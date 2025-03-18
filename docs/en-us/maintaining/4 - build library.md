@@ -28,7 +28,7 @@ This command will do the things following:
 
 - `PEER`: As the version of the project in the root directory, it is added to the `package.json` file of the library to be published as a Peer dependency.
 
-- `EMBEDDED`: The `_monaembed` folder is created in the build and the name of the imported library is changed according to whatever it is. For example; if the library name is `@ubs-platform/users-consts`, it will be converted to `./_monaembed/@ubs-platform/users-consts` or `../../_monaembed/@ubs-platform/users-consts` depending on the current file location
+- `EMBEDDED`: The `_monaembed` folder is created in the build and the name of the imported library is changed according to whatever it is. For example; if the library name is `@tk-postral/users-consts`, it will be converted to `./_monaembed/@tk-postral/users-consts` or `../../_monaembed/@tk-postral/users-consts` depending on the current file location
 
 - package.json is written into build directory
 - NPM is sent to the Registry or copied to the specified folder if in `patch` mode.

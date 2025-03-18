@@ -10,13 +10,13 @@ And then to make it publishable via npm and usable by other libraries, run `npm 
 
 **Library requirements**
 
-1 - **All exports should be done via `index.ts`** and also other libraries should be imported as **@ubs-platform/library-name**.
+1 - **All exports should be done via `index.ts`** and also other libraries should be imported as **@tk-postral/library-name**.
 
 2 - Each library should have 3 files. package.json, tsconfig-lib.json and tsconfi-lib-publish.json
 
-- @ubs-platform/\*\*\* should be excluded in publish json.
+- @tk-postral/\*\*\* should be excluded in publish json.
 
-3 - In package, the library's path in typescript should start as @ubs-platform/... or at least the package name and typescript path should be the same. Similarly, there should be a section for xr
+3 - In package, the library's path in typescript should start as @tk-postral/... or at least the package name and typescript path should be the same. Similarly, there should be a section for xr
 
 ```
     "iksir": {

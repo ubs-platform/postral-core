@@ -10,13 +10,13 @@ Ve ardından npm üzerinden yayınlanabilir yapmak ve diğer kütüphaneler tara
 
 **Kütüphane gereksinimleri**
 
-1 - **tüm exportlar `index.ts` üzerinden yapılmalıdır** ve aynı zamanda diğer kütüphaneler **@ubs-platform/kütüphane-ismi** olarak import edilmelidir.
+1 - **tüm exportlar `index.ts` üzerinden yapılmalıdır** ve aynı zamanda diğer kütüphaneler **@tk-postral/kütüphane-ismi** olarak import edilmelidir.
 
 2 - Her kütüphanede 3 dosya olmalı. package.json, tsconfig-lib.json ve tsconfi-lib-publish.json
 
-- publish json'da @ubs-platform/\*\*\* exclude edilmelidir.
+- publish json'da @tk-postral/\*\*\* exclude edilmelidir.
 
-3 - package'da kütüphanenin typescripteki path'i @ubs-platform/... olarak başlamalı. ya da en azından package name ve typescript path kısmındakiler aynı olmalıdır. Aynı şekilde xr için bir bölüm olmalıdır
+3 - package'da kütüphanenin typescripteki path'i @tk-postral/... olarak başlamalı. ya da en azından package name ve typescript path kısmındakiler aynı olmalıdır. Aynı şekilde xr için bir bölüm olmalıdır
 
 ```
     "iksir": {

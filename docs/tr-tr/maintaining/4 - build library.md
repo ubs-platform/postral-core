@@ -28,7 +28,7 @@ Bu komut şunları yapacaktır
 
     - `PEER`: kök dizindeki projenin sürümü olarak Peer dependency olarak yayınlanacak kütüphanenin `package.json` dosyasına eklenir
 
-    - `EMBEDDED`: Buildin içinde `_monaembed` klasörü açılır ve import edilen kütüphanenin ismi neyse ona göre değiştirilir. Örneğin; kütüphane ismi `@ubs-platform/users-consts` ise, şu anki dosyanın konumuna göre `./_monaembed/@ubs-platform/users-consts` ya da `../../_monaembed/@ubs-platform/users-consts` haline getirilecek
+    - `EMBEDDED`: Buildin içinde `_monaembed` klasörü açılır ve import edilen kütüphanenin ismi neyse ona göre değiştirilir. Örneğin; kütüphane ismi `@tk-postral/users-consts` ise, şu anki dosyanın konumuna göre `./_monaembed/@tk-postral/users-consts` ya da `../../_monaembed/@tk-postral/users-consts` haline getirilecek
 
 - package.json yazdırılır
 - NPM Registry'e gönderilir ya da `patch` modundaysa belirtilen klasöre kopyalanır.

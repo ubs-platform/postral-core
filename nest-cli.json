@@ -1,13 +1,32 @@
 {
-    "$schema": "https://json.schemastore.org/nest-cli",
-    "collection": "@nestjs/schematics",
-    "sourceRoot": "apps/ubs-mona-mr/src",
-    "defaultLibraryPrefix": "@ubs-platform",
-    "monorepo": true,
-    "root": "apps/ubs-mona-mr",
-    "compilerOptions": {
-        "deleteOutDir": true,
-        "webpack": true
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/ubs-mona-mr/src",
+  "defaultLibraryPrefix": "@tk-postral",
+  "monorepo": true,
+  "root": "apps/ubs-mona-mr",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true
+  },
+  "projects": {
+    "payments": {
+      "type": "library",
+      "root": "libs/payments",
+      "entryFile": "index",
+      "sourceRoot": "libs/payments/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/payments/tsconfig.lib.json"
+      }
     },
-    "projects": {}
+    "postral-epos": {
+      "type": "application",
+      "root": "apps/postral-epos",
+      "entryFile": "main",
+      "sourceRoot": "apps/postral-epos/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/postral-epos/tsconfig.app.json"
+      }
+    }
+  }
 }

@@ -1,5 +1,5 @@
 {
-    "name": "ubs-mona-mr",
+    "name": "tk-postral",
     "version": "5.2.0",
     "description": "",
     "author": "",
@@ -10,13 +10,13 @@
     },
     "docker": {
         "organisation": "hcangunduz",
-        "imageNamePrefix": "ubs-mona-"
+        "imageNamePrefix": "tk-postral-"
     },
     "iksir": {
         "type": "ROOT",
         "childrenVersionTag": "beta",
         "childrenAccess": "public",
-        "childrenPrefix": "@ubs-platform"
+        "childrenPrefix": "@tk-postral"
     },
     "scripts": {
         "build": "nest build",
@@ -52,18 +52,21 @@
         "@nestjs/platform-fastify": "^11.0.11",
         "@nestjs/schedule": "^5.0.1",
         "@nestjs/serve-static": "^5.0.1",
+        "@nestjs/typeorm": "^11.0.0",
         "axios": "^1.7.9",
         "comment-json": "^4.2.5",
         "crypto-promise": "^2.1.0",
         "kafkajs": "^2.2.4",
         "mongoose": "^8.10.2",
+        "mysql2": "^3.13.0",
         "ollama": "^0.5.14",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.1",
-        "sharp": "^0.33.5"
+        "sharp": "^0.33.5",
+        "typeorm": "^0.3.21"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",
@@ -114,6 +117,8 @@
             "<rootDir>/apps/",
             "<rootDir>/libs/"
         ],
-        "moduleNameMapper": {}
+        "moduleNameMapper": {
+            "^@tk-postral/payments(|/.*)$": "<rootDir>/libs/payments/src/$1"
+        }
     }
 }
