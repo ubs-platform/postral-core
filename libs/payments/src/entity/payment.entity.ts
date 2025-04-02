@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PaymentProgress } from './payment-status.entity';
+import { PostralPaymentTax } from './payment-tax.entity';
 
 @Entity()
 export class Payment {
@@ -29,6 +30,11 @@ export class Payment {
         cascade: true,
     })
     items: PostralPaymentItem[];
+
+    @OneToMany(() => PostralPaymentTax, (item) => item.payment, {
+        cascade: true,
+    })
+    taxes: PostralPaymentTax[];
 
     @OneToOne(() => PaymentProgress, (item) => item.payment, {
         cascade: true,

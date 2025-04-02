@@ -7,25 +7,28 @@ export class PostralPaymentItem {
     id: string;
 
     @Column()
-    entityGroup: string;
-    
-    @Column()
-    entityId: string;
-    
-    @Column()
-    entityName: string;
-    
+    name: string;
+
     @Column()
     quantity: number;
-    
+
     @Column()
     totalAmount: number;
-    
+
+    @Column()
+    originalUnitAmount: number;
+
     @Column()
     unitAmount: number;
-    
+
     @Column()
     taxPercent: number;
+
+    @Column()
+    taxAmount: number;
+
+    @Column()
+    unTaxAmount: number;
 
     @ManyToOne(() => Payment, (a) => a.items, {
         onDelete: 'CASCADE',
