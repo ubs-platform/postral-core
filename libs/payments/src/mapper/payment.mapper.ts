@@ -8,7 +8,7 @@ export class PaymentMapper {
         return {
             type: saved.type,
             id: saved.id,
-            unit: saved.unit,
+            currency: saved.currency,
             totalAmount: saved.totalAmount,
             //   items: saved.items.map((a) => {
             //     return {

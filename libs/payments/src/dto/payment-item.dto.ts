@@ -4,7 +4,7 @@ export interface PaymentItemDto {
     quantity: number;
     totalAmount: number;
     taxPercent: number;
-    taxedAmount: number;
+    taxAmount: number;
 
     // itemType: 'PRODUCT' | 'DISCOUNT' | 'ADDITION' | 'OTHER';
     // taxPercent: number;

@@ -20,6 +20,12 @@ export class PaymentController {
     public async fetchAll() {
         return await this.ps.findAll();
     }
+
+    @Get('/:id')
+    public async fetchPaymentInformation(@Param() { id }: { id: string }) {
+        return await this.ps.findPaymentById(id);
+    }
+
     @Get('/:id/items')
     public async fetchItems(@Param() { id }: { id: string }) {
         return await this.ps.findItems(id);

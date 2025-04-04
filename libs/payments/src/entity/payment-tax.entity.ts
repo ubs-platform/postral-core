@@ -6,13 +6,13 @@ export class PostralPaymentTax {
     @PrimaryGeneratedColumn('uuid')
     id: string;
     @Column()
-    quantity: number;
+    taxAmount: number;
     @Column()
-    totalAmount: number;
+    untaxAmount: number;
     @Column()
-    unitAmount: number;
+    fullAmount: number;
     @Column()
-    taxPercent: number;
+    percent: number;
 
     @ManyToOne(() => Payment, (a) => a.items, {
         onDelete: 'CASCADE',

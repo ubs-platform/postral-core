@@ -24,7 +24,7 @@ export class Payment {
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
     @Column()
-    unit: string;
+    currency: string;
 
     @OneToMany(() => PostralPaymentItem, (item) => item.payment, {
         cascade: true,

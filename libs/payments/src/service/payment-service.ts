@@ -10,6 +10,7 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxDTO } from '../dto/tax.dto';
 import { TaxCalculationUtil } from '../util/calculations';
+import { PostralPaymentTax } from '../entity/payment-tax.entity';
 
 @Injectable()
 export class PaymentService {
@@ -32,36 +33,54 @@ export class PaymentService {
         return this.paymentItemMapper.toDto(ac[0].items);
     }
 
+    async findPaymentById(id: string) {
+        return this.paymentMapper.toDto(
+            (await this.paymentrepo.findOneBy({ id }))![0],
+        );
+    }
+
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
-        let taxes: TaxDTO[] = [],
-            items: PostralPaymentItem[] = [],
-            taxMap: Map<String, TaxDTO> = new Map();
+        let taxesFromItems: TaxDTO[] = [],
+            items: PostralPaymentItem[] = [];
+        let totalAmt = 0;
+
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const itemDto = pdto.items[itemIndex];
+            totalAmt += itemDto.totalAmount;
             const taxDto = TaxCalculationUtil.generateTaxDto(
                 itemDto.taxPercent.toString(),
                 itemDto.totalAmount,
                 itemDto.taxPercent,
             );
-            taxes.push(taxDto);
+            taxesFromItems.push(taxDto);
 
             const item = new PostralPaymentItem();
             item.taxAmount = taxDto.taxAmount!;
             item.taxPercent = taxDto.percent!;
             item.unTaxAmount = taxDto.untaxAmount!;
+            item.quantity = itemDto.quantity;
             item.name = itemDto.name;
-            item.totalAmount = item.totalAmount;
-            item.unitAmount = item.unitAmount;
-            item.originalUnitAmount = item.originalUnitAmount;
+            item.totalAmount = itemDto.totalAmount;
+            item.unitAmount = itemDto.totalAmount / itemDto.quantity;
+            item.originalUnitAmount = itemDto.totalAmount;
             items.push(item);
         }
 
         const p = new Payment();
         p.type = pdto.type;
-        p.unit = pdto.unit;
-        p.totalAmount = pdto.totalAmount;
+        p.currency = pdto.currency;
+        p.totalAmount = totalAmt;
         p.items = items;
-        p.taxes;
+        p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
+            (a) => {
+                const ppt = new PostralPaymentTax();
+                ppt.fullAmount = a.fullAmount;
+                ppt.percent = a.percent;
+                ppt.taxAmount = a.taxAmount;
+                ppt.untaxAmount = a.untaxAmount;
+                return ppt;
+            },
+        );
         const paymentSaved = await this.paymentrepo.save(p);
         return this.paymentMapper.toDto(paymentSaved);
     }

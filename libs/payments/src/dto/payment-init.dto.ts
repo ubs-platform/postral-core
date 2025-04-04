@@ -6,12 +6,12 @@ export interface PaymentInitDTO {
     // id: string;
 
     type: 'PURCHASE' | 'REFUND';
-    totalAmount: number;
+    // totalAmount: number;
 
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
-    unit: string;
+    currency: string;
 
     items: PaymentItemInputDto[];
 }

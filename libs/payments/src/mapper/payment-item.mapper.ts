@@ -13,8 +13,8 @@ export class PaymentItemMapper {
                 name: a.name,
                 quantity: a.quantity,
                 totalAmount: a.totalAmount,
-                taxedAmount: 10,
-                taxPercent: 10,
+                taxAmount: a.taxAmount,
+                taxPercent: a.taxPercent,
             });
         }
         return dtos;

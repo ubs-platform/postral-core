@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '../dto/tax.dto';
+import { ArrayToObjectUtil } from './array-to-object';
 
 export class TaxCalculationUtil {
     static calculateUntaxedPrice(fullAmount: number, taxAmount: number) {
@@ -66,5 +67,27 @@ export class TaxCalculationUtil {
             taxTotal += tax.taxAmount;
         }
         return this.generateTaxDto('Total', fullTotal, null, taxTotal);
+    }
+
+    static mergeTaxesByPercent(taxes: TaxDTO[]) {
+        return Object.values(
+            ArrayToObjectUtil.arrayConditionCirculation(
+                taxes,
+                (a: TaxDTO) => a.percent.toString(),
+                (
+                    object: TaxDTO,
+                    key: string,
+                    map: { [key: string]: TaxDTO },
+                ) => {
+                    if (map[key]) {
+                        map[key] = this.mergeTaxes([map[key], object]);
+                    } else {
+                        map[key] = object;
+                    }
+                },
+            ),
+        ) as TaxDTO[];
+
+        // return this.generateTaxDto('Total', fullTotal, null, taxTotal);
     }
 }
