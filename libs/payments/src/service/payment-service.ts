@@ -34,9 +34,12 @@ export class PaymentService {
     }
 
     async findPaymentById(id: string) {
-        return this.paymentMapper.toDto(
-            (await this.paymentrepo.findOneBy({ id }))![0],
-        );
+        const paymentReal = await this.paymentrepo.find({
+            where: { id },
+            // relations: detailed ? ['items', 'taxes'] : [],
+        });
+        const p = this.paymentMapper.toDto(paymentReal[0]!);
+        return p;
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
