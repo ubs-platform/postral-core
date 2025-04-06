@@ -11,6 +11,7 @@ import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxDTO } from '../dto/tax.dto';
 import { TaxCalculationUtil } from '../util/calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
+import { EventManagementService } from './event-management.service';
 
 @Injectable()
 export class PaymentService {
@@ -19,6 +20,7 @@ export class PaymentService {
         private readonly paymentrepo: Repository<Payment>,
         private paymentMapper: PaymentMapper,
         private paymentItemMapper: PaymentItemMapper,
+        private ems: EventManagementService,
     ) {}
 
     async findAll(): Promise<Payment[]> {
@@ -85,6 +87,12 @@ export class PaymentService {
             },
         );
         const paymentSaved = await this.paymentrepo.save(p);
-        return this.paymentMapper.toDto(paymentSaved);
+        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        try {
+            await this.ems.onPaymentInitialized(paymentDtoFinal);
+        } catch (error) {
+            console.error(error);
+        }
+        return paymentDtoFinal;
     }
 }
