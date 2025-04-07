@@ -6,6 +6,7 @@ export class Participant {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    /** Gerçek ya da Tüzel kişi */
     personalityType: 'INDUVIDIAL' | 'COMMERCIAL';
 
     fullName: string;
