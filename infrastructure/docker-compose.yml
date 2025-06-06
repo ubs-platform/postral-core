@@ -30,3 +30,23 @@ services:
             - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
         depends_on:
             - zookeeper
+    zookeeper:
+        image: 'docker.io/bitnami/zookeeper:3-debian-10'
+        ports:
+            - 2181:2181
+        environment:
+            - ALLOW_ANONYMOUS_LOGIN=yes
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'bash',
+                    '-c',
+                    'unset',
+                    'JMX_PORT',
+                    ';',
+                    'kafka-topics.sh',
+                    '--zookeeper',
+                    'zookeeper:2181',
+                    '--list',
+                ]
