@@ -21,11 +21,11 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@tk-postral/payments": [
-        "libs/payments/src"
+      "@tk-postral/payment-common": [
+        "libs/payment-common/src"
       ],
-      "@tk-postral/payments/*": [
-        "libs/payments/src/*"
+      "@tk-postral/payment-common/*": [
+        "libs/payment-common/src/*"
       ]
     }
   }

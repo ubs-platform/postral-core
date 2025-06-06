@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { PostralEposModule } from './epos.module';
 import { Logger } from '@nestjs/common';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import {
@@ -7,10 +6,11 @@ import {
     NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyMultipart from '@fastify/multipart';
+import { PaymentModule } from './payment.module';
 
 async function bootstrap() {
     const app = await NestFactory.create<NestFastifyApplication>(
-        PostralEposModule,
+        PaymentModule,
         new FastifyAdapter(),
     );
     const globalPrefix = 'api';

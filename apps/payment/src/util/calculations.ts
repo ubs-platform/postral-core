@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { TaxDTO } from '../dto/tax.dto';
+import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from './array-to-object';
 
 export class TaxCalculationUtil {

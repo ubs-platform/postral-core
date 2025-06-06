@@ -10,22 +10,22 @@
     "webpack": true
   },
   "projects": {
-    "payments": {
-      "type": "library",
-      "root": "libs/payments",
-      "entryFile": "index",
-      "sourceRoot": "libs/payments/src",
+    "payment": {
+      "type": "application",
+      "root": "apps/payment",
+      "entryFile": "main",
+      "sourceRoot": "apps/payment/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/payments/tsconfig.lib.json"
+        "tsConfigPath": "apps/payment/tsconfig.app.json"
       }
     },
-    "epos": {
-      "type": "application",
-      "root": "apps/epos",
-      "entryFile": "main",
-      "sourceRoot": "apps/epos/src",
+    "payment-common": {
+      "type": "library",
+      "root": "libs/payment-common",
+      "entryFile": "index",
+      "sourceRoot": "@tk-postral/payment-common",
       "compilerOptions": {
-        "tsConfigPath": "apps/epos/tsconfig.app.json"
+        "tsConfigPath": "libs/payment-common/tsconfig.lib.json"
       }
     }
   }

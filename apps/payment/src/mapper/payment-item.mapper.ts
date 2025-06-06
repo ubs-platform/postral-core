@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentItemDto as PostralPaymentItemDto } from '../dto/payment-item.dto';
+import { PaymentItemDto } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 
 @Injectable()
 export class PaymentItemMapper {
-    toDto(items: PostralPaymentItem[]): PostralPaymentItemDto[] {
-        const dtos: PostralPaymentItemDto[] = [];
+    toDto(items: PostralPaymentItem[]): PaymentItemDto[] {
+        const dtos: PaymentItemDto[] = [];
         for (let index = 0; index < items.length; index++) {
             const a = items[index];
             dtos.push({

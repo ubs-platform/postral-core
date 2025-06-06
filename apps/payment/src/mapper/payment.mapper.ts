@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Payment } from '../entity/payment.entity';
-import { PaymentDTO } from '../dto/payment.dto';
+import { PaymentDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class PaymentMapper {

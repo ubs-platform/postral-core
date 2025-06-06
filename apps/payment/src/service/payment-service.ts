@@ -2,16 +2,13 @@ import { Injectable, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { Repository } from 'typeorm';
-import { PaymentInitDTO } from '../dto/payment-init.dto';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
-import { PaymentDTO } from '../dto/payment.dto';
-import { PaymentItemDto } from '../dto/payment-item.dto';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxDTO } from '../dto/tax.dto';
 import { TaxCalculationUtil } from '../util/calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventManagementService } from './event-management.service';
+import { PaymentItemDto, PaymentInitDTO, PaymentDTO, TaxDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class PaymentService {

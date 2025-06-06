@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { PaymentDTO } from '../dto/payment.dto';
+import { PaymentDTO } from '@tk-postral/payment-common';
 @Injectable()
 export class EventManagementService {
     /**
