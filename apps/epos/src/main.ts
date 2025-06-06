@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { PostralEposModule } from './postral-epos.module';
+import { PostralEposModule } from './epos.module';
 import { Logger } from '@nestjs/common';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { PostralEposModule } from './../src/postral-epos.module';
+import { PostralEposModule } from '../src/epos.module';
 
 describe('PostralEposController (e2e)', () => {
   let app: INestApplication;

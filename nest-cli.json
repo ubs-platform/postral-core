@@ -19,13 +19,13 @@
         "tsConfigPath": "libs/payments/tsconfig.lib.json"
       }
     },
-    "postral-epos": {
+    "epos": {
       "type": "application",
-      "root": "apps/postral-epos",
+      "root": "apps/epos",
       "entryFile": "main",
-      "sourceRoot": "apps/postral-epos/src",
+      "sourceRoot": "apps/epos/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/postral-epos/tsconfig.app.json"
+        "tsConfigPath": "apps/epos/tsconfig.app.json"
       }
     }
   }
