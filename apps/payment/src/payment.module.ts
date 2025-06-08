@@ -35,7 +35,7 @@ import { PaymentsEntities } from './entity';
                         brokers: [`${process.env['NX_KAFKA_URL']}`],
                     },
                     consumer: {
-                        groupId: 'tk-lotus' + randomUUID(),
+                        groupId: 'tk-postral-' + randomUUID(),
                     },
                 },
             },
