@@ -10,7 +10,7 @@ export class Account {
     name: string;
 
     @Column()
-    identity: string;
+    legalIdentity: string;
 
     @Column()
     type: 'INDUVIDIAL' | 'COMMERCIAL';

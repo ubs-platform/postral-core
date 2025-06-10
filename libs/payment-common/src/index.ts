@@ -1,8 +1,9 @@
 // export * from './payments.module';
 // export * from './entity/index';
-export * from "./dto/payment-init.dto"
-export * from "./dto/payment-item-init.dto"
-export * from "./dto/payment-item-input.dto"
-export * from "./dto/payment.dto"
-export * from "./dto/tax.dto"
-export * from "./dto/payment-item.dto"
+export * from './dto/payment-init.dto';
+export * from './dto/payment-item-init.dto';
+export * from './dto/payment-item-input.dto';
+export * from './dto/payment.dto';
+export * from './dto/tax.dto';
+export * from './dto/payment-item.dto';
+export * from './dto/account.dto';
