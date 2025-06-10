@@ -2,7 +2,7 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Payment } from './payment.entity';
 
 @Entity()
-export class Comission {
+export class AppComission {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -11,10 +11,16 @@ export class Comission {
     
     @Column()
     applicationAccountId: string;
+    
+    @Column()
+    default: boolean;
 
     @Column()
-    identity: string;
+    itemSellerAccountId: string;
 
     @Column()
-    type: 'INDUVIDIAL' | 'COMMERCIAL';
+    appAccountId: string;
+
+    @Column()
+    percent: number;
 }
