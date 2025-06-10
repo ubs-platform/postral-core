@@ -1,0 +1,6 @@
+{
+    "clientLibrary": "axios",
+    "directories": {
+        "client": "../../libs/payment-common/src",
+    }
+}

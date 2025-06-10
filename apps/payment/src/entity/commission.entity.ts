@@ -7,7 +7,10 @@ export class Comission {
     id: string;
 
     @Column()
-    accountId: string;
+    sellerAccountId: string;
+    
+    @Column()
+    applicationAccountId: string;
 
     @Column()
     identity: string;

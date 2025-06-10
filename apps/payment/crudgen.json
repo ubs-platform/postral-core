@@ -1,0 +1,8 @@
+{
+    "directories": {
+        "dto": "../../libs/payment-common/src",
+        "mapper": "../mapper",
+        "service": "../service",
+        "controller": "../controller"
+    }
+}
