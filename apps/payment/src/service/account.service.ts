@@ -1,4 +1,4 @@
-import { Injectable, Post } from '@nestjs/common';
+import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { Repository } from 'typeorm';
@@ -17,6 +17,7 @@ import {
 } from '@tk-postral/payment-common';
 import { Account } from '../entity/account.entity';
 import { AccountMapper } from '../mapper/account.mapper';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class AccountService {
@@ -25,6 +26,19 @@ export class AccountService {
         private readonly accountRepo: Repository<Account>,
         private readonly accountMapper: AccountMapper,
     ) {}
+
+    async fetchAll() {
+        return this.accountMapper.toDtoList(await this.accountRepo.find());
+    }
+
+    async fetchOne(id: string) {
+        let exist = await this.accountRepo.findOne({ where: { id } });
+        if (exist) {
+            return await this.accountMapper.toDto(exist);
+        } else {
+            throw new NotFoundException('Account');
+        }
+    }
 
     async delete(id: string) {
         await this.accountRepo.delete({ id });
@@ -41,6 +55,8 @@ export class AccountService {
         if (exist) {
             exist = await this.accountMapper.updateEntity(exist, dto);
             this.accountRepo.save(exist);
+        } else {
+            throw new NotFoundException('Account');
         }
     }
 }

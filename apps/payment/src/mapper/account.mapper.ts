@@ -4,6 +4,15 @@ import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AccountMapper {
+    async toDtoList(exist: Account[]): Promise<AccountDTO[]> {
+        const items: AccountDTO[] = [];
+        for (let index = 0; index < exist.length; index++) {
+            const existAccount = exist[index];
+            items.push(await this.toDto(existAccount));
+        }
+        return items;
+    }
+
     async toDto(ac: Account): Promise<AccountDTO> {
         return {
             id: ac.id,

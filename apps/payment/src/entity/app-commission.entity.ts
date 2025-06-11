@@ -8,18 +8,12 @@ export class AppComission {
 
     @Column()
     sellerAccountId: string;
-    
+
     @Column()
     applicationAccountId: string;
-    
+
     @Column()
     default: boolean;
-
-    @Column()
-    itemSellerAccountId: string;
-
-    @Column()
-    appAccountId: string;
 
     @Column()
     percent: number;
