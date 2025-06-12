@@ -26,52 +26,59 @@ import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dt
 export class AppComissionService {
     constructor(
         @InjectRepository(AppComission)
-        private readonly accountRepo: Repository<AppComission>,
-        private readonly accountMapper: AppComissionMapper,
+        private readonly appComissionRepo: Repository<AppComission>,
+        private readonly appComissionMapper: AppComissionMapper,
     ) {}
 
     async fetchAll() {
-        return this.accountMapper.toDtoList(await this.accountRepo.find());
+        return this.appComissionMapper.toDtoList(
+            await this.appComissionRepo.find(),
+        );
     }
 
     async fetchOne(appAccountId: string, sellerAccountId?: string) {
-        const where = {
-            applicationAccountId: appAccountId,
-            ...(sellerAccountId ? { sellerAccountId } : { default: true }),
-        };
-        let exist = await this.accountRepo.findOne({
+        const where: any = [
+            { applicationAccountId: appAccountId, default: true },
+            sellerAccountId
+                ? {
+                      applicationAccountId: appAccountId,
+                      default: false,
+                      sellerAccountId: sellerAccountId,
+                  }
+                : null,
+        ].filter((a) => a);
+
+        let exist = await this.appComissionRepo.findOne({
             where,
         });
         if (exist) {
-            return await this.accountMapper.toDto(exist);
+            return await this.appComissionMapper.toDto(exist);
         } else {
-            const appComission = new AppComission();
-            if (sellerAccountId != null) {
-                this.fetchOne(appAccountId); // defaultu getirsin
-            } else {
-                // default yoksa %0 komisyon... daha napcaz aq
-                return {} as AppComissionDTO;
-            }
+            return await this.edit({
+                applicationAccountId: appAccountId,
+                default: true,
+                percent: 0,
+            });
         }
     }
 
-    // async delete(id: string) {
-    //     await this.accountRepo.delete({ id });
-    // }
-
-    // async add(dto: AccountDTO) {
-    //     await this.accountRepo.insert(
-    //         await this.accountMapper.updateEntity(new Account(), dto),
-    //     );
-    // }
-
     async edit(dto: AppComissionDTO) {
-        let exist = await this.accountRepo.findOne({ where: { id: dto.id } });
-        if (exist) {
-            exist = await this.accountMapper.updateEntity(exist, dto);
-            this.accountRepo.save(exist);
-        } else {
-            throw new NotFoundException('Account');
+        if (dto.default == null) dto.default = false;
+        if (dto.percent == null) {
+            const defaultComission = await this.fetchOne(
+                dto.applicationAccountId,
+            );
+            dto.percent = defaultComission.percent;
         }
+
+        let exist = await this.appComissionRepo.findOne({
+            where: { id: dto.id },
+        });
+        if (!exist) {
+            exist = new AppComission();
+        }
+        exist = await this.appComissionMapper.updateEntity(exist, dto);
+        exist = await this.appComissionRepo.save(exist);
+        return await this.appComissionMapper.toDto(exist);
     }
 }
