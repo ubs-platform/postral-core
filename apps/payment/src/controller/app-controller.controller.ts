@@ -17,9 +17,9 @@ import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dt
 export class AppComissionController {
     constructor(private readonly accountService: AppComissionService) {}
 
-    @Get()
+    @Get(":applicationAccountId")
     async fetchOne(
-        @Query() applicationAccountId: string,
+        @Param() applicationAccountId: string,
         @Query() sellerAccountId?: string,
     ): Promise<AppComissionDTO> {
         return await this.accountService.fetchOne(

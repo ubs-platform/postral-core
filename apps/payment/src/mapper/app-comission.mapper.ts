@@ -33,8 +33,8 @@ export class AppComissionMapper {
 
         entity.applicationAccountId = dto.applicationAccountId;
         entity.default = dto.default;
-        entity.sellerAccountId = dto.sellerAccountId;
-        entity.percent = dto.percent;
+        entity.sellerAccountId = dto.sellerAccountId || "";
+        entity.percent = dto.percent || 0;
 
         return entity;
     }

@@ -10,6 +10,12 @@ import { EventManagementService } from './service/event-management.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { randomUUID } from 'crypto';
 import { PaymentsEntities } from './entity';
+import { AccountService } from './service/account.service';
+import { AccountMapper } from './mapper/account.mapper';
+import { AppComissionService } from './service/app-commission.service';
+import { AppComissionMapper } from './mapper/app-comission.mapper';
+import { AppComissionController } from './controller/app-controller.controller';
+import { AccountController } from './controller/account.controller';
 
 @Module({
     imports: [
@@ -18,9 +24,9 @@ import { PaymentsEntities } from './entity';
             type: 'mariadb',
             host: 'localhost',
             port: 3306,
-            username: 'postral',
-            password: 'postral',
-            database: 'postral_epos',
+            username: 'root',
+            password: '',
+            database: 'postral_core',
             entities: PaymentsEntities,
             synchronize: true,
             metadataTableName: '',
@@ -43,11 +49,15 @@ import { PaymentsEntities } from './entity';
     ],
     exports: [TypeOrmModule],
     providers: [
+        AccountService,
+        AccountMapper,
+        AppComissionService,
+        AppComissionMapper,
         PaymentService,
         PaymentMapper,
         PaymentItemMapper,
         EventManagementService,
     ],
-    controllers: [PaymentController],
+    controllers: [PaymentController, AppComissionController, AccountController],
 })
 export class PaymentModule {}

@@ -11,4 +11,6 @@ export class EventManagementService {
     async onPaymentInitialized(pd: PaymentDTO) {
         await this.kfk.emit('POSTRAL_PAYMENT_INITIALIZED', pd);
     }
+
+    
 }
