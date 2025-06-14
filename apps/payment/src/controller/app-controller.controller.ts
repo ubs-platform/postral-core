@@ -7,6 +7,7 @@ import {
     Param,
     Body,
     Query,
+    BadRequestException,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO } from '@tk-postral/payment-common';
@@ -35,6 +36,9 @@ export class AppComissionController {
 
     @Put()
     async update(@Body() account: AppComissionDTO): Promise<AppComissionDTO> {
+        if (account.applicationAccountId == null) {
+            throw new BadRequestException("ApplicationAccountId is required")
+        }
         return await this.accountService.edit(account);
     }
 }
