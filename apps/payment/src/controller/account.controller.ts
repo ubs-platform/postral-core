@@ -16,11 +16,13 @@ export class AccountController {
 
     @Get()
     async findAll(): Promise<AccountDTO[]> {
+        // admin ise tümü, değilse kendi oluşturdukları vs
         return this.accountService.fetchAll();
     }
 
     @Get(':id')
     async findOne(@Param('id') id: string): Promise<AccountDTO> {
+        // admin ise tümü, değilse kendi oluşturdukları vs
         return this.accountService.fetchOne(id);
     }
 

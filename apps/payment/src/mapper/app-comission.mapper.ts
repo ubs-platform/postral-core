@@ -17,7 +17,6 @@ export class AppComissionMapper {
 
     async toDto(ac: AppComission): Promise<AppComissionDTO> {
         return {
-            id: ac.id,
             applicationAccountId: ac.applicationAccountId,
             default: ac.default,
             sellerAccountId: ac.sellerAccountId,

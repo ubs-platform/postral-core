@@ -12,7 +12,7 @@ export class AppComission {
     @Column()
     applicationAccountId: string;
 
-    @Column()
+    @Column({ name: 'app_default' })
     default: boolean;
 
     @Column()

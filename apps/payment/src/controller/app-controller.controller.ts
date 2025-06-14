@@ -17,10 +17,10 @@ import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dt
 export class AppComissionController {
     constructor(private readonly accountService: AppComissionService) {}
 
-    @Get(":applicationAccountId")
+    @Get(':applicationAccountId')
     async fetchOne(
-        @Param() applicationAccountId: string,
-        @Query() sellerAccountId?: string,
+        @Param("applicationAccountId") applicationAccountId: string,
+        @Query("seller-account-id") sellerAccountId?: string,
     ): Promise<AppComissionDTO> {
         return await this.accountService.fetchOne(
             applicationAccountId,
@@ -34,7 +34,7 @@ export class AppComissionController {
     }
 
     @Put()
-    async update(@Body() account: AppComissionDTO): Promise<void> {
-        await this.accountService.edit(account);
+    async update(@Body() account: AppComissionDTO): Promise<AppComissionDTO> {
+        return await this.accountService.edit(account);
     }
 }

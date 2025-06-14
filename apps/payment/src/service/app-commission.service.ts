@@ -37,16 +37,12 @@ export class AppComissionService {
     }
 
     async fetchOne(appAccountId: string, sellerAccountId?: string) {
-        const where: any = [
-            { applicationAccountId: appAccountId, default: true },
-            sellerAccountId
-                ? {
-                      applicationAccountId: appAccountId,
-                      default: false,
-                      sellerAccountId: sellerAccountId,
-                  }
-                : null,
-        ].filter((a) => a);
+        const where: any = {
+            applicationAccountId: appAccountId,
+            ...(sellerAccountId
+                ? { default: false, sellerAccountId: sellerAccountId }
+                : { default: true }),
+        };
 
         let exist = await this.appComissionRepo.findOne({
             where,
@@ -54,16 +50,24 @@ export class AppComissionService {
         if (exist) {
             return await this.appComissionMapper.toDto(exist);
         } else {
-            return await this.edit({
-                applicationAccountId: appAccountId,
-                default: true,
-                percent: 0,
-            });
+            if (sellerAccountId) {
+                return this.fetchOne(appAccountId);
+            } else {
+                return await this.edit({
+                    applicationAccountId: appAccountId,
+                    default: true,
+                    percent: 0,
+                });
+            }
         }
     }
 
     async edit(dto: AppComissionDTO) {
-        if (dto.default == null) dto.default = false;
+        if (dto.sellerAccountId == null) {
+            dto.default = true;
+        } else {
+            dto.default = false;
+        }
         if (dto.percent == null) {
             const defaultComission = await this.fetchOne(
                 dto.applicationAccountId,
@@ -72,7 +76,13 @@ export class AppComissionService {
         }
 
         let exist = await this.appComissionRepo.findOne({
-            where: { id: dto.id },
+            where: {
+                default: dto.default,
+                applicationAccountId: dto.applicationAccountId,
+                ...(!dto.default
+                    ? { sellerAccountId: dto.sellerAccountId }
+                    : {}),
+            },
         });
         if (!exist) {
             exist = new AppComission();
