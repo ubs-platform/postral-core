@@ -45,16 +45,18 @@ export class AccountService {
     }
 
     async add(dto: AccountDTO) {
-        await this.accountRepo.insert(
+        const a = await this.accountRepo.save(
             await this.accountMapper.updateEntity(new Account(), dto),
         );
+        return this.accountMapper.toDto(a);
     }
 
     async edit(dto: AccountDTO) {
         let exist = await this.accountRepo.findOne({ where: { id: dto.id } });
         if (exist) {
             exist = await this.accountMapper.updateEntity(exist, dto);
-            this.accountRepo.save(exist);
+            exist = await this.accountRepo.save(exist);
+            return this.accountMapper.toDto(exist);
         } else {
             throw new NotFoundException('Account');
         }

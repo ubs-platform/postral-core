@@ -16,6 +16,9 @@ import { AppComissionService } from './service/app-commission.service';
 import { AppComissionMapper } from './mapper/app-comission.mapper';
 import { AppComissionController } from './controller/app-controller.controller';
 import { AccountController } from './controller/account.controller';
+import { ItemMapper } from './mapper/item.mapper';
+import { ItemService } from './service/item.service';
+import { ItemController } from './controller/item.controller';
 
 @Module({
     imports: [
@@ -57,7 +60,14 @@ import { AccountController } from './controller/account.controller';
         PaymentMapper,
         PaymentItemMapper,
         EventManagementService,
+        ItemMapper,
+        ItemService,
     ],
-    controllers: [PaymentController, AppComissionController, AccountController],
+    controllers: [
+        PaymentController,
+        AppComissionController,
+        AccountController,
+        ItemController,
+    ],
 })
 export class PaymentModule {}

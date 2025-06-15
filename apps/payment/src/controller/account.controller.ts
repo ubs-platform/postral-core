@@ -27,13 +27,13 @@ export class AccountController {
     }
 
     @Post()
-    async create(@Body() account: AccountDTO): Promise<void> {
-        await this.accountService.add(account);
+    async create(@Body() account: AccountDTO): Promise<AccountDTO> {
+        return await this.accountService.add(account);
     }
 
     @Put()
-    async update(@Body() account: AccountDTO): Promise<void> {
-        await this.accountService.edit(account);
+    async update(@Body() account: AccountDTO): Promise<AccountDTO> {
+        return await this.accountService.edit(account);
     }
 
     @Delete(':id')

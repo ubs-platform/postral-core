@@ -7,6 +7,9 @@ export class Item {
     id: string;
 
     @Column()
+    name: string;
+
+    @Column()
     entityGroup: string;
 
     @Column()
@@ -23,4 +26,7 @@ export class Item {
 
     @Column()
     originalUnitAmount: number;
+
+    @Column()
+    sellerAccountId: string;
 }
