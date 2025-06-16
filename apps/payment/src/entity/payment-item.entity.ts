@@ -7,8 +7,11 @@ export class PostralPaymentItem {
     id: string;
 
     @Column()
+    itemId: string;
+
+    @Column()
     entityGroup: string;
-    
+
     @Column()
     entityName: string;
 

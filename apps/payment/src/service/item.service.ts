@@ -19,7 +19,7 @@ export class ItemService {
     ) {}
 
     async fetchAll(search: ItemSearchDTO) {
-        return this.itemMapper.toDtoList(
+        return await this.itemMapper.toDtoList(
             await this.itemRepo.find({ where: search }),
         );
     }

@@ -33,6 +33,8 @@ export class ItemMapper {
             originalUnitAmount: ac.originalUnitAmount,
 
             sellerAccountId: ac.sellerAccountId,
+
+            unitAmount: ac.unitAmount,
         };
     }
 

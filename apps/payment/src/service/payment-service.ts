@@ -8,7 +8,13 @@ import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventManagementService } from './event-management.service';
-import { PaymentItemDto, PaymentInitDTO, PaymentDTO, TaxDTO } from '@tk-postral/payment-common';
+import {
+    PaymentItemDto,
+    PaymentInitDTO,
+    PaymentDTO,
+    TaxDTO,
+} from '@tk-postral/payment-common';
+import { ItemService } from './item.service';
 
 @Injectable()
 export class PaymentService {
@@ -18,6 +24,7 @@ export class PaymentService {
         private paymentMapper: PaymentMapper,
         private paymentItemMapper: PaymentItemMapper,
         private ems: EventManagementService,
+        private itemService: ItemService,
     ) {}
 
     async findAll(): Promise<Payment[]> {
@@ -48,22 +55,39 @@ export class PaymentService {
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const itemDto = pdto.items[itemIndex];
+
+            const itemx = (
+                await this.itemService.fetchAll(
+                    itemDto.itemId
+                        ? { id: itemDto.itemId }
+                        : {
+                              entityGroup: itemDto.entityGroup,
+                              entityId: itemDto.entityId,
+                              entityName: itemDto.entityName,
+                          },
+                )
+            )[0];
+
             totalAmt += itemDto.totalAmount;
             const taxDto = TaxCalculationUtil.generateTaxDto(
-                itemDto.taxPercent.toString(),
+                itemx.taxPercent.toString(),
                 itemDto.totalAmount,
                 itemDto.taxPercent,
             );
             taxesFromItems.push(taxDto);
 
             const item = new PostralPaymentItem();
+            item.entityGroup = itemx.entityGroup;
+            item.entityId = itemx.entityId;
+            item.entityName = itemx.entityName;
+            item.itemId = itemx.id;
+            item.name = itemx.name;
+            item.unitAmount = itemx.unitAmount;
+            item.totalAmount = itemx.unitAmount * itemDto.quantity;
             item.taxAmount = taxDto.taxAmount!;
             item.taxPercent = taxDto.percent!;
             item.unTaxAmount = taxDto.untaxAmount!;
             item.quantity = itemDto.quantity;
-            item.name = itemDto.name;
-            item.totalAmount = itemDto.totalAmount;
-            item.unitAmount = itemDto.totalAmount / itemDto.quantity;
             item.originalUnitAmount = itemDto.totalAmount;
             items.push(item);
         }

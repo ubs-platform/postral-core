@@ -25,6 +25,9 @@ export class Item {
     taxPercent: number;
 
     @Column()
+    unitAmount: number;
+
+    @Column()
     originalUnitAmount: number;
 
     @Column()

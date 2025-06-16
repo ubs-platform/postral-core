@@ -13,6 +13,8 @@ export class ItemDTO {
 
     taxPercent: number;
 
+    unitAmount: number;
+
     originalUnitAmount: number;
 
     sellerAccountId: string;
