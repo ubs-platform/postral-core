@@ -67,29 +67,30 @@ export class PaymentService {
                           },
                 )
             )[0];
+            const paymentItem = new PostralPaymentItem();
+            paymentItem.entityGroup = itemx.entityGroup;
+            paymentItem.entityId = itemx.entityId;
+            paymentItem.entityName = itemx.entityName;
+            paymentItem.totalAmount = itemx.unitAmount * itemDto.quantity;
+            paymentItem.taxPercent = itemx.taxPercent;
+            paymentItem.entityOwnerAccountId = itemx.sellerAccountId;
+            paymentItem.originalUnitAmount = itemx.originalUnitAmount || 0;
+            paymentItem.unitAmount = itemx.unitAmount;
+            paymentItem.itemId = itemx.id;
 
-            totalAmt += itemDto.totalAmount;
+            totalAmt += paymentItem.totalAmount;
             const taxDto = TaxCalculationUtil.generateTaxDto(
                 itemx.taxPercent.toString(),
-                itemDto.totalAmount,
-                itemDto.taxPercent,
+                paymentItem.totalAmount,
+                itemx.taxPercent,
             );
             taxesFromItems.push(taxDto);
 
-            const item = new PostralPaymentItem();
-            item.entityGroup = itemx.entityGroup;
-            item.entityId = itemx.entityId;
-            item.entityName = itemx.entityName;
-            item.itemId = itemx.id;
-            item.name = itemx.name;
-            item.unitAmount = itemx.unitAmount;
-            item.totalAmount = itemx.unitAmount * itemDto.quantity;
-            item.taxAmount = taxDto.taxAmount!;
-            item.taxPercent = taxDto.percent!;
-            item.unTaxAmount = taxDto.untaxAmount!;
-            item.quantity = itemDto.quantity;
-            item.originalUnitAmount = itemDto.totalAmount;
-            items.push(item);
+            paymentItem.name = itemx.name;
+            paymentItem.taxAmount = taxDto.taxAmount!;
+            paymentItem.unTaxAmount = taxDto.untaxAmount!;
+            paymentItem.quantity = itemDto.quantity;
+            items.push(paymentItem);
         }
 
         const p = new Payment();
