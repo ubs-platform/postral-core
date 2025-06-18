@@ -10,6 +10,7 @@ export class PaymentItemMapper {
             const a = items[index];
             dtos.push({
                 id: a.id,
+                itemId: a.itemId,
                 name: a.name,
                 quantity: a.quantity,
                 totalAmount: a.totalAmount,

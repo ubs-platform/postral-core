@@ -54,6 +54,8 @@ export class ItemMapper {
 
         entity.taxPercent = dto.taxPercent;
 
+        entity.unitAmount = dto.unitAmount;
+
         entity.originalUnitAmount = dto.originalUnitAmount;
 
         entity.sellerAccountId = dto.sellerAccountId;

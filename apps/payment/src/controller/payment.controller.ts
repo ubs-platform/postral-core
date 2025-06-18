@@ -26,8 +26,13 @@ export class PaymentController {
         return await this.ps.findPaymentById(id);
     }
 
-    @Get('/:id/items')
+    @Get('/:id/item')
     public async fetchItems(@Param() { id }: { id: string }) {
         return await this.ps.findItems(id);
+    }
+
+    @Get('/:id/tax')
+    public async fetchTaxes(@Param() { id }: { id: string }) {
+        return await this.ps.findTaxes(id);
     }
 }

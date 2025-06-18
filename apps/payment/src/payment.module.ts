@@ -19,6 +19,7 @@ import { AccountController } from './controller/account.controller';
 import { ItemMapper } from './mapper/item.mapper';
 import { ItemService } from './service/item.service';
 import { ItemController } from './controller/item.controller';
+import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 
 @Module({
     imports: [
@@ -62,6 +63,7 @@ import { ItemController } from './controller/item.controller';
         EventManagementService,
         ItemMapper,
         ItemService,
+        PaymentTaxMapper,
     ],
     controllers: [
         PaymentController,

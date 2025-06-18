@@ -4,6 +4,6 @@ export class TaxDTO {
         public fullAmount: number,
         public percent: number,
         public taxAmount: number,
-        public untaxAmount,
+        public untaxAmount: number,
     ) {}
 }

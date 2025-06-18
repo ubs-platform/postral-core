@@ -20,6 +20,8 @@ export class Payment {
     @Column()
     totalAmount: number;
 
+    @Column()
+    taxAmount: number;
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */

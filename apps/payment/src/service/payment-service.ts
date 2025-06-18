@@ -15,6 +15,7 @@ import {
     TaxDTO,
 } from '@tk-postral/payment-common';
 import { ItemService } from './item.service';
+import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 
 @Injectable()
 export class PaymentService {
@@ -23,6 +24,7 @@ export class PaymentService {
         private readonly paymentrepo: Repository<Payment>,
         private paymentMapper: PaymentMapper,
         private paymentItemMapper: PaymentItemMapper,
+        private paymentTaxMapper: PaymentTaxMapper,
         private ems: EventManagementService,
         private itemService: ItemService,
     ) {}
@@ -39,6 +41,14 @@ export class PaymentService {
         return this.paymentItemMapper.toDto(ac[0].items);
     }
 
+    async findTaxes(id: string): Promise<TaxDTO[]> {
+        const ac = await this.paymentrepo.find({
+            relations: { taxes: true },
+            where: { id: id },
+        });
+        return this.paymentTaxMapper.toDto(ac[0].taxes);
+    }
+
     async findPaymentById(id: string) {
         const paymentReal = await this.paymentrepo.find({
             where: { id },
@@ -51,7 +61,8 @@ export class PaymentService {
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
         let taxesFromItems: TaxDTO[] = [],
             items: PostralPaymentItem[] = [];
-        let totalAmt = 0;
+        let totalAmt = 0,
+            taxTotal = 0;
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const itemDto = pdto.items[itemIndex];
@@ -84,6 +95,8 @@ export class PaymentService {
                 paymentItem.totalAmount,
                 itemx.taxPercent,
             );
+            taxTotal += taxDto.taxAmount;
+
             taxesFromItems.push(taxDto);
 
             paymentItem.name = itemx.name;
@@ -97,6 +110,7 @@ export class PaymentService {
         p.type = pdto.type;
         p.currency = pdto.currency;
         p.totalAmount = totalAmt;
+        p.taxAmount = taxTotal;
         p.items = items;
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {

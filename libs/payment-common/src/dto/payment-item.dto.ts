@@ -1,5 +1,6 @@
 export interface PaymentItemDto {
     id: string;
+    itemId: string;
     name: string;
     quantity: number;
     totalAmount: number;
