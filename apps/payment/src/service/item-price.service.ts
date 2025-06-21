@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import {
     ItemDTO,
     ItemEditDTO,
+    ItemPriceDTO,
     ItemSearchDTO,
 } from '@tk-postral/payment-common';
 import { Account } from '../entity/account.entity';
@@ -18,40 +19,29 @@ export class ItemPriceService {
         private readonly itemRepo: Repository<ItemPrice>,
     ) {}
 
-    async fetchAll(search: ItemSearchDTO) {
-        return await this.itemMapper.toDtoList(
-            await this.itemRepo.find({ where: search }),
-        );
+    async allDefaultPrices(
+        itemId: string,
+        variation = ItemPriceDTO.DEFAULT_VARIATION,
+    ) {
+        return await this.itemRepo.find({
+            where: {
+                itemId,
+                variation,
+                activityOrder: 0,
+            },
+        });
     }
 
-    async fetchOne(id: string) {
-        let exist = await this.itemRepo.findOne({ where: { id } });
-        if (exist) {
-            return await this.itemMapper.toDto(exist);
-        } else {
-            throw new NotFoundException('Account');
-        }
-    }
-
-    async delete(id: string) {
-        await this.itemRepo.delete({ id });
-    }
-
-    async add(dto: ItemDTO) {
-        const a = await this.itemRepo.save(
-            await this.itemMapper.updateEntity(new Item(), dto),
-        );
-        return this.itemMapper.toDto(a);
-    }
-
-    async edit(dto: ItemEditDTO) {
-        let exist = await this.itemRepo.findOne({ where: { id: dto.id } });
-        if (exist) {
-            exist = await this.itemMapper.updateEntityEdit(exist, dto);
-            exist = await this.itemRepo.save(exist);
-            return exist;
-        } else {
-            throw new NotFoundException('Account');
-        }
+    async allLatestPrices(
+        itemId: string,
+        variation = ItemPriceDTO.DEFAULT_VARIATION,
+    ) {
+        return await this.itemRepo.find({
+            where: {
+                itemId,
+                variation,
+                activityOrder: 0,
+            },
+        });
     }
 }
