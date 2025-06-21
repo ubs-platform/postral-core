@@ -11,11 +11,11 @@ export class ItemAddDTO {
 
     unit: string;
 
-    taxPercent: number;
+    // taxPercent: number;
 
-    unitAmount: number;
+    // unitAmount: number;
 
-    originalUnitAmount: number;
+    // originalUnitAmount: number;
 
     sellerAccountId: string;
 }
@@ -33,11 +33,11 @@ export class ItemDTO {
 
     unit: string;
 
-    taxPercent: number;
+    // taxPercent: number;
 
-    unitAmount: number;
+    // unitAmount: number;
 
-    originalUnitAmount: number;
+    // originalUnitAmount: number;
 
     sellerAccountId: string;
 }
@@ -49,9 +49,9 @@ export class ItemEditDTO {
 
     unit: string;
 
-    taxPercent: number;
+    // taxPercent: number;
 
-    originalUnitAmount: number;
+    // originalUnitAmount: number;
 }
 
 export class ItemSearchDTO {

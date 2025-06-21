@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { PaymentService } from '../service/payment-service';
+import { PaymentService } from '../service/payment.service';
 import { PaymentInitDTO } from '@tk-postral/payment-common';
 
 @Controller('payment')

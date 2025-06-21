@@ -28,13 +28,7 @@ export class ItemMapper {
 
             unit: ac.unit,
 
-            taxPercent: ac.taxPercent,
-
-            originalUnitAmount: ac.originalUnitAmount,
-
             sellerAccountId: ac.sellerAccountId,
-
-            unitAmount: ac.unitAmount,
         };
     }
 
@@ -52,12 +46,6 @@ export class ItemMapper {
 
         entity.unit = dto.unit;
 
-        entity.taxPercent = dto.taxPercent;
-
-        entity.unitAmount = dto.unitAmount;
-
-        entity.originalUnitAmount = dto.originalUnitAmount;
-
         entity.sellerAccountId = dto.sellerAccountId;
 
         return entity;
@@ -70,10 +58,6 @@ export class ItemMapper {
         entity.name = dto.name;
 
         entity.unit = dto.unit;
-
-        entity.taxPercent = dto.taxPercent;
-
-        entity.originalUnitAmount = dto.originalUnitAmount;
 
         return entity;
     }

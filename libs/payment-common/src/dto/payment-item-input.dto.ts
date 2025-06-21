@@ -7,6 +7,8 @@ export interface PaymentItemInputDto {
 
     entityId: string;
 
+    variation: string;
+
     quantity: number;
 
     totalAmount: number;

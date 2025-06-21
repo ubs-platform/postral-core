@@ -10,12 +10,20 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
-import { ItemDTO, ItemSearchDTO } from '@tk-postral/payment-common';
+import {
+    ItemDTO,
+    ItemPriceDTO,
+    ItemSearchDTO,
+} from '@tk-postral/payment-common';
 import { ItemService } from '../service/item.service';
+import { ItemPriceService } from '../service/item-price.service';
 
 @Controller('item')
 export class ItemController {
-    constructor(private readonly accountService: ItemService) {}
+    constructor(
+        private readonly accountService: ItemService,
+        private readonly itemPriceService: ItemPriceService,
+    ) {}
 
     @Get()
     async findAll(@Query() itemSearch: ItemSearchDTO): Promise<ItemDTO[]> {
@@ -59,6 +67,36 @@ export class ItemController {
         // TODO: 2 tane aynı entityGroup - entityName - entityId değerlerine sahip olanlar geçmemeli
         await this.checkBeforAdd(account);
         return await this.accountService.add(account);
+    }
+
+    @Put(':itemId/price')
+    async setPrice(
+        @Param('itemId') itemId: string,
+        @Body() priceDto: ItemPriceDTO,
+    ): Promise<ItemPriceDTO> {
+        priceDto.itemId = itemId;
+        priceDto.activityOrder = 0;
+        return await this.itemPriceService.setDefaultPrice(priceDto);
+    }
+
+    @Get(':itemId/price/default')
+    async getDefaultPrice(
+        @Param('itemId') itemId: string,
+    ): Promise<ItemPriceDTO> {
+        throw new BadRequestException('Ğ');
+        // priceDto.itemId = itemId;
+        // priceDto.activityOrder = 0;
+        // return await this.itemPriceService.setDefaultPrice(priceDto);
+    }
+
+    @Get(':itemId/price/latest')
+    async getLatestPrice(
+        @Param('itemId') itemId: string,
+    ): Promise<ItemPriceDTO> {
+        throw new BadRequestException('Ğ');
+        // priceDto.itemId = itemId;
+        // priceDto.activityOrder = 0;
+        // return await this.itemPriceService.setDefaultPrice(priceDto);
     }
 
     @Put()

@@ -1,7 +1,9 @@
-export class ItemPriceDTO {
+export class ItemPriceDefaults {
     public static VARIATION_DEFAULT = 'default';
-    public static COUNTRY_ANY = 'any-c';
+    public static REGION_ANY = 'any';
+}
 
+export interface ItemPriceDTO {
     id: string;
 
     itemId: string;
@@ -14,8 +16,22 @@ export class ItemPriceDTO {
 
     taxPercent: number;
 
-    country: string;
+    region: string;
 
     /* 0 default fiyatıdır, activityOrder en yüksek olan tercih edilir. Kampanya gibi durumlarda bu artırılarak önceliği yükselir ve bu fiyattan verilir */
     activityOrder: number;
+
+    activeStartAt?: Date;
+
+    activeExpireAt?: Date;
+}
+
+export interface ItemPriceSearchDTO {
+    itemId: string | string[];
+
+    variation?: string;
+
+    currency: string;
+
+    region?: string;
 }

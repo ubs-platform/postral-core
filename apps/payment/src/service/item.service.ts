@@ -9,6 +9,7 @@ import {
 import { Account } from '../entity/account.entity';
 import { Item } from '../entity/item.entity';
 import { ItemMapper } from '../mapper/item.mapper';
+import { ItemPriceService } from './item-price.service';
 
 @Injectable()
 export class ItemService {

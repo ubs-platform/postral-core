@@ -1,5 +1,6 @@
 import { Account } from './account.entity';
 import { AppComission } from './app-commission.entity';
+import { ItemPrice } from './item-price.entity';
 import { Item } from './item.entity';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PaymentProgress } from './payment-status.entity';
@@ -22,4 +23,5 @@ export const PaymentsEntities = [
     AppComission,
     Account,
     Item,
+    ItemPrice
 ];

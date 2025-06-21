@@ -16,6 +16,7 @@ import {
 } from '@tk-postral/payment-common';
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
+import { ItemPriceService } from './item-price.service';
 
 @Injectable()
 export class PaymentService {
@@ -27,6 +28,7 @@ export class PaymentService {
         private paymentTaxMapper: PaymentTaxMapper,
         private ems: EventManagementService,
         private itemService: ItemService,
+        private itemPriceService: ItemPriceService,
     ) {}
 
     async findAll(): Promise<Payment[]> {
@@ -65,44 +67,64 @@ export class PaymentService {
             taxTotal = 0;
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
-            const itemDto = pdto.items[itemIndex];
+            const paymentItemDto = pdto.items[itemIndex];
 
-            const itemx = (
+            const realItemFind = (
                 await this.itemService.fetchAll(
-                    itemDto.itemId
-                        ? { id: itemDto.itemId }
+                    paymentItemDto.itemId
+                        ? { id: paymentItemDto.itemId }
                         : {
-                              entityGroup: itemDto.entityGroup,
-                              entityId: itemDto.entityId,
-                              entityName: itemDto.entityName,
+                              entityGroup: paymentItemDto.entityGroup,
+                              entityId: paymentItemDto.entityId,
+                              entityName: paymentItemDto.entityName,
                           },
                 )
             )[0];
+
+            const itemPriceActive =
+                await this.itemPriceService.allLatestPrices({
+                    currency: pdto.currency,
+                    itemId: realItemFind.id,
+                    // region:
+                    variation: paymentItemDto.variation,
+                });
+
+            const itemPriceDefault =
+                await this.itemPriceService.allDefaultPrices({
+                    currency: pdto.currency,
+                    itemId: realItemFind.id,
+                    // region:
+                    variation: paymentItemDto.variation,
+                });
+
             const paymentItem = new PostralPaymentItem();
-            paymentItem.entityGroup = itemx.entityGroup;
-            paymentItem.entityId = itemx.entityId;
-            paymentItem.entityName = itemx.entityName;
-            paymentItem.totalAmount = itemx.unitAmount * itemDto.quantity;
-            paymentItem.taxPercent = itemx.taxPercent;
-            paymentItem.entityOwnerAccountId = itemx.sellerAccountId;
-            paymentItem.originalUnitAmount = itemx.originalUnitAmount || 0;
-            paymentItem.unitAmount = itemx.unitAmount;
-            paymentItem.itemId = itemx.id;
+            paymentItem.variation = itemPriceActive[0].variation;
+            paymentItem.entityGroup = realItemFind.entityGroup;
+            paymentItem.entityId = realItemFind.entityId;
+            paymentItem.entityName = realItemFind.entityName;
+            paymentItem.totalAmount =
+                itemPriceActive[0].itemPrice * paymentItemDto.quantity;
+            paymentItem.taxPercent = itemPriceActive[0].taxPercent;
+            paymentItem.variation = paymentItem.entityOwnerAccountId =
+                realItemFind.sellerAccountId;
+            paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
+            paymentItem.unitAmount = itemPriceActive[0].itemPrice;
+            paymentItem.itemId = realItemFind.id;
 
             totalAmt += paymentItem.totalAmount;
             const taxDto = TaxCalculationUtil.generateTaxDto(
-                itemx.taxPercent.toString(),
+                itemPriceActive[0].taxPercent.toString(),
                 paymentItem.totalAmount,
-                itemx.taxPercent,
+                itemPriceActive[0].taxPercent,
             );
             taxTotal += taxDto.taxAmount;
 
             taxesFromItems.push(taxDto);
 
-            paymentItem.name = itemx.name;
+            paymentItem.name = realItemFind.name;
             paymentItem.taxAmount = taxDto.taxAmount!;
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
-            paymentItem.quantity = itemDto.quantity;
+            paymentItem.quantity = paymentItemDto.quantity;
             items.push(paymentItem);
         }
 

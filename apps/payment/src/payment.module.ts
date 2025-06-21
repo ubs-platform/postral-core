@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Payment } from './entity/payment.entity';
 import { PostralPaymentItem } from './entity/payment-item.entity';
-import { PaymentService } from './service/payment-service';
+import { PaymentService } from './service/payment.service';
 import { PaymentController } from './controller/payment.controller';
 import { PaymentMapper } from './mapper/payment.mapper';
 import { PaymentItemMapper } from './mapper/payment-item.mapper';
@@ -20,6 +20,8 @@ import { ItemMapper } from './mapper/item.mapper';
 import { ItemService } from './service/item.service';
 import { ItemController } from './controller/item.controller';
 import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
+import { ItemPriceMapper } from './mapper/item-price.mapper';
+import { ItemPriceService } from './service/item-price.service';
 
 @Module({
     imports: [
@@ -64,6 +66,8 @@ import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
         ItemMapper,
         ItemService,
         PaymentTaxMapper,
+        ItemPriceMapper,
+        ItemPriceService
     ],
     controllers: [
         PaymentController,
