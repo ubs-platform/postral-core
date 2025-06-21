@@ -17,7 +17,7 @@ export class ItemPrice {
     @Column()
     itemId: string;
 
-    @Column({ default: ItemPriceDTO.DEFAULT_VARIATION })
+    @Column({ default: ItemPriceDTO.VARIATION_DEFAULT })
     variation: string;
 
     @Column({ default: 0, type: 'long' })
@@ -25,7 +25,8 @@ export class ItemPrice {
 
     @Column({ default: 0, type: 'long' })
     taxPercent: number;
-
+    @Column({ default: ItemPriceDTO.COUNTRY_ANY })
+    country: string;
     @Column()
     currency: string;
 

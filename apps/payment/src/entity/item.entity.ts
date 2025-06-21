@@ -22,6 +22,9 @@ export class Item {
     unit: string;
 
     @Column()
+    baseCurrency: string;
+
+    @Column()
     taxPercent: number;
 
     @Column()

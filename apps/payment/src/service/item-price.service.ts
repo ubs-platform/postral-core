@@ -21,7 +21,7 @@ export class ItemPriceService {
 
     async allDefaultPrices(
         itemId: string,
-        variation = ItemPriceDTO.DEFAULT_VARIATION,
+        variation = ItemPriceDTO.VARIATION_DEFAULT,
     ) {
         return await this.itemRepo.find({
             where: {
@@ -34,7 +34,7 @@ export class ItemPriceService {
 
     async allLatestPrices(
         itemId: string,
-        variation = ItemPriceDTO.DEFAULT_VARIATION,
+        variation = ItemPriceDTO.VARIATION_DEFAULT,
     ) {
         return await this.itemRepo.find({
             where: {
