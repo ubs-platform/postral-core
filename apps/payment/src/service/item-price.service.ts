@@ -46,8 +46,9 @@ export class ItemPriceService {
                 variation: itemPriceSearchDto.variation,
                 region: itemPriceSearchDto.region,
                 currency: itemPriceSearchDto.currency,
-                activeStartAt: [null, LessThanOrEqual(new Date())],
-                activeExpireAt: [null, MoreThanOrEqual(new Date())],
+                // FIXME
+                // activeStartAt: [null, LessThanOrEqual(new Date())],
+                // activeExpireAt: [null, MoreThanOrEqual(new Date())],
             })
             .distinctOn([
                 'item_price.item_id',
@@ -55,7 +56,7 @@ export class ItemPriceService {
                 'item_price.region',
                 'item_price.currency',
             ])
-            .orderBy({ 'item_price.activity_order': 'DESC' })
+            .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
 
         return await this.itemPriceMapper.toDtoList(ls);

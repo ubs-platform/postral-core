@@ -82,8 +82,12 @@ export class ItemController {
     @Get(':itemId/price/default')
     async getDefaultPrice(
         @Param('itemId') itemId: string,
-    ): Promise<ItemPriceDTO> {
-        throw new BadRequestException('Ğ');
+    ): Promise<ItemPriceDTO[]> {
+        // throw new BadRequestException('Ğ');
+        return await this.itemPriceService.allDefaultPrices({
+            itemId,
+            currency: 'TRY',
+        });
         // priceDto.itemId = itemId;
         // priceDto.activityOrder = 0;
         // return await this.itemPriceService.setDefaultPrice(priceDto);
@@ -92,8 +96,12 @@ export class ItemController {
     @Get(':itemId/price/latest')
     async getLatestPrice(
         @Param('itemId') itemId: string,
-    ): Promise<ItemPriceDTO> {
-        throw new BadRequestException('Ğ');
+    ): Promise<ItemPriceDTO[]> {
+        return await this.itemPriceService.allLatestPrices({
+            itemId,
+            currency: 'TRY',
+        });
+
         // priceDto.itemId = itemId;
         // priceDto.activityOrder = 0;
         // return await this.itemPriceService.setDefaultPrice(priceDto);
