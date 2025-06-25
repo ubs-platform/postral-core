@@ -82,11 +82,13 @@ export class ItemController {
     @Get(':itemId/price/default')
     async getDefaultPrice(
         @Param('itemId') itemId: string,
+        @Query('variation') variation?: string,
     ): Promise<ItemPriceDTO[]> {
         // throw new BadRequestException('Ğ');
         return await this.itemPriceService.allDefaultPrices({
             itemId,
             currency: 'TRY',
+            variation,
         });
         // priceDto.itemId = itemId;
         // priceDto.activityOrder = 0;
@@ -96,10 +98,12 @@ export class ItemController {
     @Get(':itemId/price/latest')
     async getLatestPrice(
         @Param('itemId') itemId: string,
+        @Query('variation') variation?: string,
     ): Promise<ItemPriceDTO[]> {
         return await this.itemPriceService.allLatestPrices({
             itemId,
             currency: 'TRY',
+            variation,
         });
 
         // priceDto.itemId = itemId;

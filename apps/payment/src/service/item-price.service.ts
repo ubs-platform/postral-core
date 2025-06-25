@@ -24,7 +24,8 @@ export class ItemPriceService {
     ) {}
 
     async allDefaultPrices(itemPriceSearchDto: ItemPriceSearchDTO) {
-        this.priceSearchDefaults(itemPriceSearchDto);
+        // this.priceSearchDefaults(itemPriceSearchDto);
+        this.regionDefault(itemPriceSearchDto);
         const ls = await this.itemRepo.find({
             where: {
                 itemId: itemPriceSearchDto.itemId as any,
@@ -38,23 +39,21 @@ export class ItemPriceService {
     }
 
     async allLatestPrices(itemPriceSearchDto: ItemPriceSearchDTO) {
-        this.priceSearchDefaults(itemPriceSearchDto);
+        // this.priceSearchDefaults(itemPriceSearchDto);
+        this.regionDefault(itemPriceSearchDto);
         const ls = await this.itemRepo
             .createQueryBuilder('item_price')
+            .groupBy('itemId, variation, region, currency')
             .where({
                 itemId: itemPriceSearchDto.itemId,
-                variation: itemPriceSearchDto.variation,
+                ...(itemPriceSearchDto.variation
+                    ? { variation: itemPriceSearchDto.variation }
+                    : {}),
                 region: itemPriceSearchDto.region,
                 currency: itemPriceSearchDto.currency,
-                activeStartAt: Or(null!, LessThanOrEqual(new Date())),
-                activeExpireAt: Or(null!, MoreThanOrEqual(new Date())),
+                activeStartAt: LessThanOrEqual(new Date()),
+                activeExpireAt: MoreThanOrEqual(new Date()),
             })
-            .distinctOn([
-                'item_price.item_id',
-                'item_price.variation',
-                'item_price.region',
-                'item_price.currency',
-            ])
             .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
 
@@ -82,9 +81,15 @@ export class ItemPriceService {
     private priceSearchDefaults(
         itemPriceSearchDto: ItemPriceSearchDTO | ItemPriceDTO,
     ) {
-        itemPriceSearchDto.region =
-            itemPriceSearchDto.region || ItemPriceDefaults.REGION_ANY;
+        this.regionDefault(itemPriceSearchDto);
         itemPriceSearchDto.variation =
             itemPriceSearchDto.variation || ItemPriceDefaults.VARIATION_DEFAULT;
+    }
+
+    private regionDefault(
+        itemPriceSearchDto: ItemPriceSearchDTO | ItemPriceDTO,
+    ) {
+        itemPriceSearchDto.region =
+            itemPriceSearchDto.region || ItemPriceDefaults.REGION_ANY;
     }
 }

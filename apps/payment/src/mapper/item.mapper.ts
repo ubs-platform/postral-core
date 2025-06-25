@@ -2,6 +2,7 @@ import { AccountDTO, ItemDTO, ItemEditDTO } from '@tk-postral/payment-common';
 import { Account } from '../entity/account.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Item } from '../entity/item.entity';
+import e from 'express';
 
 @Injectable()
 export class ItemMapper {
@@ -29,6 +30,7 @@ export class ItemMapper {
             unit: ac.unit,
 
             sellerAccountId: ac.sellerAccountId,
+            baseCurrency: ac.baseCurrency,
         };
     }
 
@@ -47,6 +49,7 @@ export class ItemMapper {
         entity.unit = dto.unit;
 
         entity.sellerAccountId = dto.sellerAccountId;
+        entity.baseCurrency = dto.baseCurrency;
 
         return entity;
     }

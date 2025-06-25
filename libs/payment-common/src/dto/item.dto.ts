@@ -18,6 +18,8 @@ export class ItemAddDTO {
     // originalUnitAmount: number;
 
     sellerAccountId: string;
+
+    baseCurrency: string;
 }
 
 export class ItemDTO {
@@ -40,6 +42,8 @@ export class ItemDTO {
     // originalUnitAmount: number;
 
     sellerAccountId: string;
+
+    baseCurrency: string;
 }
 
 export class ItemEditDTO {
