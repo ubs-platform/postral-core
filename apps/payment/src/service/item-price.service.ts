@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Or, Repository } from 'typeorm';
 import {
     ItemDTO,
     ItemEditDTO,
@@ -46,8 +46,8 @@ export class ItemPriceService {
                 variation: itemPriceSearchDto.variation,
                 region: itemPriceSearchDto.region,
                 currency: itemPriceSearchDto.currency,
-                activeStartAt: [null, LessThanOrEqual(new Date())],
-                activeExpireAt: [null, MoreThanOrEqual(new Date())],
+                activeStartAt: Or(null!, LessThanOrEqual(new Date())),
+                activeExpireAt: Or(null!, MoreThanOrEqual(new Date())),
             })
             .distinctOn([
                 'item_price.item_id',
@@ -70,13 +70,13 @@ export class ItemPriceService {
                 variation: dto.variation,
                 region: dto.region,
                 currency: dto.currency,
-                activityOrder: dto.activityOrder
+                activityOrder: dto.activityOrder,
             },
         });
         let entity = exist[0] ?? new ItemPrice();
         entity = await this.itemPriceMapper.updateEntity(entity, dto);
         entity = await this.itemRepo.save(entity);
-        return await this.itemPriceMapper.toDto(entity)
+        return await this.itemPriceMapper.toDto(entity);
     }
 
     private priceSearchDefaults(
