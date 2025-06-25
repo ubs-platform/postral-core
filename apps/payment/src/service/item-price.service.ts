@@ -55,7 +55,7 @@ export class ItemPriceService {
                 'item_price.region',
                 'item_price.currency',
             ])
-            .orderBy({ 'item_price.activity_order': 'DESC' })
+            .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
 
         return await this.itemPriceMapper.toDtoList(ls);
