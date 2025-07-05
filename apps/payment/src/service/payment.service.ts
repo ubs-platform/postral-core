@@ -65,6 +65,7 @@ export class PaymentService {
             items: PostralPaymentItem[] = [];
         let totalAmt = 0,
             taxTotal = 0;
+        debugger;
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const paymentItemDto = pdto.items[itemIndex];
@@ -80,15 +81,17 @@ export class PaymentService {
                           },
                 )
             )[0];
+            debugger;
 
-            const itemPriceActive =
-                await this.itemPriceService.allLatestPrices({
+            const itemPriceActive = await this.itemPriceService.allLatestPrices(
+                {
                     currency: pdto.currency,
                     itemId: realItemFind.id,
                     // region:
                     variation: paymentItemDto.variation,
-                });
-
+                },
+            );
+            debugger;
             const itemPriceDefault =
                 await this.itemPriceService.allDefaultPrices({
                     currency: pdto.currency,

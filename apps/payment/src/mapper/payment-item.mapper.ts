@@ -16,6 +16,7 @@ export class PaymentItemMapper {
                 totalAmount: a.totalAmount,
                 taxAmount: a.taxAmount,
                 taxPercent: a.taxPercent,
+                variation: a.variation
             });
         }
         return dtos;

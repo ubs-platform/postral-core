@@ -44,19 +44,23 @@ export class ItemPriceService {
         const ls = await this.itemRepo
             .createQueryBuilder('item_price')
             .groupBy('itemId, variation, region, currency')
-            .where({
-                itemId: itemPriceSearchDto.itemId,
-                ...(itemPriceSearchDto.variation
-                    ? { variation: itemPriceSearchDto.variation }
-                    : {}),
-                region: itemPriceSearchDto.region,
-                currency: itemPriceSearchDto.currency,
-                activeStartAt: LessThanOrEqual(new Date()),
-                activeExpireAt: MoreThanOrEqual(new Date()),
-            })
+            .where(
+                ' item_price.itemId = :itemId and ' +
+                    ' (:variation is null or :variation = \"\" or item_price.variation = :variation) and ' +
+                    ' item_price.region = :region and ' +
+                    ' item_price.currency = :currency and ' +
+                    ' (item_price.activeStartAt is null or item_price.activeStartAt <= :currentDate) and ' +
+                    ' (item_price.activeExpireAt is null or item_price.activeExpireAt >= :currentDate)',
+                {
+                    itemId: itemPriceSearchDto.itemId,
+                    variation: itemPriceSearchDto.variation,
+                    region: itemPriceSearchDto.region,
+                    currency: itemPriceSearchDto.currency,
+                    currentDate: new Date().toUTCString(),
+                },
+            )
             .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
-
         return await this.itemPriceMapper.toDtoList(ls);
     }
 
