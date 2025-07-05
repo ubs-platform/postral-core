@@ -14,6 +14,7 @@ import { Item } from '../entity/item.entity';
 import { ItemMapper } from '../mapper/item.mapper';
 import { ItemPrice } from '../entity/item-price.entity';
 import { ItemPriceMapper } from '../mapper/item-price.mapper';
+import * as moment from 'moment';
 
 @Injectable()
 export class ItemPriceService {
@@ -56,11 +57,12 @@ export class ItemPriceService {
                     variation: itemPriceSearchDto.variation,
                     region: itemPriceSearchDto.region,
                     currency: itemPriceSearchDto.currency,
-                    currentDate: new Date().toUTCString(),
+                    currentDate: moment().format("yyyy-MM-DD hh:mm:ss"),
                 },
             )
             .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
+        debugger;
         return await this.itemPriceMapper.toDtoList(ls);
     }
 

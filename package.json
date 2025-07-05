@@ -58,6 +58,7 @@
     "comment-json": "^4.2.5",
     "crypto-promise": "^2.1.0",
     "kafkajs": "^2.2.4",
+    "moment": "^2.30.1",
     "mongoose": "^8.10.2",
     "mysql2": "^3.13.0",
     "ollama": "^0.5.14",
