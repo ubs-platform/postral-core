@@ -42,28 +42,33 @@ export class ItemPriceService {
     async allLatestPrices(itemPriceSearchDto: ItemPriceSearchDTO) {
         // this.priceSearchDefaults(itemPriceSearchDto);
         this.regionDefault(itemPriceSearchDto);
+        const now = this.nowString();
+        console.info(now)
         const ls = await this.itemRepo
             .createQueryBuilder('item_price')
             .groupBy('itemId, variation, region, currency')
+            .orderBy({ 'item_price.activityOrder': 'DESC' })
             .where(
                 ' item_price.itemId = :itemId and ' +
                     ' (:variation is null or :variation = \"\" or item_price.variation = :variation) and ' +
                     ' item_price.region = :region and ' +
                     ' item_price.currency = :currency and ' +
-                    ' (item_price.activeStartAt is null or item_price.activeStartAt <= :currentDate) and ' +
-                    ' (item_price.activeExpireAt is null or item_price.activeExpireAt >= :currentDate)',
+                    ' ((item_price.activeStartAt < :currentDate) or (item_price.activeStartAt is null)) and ' +
+                    ' ((item_price.activeExpireAt > :currentDate) or (item_price.activeExpireAt is null))',
                 {
                     itemId: itemPriceSearchDto.itemId,
                     variation: itemPriceSearchDto.variation,
                     region: itemPriceSearchDto.region,
                     currency: itemPriceSearchDto.currency,
-                    currentDate: moment().format("yyyy-MM-DD hh:mm:ss"),
+                    currentDate: now,
                 },
             )
-            .orderBy({ 'item_price.activityOrder': 'DESC' })
             .getMany();
-        debugger;
         return await this.itemPriceMapper.toDtoList(ls);
+    }
+
+    private nowString(): any {
+        return moment().utc().format("yyyy-MM-DD hh:mm:ss");
     }
 
     async setDefaultPrice(dto: ItemPriceDTO) {
