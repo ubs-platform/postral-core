@@ -43,18 +43,17 @@ export class ItemPriceService {
         // this.priceSearchDefaults(itemPriceSearchDto);
         this.regionDefault(itemPriceSearchDto);
         const now = this.nowString();
-        console.info(now)
+        console.info(now);
         const ls = await this.itemRepo
             .createQueryBuilder('item_price')
-            .groupBy('itemId, variation, region, currency')
-            .orderBy({ 'item_price.activityOrder': 'DESC' })
             .where(
-                ' item_price.itemId = :itemId and ' +
-                    ' (:variation is null or :variation = \"\" or item_price.variation = :variation) and ' +
-                    ' item_price.region = :region and ' +
-                    ' item_price.currency = :currency and ' +
-                    ' ((item_price.activeStartAt < :currentDate) or (item_price.activeStartAt is null)) and ' +
-                    ' ((item_price.activeExpireAt > :currentDate) or (item_price.activeExpireAt is null))',
+                `item_price.id=( select ip2.id from item_price ip2 where 
+                    item_price.region=ip2.region and item_price.currency=ip2.currency and item_price.itemId=ip2.itemId and item_price.variation=ip2.variation 
+                    and ip2.itemId = :itemId 
+                    and (:variation is null or :variation = '' or ip2.variation = :variation)
+                    and ip2.region = :region
+                    and ip2.currency = :currency
+                    and ( (ip2.activeStartAt is null) or (ip2.activeStartAt < :currentDate)) and ( (ip2.activeExpireAt is null) or  (ip2.activeExpireAt > :currentDate) ) order by ip2.activityOrder desc limit 1 offset 0 )`,
                 {
                     itemId: itemPriceSearchDto.itemId,
                     variation: itemPriceSearchDto.variation,
@@ -68,7 +67,7 @@ export class ItemPriceService {
     }
 
     private nowString(): any {
-        return moment().utc().format("yyyy-MM-DD hh:mm:ss");
+        return moment().utc().format('yyyy-MM-DD hh:mm:ss');
     }
 
     async setDefaultPrice(dto: ItemPriceDTO) {
