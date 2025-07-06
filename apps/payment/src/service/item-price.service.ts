@@ -43,7 +43,6 @@ export class ItemPriceService {
         // this.priceSearchDefaults(itemPriceSearchDto);
         this.regionDefault(itemPriceSearchDto);
         const now = this.nowString();
-        console.info(now);
         const ls = await this.itemRepo
             .createQueryBuilder('item_price')
             .where(
