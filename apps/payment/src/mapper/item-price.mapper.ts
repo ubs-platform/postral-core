@@ -29,6 +29,7 @@ export class ItemPriceMapper {
             activityOrder: ac.activityOrder,
             activeExpireAt: ac.activeExpireAt,
             activeStartAt: ac.activeStartAt,
+            automaticExchangeFromCurrency: ac.automaticExchangeFromCurrency,
         };
     }
 
@@ -44,6 +45,8 @@ export class ItemPriceMapper {
         entity.region = dto.region;
         entity.currency = dto.currency;
         entity.activityOrder = dto.activityOrder;
+        entity.automaticExchangeFromCurrency =
+            entity.automaticExchangeFromCurrency;
         if (dto.activityOrder != 0) {
             entity.activeExpireAt = null!;
             entity.activeStartAt = null!;

@@ -28,12 +28,12 @@ export class ItemPrice {
 
     @Column({ default: ItemPriceDefaults.REGION_ANY })
     region: string;
-    
+
     @Column()
     currency: string;
 
     /* 0 default fiyatıdır, activityOrder en yüksek olan tercih edilir. Kampanya gibi durumlarda bu artırılarak önceliği yükselir ve bu fiyattan verilir */
-    @Column({ default: 0, type: "bigint" })
+    @Column({ default: 0, type: 'bigint' })
     activityOrder: number;
 
     @Column({ nullable: true, type: 'datetime' })
@@ -42,7 +42,7 @@ export class ItemPrice {
     /**Null ise sonsuza kadardır */
     @Column({ nullable: true, type: 'datetime' })
     activeExpireAt?: Date;
-    
-    @Column({ nullable: true, type: "string" })
+
+    @Column({ nullable: true })
     automaticExchangeFromCurrency?: string;
 }

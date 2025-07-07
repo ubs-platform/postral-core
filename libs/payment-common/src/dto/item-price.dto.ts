@@ -24,6 +24,8 @@ export interface ItemPriceDTO {
     activeStartAt?: Date;
 
     activeExpireAt?: Date;
+
+    automaticExchangeFromCurrency?: string;
 }
 
 export interface ItemPriceSearchDTO {
