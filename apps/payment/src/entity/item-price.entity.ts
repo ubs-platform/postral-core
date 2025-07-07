@@ -42,4 +42,7 @@ export class ItemPrice {
     /**Null ise sonsuza kadardır */
     @Column({ nullable: true, type: 'datetime' })
     activeExpireAt?: Date;
+    
+    @Column({ nullable: true, type: "string" })
+    automaticExchangeFromCurrency?: string;
 }

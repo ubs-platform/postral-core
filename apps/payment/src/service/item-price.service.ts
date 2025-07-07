@@ -101,4 +101,31 @@ export class ItemPriceService {
         itemPriceSearchDto.region =
             itemPriceSearchDto.region || ItemPriceDefaults.REGION_ANY;
     }
+
+    async getLatestActivityOrder(itemPriceSearchDto: ItemPriceSearchDTO) {
+        this.priceSearchDefaults(itemPriceSearchDto);
+        const now = this.nowString();
+
+        const latest = await this.itemRepo
+            .createQueryBuilder('item_price')
+            .where(
+                ' item_price.itemId = :itemId and ' +
+                    ' (:variation is null or :variation = \"\" or item_price.variation = :variation) and ' +
+                    ' item_price.region = :region and ' +
+                    ' item_price.currency = :currency and ' +
+                    ' ((item_price.activeStartAt < :currentDate) or (item_price.activeStartAt is null)) and ' +
+                    ' ((item_price.activeExpireAt > :currentDate) or (item_price.activeExpireAt is null)) ',
+                {
+                    itemId: itemPriceSearchDto.itemId,
+                    variation: itemPriceSearchDto.variation,
+                    region: itemPriceSearchDto.region,
+                    currency: itemPriceSearchDto.currency,
+                    currentDate: now,
+                },
+            )
+            .orderBy('item_price.activityOrder', 'DESC')
+            .getOne();
+
+        return latest ? latest.activityOrder : null;
+    }
 }
