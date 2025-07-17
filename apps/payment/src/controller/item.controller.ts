@@ -12,6 +12,7 @@ import {
 import { AccountService } from '../service/account.service';
 import {
     ItemDTO,
+    ItemPriceDefaults,
     ItemPriceDTO,
     ItemSearchDTO,
 } from '@tk-postral/payment-common';
@@ -83,12 +84,15 @@ export class ItemController {
     async getDefaultPrice(
         @Param('itemId') itemId: string,
         @Query('variation') variation?: string,
+        @Query('currency') currency = 'TRY',
+        @Query('region') region = ItemPriceDefaults.REGION_ANY,
     ): Promise<ItemPriceDTO[]> {
         // throw new BadRequestException('Ğ');
         return await this.itemPriceService.allDefaultPrices({
             itemId,
-            currency: 'TRY',
+            currency,
             variation,
+            region,
         });
         // priceDto.itemId = itemId;
         // priceDto.activityOrder = 0;
@@ -99,10 +103,13 @@ export class ItemController {
     async getLatestPrice(
         @Param('itemId') itemId: string,
         @Query('variation') variation?: string,
+        @Query('currency') currency = 'TRY',
+        @Query('region') region = ItemPriceDefaults.REGION_ANY,
     ): Promise<ItemPriceDTO[]> {
         return await this.itemPriceService.allLatestPrices({
             itemId,
-            currency: 'TRY',
+            currency,
+            region,
             variation,
         });
 
