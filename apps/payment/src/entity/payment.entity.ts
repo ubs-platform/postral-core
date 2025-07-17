@@ -14,6 +14,9 @@ export class Payment {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Column({ length: 200, type: "varchar", nullable: true, unique: true })
+    billingCode: string
+
     @Column()
     type: 'PURCHASE' | 'REFUND';
 
