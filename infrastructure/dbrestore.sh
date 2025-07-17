@@ -1,0 +1,1 @@
+docker compose exec -T mariadb mariadb postral_core < postral.sql
