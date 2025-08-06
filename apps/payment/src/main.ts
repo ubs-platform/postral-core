@@ -16,7 +16,7 @@ async function bootstrap() {
     const globalPrefix = 'api';
     app.register(fastifyMultipart);
     app.connectMicroservice(
-        MicroserviceSetupUtil.getMicroserviceConnection(''),
+        MicroserviceSetupUtil.setupServer('tetakent-postral'),
     );
     app.setGlobalPrefix(globalPrefix);
     const port = process.env.PORT || 3000;

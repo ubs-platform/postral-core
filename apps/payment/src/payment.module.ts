@@ -22,6 +22,7 @@ import { ItemController } from './controller/item.controller';
 import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
+import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 
 @Module({
     imports: [
@@ -39,17 +40,10 @@ import { ItemPriceService } from './service/item-price.service';
         }),
         ClientsModule.register([
             {
-                name: 'KAFKA_CLIENT',
-                transport: Transport.KAFKA,
-                options: {
-                    client: {
-                        clientId: 'main',
-                        brokers: [`${process.env['NX_KAFKA_URL']}`],
-                    },
-                    consumer: {
-                        groupId: 'tk-postral-' + randomUUID(),
-                    },
-                },
+                ...MicroserviceSetupUtil.setupClient(
+                    'tetakent-postral-client',
+                    'KAFKA_CLIENT',
+                ),
             },
         ]),
     ],
@@ -67,7 +61,7 @@ import { ItemPriceService } from './service/item-price.service';
         ItemService,
         PaymentTaxMapper,
         ItemPriceMapper,
-        ItemPriceService
+        ItemPriceService,
     ],
     controllers: [
         PaymentController,

@@ -41,8 +41,4 @@ export class Payment {
     })
     taxes: PostralPaymentTax[];
 
-    @OneToOne(() => PaymentProgress, (item) => item.payment, {
-        cascade: true,
-    })
-    progress: PaymentProgress;
 }

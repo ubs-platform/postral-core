@@ -1,37 +1,31 @@
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  ManyToOne,
-  OneToOne,
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToMany,
+    ManyToOne,
+    OneToOne,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { Payment } from './payment.entity';
 
 @Entity()
 export class PaymentProgress {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
-  @Column()
-  status: 'COMPLETED' | 'WAITING' | 'EXPIRED';
+    @Column()
+    status: 'COMPLETED' | 'WAITING' | 'EXPIRED';
 
-  @Column()
-  paidAmountIc: number;
+    @Column({ default: 0 })
+    paidAmount: number;
 
-  @Column()
-  chargeBackAmountIc: number;
+    @Column()
+    currency: string;
 
-  //   paymentParts: PaymentPart[]
+    @Column({ default: 0 })
+    chargeBackAmountIc: number;
 
-  /*
-        {
-            "paidAmountIc": 40000,
-            "wrapper": 
-        }
-  */
-
-  @OneToOne(() => Payment, (a) => a.progress)
-  payment: Payment;
+    @Column()
+    paymentId: string;
 }
