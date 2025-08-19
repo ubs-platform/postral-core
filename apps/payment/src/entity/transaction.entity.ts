@@ -14,6 +14,26 @@ export class Transaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+
+    @Column()
+    paymentId: string;
+
+
+    @Column()
+    amount: number;
+
+    @Column()
+    currency: string;
+
+    @Column()
+    rotationTo: "CUSTOMER" | "SELLER";
+
+    @Column()
+    paymentChannelId: string
+
+
+    @Column()
+    approved: boolean
     // @Column()
     // type: 'PURCHASE' | 'REFUND';
 

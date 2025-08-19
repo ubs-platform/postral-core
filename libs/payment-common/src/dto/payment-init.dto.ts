@@ -14,4 +14,6 @@ export interface PaymentInitDTO {
     currency: string;
 
     items: PaymentItemInputDto[];
+
+    customerAccountId: string;
 }

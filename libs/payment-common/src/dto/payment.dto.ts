@@ -6,6 +6,7 @@ export interface PaymentDTO {
     type: 'PURCHASE' | 'REFUND';
     totalAmount: number;
     taxAmount: number;
+    customerAccountId: string;
 
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...

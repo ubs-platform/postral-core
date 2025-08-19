@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import { PaymentInitDTO } from '@tk-postral/payment-common';
+import { AccountService } from '../service/account.service';
 
 @Controller('payment')
 export class PaymentController {
-    constructor(private ps: PaymentService) {}
+    constructor(private ps: PaymentService, private as: AccountService) { }
 
     @Post()
     public async initialize(@Body() body: PaymentInitDTO) {
+        await this.as.fetchOne(body.customerAccountId)
         return await this.ps.init(body);
     }
 

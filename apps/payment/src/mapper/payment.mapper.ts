@@ -11,6 +11,7 @@ export class PaymentMapper {
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
+            customerAccountId: saved.customerAccountId
             //   items: saved.items.map((a) => {
             //     return {
             //       name: a.name,
