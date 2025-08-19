@@ -41,4 +41,8 @@ export class Payment {
     })
     taxes: PostralPaymentTax[];
 
+    @Column()
+    customerAccountId: string;
+
+
 }
