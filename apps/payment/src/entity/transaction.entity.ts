@@ -14,11 +14,6 @@ export class Transaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-
-    @Column()
-    paymentId: string;
-
-
     @Column()
     amount: number;
 
@@ -31,6 +26,8 @@ export class Transaction {
     @Column()
     paymentChannelId: string
 
+    @Column()
+    paymentId: string;
 
     @Column()
     approved: boolean
