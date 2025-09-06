@@ -1,4 +1,4 @@
-import { Injectable, Post } from '@nestjs/common';
+import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { Repository } from 'typeorm';
@@ -17,9 +17,11 @@ import {
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
+import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 
 @Injectable()
 export class PaymentService {
+
     constructor(
         @InjectRepository(Payment)
         private readonly paymentrepo: Repository<Payment>,
@@ -29,7 +31,9 @@ export class PaymentService {
         private ems: EventManagementService,
         private itemService: ItemService,
         private itemPriceService: ItemPriceService,
-    ) {}
+    ) { }
+
+
 
     async findAll(): Promise<Payment[]> {
         return this.paymentrepo.find();
@@ -52,12 +56,24 @@ export class PaymentService {
     }
 
     async findPaymentById(id: string) {
-        const paymentReal = await this.paymentrepo.find({
-            where: { id },
-            // relations: detailed ? ['items', 'taxes'] : [],
-        });
-        const p = this.paymentMapper.toDto(paymentReal[0]!);
+        const paymentReal = await this.findPaymentByIdRaw(id);
+        const p = this.paymentMapper.toDto(paymentReal!);
         return p;
+    }
+
+    private async findPaymentByIdRaw(id: string): Promise<Payment | undefined> {
+        return await this.paymentrepo.find({
+            where: { id },
+        })[0];
+    }
+
+    async capture(id: string, captureInfo: PaymentCaptureInfoDTO) {
+        const paymentReal = await this.findPaymentByIdRaw(id);
+        if (paymentReal) {
+
+        } else {
+            throw new NotFoundException("payment",id);
+        }
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
@@ -75,10 +91,10 @@ export class PaymentService {
                     paymentItemDto.itemId
                         ? { id: paymentItemDto.itemId }
                         : {
-                              entityGroup: paymentItemDto.entityGroup,
-                              entityId: paymentItemDto.entityId,
-                              entityName: paymentItemDto.entityName,
-                          },
+                            entityGroup: paymentItemDto.entityGroup,
+                            entityId: paymentItemDto.entityId,
+                            entityName: paymentItemDto.entityName,
+                        },
                 )
             )[0];
             debugger;

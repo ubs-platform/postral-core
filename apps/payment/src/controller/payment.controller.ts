@@ -2,6 +2,7 @@ import { Body, Controller, Get, NotFoundException, Param, Post } from '@nestjs/c
 import { PaymentService } from '../service/payment.service';
 import { PaymentInitDTO } from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
+import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 
 @Controller('payment')
 export class PaymentController {
@@ -14,8 +15,8 @@ export class PaymentController {
     }
 
     @Post('/:id/capture')
-    public async capture(@Param() { id }: { id: string }, @Body() captureInfo) {
-        // return await this.ps.init(body);
+    public async capture(@Param() { id }: { id: string }, @Body() captureInfo : PaymentCaptureInfoDTO) {
+      return await this.ps.capture(id, captureInfo);
     }
 
     @Get()
