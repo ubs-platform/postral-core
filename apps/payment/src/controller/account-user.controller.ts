@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO } from '@tk-postral/payment-common';
-import { Roles, RolesGuard } from '@ubs-platform/users-roles';
 import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
+import { Roles, RolesGuard } from '@ubs-platform/users-roles';
 
-@Controller('__adm__/account')
+@Controller('current-user/account')
 @Roles(['ADMIN'])
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AccountController {
