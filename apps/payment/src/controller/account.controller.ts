@@ -14,12 +14,12 @@ import { Roles, RolesGuard } from '@ubs-platform/users-roles';
 import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 
 @Controller('__adm__/account')
-@Roles(['ADMIN'])
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class AccountController {
     constructor(private readonly accountService: AccountService) {}
 
     @Get()
+    @Roles(['ADMIN'])
+    @UseGuards(JwtAuthGuard, RolesGuard)
     async findAll(): Promise<AccountDTO[]> {
         // admin ise tümü, değilse kendi oluşturdukları vs
         return this.accountService.fetchAll();

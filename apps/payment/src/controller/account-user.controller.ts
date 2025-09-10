@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 
 @Controller('current-user/account')
 @UseGuards(JwtAuthGuard)
-export class AccountController {
+export class AccountUserController {
     constructor(private readonly accountService: AccountService) {}
 
     @Get()
