@@ -11,12 +11,10 @@ import {
 import { AccountService } from '../service/account.service';
 import { AccountDTO } from '@tk-postral/payment-common';
 import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
-import { Roles, RolesGuard } from '@ubs-platform/users-roles';
 
 @Controller('current-user/account')
-@Roles(['ADMIN'])
-@UseGuards(JwtAuthGuard, RolesGuard)
-export class AccountController {
+@UseGuards(JwtAuthGuard)
+export class AccountUserController {
     constructor(private readonly accountService: AccountService) {}
 
     @Get()

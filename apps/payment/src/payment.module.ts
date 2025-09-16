@@ -23,6 +23,8 @@ import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
+import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
+import { AccountUserController } from './controller/account-user.controller';
 
 @Module({
     imports: [
@@ -46,6 +48,8 @@ import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
                 ),
             },
         ]),
+        BackendJwtUtilsModule,
+
     ],
     exports: [TypeOrmModule],
     providers: [
@@ -67,7 +71,7 @@ import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
         PaymentController,
         AppComissionController,
         AccountController,
-        ItemController,
+        ItemController,AccountUserController
     ],
 })
 export class PaymentModule {}
