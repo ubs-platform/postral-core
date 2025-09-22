@@ -3,6 +3,8 @@ import { COLORS, strColor } from './util/colors';
 import { AllLibrariesBuilder } from './operation/all-libraries-builder';
 import { IksirPackage } from './data/iksir-package';
 import { NestJsCliWrap } from './operation/nest-cli-wrap';
+import { RestApiDocGen } from './operation/rest-api-doc-gen';
+import { RestApiAngularClientGen } from './operation/rest-api-angular-client-gen';
 
 console.info(
     `
@@ -19,6 +21,20 @@ export interface IAction {
 }
 
 const actionList: { [key: string]: IAction } = {
+    'generate-ngx-services': {
+        info: "Generates Angular HttpClient services from REST API controllers in the current project",
+        action: async (workDir) => {
+            const paket = await IksirPackage.scanRoot(workDir);
+
+            await RestApiAngularClientGen.generate(workDir,paket);
+        },
+    },
+    'generate-rest-doc': {
+        info: 'Generates REST API documentation from source codes',
+        action: async () => {
+            await RestApiDocGen.generate();
+        },
+    },
     'publish-libs': {
         info: 'Builds libraries and pushes into NPM Registry',
         action: async (workDir) => {

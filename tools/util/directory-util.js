@@ -38,11 +38,6 @@ const FileSystem = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const colors_1 = require("./colors");
 class DirectoryUtil {
-    /**
-     * List all files in the folder recursively
-     * @param folderPath
-     * @returns the list that contains full file paths
-     */
     static async listAllFiles(folderPath) {
         const allFileList = [];
         await this.circulateFilesRecursive(folderPath, (a) => {
@@ -50,11 +45,25 @@ class DirectoryUtil {
         });
         return allFileList;
     }
-    /**
-     * Circulates files in the folder recursively
-     * @param folderPath
-     * @method fileAction if encounters a file, that will called with file full path
-     */
+    static async ensureDirectory(...filePath) {
+        const dirPath = path.join(...filePath);
+        try {
+            await FileSystem.mkdir(dirPath, { recursive: true });
+        }
+        catch (err) {
+            console.error((0, colors_1.strColor)(colors_1.COLORS.BgRed, 'Could not create directory: ' + dirPath + '\n' + err));
+            throw err;
+        }
+    }
+    static async directoryExists(...filePath) {
+        try {
+            await FileSystem.access(path.join(...filePath), FileSystem.constants.F_OK);
+            return true;
+        }
+        catch (err) {
+            return false;
+        }
+    }
     static async circulateFilesRecursive(folderPath, fileAction) {
         const onQueue = [];
         let current = folderPath;
@@ -83,3 +92,4 @@ class DirectoryUtil {
     }
 }
 exports.DirectoryUtil = DirectoryUtil;
+//# sourceMappingURL=directory-util.js.map
