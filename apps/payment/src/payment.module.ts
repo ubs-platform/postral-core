@@ -14,7 +14,7 @@ import { AccountService } from './service/account.service';
 import { AccountMapper } from './mapper/account.mapper';
 import { AppComissionService } from './service/app-commission.service';
 import { AppComissionMapper } from './mapper/app-comission.mapper';
-import { AppComissionController } from './controller/app-controller.controller';
+import { AppComissionController } from './controller/app-comission.controller';
 import { AccountController } from './controller/account.controller';
 import { ItemMapper } from './mapper/item.mapper';
 import { ItemService } from './service/item.service';
