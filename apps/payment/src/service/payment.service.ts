@@ -35,10 +35,13 @@ export class PaymentService {
 
 
 
-    async findAll(): Promise<Payment[]> {
+
+    async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
     }
-
+    async findAll(): Promise<PaymentDTO[]> {
+        return (await this.findAllRaw()).map(p => this.paymentMapper.toDto(p));
+    }
     async findItems(id: string): Promise<PaymentItemDto[]> {
         const ac = await this.paymentrepo.find({
             relations: { items: true },
@@ -72,7 +75,7 @@ export class PaymentService {
         if (paymentReal) {
 
         } else {
-            throw new NotFoundException("payment",id);
+            throw new NotFoundException("payment", id);
         }
     }
 
