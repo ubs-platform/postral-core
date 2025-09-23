@@ -16,6 +16,32 @@ export class DirectoryUtil {
         return allFileList;
     }
 
+    static async ensureDirectory(...filePath: string[]) {
+        const dirPath = path.join(...filePath);
+        try {
+            await FileSystem.mkdir(dirPath, { recursive: true });
+        } catch (err) {
+            console.error(
+                strColor(
+                    COLORS.BgRed,
+                    'Could not create directory: ' + dirPath + '\n' + err,
+                ),
+            );
+            throw err;
+        }
+    }
+    static async directoryExists(...filePath: string[]): Promise<boolean> {
+        try {
+            await FileSystem.access(
+                path.join(...filePath),
+                FileSystem.constants.F_OK,
+            );
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
+
     /**
      * Circulates files in the folder recursively
      * @param folderPath
