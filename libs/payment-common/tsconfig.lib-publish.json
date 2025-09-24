@@ -1,0 +1,1 @@
+{"extends":"../../tsconfig.json","compilerOptions":{"declaration":true,"outDir":"../../dist/libs/payments"},"include":["src/**/*"],"exclude":["node_modules","dist","test","**/*spec.ts","@tk-postral/**"]}

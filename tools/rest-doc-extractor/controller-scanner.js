@@ -34,7 +34,6 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControllerScanner = void 0;
-const path_1 = require("path");
 const ts_morph_1 = require("ts-morph");
 const typescript_utils_js_1 = require("./parser/typescript-utils.js");
 const crypto_1 = require("crypto");
@@ -116,7 +115,7 @@ class ControllerScanner {
                             const queryParameters = [];
                             const pathParameters = [];
                             let methodType = restMethodDecorator.getName();
-                            let path = (0, path_1.join)(typescript_utils_js_1.TypescriptNestUtils.firstParameterAsString(restMethodDecorator));
+                            let path = typescript_utils_js_1.TypescriptNestUtils.firstParameterAsString(restMethodDecorator);
                             console.info(path);
                             method.getParameters().forEach((parameter) => {
                                 const restParameterTypeName = parameter
@@ -191,11 +190,19 @@ class ControllerScanner {
                 collectionsByProject[key].forEach((controller) => {
                     controller.parentPath =
                         '/' +
-                            path.join('service', key, globalPrefix, controller.parentPath);
+                            ControllerScanner.combineUrlPaths(key, globalPrefix, controller);
                 });
             }
         });
         return collectionsByProject;
+    }
+    static combineUrlPaths(key, globalPrefix, controller) {
+        return [
+            'service',
+            key,
+            globalPrefix,
+            controller.parentPath
+        ].join('/');
     }
     static returnTypeNameDetermination(returnTypeRaw) {
         if (returnTypeRaw.isArray()) {

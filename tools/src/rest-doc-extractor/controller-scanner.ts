@@ -77,10 +77,10 @@ export class ControllerScanner {
                         capturedGlobalPrefix[4];
                     console.info(
                         'Global prefix: ' +
-                            (capturedGlobalPrefix[1] ||
-                                capturedGlobalPrefix[2] ||
-                                capturedGlobalPrefix[3] ||
-                                capturedGlobalPrefix[4]),
+                        (capturedGlobalPrefix[1] ||
+                            capturedGlobalPrefix[2] ||
+                            capturedGlobalPrefix[3] ||
+                            capturedGlobalPrefix[4]),
                     );
                 }
                 // source kodlarını okuyup global prefixi bulmakk
@@ -120,11 +120,9 @@ export class ControllerScanner {
                             // const restQueryResponse: RestApiMethod = null;
                             let methodType = restMethodDecorator.getName();
 
-                            let path = join(
-                                TypescriptNestUtils.firstParameterAsString(
-                                    restMethodDecorator,
-                                ),
-                            );
+                            let path = TypescriptNestUtils.firstParameterAsString(
+                                restMethodDecorator,
+                            )
                             console.info(path);
                             method.getParameters().forEach((parameter) => {
                                 const restParameterTypeName = parameter
@@ -139,8 +137,8 @@ export class ControllerScanner {
                                 if (!restParameterTypeName) {
                                     console.error(
                                         'Bilinmeyen parametre türü: ' +
-                                            parameter.getName() +
-                                            ' dekoratör bulunamadı',
+                                        parameter.getName() +
+                                        ' dekoratör bulunamadı',
                                     );
                                 } else {
                                     if (restParameterTypeName === 'Body') {
@@ -167,9 +165,9 @@ export class ControllerScanner {
                                         };
                                         console.info(
                                             'Payload parametre: ' +
-                                                parameter.getName() +
-                                                ' tipi: ' +
-                                                parameter.getType().getText(),
+                                            parameter.getName() +
+                                            ' tipi: ' +
+                                            parameter.getType().getText(),
                                         );
                                     } else {
                                         const extractedParameters =
@@ -237,16 +235,20 @@ export class ControllerScanner {
                 collectionsByProject[key].forEach((controller) => {
                     controller.parentPath =
                         '/' +
-                        path.join(
-                            'service',
-                            key,
-                            globalPrefix,
-                            controller.parentPath,
-                        );
+                        ControllerScanner.combineUrlPaths(key, globalPrefix, controller);
                 });
             }
         });
         return collectionsByProject;
+    }
+
+    private static combineUrlPaths(key: string, globalPrefix: string, controller: RestApiCollection) {
+        return [
+            'service',
+            key,
+            globalPrefix,
+            controller.parentPath
+        ].join('/');
     }
 
     private static returnTypeNameDetermination(returnTypeRaw) {

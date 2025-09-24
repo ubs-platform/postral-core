@@ -21,7 +21,7 @@ export class PaymentController {
 
     @Get()
     public async fetchAll() {
-        return await this.ps.findAllRaw();
+        return await this.ps.findAll();
     }
 
     @Get('/:id')
