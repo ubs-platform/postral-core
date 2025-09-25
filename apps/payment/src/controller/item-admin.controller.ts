@@ -20,7 +20,7 @@ import { ItemService } from '../service/item.service';
 import { ItemPriceService } from '../service/item-price.service';
 
 @Controller('item')
-export class ItemController {
+export class ItemAdminController {
     constructor(
         private readonly accountService: ItemService,
         private readonly itemPriceService: ItemPriceService,

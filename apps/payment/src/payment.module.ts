@@ -18,13 +18,14 @@ import { AppComissionController } from './controller/app-comission.controller';
 import { AccountController } from './controller/account.controller';
 import { ItemMapper } from './mapper/item.mapper';
 import { ItemService } from './service/item.service';
-import { ItemController } from './controller/item.controller';
+import { ItemAdminController } from './controller/item-admin.controller';
 import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
 import { AccountUserController } from './controller/account-user.controller';
+import { ItemSellerController } from './controller/item-seller.controller';
 
 @Module({
     imports: [
@@ -49,7 +50,6 @@ import { AccountUserController } from './controller/account-user.controller';
             },
         ]),
         BackendJwtUtilsModule,
-
     ],
     exports: [TypeOrmModule],
     providers: [
@@ -71,7 +71,9 @@ import { AccountUserController } from './controller/account-user.controller';
         PaymentController,
         AppComissionController,
         AccountController,
-        ItemController,AccountUserController
+        ItemSellerController,
+        ItemAdminController,
+        AccountUserController,
     ],
 })
 export class PaymentModule {}
