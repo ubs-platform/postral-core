@@ -69,16 +69,20 @@ class DirectoryUtil {
         let current = folderPath;
         while (current) {
             try {
-                const fileList = await FileSystem.readdir(current);
-                for (let index = 0; index < fileList.length; index++) {
-                    const fileName = fileList[index];
-                    const fullPath = path.join(current, fileName);
-                    const fileInfo = await FileSystem.stat(fullPath);
-                    if (fileInfo.isDirectory()) {
-                        onQueue.push(fullPath);
-                    }
-                    else if (fileInfo.isFile()) {
-                        await fileAction(fullPath);
+                if (current.includes("/node_modules/") || current.includes("/.angular/") || current.includes("/.nx/")) {
+                }
+                else {
+                    const fileList = await FileSystem.readdir(current);
+                    for (let index = 0; index < fileList.length; index++) {
+                        const fileName = fileList[index];
+                        const fullPath = path.join(current, fileName);
+                        const fileInfo = await FileSystem.stat(fullPath);
+                        if (fileInfo.isDirectory()) {
+                            onQueue.push(fullPath);
+                        }
+                        else if (fileInfo.isFile()) {
+                            await fileAction(fullPath);
+                        }
                     }
                 }
             }
