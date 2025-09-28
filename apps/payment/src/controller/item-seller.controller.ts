@@ -66,6 +66,7 @@ export class ItemSellerController {
     @Post()
     async create(@Body() account: ItemDTO): Promise<ItemDTO> {
         // TODO: 2 tane aynı entityGroup - entityName - entityId değerlerine sahip olanlar geçmemeli
+        
         await this.checkBeforAdd(account);
         return await this.accountService.add(account);
     }
