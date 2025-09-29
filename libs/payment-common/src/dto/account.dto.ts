@@ -5,5 +5,5 @@ export class AccountDTO {
 
     legalIdentity: string;
 
-    type: 'INDUVIDIAL' | 'COMMERCIAL';
+    type: 'INDIVIDUAL' | 'COMMERCIAL';
 }

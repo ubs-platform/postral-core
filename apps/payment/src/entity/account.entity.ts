@@ -13,5 +13,5 @@ export class Account {
     legalIdentity: string;
 
     @Column()
-    type: 'INDUVIDIAL' | 'COMMERCIAL';
+    type: 'INDIVIDUAL' | 'COMMERCIAL';
 }
