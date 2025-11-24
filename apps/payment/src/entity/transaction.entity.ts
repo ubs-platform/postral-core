@@ -21,13 +21,19 @@ export class Transaction {
     currency: string;
 
     @Column()
-    rotationTo: "CUSTOMER" | "SELLER";
-
-    @Column()
     paymentChannelId: string
 
     @Column()
     paymentId: string;
+
+    @Column()
+    targetAccountId: string;
+
+    @Column()
+    sourceAccountId: string;
+
+    @Column()
+    status: 'INITIATED' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
     @Column()
     approved: boolean
