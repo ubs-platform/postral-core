@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { Repository } from 'typeorm';
+import { Repository, Transaction } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -13,11 +13,13 @@ import {
     PaymentInitDTO,
     PaymentDTO,
     TaxDTO,
+    PaymentTransactionDTO,
 } from '@tk-postral/payment-common';
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
+import { PaymentTransactionService } from './transaction.service';
 
 @Injectable()
 export class PaymentService {
@@ -31,6 +33,7 @@ export class PaymentService {
         private ems: EventManagementService,
         private itemService: ItemService,
         private itemPriceService: ItemPriceService,
+        private transactionService: PaymentTransactionService,
     ) { }
 
 
@@ -73,6 +76,22 @@ export class PaymentService {
     async capture(id: string, captureInfo: PaymentCaptureInfoDTO) {
         const paymentReal = await this.findPaymentByIdRaw(id);
         if (paymentReal) {
+            const items = await this.findItems(id);
+            for (let index = 0; index < items.length; index++) {
+                const item = items[index];
+                const itemId = item.itemId;
+                // const itemReal = await this.itemService.fetchOne(itemId);
+
+                const transaction = new PaymentTransactionDTO();
+                transaction.amount = captureInfo.paidAmount;
+                transaction.currency = paymentReal.currency;
+                transaction.paymentChannelId = captureInfo.paymentChannelId;
+                transaction.paymentId = paymentReal.id;
+                transaction.sourceAccountId = paymentReal.customerAccountId;
+                transaction.targetAccountId = item.sellerAccountId;
+                transaction.status = 'INITIATED';
+                transaction.approved = false;
+            }
 
         } else {
             throw new NotFoundException("payment", id);
@@ -132,6 +151,7 @@ export class PaymentService {
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
             paymentItem.itemId = realItemFind.id;
+            paymentItem.sellerAccountId = realItemFind.sellerAccountId;
 
             totalAmt += paymentItem.totalAmount;
             const taxDto = TaxCalculationUtil.generateTaxDto(

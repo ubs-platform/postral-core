@@ -10,7 +10,7 @@ import { PaymentProgress } from './payment-status.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 
 @Entity()
-export class Transaction {
+export class PaymentTransaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -36,33 +36,22 @@ export class Transaction {
     status: 'INITIATED' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
     @Column()
-    approved: boolean
-    // @Column()
-    // type: 'PURCHASE' | 'REFUND';
+    approved: boolean;
 
-    // @Column()
-    // totalAmount: number;
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
 
-    // @Column()
-    // taxAmount: number;
-    // /**
-    //  * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
-    //  */
-    // @Column()
-    // currency: string;
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    updatedAt: Date;
 
-    // @OneToMany(() => PostralPaymentItem, (item) => item.payment, {
-    //     cascade: true,
-    // })
-    // items: PostralPaymentItem[];
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    lastOperationDate: Date;
 
-    // @OneToMany(() => PostralPaymentTax, (item) => item.payment, {
-    //     cascade: true,
-    // })
-    // taxes: PostralPaymentTax[];
+    @Column({ type: "mediumtext", nullable: true, default: "" })
+    operationNote: string;
 
-    // @OneToOne(() => PaymentProgress, (item) => item.payment, {
-    //     cascade: true,
-    // })
-    // progress: PaymentProgress;
+    @Column({ type: "mediumtext", nullable: true, default: "" })
+    description: string;
+    // Additional fields can be added as needed
+
 }

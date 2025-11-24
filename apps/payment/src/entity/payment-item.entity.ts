@@ -52,4 +52,7 @@ export class PostralPaymentItem {
         onDelete: 'CASCADE',
     })
     payment: Payment;
+    
+    @Column()
+    sellerAccountId: string;
 }
