@@ -49,10 +49,10 @@ export class DummyEcommercePaymentChannelController {
                 <button onclick="refusePayment()">Refuse Payment</button>
                 <script>
                     function completePayment() {
-                        window.location.href = '/dummy-ecommerce-payment-channel/operation/${operationId}/status/COMPLETED?redirectUrl=${redirectUrlBackToApp}';
+                        window.location.href = './status/COMPLETED?redirectUrl=${redirectUrlBackToApp}';
                     }
                     function refusePayment() {
-                        window.location.href = '/dummy-ecommerce-payment-channel/operation/${operationId}/status/EXPIRED?redirectUrl=${redirectUrlBackToApp}';
+                        window.location.href = './status/EXPIRED?redirectUrl=${redirectUrlBackToApp}';
                     }
                 </script>
             </body>
