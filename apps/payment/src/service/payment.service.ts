@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Post } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { Repository, Transaction } from 'typeorm';
@@ -34,6 +34,7 @@ export class PaymentService {
         private itemService: ItemService,
         private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
+        @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
     ) { }
 
 
@@ -101,8 +102,8 @@ export class PaymentService {
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
         let taxesFromItems: TaxDTO[] = [],
-            items: PostralPaymentItem[] = [],
-            transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
+            items: PostralPaymentItem[] = [];
+            // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
         let totalAmt = 0,
             taxTotal = 0;
 

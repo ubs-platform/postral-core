@@ -45,7 +45,7 @@ import { ItemSellerController } from './controller/item-seller.controller';
             {
                 ...MicroserviceSetupUtil.setupClient(
                     'tetakent-postral-client',
-                    'KAFKA_CLIENT',
+                    'MICROSERVICE_CLIENT',
                 ),
             },
         ]),
