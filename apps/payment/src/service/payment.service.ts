@@ -45,6 +45,7 @@ export class PaymentService {
     async findAll(): Promise<PaymentDTO[]> {
         return (await this.findAllRaw()).map(p => this.paymentMapper.toDto(p));
     }
+    
     async findItems(id: string): Promise<PaymentItemDto[]> {
         const ac = await this.paymentrepo.find({
             relations: { items: true },
@@ -73,37 +74,39 @@ export class PaymentService {
         })[0];
     }
 
-    async generateTransactions(id: string, captureInfo: PaymentCaptureInfoDTO) {
-        const paymentReal = await this.findPaymentByIdRaw(id);
-        if (paymentReal) {
-            const items = await this.findItems(id);
-            for (let index = 0; index < items.length; index++) {
-                const paymentItem = items[index];
-                // const itemId = item.itemId;
-                // const itemReal = await this.itemService.fetchOne(itemId);
+    // async generateTransactions(id: string, captureInfo: PaymentCaptureInfoDTO) {
+    //     const paymentReal = await this.findPaymentByIdRaw(id);
+    //     if (paymentReal) {
+    //         const items = await this.findItems(id);
+    //         for (let index = 0; index < items.length; index++) {
+    //             const paymentItem = items[index];
+    //             // const itemId = item.itemId;
+    //             // const itemReal = await this.itemService.fetchOne(itemId);
 
-                const transaction = new PaymentTransactionDTO();
-                transaction.amount = captureInfo.paidAmount;
-                transaction.currency = paymentReal.currency;
-                transaction.paymentChannelId = captureInfo.paymentChannelId;
-                transaction.paymentId = paymentReal.id;
-                transaction.sourceAccountId = paymentReal.customerAccountId;
-                transaction.targetAccountId = paymentItem.sellerAccountId;
-                transaction.status = 'INITIATED';
-                transaction.approved = false;
-            }
+    //             const transaction = new PaymentTransactionDTO();
+    //             transaction.amount = captureInfo.paidAmount;
+    //             transaction.currency = paymentReal.currency;
+    //             transaction.paymentChannelId = captureInfo.paymentChannelId;
+    //             transaction.paymentId = paymentReal.id;
+    //             transaction.sourceAccountId = paymentReal.customerAccountId;
+    //             transaction.targetAccountId = paymentItem.sellerAccountId;
+    //             transaction.status = 'INITIATED';
+    //             transaction.approved = false;
+    //         }
 
-        } else {
-            throw new NotFoundException("payment", id);
-        }
-    }
+    //     } else {
+    //         throw new NotFoundException("payment", id);
+    //     }
+    // }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
         let taxesFromItems: TaxDTO[] = [],
-            items: PostralPaymentItem[] = [];
+            items: PostralPaymentItem[] = [],
+            transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
         let totalAmt = 0,
             taxTotal = 0;
-        debugger;
+
+        
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const paymentItemDto = pdto.items[itemIndex];
@@ -119,7 +122,6 @@ export class PaymentService {
                         },
                 )
             )[0];
-            debugger;
 
             const itemPriceActive = await this.itemPriceService.allLatestPrices(
                 {
@@ -129,7 +131,6 @@ export class PaymentService {
                     variation: paymentItemDto.variation,
                 },
             );
-            debugger;
             const itemPriceDefault =
                 await this.itemPriceService.allDefaultPrices({
                     currency: pdto.currency,
@@ -168,6 +169,18 @@ export class PaymentService {
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
             paymentItem.quantity = paymentItemDto.quantity;
             items.push(paymentItem);
+
+            // transactions[paymentItem.entityOwnerAccountId] = {
+            //     amount: paymentItem.unTaxAmount,
+            //     taxAmount: paymentItem.taxAmount,
+            //     currency: pdto.currency,
+            //     paymentChannelId: pdto.paymentChannelId,
+            //     paymentId: '', // to be filled after payment is created
+            //     sourceAccountId: pdto.customerAccountId,
+            //     targetAccountId: paymentItem.entityOwnerAccountId,
+            //     status: 'INITIATED',
+            //     approved: false,
+            // };
         }
 
         const p = new Payment();
@@ -194,5 +207,14 @@ export class PaymentService {
             console.error(error);
         }
         return paymentDtoFinal;
+    }
+
+
+    async startPaymentOperation(id: string, captureInfo : PaymentCaptureInfoDTO) {
+        // return this.transactionService.generateTransactions(id, captureInfo);
+    }
+
+    async checkPaymentStatus(id: string, captureInfo : PaymentCaptureInfoDTO) {
+        // return this.transactionService.checkTransactionsStatus(id, captureInfo);
     }
 }

@@ -17,6 +17,9 @@ export class PaymentTransaction {
     amount: number;
 
     @Column()
+    taxAmount: number;
+
+    @Column()
     currency: string;
 
     @Column()

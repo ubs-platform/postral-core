@@ -1,6 +1,7 @@
 export class PaymentTransactionDTO {
     id?: string;
     amount: number;
+    taxAmount: number;
     currency: string;
     paymentChannelId: string;
     paymentId: string;

@@ -16,13 +16,14 @@ export class PaymentController {
 
     @Post('/:id/operation/start')
     public async capture(@Param() { id }: { id: string }, @Body() captureInfo : PaymentCaptureInfoDTO) {
-      return await this.ps.generateTransactions(id, captureInfo);
+        
+    //   return await this.ps.generateTransactions(id, captureInfo);
     }
 
 
     @Post('/:id/operation/check')
     public async checkIsItPaid(@Param() { id }: { id: string }, @Body() captureInfo : PaymentCaptureInfoDTO) {
-      return await this.ps.generateTransactions(id, captureInfo);
+    //   return await this.ps.generateTransactions(id, captureInfo);
     }
 
     @Get()

@@ -1,4 +1,5 @@
 import { PaymentItemDto } from './payment-item.dto';
+import { TaxDTO } from './tax.dto';
 
 export interface PaymentDTO {
     id: string;
@@ -21,4 +22,9 @@ export interface PaymentDTO {
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
     currency: string;
+}
+
+export interface PaymentFullDTO extends PaymentDTO {
+    items: PaymentItemDto[];
+    taxes: TaxDTO[];
 }
