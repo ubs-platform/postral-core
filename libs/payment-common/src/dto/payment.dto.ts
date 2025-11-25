@@ -12,11 +12,13 @@ export interface PaymentDTO {
     taxAmount: number;
     customerAccountId: string;
 
+    paymentChannelId: string;
+    paymentChannelOperationId?: string;
+    paymentChannelOperationUrl?: string;
+    status: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
+    
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
-    paymentOperationId?: string;
-    paymentOperationRedirectUrl?: string;
-    status: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
     currency: string;
 }

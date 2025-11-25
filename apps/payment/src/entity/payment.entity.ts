@@ -62,7 +62,7 @@ export class Payment {
     paymentChannelOperationId: string;
 
     @Column()
-    paymentChannelUrl: string;
+    paymentChannelOperationUrl: string;
 
     @Column()
     channelUrlExpiryDate: Date;

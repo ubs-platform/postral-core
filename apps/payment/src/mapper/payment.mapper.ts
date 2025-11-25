@@ -11,7 +11,11 @@ export class PaymentMapper {
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
-            customerAccountId: saved.customerAccountId
+            customerAccountId: saved.customerAccountId,
+            paymentChannelId: saved.paymentChannelId,
+            paymentChannelOperationId: saved.paymentChannelOperationId,
+            paymentChannelOperationUrl: saved.paymentChannelOperationUrl,
+            status: saved.status,
             //   items: saved.items.map((a) => {
             //     return {
             //       name: a.name,
