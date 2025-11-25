@@ -73,13 +73,13 @@ export class PaymentService {
         })[0];
     }
 
-    async capture(id: string, captureInfo: PaymentCaptureInfoDTO) {
+    async generateTransactions(id: string, captureInfo: PaymentCaptureInfoDTO) {
         const paymentReal = await this.findPaymentByIdRaw(id);
         if (paymentReal) {
             const items = await this.findItems(id);
             for (let index = 0; index < items.length; index++) {
-                const item = items[index];
-                const itemId = item.itemId;
+                const paymentItem = items[index];
+                // const itemId = item.itemId;
                 // const itemReal = await this.itemService.fetchOne(itemId);
 
                 const transaction = new PaymentTransactionDTO();
@@ -88,7 +88,7 @@ export class PaymentService {
                 transaction.paymentChannelId = captureInfo.paymentChannelId;
                 transaction.paymentId = paymentReal.id;
                 transaction.sourceAccountId = paymentReal.customerAccountId;
-                transaction.targetAccountId = item.sellerAccountId;
+                transaction.targetAccountId = paymentItem.sellerAccountId;
                 transaction.status = 'INITIATED';
                 transaction.approved = false;
             }

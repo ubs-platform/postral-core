@@ -6,7 +6,6 @@ import {
     OneToOne,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
-import { PaymentProgress } from './payment-status.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 
 @Entity()
@@ -14,8 +13,8 @@ export class Payment {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ length: 200, type: "varchar", nullable: true, unique: true })
-    billingCode: string
+    @Column({ length: 200, type: 'varchar', nullable: true, unique: true })
+    billingCode: string;
 
     @Column()
     type: 'PURCHASE' | 'REFUND';
@@ -44,5 +43,27 @@ export class Payment {
     @Column()
     customerAccountId: string;
 
+    /**
+     * INITIATED: Payment oluşturuldu, ancak henüz ödeme kanalı ile işlem başlatılmadı.
+     * WAITING: Ödeme kanalı ile işlem başlatıldı, ancak ödeme henüz tamamlanmadı.
+     * COMPLETED: Ödeme başarıyla tamamlandı.
+     * EXPIRED: Ödeme işlemi süresi doldu veya iptal edildi.
+     */
+    @Column()
+    status: 'INITIATED' | 'WAITING' | 'COMPLETED' | 'EXPIRED';
 
+    /**
+     * Nakit, Kredi Kartı, Havale/EFT, vs...
+     */
+    @Column()
+    paymentChannelId: string;
+
+    @Column()
+    paymentChannelOperationId: string;
+
+    @Column()
+    paymentChannelUrl: string;
+
+    @Column()
+    channelUrlExpiryDate: Date;
 }

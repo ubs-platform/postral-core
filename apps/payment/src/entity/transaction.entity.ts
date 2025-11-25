@@ -6,7 +6,6 @@ import {
     OneToOne,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
-import { PaymentProgress } from './payment-status.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 
 @Entity()
