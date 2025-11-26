@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Post, Query, Redirect } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PaymentDTO, PaymentFullDTO } from '@tk-postral/payment-common';
+import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
@@ -13,16 +14,23 @@ export class DummyEcommercePaymentChannelController {
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/start')
     async handleStartPaymentOperation(paymentDto: PaymentFullDTO) {
-        this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
-        return {
-            operationId: paymentDto.id,
-            redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentDto.id}`,
-        };
+        // this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
+        // return {
+        //     operationId: paymentDto.id,
+        //     redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentDto.id}`,
+        //     currentStatus: 'WAITING',
+        // } as PaymentChannelStatusDTO;
+        return this.startPaymentOperation(paymentDto.id);
     }
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/check')
-    async checkPayment(paymentOperationId: string) {
-        return this.statusMapByOperationId.get(paymentOperationId);
+    async checkPayment(paymentOperationId: string): Promise<PaymentChannelStatusDTO> {
+        return {
+            operationId: paymentOperationId,
+            redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
+            currentStatus:
+                this.statusMapByOperationId.get(paymentOperationId) || 'EXPIRED',
+        } as PaymentChannelStatusDTO;
     }
 
     @Post('/operation')

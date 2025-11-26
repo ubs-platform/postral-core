@@ -7,7 +7,7 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
-import { EventManagementService } from './event-management.service';
+import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
     PaymentInitDTO,

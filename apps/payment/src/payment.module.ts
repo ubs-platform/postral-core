@@ -6,7 +6,7 @@ import { PaymentService } from './service/payment.service';
 import { PaymentController } from './controller/payment.controller';
 import { PaymentMapper } from './mapper/payment.mapper';
 import { PaymentItemMapper } from './mapper/payment-item.mapper';
-import { EventManagementService } from './service/event-management.service';
+import { EventSenderService } from './service/event-management.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { randomUUID } from 'crypto';
 import { PaymentsEntities } from './entity';
@@ -60,7 +60,7 @@ import { ItemSellerController } from './controller/item-seller.controller';
         PaymentService,
         PaymentMapper,
         PaymentItemMapper,
-        EventManagementService,
+        EventSenderService,
         ItemMapper,
         ItemService,
         PaymentTaxMapper,

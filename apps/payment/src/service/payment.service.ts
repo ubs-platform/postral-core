@@ -7,7 +7,7 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
-import { EventManagementService } from './event-management.service';
+import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
     PaymentInitDTO,
@@ -30,7 +30,7 @@ export class PaymentService {
         private paymentMapper: PaymentMapper,
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
-        private ems: EventManagementService,
+        private ems: EventSenderService,
         private itemService: ItemService,
         private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
