@@ -1,5 +1,6 @@
 export class PaymentChannelStatusDTO {
-    operationId: string;
+    paymentChannelId: string;
+    paymentChannelOperationId: string;
     redirectUrl: string;
-    currentStatus: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
+    paymentStatus: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
 }

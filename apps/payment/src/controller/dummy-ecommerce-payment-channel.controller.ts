@@ -28,7 +28,7 @@ export class DummyEcommercePaymentChannelController {
         return {
             operationId: paymentOperationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
-            currentStatus:
+            paymentStatus:
                 this.statusMapByOperationId.get(paymentOperationId) || 'EXPIRED',
         } as PaymentChannelStatusDTO;
     }
@@ -39,7 +39,7 @@ export class DummyEcommercePaymentChannelController {
         return {
             operationId: operationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${operationId}`,
-        };
+        } as PaymentChannelStatusDTO;
     }
 
     @Get('operation/:operationId')

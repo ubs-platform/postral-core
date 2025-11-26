@@ -20,6 +20,7 @@ import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { PaymentTransactionService } from './transaction.service';
+import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 
 @Injectable()
 export class PaymentService {
@@ -30,7 +31,7 @@ export class PaymentService {
         private paymentMapper: PaymentMapper,
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
-        private ems: EventSenderService,
+        private eventSenderService: EventSenderService,
         private itemService: ItemService,
         private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
@@ -46,7 +47,7 @@ export class PaymentService {
     async findAll(): Promise<PaymentDTO[]> {
         return (await this.findAllRaw()).map(p => this.paymentMapper.toDto(p));
     }
-    
+
     async findItems(id: string): Promise<PaymentItemDto[]> {
         const ac = await this.paymentrepo.find({
             relations: { items: true },
@@ -73,6 +74,27 @@ export class PaymentService {
         return await this.paymentrepo.find({
             where: { id },
         })[0];
+    }
+
+    async editPaymentOperationInformation(id: string, info: PaymentChannelStatusDTO) {
+        const paymentReal = await this.findPaymentByIdRaw(id);
+        if (paymentReal) {
+            paymentReal.paymentChannelId = info.paymentChannelId || paymentReal.paymentChannelId;
+            paymentReal.paymentChannelOperationId =
+                info.paymentChannelOperationId || paymentReal.paymentChannelOperationId;
+            if (info.paymentStatus == "COMPLETED") {
+                paymentReal.status = "COMPLETED";
+                // TODO: trigger transaction generation
+            } else if (info.paymentStatus == "EXPIRED") {
+                paymentReal.status = "EXPIRED";
+            } else {
+                paymentReal.status = "WAITING";
+            }
+            //
+            await this.paymentrepo.save(paymentReal);
+        } else {
+            throw new NotFoundException("payment", id);
+        }
     }
 
     // async generateTransactions(id: string, captureInfo: PaymentCaptureInfoDTO) {
@@ -103,11 +125,11 @@ export class PaymentService {
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
         let taxesFromItems: TaxDTO[] = [],
             items: PostralPaymentItem[] = [];
-            // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
+        // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
         let totalAmt = 0,
             taxTotal = 0;
 
-        
+
 
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const paymentItemDto = pdto.items[itemIndex];
@@ -203,7 +225,7 @@ export class PaymentService {
         const paymentSaved = await this.paymentrepo.save(p);
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
         try {
-            await this.ems.onPaymentInitialized(paymentDtoFinal);
+            await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
         } catch (error) {
             console.error(error);
         }
@@ -211,11 +233,34 @@ export class PaymentService {
     }
 
 
-    async startPaymentOperation(id: string, captureInfo : PaymentCaptureInfoDTO) {
-        // return this.transactionService.generateTransactions(id, captureInfo);
+    async startPaymentOperation(id: string, captureInfo: PaymentCaptureInfoDTO) {
+
+        const paymentDto = await this.findPaymentById(id);
+        const paymentItems = await this.findItems(id);
+        const paymentTaxes = await this.findTaxes(id);
+
+        if (captureInfo.paidAmount !== undefined && captureInfo.paidAmount <= 0) {
+            captureInfo.paidAmount = paymentDto.totalAmount;
+        }
+
+        try {
+            const result = await this.eventSenderService.paymentChannelStarted({
+                ...paymentDto,
+                items: paymentItems,
+                taxes: paymentTaxes,
+                captureInfo: captureInfo,
+            });
+            paymentDto.paymentChannelId = captureInfo.paymentChannelId;
+            paymentDto.paymentChannelOperationId = result.operationId;
+
+
+
+        } catch (error) {
+            console.error(error);
+        }
     }
 
-    async checkPaymentStatus(id: string, captureInfo : PaymentCaptureInfoDTO) {
+    async checkPaymentStatus(id: string, captureInfo: PaymentCaptureInfoDTO) {
         // return this.transactionService.checkTransactionsStatus(id, captureInfo);
     }
 }

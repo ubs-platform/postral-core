@@ -1,3 +1,4 @@
+import { PaymentCaptureInfoDTO } from './capture-info.dto';
 import { PaymentItemDto } from './payment-item.dto';
 import { TaxDTO } from './tax.dto';
 
@@ -27,4 +28,5 @@ export interface PaymentDTO {
 export interface PaymentFullDTO extends PaymentDTO {
     items: PaymentItemDto[];
     taxes: TaxDTO[];
+    captureInfo?: PaymentCaptureInfoDTO;
 }
