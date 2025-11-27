@@ -2,13 +2,8 @@ import {
     Entity,
     Column,
     PrimaryGeneratedColumn,
-    OneToMany,
-    OneToOne,
 } from 'typeorm';
-import { PostralPaymentItem } from './payment-item.entity';
-import { PaymentProgress } from './payment-status.entity';
-import { PostralPaymentTax } from './payment-tax.entity';
-import { ItemPriceDefaults, ItemPriceDTO } from '@tk-postral/payment-common';
+import { ItemPriceDefaults } from '@tk-postral/payment-common';
 @Entity()
 export class ItemPrice {
     @PrimaryGeneratedColumn('uuid')

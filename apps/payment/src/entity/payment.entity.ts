@@ -55,15 +55,15 @@ export class Payment {
     /**
      * Nakit, Kredi Kartı, Havale/EFT, vs...
      */
-    @Column()
+    @Column({nullable: true})
     paymentChannelId: string;
 
-    @Column()
+    @Column({nullable: true})
     paymentChannelOperationId: string;
 
-    @Column()
+    @Column({nullable: true})
     paymentChannelOperationUrl: string;
 
-    @Column()
+    @Column({nullable: true})
     channelUrlExpiryDate: Date;
 }

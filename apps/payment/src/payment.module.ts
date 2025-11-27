@@ -26,6 +26,7 @@ import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
 import { AccountUserController } from './controller/account-user.controller';
 import { ItemSellerController } from './controller/item-seller.controller';
+import { PaymentTransactionService } from './service/transaction.service';
 
 @Module({
     imports: [
@@ -66,6 +67,7 @@ import { ItemSellerController } from './controller/item-seller.controller';
         PaymentTaxMapper,
         ItemPriceMapper,
         ItemPriceService,
+        PaymentTransactionService
     ],
     controllers: [
         PaymentController,

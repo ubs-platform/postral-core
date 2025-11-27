@@ -20,6 +20,18 @@ export class EventSenderService {
         );
     }
 
+    async paymentChannelStatusChecked(
+        paymentChannelId: string,
+        paymentOperationId: string,
+    ): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(
+            this.kfk.send(
+                `postral/payment-channel/${paymentChannelId}/check`,
+                paymentOperationId,
+            ),
+        );
+    }
+
     // async paymentCompleted(pd: PaymentDTO) {
     //     await this.kfk.emit('POSTRAL_PAYMENT_COMPLETED', pd);
     // }

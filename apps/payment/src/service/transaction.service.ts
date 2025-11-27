@@ -21,10 +21,10 @@ import { ItemPriceService } from './item-price.service';
 import { PaymentTransaction } from '../entity/transaction.entity';
 @Injectable()
 export class PaymentTransactionService {
-
     constructor(
+        @InjectRepository(PaymentTransaction)
         private transactionRepository: Repository<PaymentTransaction>,
-    ) { }
+    ) {}
 
     toDto(entity: PaymentTransaction): PaymentTransactionDTO {
         const dto = new PaymentTransactionDTO();
@@ -56,13 +56,10 @@ export class PaymentTransactionService {
         return entity;
     }
 
-
-
     addTransaction(tr: PaymentTransactionDTO): Promise<PaymentTransactionDTO> {
         const entity = this.fromDto(tr);
         this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)
         return Promise.resolve(this.toDto(entity));
     }
-
 }

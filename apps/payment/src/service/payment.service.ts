@@ -24,7 +24,6 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 
 @Injectable()
 export class PaymentService {
-
     constructor(
         @InjectRepository(Payment)
         private readonly paymentrepo: Repository<Payment>,
@@ -36,16 +35,15 @@ export class PaymentService {
         private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
         @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
-    ) { }
-
-
-
+    ) {}
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
     }
     async findAll(): Promise<PaymentDTO[]> {
-        return (await this.findAllRaw()).map(p => this.paymentMapper.toDto(p));
+        return (await this.findAllRaw()).map((p) =>
+            this.paymentMapper.toDto(p),
+        );
     }
 
     async findItems(id: string): Promise<PaymentItemDto[]> {
@@ -71,29 +69,36 @@ export class PaymentService {
     }
 
     private async findPaymentByIdRaw(id: string): Promise<Payment | undefined> {
-        return await this.paymentrepo.find({
-            where: { id },
-        })[0];
+        return (
+            await this.paymentrepo.find({
+                where: { id },
+            })
+        )[0];
     }
 
-    async editPaymentOperationInformation(id: string, info: PaymentChannelStatusDTO) {
+    async editPaymentOperationInformation(
+        id: string,
+        info: PaymentChannelStatusDTO,
+    ) {
         const paymentReal = await this.findPaymentByIdRaw(id);
         if (paymentReal) {
-            paymentReal.paymentChannelId = info.paymentChannelId || paymentReal.paymentChannelId;
+            paymentReal.paymentChannelId =
+                info.paymentChannelId || paymentReal.paymentChannelId;
             paymentReal.paymentChannelOperationId =
-                info.paymentChannelOperationId || paymentReal.paymentChannelOperationId;
-            if (info.paymentStatus == "COMPLETED") {
-                paymentReal.status = "COMPLETED";
+                info.paymentChannelOperationId ||
+                paymentReal.paymentChannelOperationId;
+            if (info.paymentStatus == 'COMPLETED') {
+                paymentReal.status = 'COMPLETED';
                 // TODO: trigger transaction generation
-            } else if (info.paymentStatus == "EXPIRED") {
-                paymentReal.status = "EXPIRED";
+            } else if (info.paymentStatus == 'EXPIRED') {
+                paymentReal.status = 'EXPIRED';
             } else {
-                paymentReal.status = "WAITING";
+                paymentReal.status = 'WAITING';
             }
             //
             await this.paymentrepo.save(paymentReal);
         } else {
-            throw new NotFoundException("payment", id);
+            throw new NotFoundException('payment', id);
         }
     }
 
@@ -129,8 +134,6 @@ export class PaymentService {
         let totalAmt = 0,
             taxTotal = 0;
 
-
-
         for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
             const paymentItemDto = pdto.items[itemIndex];
 
@@ -139,10 +142,10 @@ export class PaymentService {
                     paymentItemDto.itemId
                         ? { id: paymentItemDto.itemId }
                         : {
-                            entityGroup: paymentItemDto.entityGroup,
-                            entityId: paymentItemDto.entityId,
-                            entityName: paymentItemDto.entityName,
-                        },
+                              entityGroup: paymentItemDto.entityGroup,
+                              entityId: paymentItemDto.entityId,
+                              entityName: paymentItemDto.entityName,
+                          },
                 )
             )[0];
 
@@ -212,6 +215,9 @@ export class PaymentService {
         p.totalAmount = totalAmt;
         p.taxAmount = taxTotal;
         p.items = items;
+        //todo: anon yerine gerçek id olması gerekiyor...
+        p.customerAccountId = 'anon';
+        p.status = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {
                 const ppt = new PostralPaymentTax();
@@ -232,14 +238,18 @@ export class PaymentService {
         return paymentDtoFinal;
     }
 
-
-    async startPaymentOperation(id: string, captureInfo: PaymentCaptureInfoDTO) {
-
+    async startPaymentOperation(
+        id: string,
+        captureInfo: PaymentCaptureInfoDTO,
+    ) {
         const paymentDto = await this.findPaymentById(id);
         const paymentItems = await this.findItems(id);
         const paymentTaxes = await this.findTaxes(id);
 
-        if (captureInfo.paidAmount !== undefined && captureInfo.paidAmount <= 0) {
+        if (
+            captureInfo.paidAmount !== undefined &&
+            captureInfo.paidAmount <= 0
+        ) {
             captureInfo.paidAmount = paymentDto.totalAmount;
         }
 
@@ -252,15 +262,21 @@ export class PaymentService {
             });
             await this.editPaymentOperationInformation(id, result);
             return result;
-
-
         } catch (error) {
             console.error(error);
             throw error;
         }
     }
 
-    async checkPaymentStatus(id: string, captureInfo: PaymentCaptureInfoDTO) {
+    async checkPaymentStatus(id: string) {
+        const paymentDto = await this.findPaymentById(id);
+        const result =
+            await this.eventSenderService.paymentChannelStatusChecked(
+                paymentDto.paymentChannelId!,
+                id,
+            );
+        await this.editPaymentOperationInformation(id, result);
+        return result;
         // return this.transactionService.checkTransactionsStatus(id, captureInfo);
     }
 }
