@@ -16,11 +16,11 @@ async function bootstrap() {
     const globalPrefix = 'api';
     app.register(fastifyMultipart);
     app.connectMicroservice(
-        MicroserviceSetupUtil.setupServer('tetakent-postral'),
+        MicroserviceSetupUtil.setupServer(''),
     );
     app.setGlobalPrefix(globalPrefix);
     const port = process.env.PORT || 3000;
-    app.startAllMicroservices();
+    await app.startAllMicroservices();
     await app.listen(port, '0.0.0.0');
     Logger.log(
         `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,

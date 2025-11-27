@@ -15,8 +15,9 @@ export class EventSenderService {
     }
 
     async paymentChannelStarted(pd: PaymentFullDTO): Promise<PaymentChannelStatusDTO> {
+        debugger
         return await lastValueFrom(
-            this.kfk.send(`postral/payment-channel/${pd.paymentChannelId}/start`, pd),
+            this.kfk.send(`postral/payment-channel/${pd.captureInfo.paymentChannelId}/start`, pd),
         );
     }
 

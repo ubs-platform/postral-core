@@ -45,7 +45,7 @@ import { PaymentTransactionService } from './service/transaction.service';
         ClientsModule.register([
             {
                 ...MicroserviceSetupUtil.setupClient(
-                    'tetakent-postral-client',
+                    '',
                     'MICROSERVICE_CLIENT',
                 ),
             },

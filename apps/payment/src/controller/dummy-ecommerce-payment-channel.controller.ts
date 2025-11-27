@@ -14,11 +14,13 @@ export class DummyEcommercePaymentChannelController {
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/start')
     async handleStartPaymentOperation(paymentDto: PaymentFullDTO) {
+        debugger
         return this.startPaymentOperation(paymentDto);
     }
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/check')
     async checkPayment(paymentOperationId: string): Promise<PaymentChannelStatusDTO> {
+        debugger
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentOperationId,
@@ -30,6 +32,7 @@ export class DummyEcommercePaymentChannelController {
 
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullDTO) {
+        debugger
         this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
         return {
             paymentChannelId: 'dummy-ecommerce',
