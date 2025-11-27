@@ -250,13 +250,13 @@ export class PaymentService {
                 taxes: paymentTaxes,
                 captureInfo: captureInfo,
             });
-            paymentDto.paymentChannelId = captureInfo.paymentChannelId;
-            paymentDto.paymentChannelOperationId = result.operationId;
-
+            await this.editPaymentOperationInformation(id, result);
+            return result;
 
 
         } catch (error) {
             console.error(error);
+            throw error;
         }
     }
 

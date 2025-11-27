@@ -14,19 +14,14 @@ export class DummyEcommercePaymentChannelController {
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/start')
     async handleStartPaymentOperation(paymentDto: PaymentFullDTO) {
-        // this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
-        // return {
-        //     operationId: paymentDto.id,
-        //     redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentDto.id}`,
-        //     currentStatus: 'WAITING',
-        // } as PaymentChannelStatusDTO;
-        return this.startPaymentOperation(paymentDto.id);
+        return this.startPaymentOperation(paymentDto);
     }
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/check')
     async checkPayment(paymentOperationId: string): Promise<PaymentChannelStatusDTO> {
         return {
-            operationId: paymentOperationId,
+            paymentChannelId: 'dummy-ecommerce',
+            paymentChannelOperationId: paymentOperationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
             paymentStatus:
                 this.statusMapByOperationId.get(paymentOperationId) || 'EXPIRED',
@@ -34,11 +29,14 @@ export class DummyEcommercePaymentChannelController {
     }
 
     @Post('/operation')
-    async startPaymentOperation(operationId: string) {
-        this.statusMapByOperationId.set(operationId, 'WAITING');
+    async startPaymentOperation(paymentDto: PaymentFullDTO) {
+        this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
         return {
-            operationId: operationId,
-            redirectUrl: `dummy-ecommerce-payment-channel/pay/${operationId}`,
+            paymentChannelId: 'dummy-ecommerce',
+            paymentChannelOperationId: paymentDto.id,
+            redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentDto.id}`,
+            paymentStatus: 'WAITING',
+
         } as PaymentChannelStatusDTO;
     }
 
@@ -67,7 +65,7 @@ export class DummyEcommercePaymentChannelController {
         </html>`;
     }
 
-    @Post('/operation/:operationId/status/:set')
+    @Get('/operation/:operationId/status/:set')
     async setPaymentStatusAndRedirect(
         @Param('operationId') operationId: string,
         @Param('set') set: 'COMPLETED' | 'EXPIRED',

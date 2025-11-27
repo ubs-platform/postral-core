@@ -28,5 +28,5 @@ export interface PaymentDTO {
 export interface PaymentFullDTO extends PaymentDTO {
     items: PaymentItemDto[];
     taxes: TaxDTO[];
-    captureInfo?: PaymentCaptureInfoDTO;
+    captureInfo: PaymentCaptureInfoDTO;
 }
