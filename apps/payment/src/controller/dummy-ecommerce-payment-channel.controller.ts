@@ -68,7 +68,7 @@ export class DummyEcommercePaymentChannelController {
         </html>`;
     }
 
-    @Get('/operation/:operationId/status/:set')
+    @Post('/operation/:operationId/status/:set')
     async setPaymentStatusAndRedirect(
         @Param('operationId') operationId: string,
         @Param('set') set: 'COMPLETED' | 'EXPIRED',
