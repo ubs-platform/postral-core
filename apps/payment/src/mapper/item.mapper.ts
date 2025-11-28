@@ -16,7 +16,7 @@ export class ItemMapper {
     }
 
     async toDto(ac: Item): Promise<ItemDTO> {
-        debugger
+        
         return {
             id: ac.id,
 

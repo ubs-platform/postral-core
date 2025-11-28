@@ -5,7 +5,7 @@ import { PaymentDTO } from '@tk-postral/payment-common';
 @Injectable()
 export class PaymentMapper {
     toDto(saved: Payment): PaymentDTO {
-        debugger
+        
         return {
             type: saved.type,
             id: saved.id,
