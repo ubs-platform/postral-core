@@ -20,6 +20,9 @@ export class PaymentTransaction {
     taxAmount: number;
 
     @Column()
+    untaxedAmount: number;
+
+    @Column()
     currency: string;
 
     @Column()

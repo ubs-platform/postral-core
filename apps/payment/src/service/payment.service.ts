@@ -82,50 +82,57 @@ export class PaymentService {
     ) {
         const paymentReal = await this.findPaymentByIdRaw(id);
         if (paymentReal) {
+            if (paymentReal.status === 'EXPIRED' || paymentReal.status === 'COMPLETED') {
+                // already expired, no need to update
+                return;
+            }
             paymentReal.paymentChannelId =
                 info.paymentChannelId || paymentReal.paymentChannelId;
             paymentReal.paymentChannelOperationId =
                 info.paymentChannelOperationId ||
                 paymentReal.paymentChannelOperationId;
-            if (info.paymentStatus == 'COMPLETED') {
-                paymentReal.status = 'COMPLETED';
-                // TODO: trigger transaction generation
-            } else if (info.paymentStatus == 'EXPIRED') {
-                paymentReal.status = 'EXPIRED';
-            } else {
-                paymentReal.status = 'WAITING';
-            }
+            // if (info.paymentStatus == 'COMPLETED') {
+            //     paymentReal.status = 'COMPLETED';
+            // } else if (info.paymentStatus == 'EXPIRED') {
+            //     paymentReal.status = 'EXPIRED';
+            // } else {
+            //     paymentReal.status = 'WAITING';
+            // }
+
+            paymentReal.status = info.paymentStatus;
             //
+            // paymentReal.updatedAt = new Date();
             await this.paymentrepo.save(paymentReal);
+
+            if (paymentReal.status === 'COMPLETED') {
+                await this.generateTransactions(paymentReal, info);
+            }
         } else {
             throw new NotFoundException('payment', id);
         }
     }
 
-    // async generateTransactions(id: string, captureInfo: PaymentCaptureInfoDTO) {
-    //     const paymentReal = await this.findPaymentByIdRaw(id);
-    //     if (paymentReal) {
-    //         const items = await this.findItems(id);
-    //         for (let index = 0; index < items.length; index++) {
-    //             const paymentItem = items[index];
-    //             // const itemId = item.itemId;
-    //             // const itemReal = await this.itemService.fetchOne(itemId);
-
-    //             const transaction = new PaymentTransactionDTO();
-    //             transaction.amount = captureInfo.paidAmount;
-    //             transaction.currency = paymentReal.currency;
-    //             transaction.paymentChannelId = captureInfo.paymentChannelId;
-    //             transaction.paymentId = paymentReal.id;
-    //             transaction.sourceAccountId = paymentReal.customerAccountId;
-    //             transaction.targetAccountId = paymentItem.sellerAccountId;
-    //             transaction.status = 'INITIATED';
-    //             transaction.approved = false;
-    //         }
-
-    //     } else {
-    //         throw new NotFoundException("payment", id);
-    //     }
-    // }
+    async generateTransactions(
+        paymentReal: Payment,
+        captureInfo: PaymentChannelStatusDTO,
+    ) {
+        const items = await this.findItems(paymentReal.id);
+        for (let index = 0; index < items.length; index++) {
+            const paymentItem = items[index];
+            const transaction = new PaymentTransactionDTO();
+            transaction.amount = paymentItem.totalAmount;
+            transaction.taxAmount = paymentItem.taxAmount;
+            transaction.untaxedAmount =
+                paymentItem.totalAmount - paymentItem.taxAmount;
+            transaction.currency = paymentReal.currency;
+            transaction.paymentChannelId = captureInfo.paymentChannelId!;
+            transaction.paymentId = paymentReal.id;
+            transaction.sourceAccountId = paymentReal.customerAccountId;
+            transaction.targetAccountId = paymentItem.sellerAccountId;
+            transaction.status = paymentReal.status;
+            transaction.approved = false;
+        }
+    }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
         let taxesFromItems: TaxDTO[] = [],
@@ -195,18 +202,6 @@ export class PaymentService {
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
             paymentItem.quantity = paymentItemDto.quantity;
             items.push(paymentItem);
-
-            // transactions[paymentItem.entityOwnerAccountId] = {
-            //     amount: paymentItem.unTaxAmount,
-            //     taxAmount: paymentItem.taxAmount,
-            //     currency: pdto.currency,
-            //     paymentChannelId: pdto.paymentChannelId,
-            //     paymentId: '', // to be filled after payment is created
-            //     sourceAccountId: pdto.customerAccountId,
-            //     targetAccountId: paymentItem.entityOwnerAccountId,
-            //     status: 'INITIATED',
-            //     approved: false,
-            // };
         }
 
         const p = new Payment();
@@ -218,6 +213,9 @@ export class PaymentService {
         //todo: anon yerine gerçek id olması gerekiyor...
         p.customerAccountId = 'anon';
         p.status = 'INITIATED';
+        // Entity tarafında otomatik atılıyor... sanırım
+        // p.createdAt = new Date();
+        // p.updatedAt = new Date();
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {
                 const ppt = new PostralPaymentTax();
@@ -276,6 +274,7 @@ export class PaymentService {
                 id,
             );
         await this.editPaymentOperationInformation(id, result);
+
         return result;
         // return this.transactionService.checkTransactionsStatus(id, captureInfo);
     }
