@@ -1,3 +1,6 @@
+import { PaymentErrorStatus, PaymentStatus } from "../type/status";
+import { TransactionType } from "../type/transaction-type";
+
 export class PaymentTransactionDTO {
     id?: string;
     amount: number;
@@ -8,6 +11,8 @@ export class PaymentTransactionDTO {
     paymentId: string;
     targetAccountId: string;
     sourceAccountId: string;
-    status: 'INITIATED' | 'WAITING' | 'COMPLETED' | 'EXPIRED';
-    approved: boolean;
+    paymentStatus: PaymentStatus;
+    errorStatus?: PaymentErrorStatus;
+    operationNote: string;
+    transactionType: TransactionType;
 }

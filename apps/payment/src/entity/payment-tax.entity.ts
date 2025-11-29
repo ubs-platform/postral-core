@@ -5,13 +5,13 @@ import { Payment } from './payment.entity';
 export class PostralPaymentTax {
     @PrimaryGeneratedColumn('uuid')
     id: string;
-    @Column()
+    @Column({ type: 'float' })
     taxAmount: number;
-    @Column()
+    @Column({ type: 'float' })
     untaxAmount: number;
-    @Column()
+    @Column({ type: 'float' })
     fullAmount: number;
-    @Column()
+    @Column({ type: 'float' })
     percent: number;
 
     @ManyToOne(() => Payment, (a) => a.items, {

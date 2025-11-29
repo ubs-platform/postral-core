@@ -1,3 +1,4 @@
+import { PaymentErrorStatus, PaymentStatus } from '../type/status';
 import { PaymentCaptureInfoDTO } from './capture-info.dto';
 import { PaymentItemDto } from './payment-item.dto';
 import { TaxDTO } from './tax.dto';
@@ -17,7 +18,8 @@ export interface PaymentDTO {
     paymentChannelId: string;
     paymentChannelOperationId?: string;
     paymentChannelOperationUrl?: string;
-    status: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
+    paymentStatus: PaymentStatus;
+    errorStatus: PaymentErrorStatus;
     
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...

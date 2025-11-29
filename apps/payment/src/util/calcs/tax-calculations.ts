@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '@tk-postral/payment-common';
-import { ArrayToObjectUtil } from './array-to-object';
+import { ArrayToObjectUtil } from '../array-to-object';
 
 export class TaxCalculationUtil {
     static calculateUntaxedPrice(fullAmount: number, taxAmount: number) {
@@ -23,6 +23,7 @@ export class TaxCalculationUtil {
         percent?: number | null,
         taxAmount?: number | null,
     ) {
+        debugger
         let untaxAmount = 0;
         if (percent == null && taxAmount == null) {
             throw new BadRequestException(

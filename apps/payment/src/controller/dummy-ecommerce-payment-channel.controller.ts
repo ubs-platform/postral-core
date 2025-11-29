@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post, Query, Redirect } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { PaymentDTO, PaymentFullDTO } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentFullDTO, PaymentStatus } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 
 @Controller('dummy-ecommerce-payment-channel')
@@ -9,7 +9,7 @@ export class DummyEcommercePaymentChannelController {
 
     readonly statusMapByOperationId: Map<
         string,
-        'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED'
+        PaymentStatus
     > = new Map();
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/start')
@@ -71,7 +71,7 @@ export class DummyEcommercePaymentChannelController {
     @Post('/operation/:operationId/status/:set')
     async setPaymentStatusAndRedirect(
         @Param('operationId') operationId: string,
-        @Param('set') set: 'COMPLETED' | 'EXPIRED',
+        @Param('set') set: 'COMPLETED' | 'FAILED',
         @Query('redirectUrl') redirectUrlBackToApp: string,
     ) {
         this.statusMapByOperationId.set(operationId, set);

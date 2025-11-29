@@ -24,13 +24,13 @@ export class Item {
     @Column()
     baseCurrency: string;
 
-    @Column()
+    @Column({type: 'float'})
     taxPercent: number;
 
-    @Column()
+    @Column({type: 'float'})
     unitAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     originalUnitAmount: number;
 
     @Column()

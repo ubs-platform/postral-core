@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
+import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
 
 @Entity()
 export class Payment {
@@ -19,10 +20,10 @@ export class Payment {
     @Column()
     type: 'PURCHASE' | 'REFUND';
 
-    @Column()
+    @Column({ type: 'float' })
     totalAmount: number;
 
-    @Column()
+    @Column({ type: 'float' })
     taxAmount: number;
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
@@ -43,33 +44,34 @@ export class Payment {
     @Column()
     customerAccountId: string;
 
-    /**
-     * INITIATED: Payment oluşturuldu, ancak henüz ödeme kanalı ile işlem başlatılmadı.
-     * WAITING: Ödeme kanalı ile işlem başlatıldı, ancak ödeme henüz tamamlanmadı.
-     * COMPLETED: Ödeme başarıyla tamamlandı.
-     * EXPIRED: Ödeme işlemi süresi doldu veya iptal edildi.
-     */
-    @Column()
-    status: 'INITIATED' | 'WAITING' | 'COMPLETED' | 'EXPIRED';
+    @Column({ type: 'varchar' })
+    paymentStatus: PaymentStatus;
+
+    @Column({ type: 'varchar', nullable: true })
+    errorStatus: PaymentErrorStatus;
 
     /**
      * Nakit, Kredi Kartı, Havale/EFT, vs...
      */
-    @Column({nullable: true})
+    @Column({ nullable: true })
     paymentChannelId: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     paymentChannelOperationId: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     paymentChannelOperationUrl: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     channelUrlExpiryDate: Date;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' , onUpdate: "CURRENT_TIMESTAMP"})
+    @Column({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+    })
     updatedAt: Date;
 }

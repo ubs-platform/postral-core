@@ -4,29 +4,35 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     OneToOne,
+    Transaction,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
+import {
+    PaymentErrorStatus,
+    PaymentStatus,
+    TransactionType,
+} from '@tk-postral/payment-common';
 
 @Entity()
 export class PaymentTransaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column()
+    @Column({type: 'float'})
     amount: number;
 
-    @Column()
+    @Column({type: 'float'})
     taxAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     untaxedAmount: number;
 
     @Column()
     currency: string;
 
     @Column()
-    paymentChannelId: string
+    paymentChannelId: string;
 
     @Column()
     paymentId: string;
@@ -37,26 +43,50 @@ export class PaymentTransaction {
     @Column()
     sourceAccountId: string;
 
-    @Column()
-    status: 'INITIATED' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+    @Column({ type: 'varchar' })
+    paymentStatus: PaymentStatus;
 
-    @Column()
-    approved: boolean;
+    @Column({ type: 'varchar', nullable: true })
+    errorStatus: PaymentErrorStatus;
+
+    /**
+     * 
+     * Transaction 1 (A'nın bakiyesi için):
+    * - sourceAccountId: A
+    * - targetAccountId: B
+    * - transactionType: DEBIT (A'dan para çıkışı)
+    * - amount: 100
+
+    * Transaction 2 (B'nin bakiyesi için):
+    * - sourceAccountId: A
+    * - targetAccountId: B
+    * - transactionType: CREDIT (B'ye para girişi)
+    * - amount: 100
+     */
+    @Column({ type: 'varchar' })
+    transactionType: TransactionType;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    @Column({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+    })
     updatedAt: Date;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    @Column({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP',
+        onUpdate: 'CURRENT_TIMESTAMP',
+    })
     lastOperationDate: Date;
 
-    @Column({ type: "mediumtext", nullable: true, default: "" })
+    @Column({ type: 'mediumtext', nullable: true, default: '' })
     operationNote: string;
 
-    @Column({ type: "mediumtext", nullable: true, default: "" })
+    @Column({ type: 'mediumtext', nullable: true, default: '' })
     description: string;
     // Additional fields can be added as needed
-
 }

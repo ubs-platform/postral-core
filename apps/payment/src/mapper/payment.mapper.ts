@@ -16,7 +16,8 @@ export class PaymentMapper {
             paymentChannelId: saved.paymentChannelId,
             paymentChannelOperationId: saved.paymentChannelOperationId,
             paymentChannelOperationUrl: saved.paymentChannelOperationUrl,
-            status: saved.status,
+            paymentStatus: saved.paymentStatus,
+            errorStatus: saved.errorStatus,
             //   items: saved.items.map((a) => {
             //     return {
             //       name: a.name,

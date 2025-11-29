@@ -5,7 +5,7 @@ import { Repository, Transaction } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '../util/calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {
@@ -82,29 +82,25 @@ export class PaymentService {
     ) {
         const paymentReal = await this.findPaymentByIdRaw(id);
         if (paymentReal) {
-            if (paymentReal.status === 'EXPIRED' || paymentReal.status === 'COMPLETED') {
-                // already expired, no need to update
+            if (
+                paymentReal.paymentStatus === 'FAILED' ||
+                paymentReal.paymentStatus === 'COMPLETED'
+            ) {
+                // already finalized
                 return;
             }
+
             paymentReal.paymentChannelId =
                 info.paymentChannelId || paymentReal.paymentChannelId;
             paymentReal.paymentChannelOperationId =
                 info.paymentChannelOperationId ||
                 paymentReal.paymentChannelOperationId;
-            // if (info.paymentStatus == 'COMPLETED') {
-            //     paymentReal.status = 'COMPLETED';
-            // } else if (info.paymentStatus == 'EXPIRED') {
-            //     paymentReal.status = 'EXPIRED';
-            // } else {
-            //     paymentReal.status = 'WAITING';
-            // }
 
-            paymentReal.status = info.paymentStatus;
-            //
-            // paymentReal.updatedAt = new Date();
+            paymentReal.paymentStatus = info.paymentStatus;
+            paymentReal.errorStatus = info.paymentErrorStatus;
             await this.paymentrepo.save(paymentReal);
 
-            if (paymentReal.status === 'COMPLETED') {
+            if (paymentReal.paymentStatus === 'COMPLETED') {
                 await this.generateTransactions(paymentReal, info);
             }
         } else {
@@ -122,15 +118,14 @@ export class PaymentService {
             const transaction = new PaymentTransactionDTO();
             transaction.amount = paymentItem.totalAmount;
             transaction.taxAmount = paymentItem.taxAmount;
-            transaction.untaxedAmount =
-                paymentItem.totalAmount - paymentItem.taxAmount;
             transaction.currency = paymentReal.currency;
             transaction.paymentChannelId = captureInfo.paymentChannelId!;
             transaction.paymentId = paymentReal.id;
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
-            transaction.status = paymentReal.status;
-            transaction.approved = false;
+            transaction.paymentStatus = paymentReal.paymentStatus;
+            transaction.transactionType = 'CREDIT';
+            await this.transactionService.addTransaction(transaction);
         }
     }
 
@@ -179,6 +174,7 @@ export class PaymentService {
             paymentItem.entityName = realItemFind.entityName;
             paymentItem.totalAmount =
                 itemPriceActive[0].itemPrice * paymentItemDto.quantity;
+            debugger;
             paymentItem.taxPercent = itemPriceActive[0].taxPercent;
             paymentItem.variation = paymentItem.entityOwnerAccountId =
                 realItemFind.sellerAccountId;
@@ -212,7 +208,7 @@ export class PaymentService {
         p.items = items;
         //todo: anon yerine gerçek id olması gerekiyor...
         p.customerAccountId = 'anon';
-        p.status = 'INITIATED';
+        p.paymentStatus = 'INITIATED';
         // Entity tarafında otomatik atılıyor... sanırım
         // p.createdAt = new Date();
         // p.updatedAt = new Date();

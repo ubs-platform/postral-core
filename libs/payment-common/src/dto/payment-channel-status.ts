@@ -1,6 +1,9 @@
+import { PaymentErrorStatus, PaymentStatus } from "../type/status";
+
 export class PaymentChannelStatusDTO {
     paymentChannelId?: string;
     paymentChannelOperationId: string;
     redirectUrl: string;
-    paymentStatus: 'INITIATED' | 'COMPLETED' | 'WAITING' | 'EXPIRED';
+    paymentStatus: PaymentStatus;
+    paymentErrorStatus?: PaymentErrorStatus;
 }

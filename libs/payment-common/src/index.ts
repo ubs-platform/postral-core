@@ -12,3 +12,5 @@ export * from './dto/item-price.dto';
 export * from './dto/capture-info.dto';
 export * from "./dto/payment-transaction.dto";
 export * from "./dto/app-comission.dto";
+export * from './type/status';
+export * from './type/transaction-type';

@@ -15,6 +15,6 @@ export class AppComission {
     @Column({ name: 'app_default' })
     default: boolean;
 
-    @Column()
+    @Column({type: 'float'})
     percent: number;
 }

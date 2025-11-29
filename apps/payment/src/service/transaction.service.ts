@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '../util/calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {
@@ -19,6 +19,8 @@ import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
 import { PaymentTransaction } from '../entity/transaction.entity';
+import { ArrayToObjectUtil } from '../util/array-to-object';
+import { error } from 'console';
 @Injectable()
 export class PaymentTransactionService {
     constructor(
@@ -35,8 +37,9 @@ export class PaymentTransactionService {
         dto.paymentId = entity.paymentId;
         dto.targetAccountId = entity.targetAccountId;
         dto.sourceAccountId = entity.sourceAccountId;
-        dto.status = entity.status;
-        dto.approved = entity.approved;
+        dto.paymentStatus = entity.paymentStatus;
+        dto.untaxedAmount = entity.untaxedAmount;
+        dto.taxAmount = entity.taxAmount;
         return dto;
     }
 
@@ -45,14 +48,21 @@ export class PaymentTransactionService {
         if (dto.id) {
             entity.id = dto.id;
         }
+        entity.untaxedAmount = TaxCalculationUtil.calculateUntaxedPrice(
+            dto.amount,
+            dto.taxAmount,
+        );
+        entity.taxAmount = dto.taxAmount;
         entity.amount = dto.amount;
         entity.currency = dto.currency;
         entity.paymentChannelId = dto.paymentChannelId;
         entity.paymentId = dto.paymentId;
         entity.targetAccountId = dto.targetAccountId;
         entity.sourceAccountId = dto.sourceAccountId;
-        entity.status = dto.status;
-        entity.approved = dto.approved;
+        entity.paymentStatus = dto.paymentStatus;
+        entity.errorStatus = dto.errorStatus;
+        entity.transactionType = dto.transactionType;
+        entity.operationNote = dto.operationNote;
         return entity;
     }
 
@@ -61,5 +71,38 @@ export class PaymentTransactionService {
         this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)
         return Promise.resolve(this.toDto(entity));
+    }
+
+    async addTransactions(transactions: PaymentTransactionDTO[]): Promise<void> {
+        const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(
+            transactions,
+            (a) => {
+                return a.sourceAccountId + '|' + a.targetAccountId  + '|' + a.paymentId + '|' + a.paymentChannelId + '|' + a.currency + '|' + a.status + '|' + a.approved;
+            },
+            (object, key, mappingObject)=> {
+                const mappedObject = mappingObject[key];
+                if (mappedObject == null) {
+                    mappingObject[key] = {
+                        totalAmount: 0,
+                        taxAmount: 0,
+                        currency: object.currency,
+                        paymentChannelId: object.paymentChannelId,
+                        paymentId: object.paymentId,
+                        sourceAccountId: object.sourceAccountId,
+                        targetAccountId: object.targetAccountId,
+                        status: object.status,
+                        errorStatus: object.errorStatus,
+                        operationNote: object.operationNote,
+                        transactionType: object.transactionType,
+                
+                    };
+                }
+                mappingObject[key].totalAmount += object.amount;
+                mappingObject[key].taxAmount += object.taxAmount;
+            }
+        );
+        for (const tr of transactions) {
+            await this.addTransaction(tr);
+        }
     }
 }

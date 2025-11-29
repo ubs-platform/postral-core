@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '../util/calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {

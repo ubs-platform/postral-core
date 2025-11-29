@@ -15,10 +15,10 @@ export class ItemPrice {
     @Column({ default: ItemPriceDefaults.VARIATION_DEFAULT })
     variation: string;
 
-    @Column({ default: 0, type: 'bigint' })
+    @Column({ default: 0, type: 'float' })
     itemPrice: number;
 
-    @Column({ default: 0, type: 'bigint' })
+    @Column({ default: 0, type: 'float' })
     taxPercent: number;
 
     @Column({ default: ItemPriceDefaults.REGION_ANY })

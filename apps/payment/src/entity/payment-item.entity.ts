@@ -27,25 +27,25 @@ export class PostralPaymentItem {
     @Column()
     name: string;
 
-    @Column()
+    @Column({type: 'float'})
     quantity: number;
 
-    @Column()
+    @Column({type: 'float'})
     totalAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     originalUnitAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     unitAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     taxPercent: number;
 
-    @Column()
+    @Column({type: 'float'})
     taxAmount: number;
 
-    @Column()
+    @Column({type: 'float'})
     unTaxAmount: number;
 
     @ManyToOne(() => Payment, (a) => a.items, {
