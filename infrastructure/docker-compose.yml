@@ -15,6 +15,6 @@ services:
             - './init.sql:/docker-entrypoint-initdb.d/1.sql'
 
     engine5:
-        image: hcangunduz/engine5:0.0.7-alpha
+        image: hcangunduz/engine5:0.0.8-alpha
         ports:
             - 3535:3535
