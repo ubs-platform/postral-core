@@ -41,6 +41,7 @@ export class ItemPriceService {
 
     async allLatestPrices(itemPriceSearchDto: ItemPriceSearchDTO) {
         // this.priceSearchDefaults(itemPriceSearchDto);
+
         this.regionDefault(itemPriceSearchDto);
         const now = this.nowString();
         const ls = await this.itemRepo
@@ -55,9 +56,9 @@ export class ItemPriceService {
                     and ( (ip2.activeStartAt is null) or (ip2.activeStartAt < :currentDate)) and ( (ip2.activeExpireAt is null) or  (ip2.activeExpireAt > :currentDate) ) order by ip2.activityOrder desc limit 1 offset 0 )`,
                 {
                     itemId: itemPriceSearchDto.itemId,
-                    variation: itemPriceSearchDto.variation,
-                    region: itemPriceSearchDto.region,
-                    currency: itemPriceSearchDto.currency,
+                    variation: itemPriceSearchDto.variation?.toString() || '',
+                    region: itemPriceSearchDto.region?.toString() || '',
+                    currency: itemPriceSearchDto.currency.toString(),
                     currentDate: now,
                 },
             )
