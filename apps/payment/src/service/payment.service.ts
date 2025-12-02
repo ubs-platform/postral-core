@@ -21,6 +21,7 @@ import { ItemPriceService } from './item-price.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { PaymentTransactionService } from './transaction.service';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
+import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 
 @Injectable()
 export class PaymentService {
@@ -173,8 +174,10 @@ export class PaymentService {
             paymentItem.entityId = realItemFind.entityId;
             paymentItem.entityName = realItemFind.entityName;
             paymentItem.totalAmount =
-                itemPriceActive[0].itemPrice * paymentItemDto.quantity;
-            debugger;
+                ItemCalculationUtil.calculateTotalItemPrice(
+                    itemPriceActive[0].itemPrice,
+                    paymentItemDto.quantity,
+                );
             paymentItem.taxPercent = itemPriceActive[0].taxPercent;
             paymentItem.variation = paymentItem.entityOwnerAccountId =
                 realItemFind.sellerAccountId;
@@ -182,14 +185,15 @@ export class PaymentService {
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
-
-            totalAmt += paymentItem.totalAmount;
+                
+            totalAmt = ItemCalculationUtil.addNumberValues(totalAmt, paymentItem.totalAmount);
+            
             const taxDto = TaxCalculationUtil.generateTaxDto(
                 itemPriceActive[0].taxPercent.toString(),
                 paymentItem.totalAmount,
                 itemPriceActive[0].taxPercent,
             );
-            taxTotal += taxDto.taxAmount;
+            taxTotal = ItemCalculationUtil.addNumberValues(taxTotal, taxDto.taxAmount);
 
             taxesFromItems.push(taxDto);
 
