@@ -1,18 +1,42 @@
 import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from '../array-to-object';
+import { TypeAssertionUtil } from '../type-assertion';
+import { ItemCalculationUtil } from './item-calculations';
 
 export class TaxCalculationUtil {
     static calculateUntaxedPrice(fullAmount: number, taxAmount: number) {
+        TypeAssertionUtil.assertIsNumber(
+            fullAmount,
+            'Full amount must be a number',
+        );
+        TypeAssertionUtil.assertIsNumber(
+            taxAmount,
+            'Tax amount must be a number',
+        );
         return fullAmount - taxAmount;
     }
 
     static calculatePercent(fullAmount: number, taxAmount: number) {
+        TypeAssertionUtil.assertIsNumber(
+            fullAmount,
+            'Full amount must be a number',
+        );
+        TypeAssertionUtil.assertIsNumber(
+            taxAmount,
+            'Tax amount must be a number',
+        );
+
         const untaxAmount = this.calculateUntaxedPrice(fullAmount, taxAmount);
         return (100 * taxAmount) / untaxAmount;
     }
 
     static calculateTaxAmount(fullAmount: number, percent: number) {
+        TypeAssertionUtil.assertIsNumber(
+            fullAmount,
+            'Full amount must be a number',
+        );
+        TypeAssertionUtil.assertIsNumber(percent, 'Percent must be a number');
         const fullPercent = percent + 100;
         return (percent * fullAmount) / fullPercent;
     }
@@ -23,7 +47,6 @@ export class TaxCalculationUtil {
         percent?: number | null,
         taxAmount?: number | null,
     ) {
-        debugger
         let untaxAmount = 0;
         if (percent == null && taxAmount == null) {
             throw new BadRequestException(
@@ -64,8 +87,15 @@ export class TaxCalculationUtil {
             taxTotal = 0;
         for (let index = 0; index < taxes.length; index++) {
             const tax = taxes[index];
-            fullTotal += tax.fullAmount;
-            taxTotal += tax.taxAmount;
+            fullTotal = ItemCalculationUtil.addNumberValues(
+                fullTotal,
+                tax.fullAmount,
+            );
+
+            taxTotal = ItemCalculationUtil.addNumberValues(
+                taxTotal,
+                tax.taxAmount,
+            );
         }
         return this.generateTaxDto('Total', fullTotal, null, taxTotal);
     }
