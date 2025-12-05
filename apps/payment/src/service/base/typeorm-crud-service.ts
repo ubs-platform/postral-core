@@ -9,7 +9,7 @@ import { TypeormSearchUtil } from './typeorm-search-util';
 
 export abstract class TypeormBaseCrudService<
     MODEL extends ObjectLiteral,
-    INPUT extends { _id?: any },
+    INPUT extends { id?: any },
     OUTPUT,
     SEARCH,
 > extends BaseCrudKlass {
@@ -17,6 +17,7 @@ export abstract class TypeormBaseCrudService<
         super();
     }
 
+    abstract generateNewModel(): MODEL;
     abstract toOutput(m: MODEL): Promise<OUTPUT> | OUTPUT;
     abstract moveIntoModel(model: MODEL, i: INPUT): Promise<MODEL> | MODEL;
     abstract searchParams(s?: Partial<SEARCH>): Promise<any> | any;
@@ -58,15 +59,12 @@ export abstract class TypeormBaseCrudService<
         return await this.convertAndReturnTheList(list, user);
     }
 
-    async fetchOne(
-        id: string | ObjectId,
-        user?: UserAuthBackendDTO,
-    ): Promise<OUTPUT> {
-        return this.toOutput((await this.m.findById(id)) as MODEL);
+    async fetchOne(id: any, user?: UserAuthBackendDTO): Promise<OUTPUT> {
+        return this.toOutput((await this.m.findOneBy({ id })) as MODEL);
     }
 
     async create(input: INPUT, user?: UserAuthBackendDTO): Promise<OUTPUT> {
-        let newModel = new MODEL();
+        let newModel = this.generateNewModel();
         await this.moveIntoModel(newModel, input);
         await this.beforeCreateOrEdit(newModel, 'CREATE', user);
 
@@ -77,7 +75,7 @@ export abstract class TypeormBaseCrudService<
     }
 
     async edit(input: INPUT, user?: UserAuthBackendDTO): Promise<OUTPUT> {
-        const newModelFirst = await this.m.findById(input._id);
+        const newModelFirst = await this.m.findOneBy({ id: input.id });
 
         const newModel = await this.moveIntoModel(
             newModelFirst as MODEL,
@@ -86,17 +84,17 @@ export abstract class TypeormBaseCrudService<
 
         await this.beforeCreateOrEdit(newModel, 'EDIT', user);
 
-        await (newModel as HydratedDocument<MODEL, {}, unknown>).save();
+        await this.m.save(newModel);
 
         return this.toOutput(newModel as MODEL);
     }
 
     async remove(
-        id: string | ObjectId,
+        id: any,
         user?: UserAuthBackendDTO,
     ): Promise<OUTPUT> {
-        let ac = await this.m.findById(id)!;
-        await ac!.deleteOne();
+        let ac = await this.m.findOneBy({ id });
+        await this.m.remove(ac as MODEL);
         return this.toOutput(ac as MODEL);
     }
 
