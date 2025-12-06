@@ -19,27 +19,37 @@
 // import { AccountMapper } from '../mapper/account.mapper';
 // import { NotFoundError } from 'rxjs';
 
-import { Injectable } from "@nestjs/common";
-import { Account } from "../entity";
-import { AccountDTO, AccountSearchParamsDTO } from "@tk-postral/payment-common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { AccountMapper } from "../mapper/account.mapper";
-import { TypeormBaseCrudService } from "./base/typeorm-crud-service";
+import { Injectable } from '@nestjs/common';
+import { Account } from '../entity';
+import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AccountMapper } from '../mapper/account.mapper';
+import { BaseCrudService } from '@ubs-platform/crud-base';
+import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
 
 @Injectable()
-export class AccountService extends TypeormBaseCrudService<
+export class AccountService extends BaseCrudService<
     Account,
+    string,
     AccountDTO,
     AccountDTO,
     AccountSearchParamsDTO
 > {
     constructor(
         @InjectRepository(Account)
-        public m: Repository<Account>,
-        private readonly accountMapper: AccountMapper
+        public repo: Repository<Account>,
+        private readonly accountMapper: AccountMapper,
     ) {
-        super(m);
+        super(new TypeormRepositoryWrap<Account, string>(repo));
+    }
+
+    getIdFieldNameFromInput(i: AccountDTO): string {
+        return i.id;
+    }
+
+    getIdFieldNameFromModel(i: Account): string {
+        return i.id;
     }
 
     generateNewModel(): Account {
@@ -48,10 +58,7 @@ export class AccountService extends TypeormBaseCrudService<
     toOutput(m: Account): Promise<AccountDTO> | AccountDTO {
         return this.accountMapper.toDto(m);
     }
-    moveIntoModel(
-        model: Account,
-        i: AccountDTO
-    ): Promise<Account> | Account {
+    moveIntoModel(model: Account, i: AccountDTO): Promise<Account> | Account {
         return this.accountMapper.updateEntity(model, i);
     }
 
@@ -77,8 +84,6 @@ export class AccountService extends TypeormBaseCrudService<
         }
         return where;
     }
-
-    
 }
 
 // @Injectable()
