@@ -39,7 +39,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
 }) {
     constructor(
         protected readonly service: AccountService,
-        protected readonly eogClient: EntityOwnershipGroupClientService,
+        protected readonly eoClient: EntityOwnershipService,
     ) {
         super(service);
     }
@@ -48,24 +48,43 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<AccountSearchParamsDTO>,
     ) {
-        let isAdmin = user?.roles?.includes('ADMIN');
+        let isUserAdmin = user?.roles?.includes('ADMIN');
+
+        if (!isUserAdmin && (queriesAndPaths?.admin === 'true')) {
+            throw new UnauthorizedException(
+                'Only admins can search with admin=true',
+            );
+        }
+        if (queriesAndPaths?.admin !== 'true') {
+            if (queriesAndPaths?.entityOwnershipGroupId != null) {
+                const isInEog = this.eoClient.hasOwnership(
+                    {
+                        entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId,
+                        userId: user?.id!,
+                        capabilityAtLeastOne: ["OWNER", "EDITOR", "VIEWER"],
+                        entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                        entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                    }
+                )
+            }
+        }
+        // if (isAdmin) {
+        //     return queriesAndPaths;
+        // }
+
+
+        if (queriesAndPaths?.entityOwnershipGroupId) {
+
+        }
         if (queriesAndPaths == null) {
             queriesAndPaths = {};
         }
 
-        if (queriesAndPaths?.admin === 'true') {
-            if (!isAdmin) {
-                throw new UnauthorizedException(
-                    'Only admins can search with admin=true',
-                );
-            }
-            return queriesAndPaths;
-        }
 
         if (queriesAndPaths?.ownerUserId == null) {
             queriesAndPaths.ownerUserId = user?.id;
         }
-        if (!isAdmin && queriesAndPaths.ownerUserId !== user?.id) {
+        if (!isUserAdmin && queriesAndPaths.ownerUserId !== user?.id) {
             throw new UnauthorizedException(
                 'You can only search accounts for yourself',
             );

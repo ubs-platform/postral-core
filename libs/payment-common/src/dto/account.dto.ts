@@ -23,4 +23,6 @@ export class AccountSearchParamsDTO {
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
     admin?: "true" | "false";
+
+    
 }
