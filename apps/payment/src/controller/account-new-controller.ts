@@ -48,6 +48,10 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<AccountSearchParamsDTO>,
     ) {
+        // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
+        if (queriesAndPaths == null) {
+            queriesAndPaths = {};
+        }
         let isUserAdmin = user?.roles?.includes('ADMIN');
 
         if (!isUserAdmin && (queriesAndPaths?.admin === 'true')) {
@@ -55,40 +59,35 @@ export class AccountNewController extends BaseCrudControllerGenerator<
                 'Only admins can search with admin=true',
             );
         }
+
+        // Eğer kullanıcı admin değilse, entityOwnershipGroupId verilmişse, kullanıcının o gruba erişimi olup olmadığını kontrol et
         if (queriesAndPaths?.admin !== 'true') {
             if (queriesAndPaths?.entityOwnershipGroupId != null) {
-                const isInEog = this.eoClient.hasOwnership(
-                    {
-                        entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId,
-                        userId: user?.id!,
-                        capabilityAtLeastOne: ["OWNER", "EDITOR", "VIEWER"],
-                        entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                        entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                    }
-                )
+                const isInEog = lastValueFrom(
+                    this.eoClient.hasOwnership(
+                        {
+                            entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId,
+                            userId: user?.id!,
+                            capabilityAtLeastOne: ["OWNER", "EDITOR", "VIEWER"],
+                            entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                            entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                        }
+                    )
+                );
+
+                if (!isInEog) {
+                    throw new NotFoundException(
+                        `EntityOwnershipGroup with id ${queriesAndPaths.entityOwnershipGroupId} not found or you do not have access`,
+                    );
+                }
             }
         }
-        // if (isAdmin) {
-        //     return queriesAndPaths;
-        // }
 
-
-        if (queriesAndPaths?.entityOwnershipGroupId) {
-
-        }
-        if (queriesAndPaths == null) {
-            queriesAndPaths = {};
-        }
-
-
-        if (queriesAndPaths?.ownerUserId == null) {
+        // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
+        if (!isUserAdmin && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
         }
-        if (!isUserAdmin && queriesAndPaths.ownerUserId !== user?.id) {
-            throw new UnauthorizedException(
-                'You can only search accounts for yourself',
-            );
-        }
+
         return queriesAndPaths;
     }
 }
