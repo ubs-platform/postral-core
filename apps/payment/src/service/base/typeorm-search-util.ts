@@ -20,7 +20,7 @@ export class TypeormSearchUtil {
         ...searchParamsQuery: any[]
     ) {
 
-        const whereCondition = { ...(searchParamsQuery.reduce((acc, curr) => ({ ...acc, ...curr }), {})) };
+        const whereCondition = { ...(searchParamsQuery.reduce((previousValue, currentValue) => ({ ...previousValue, ...(currentValue["$match"]) }), {})) };
 
 
         //@ts-ignore
