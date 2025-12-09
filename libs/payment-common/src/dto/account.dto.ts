@@ -1,3 +1,5 @@
+
+
 export class AccountDTO {
     id: string;
 
@@ -7,8 +9,6 @@ export class AccountDTO {
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
 
-    // EO APIsi yerine burada ownerUserId ve eogId kullanabiliriz. Çünkü EO biraz karmaşık bir yapı ve Account
-    // devredilen bir yapıdan çok kişisel bir yapı...
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
 }

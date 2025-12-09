@@ -44,7 +44,68 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-    manipulateSearch(
+    @Post('')
+    @UseGuards(JwtAuthGuard)
+    async add(
+        @Body() body: AccountDTO,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<AccountDTO> {
+        const createdAccount = await this.service.create(body);
+        // After creating the account, assign ownership to the user
+        if (user) {
+            const eo = await this.eoClient.insertOwnership({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                entityId: createdAccount.id,
+                overriderRoles: ['ADMIN'],
+                ...(user
+                    ? {
+                          userCapabilities: [
+                              { userId: user.id, capability: 'OWNER' },
+                          ],
+                      }
+                    : { userCapabilities: [] }),
+                ...(body.entityOwnershipGroupId
+                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
+                    : { entityOwnershipGroupId: '' }),
+            });
+        }
+        return createdAccount;
+    }
+
+    checkUser(
+        operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
+        user: Optional<UserAuthBackendDTO>,
+        queriesAndPaths: Optional<{ [key: string]: any }>,
+        body: Optional<AccountDTO>,
+    ): Promise<void> {
+        let id = '';
+        if (operation === 'ADD' || operation === 'EDIT') {
+            id = body?.id || '';
+        } else if (operation === 'REMOVE' || operation === 'GETID') {
+            id = queriesAndPaths?.id || '';
+        }
+        if (id == '' || !user) {
+            return Promise.resolve();
+        }
+        return lastValueFrom(
+            this.eoClient.hasOwnership({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                entityId: id,
+                userId: user.id,
+                requiredCapabilities: ['OWNER'],
+            }),
+        ).then((res) => {
+            if (!res || !res.hasOwnership) {
+                throw new UnauthorizedException(
+                    `User does not have ownership for account ${id}`,
+                );
+            }
+        });
+    }
+
+    async manipulateSearch(
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<AccountSearchParamsDTO>,
     ) {
@@ -54,7 +115,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         }
         let isUserAdmin = user?.roles?.includes('ADMIN');
 
-        if (!isUserAdmin && (queriesAndPaths?.admin === 'true')) {
+        if (!isUserAdmin && queriesAndPaths?.admin === 'true') {
             throw new UnauthorizedException(
                 'Only admins can search with admin=true',
             );
@@ -62,25 +123,6 @@ export class AccountNewController extends BaseCrudControllerGenerator<
 
         // Eğer kullanıcı admin değilse, entityOwnershipGroupId verilmişse, kullanıcının o gruba erişimi olup olmadığını kontrol et
         if (queriesAndPaths?.admin !== 'true') {
-            if (queriesAndPaths?.entityOwnershipGroupId != null) {
-                const isInEog = lastValueFrom(
-                    this.eoClient.hasOwnership(
-                        {
-                            entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId,
-                            userId: user?.id!,
-                            capabilityAtLeastOne: ["OWNER", "EDITOR", "VIEWER"],
-                            entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                            entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                        }
-                    )
-                );
-
-                if (!isInEog) {
-                    throw new NotFoundException(
-                        `EntityOwnershipGroup with id ${queriesAndPaths.entityOwnershipGroupId} not found or you do not have access`,
-                    );
-                }
-            }
         }
 
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle

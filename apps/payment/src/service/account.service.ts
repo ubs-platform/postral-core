@@ -27,6 +27,7 @@ import { Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 
 @Injectable()
 export class AccountService extends BaseCrudService<
