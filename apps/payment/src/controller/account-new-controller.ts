@@ -94,10 +94,10 @@ export class AccountNewController extends BaseCrudControllerGenerator<
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
                 entityId: id,
                 userId: user.id,
-                requiredCapabilities: ['OWNER'],
+                capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
             }),
         ).then((res) => {
-            if (!res || !res.hasOwnership) {
+            if (!res) {
                 throw new UnauthorizedException(
                     `User does not have ownership for account ${id}`,
                 );
@@ -113,22 +113,18 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         if (queriesAndPaths == null) {
             queriesAndPaths = {};
         }
-        let isUserAdmin = user?.roles?.includes('ADMIN');
-
-        if (!isUserAdmin && queriesAndPaths?.admin === 'true') {
+        const isUserAdmin = user?.roles?.includes('ADMIN');
+        const isAdminSearchMode = queriesAndPaths?.admin === 'true';
+        if (!isUserAdmin && isAdminSearchMode) {
             throw new UnauthorizedException(
                 'Only admins can search with admin=true',
             );
         }
 
-        // Eğer kullanıcı admin değilse, entityOwnershipGroupId verilmişse, kullanıcının o gruba erişimi olup olmadığını kontrol et
-        if (queriesAndPaths?.admin !== 'true') {
-        }
-
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
-        if (!isUserAdmin && !queriesAndPaths?.entityOwnershipGroupId) {
+        if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
-        }
+        } else if (!isAdminSearchMode && queriesAndPaths?.entityOwnershipGroupId) {
 
         return queriesAndPaths;
     }
