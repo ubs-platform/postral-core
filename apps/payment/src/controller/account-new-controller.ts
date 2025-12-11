@@ -124,8 +124,11 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
         if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
-        } else if (!isAdminSearchMode && queriesAndPaths?.entityOwnershipGroupId) {
-
-        return queriesAndPaths;
+        } else if (
+            !isAdminSearchMode &&
+            queriesAndPaths?.entityOwnershipGroupId
+        ) {
+            return queriesAndPaths;
+        }
     }
 }
