@@ -9,6 +9,7 @@ import {
     UseGuards,
     NotFoundException,
     UnauthorizedException,
+    Query,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
@@ -72,6 +73,16 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         }
         return createdAccount;
     }
+
+    // @Get('')
+    // @UseGuards(JwtAuthGuard)
+    // override async fetchAll(
+    //     @Query() s?: AccountSearchParamsDTO | undefined,
+    //     @CurrentUser() user?: UserAuthBackendDTO,
+    // ): Promise<AccountDTO[]> {
+    //     await this.manipulateSearch(user, s);
+    //     return super.fetchAll(s, user);
+    // }
 
     checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',

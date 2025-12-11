@@ -28,6 +28,10 @@ import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
+import { PostralConstants } from '../util/consts';
+import { lastValueFrom } from 'rxjs';
+import { Optional } from '@ubs-platform/crud-base-common/utils';
 
 @Injectable()
 export class AccountService extends BaseCrudService<
@@ -41,6 +45,7 @@ export class AccountService extends BaseCrudService<
         @InjectRepository(Account)
         public repo: Repository<Account>,
         private readonly accountMapper: AccountMapper,
+        private eoService: EntityOwnershipService,
     ) {
         super(new TypeormRepositoryWrap<Account, string>(repo));
     }
@@ -63,7 +68,28 @@ export class AccountService extends BaseCrudService<
         return this.accountMapper.updateEntity(model, i);
     }
 
-    searchParams(s?: Partial<AccountSearchParamsDTO>): Promise<any> | any {
+    async searchParams(
+        s?: Partial<AccountSearchParamsDTO>,
+        u?: UserAuthBackendDTO,
+    ): Promise<any> {
+        if (!u) {
+            throw new Error('User information is required for search');
+        }
+        let ids: Optional<string[]> = null;
+        if (s?.admin !== 'true' && s?.entityOwnershipGroupId == null) {
+            ids = await lastValueFrom(
+                this.eoService.searchOwnershipEntityIdsByUser({
+                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                    entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+
+                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                    ...(s?.entityOwnershipGroupId != null
+                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
+                        : { userId: u!.id }),
+                }),
+            );
+        }
+
         const where: any = {};
         if (s?.name) {
             where.name = s.name;
@@ -83,6 +109,10 @@ export class AccountService extends BaseCrudService<
         if (s?.entityOwnershipGroupId) {
             where.entityOwnershipGroupId = s.entityOwnershipGroupId;
         }
+        if (ids != null) {
+            where.id = ids.length > 0 ? ids.join(',') : '##none##';
+        }
+
         return where;
     }
 }
