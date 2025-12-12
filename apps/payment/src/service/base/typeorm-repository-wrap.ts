@@ -45,4 +45,6 @@ export class TypeormRepositoryWrap<MODEL extends ObjectLiteral, ID>
     rawRepository(): Repository<MODEL> {
         return this.repository;
     }
+
+
 }

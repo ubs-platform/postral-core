@@ -23,7 +23,7 @@ import { Injectable } from '@nestjs/common';
 import { Account } from '../entity';
 import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ArrayContains, In, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
@@ -109,8 +109,8 @@ export class AccountService extends BaseCrudService<
         if (s?.entityOwnershipGroupId) {
             where.entityOwnershipGroupId = s.entityOwnershipGroupId;
         }
-        if (ids != null) {
-            where.id = ids.length > 0 ? ids.join(',') : '##none##';
+        if (ids != null && ids.length >= 0) {
+            where.id = In(ids);
         }
 
         return where;
