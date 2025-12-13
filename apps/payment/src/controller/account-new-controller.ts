@@ -84,13 +84,17 @@ export class AccountNewController extends BaseCrudControllerGenerator<
     //     return super.fetchAll(s, user);
     // }
 
-    checkUser(
+    async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<{ [key: string]: any }>,
         body: Optional<AccountDTO>,
     ): Promise<void> {
         let id = '';
+        let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
+        if (operation !== 'GETALL' && operation !== 'GETID') {
+            capabilityAtLeastOne = ['OWNER', 'EDITOR'];
+        }
         if (operation === 'ADD' || operation === 'EDIT') {
             id = body?.id || '';
         } else if (operation === 'REMOVE' || operation === 'GETID') {
@@ -99,21 +103,21 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         if (id == '' || !user) {
             return Promise.resolve();
         }
-        return lastValueFrom(
+
+        const res = await lastValueFrom(
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
                 entityId: id,
                 userId: user.id,
-                capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                capabilityAtLeastOne
             }),
-        ).then((res) => {
-            if (!res) {
-                throw new UnauthorizedException(
-                    `User does not have ownership for account ${id}`,
-                );
-            }
-        });
+        );
+        if (!res) {
+            throw new UnauthorizedException(
+                `User does not have ownership for account ${id}`,
+            );
+        }
     }
 
     async manipulateSearch(
