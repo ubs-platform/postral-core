@@ -1,94 +1,45 @@
 import {
     Controller,
-    Get,
-    Post,
-    Put,
-    Delete,
-    Param,
-    Body,
-    UseGuards,
-    NotFoundException,
     UnauthorizedException,
-    Query,
 } from '@nestjs/common';
-import { AccountService } from '../service/account.service';
-import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
+import { AddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
 import {
-    CurrentUser,
-    EntityOwnershipGroupClientService,
     EntityOwnershipService,
-    JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
-import { Account } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { AddressService } from '../service/address.service';
+import { Address } from '../entity/address.entity';
 
-@Controller('account')
-export class AccountNewController extends BaseCrudControllerGenerator<
-    Account,
-    String,
-    AccountDTO,
-    AccountDTO,
-    AccountSearchParamsDTO
+@Controller('address')
+export class AddressController extends BaseCrudControllerGenerator<
+    Address,
+    string,
+    AddressDto,
+    AddressDto,
+    AddressSearchParamsDTO
 >({
     authorization: {
         ALL: { needsAuthenticated: true },
     },
 }) {
     constructor(
-        protected readonly service: AccountService,
+        protected readonly service: AddressService,
         protected readonly eoClient: EntityOwnershipService,
     ) {
         super(service);
     }
 
-    @Post('')
-    @UseGuards(JwtAuthGuard)
-    async add(
-        @Body() body: AccountDTO,
-        @CurrentUser() user?: UserAuthBackendDTO,
-    ): Promise<AccountDTO> {
-        const createdAccount = await this.service.create(body);
-        // After creating the account, assign ownership to the user
-        if (user) {
-            const eo = await this.eoClient.insertOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                entityId: createdAccount.id,
-                overriderRoles: ['ADMIN'],
-                ...(user
-                    ? {
-                          userCapabilities: [
-                              { userId: user.id, capability: 'OWNER' },
-                          ],
-                      }
-                    : { userCapabilities: [] }),
-                ...(body.entityOwnershipGroupId
-                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
-                    : { entityOwnershipGroupId: '' }),
-            });
-        }
-        return createdAccount;
-    }
 
-    // @Get('')
-    // @UseGuards(JwtAuthGuard)
-    // override async fetchAll(
-    //     @Query() s?: AccountSearchParamsDTO | undefined,
-    //     @CurrentUser() user?: UserAuthBackendDTO,
-    // ): Promise<AccountDTO[]> {
-    //     await this.manipulateSearch(user, s);
-    //     return super.fetchAll(s, user);
-    // }
 
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<{ [key: string]: any }>,
-        body: Optional<AccountDTO>,
+        body: Optional<AddressDto>,
     ): Promise<void> {
         let id = '';
         let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
@@ -107,7 +58,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         const res = await lastValueFrom(
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                entityName: PostralConstants.ENTITY_NAME_ADDRESS,
                 entityId: id,
                 userId: user.id,
                 capabilityAtLeastOne
@@ -115,14 +66,14 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         );
         if (!res) {
             throw new UnauthorizedException(
-                `User does not have ownership for account ${id}`,
+                `User does not have ownership for address ${id}`,
             );
         }
     }
 
     async manipulateSearch(
         user: Optional<UserAuthBackendDTO>,
-        queriesAndPaths: Optional<AccountSearchParamsDTO>,
+        queriesAndPaths: Optional<AddressSearchParamsDTO>,
     ) {
         // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
         if (queriesAndPaths == null) {

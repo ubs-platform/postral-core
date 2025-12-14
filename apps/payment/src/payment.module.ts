@@ -26,7 +26,7 @@ import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
 import { ItemSellerController } from './controller/item-seller.controller';
 import { PaymentTransactionService } from './service/transaction.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
-import { AccountNewController } from './controller/account-new-controller';
+import { AccountNewController } from './controller/account-controller';
 
 @Module({
     imports: [
