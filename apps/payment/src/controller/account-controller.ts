@@ -45,8 +45,6 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-
-
     @Post('')
     @UseGuards(JwtAuthGuard)
     async add(
@@ -63,10 +61,10 @@ export class AccountNewController extends BaseCrudControllerGenerator<
                 overriderRoles: ['ADMIN'],
                 ...(!body.entityOwnershipGroupId
                     ? {
-                        userCapabilities: [
-                            { userId: user.id, capability: 'OWNER' },
-                        ],
-                    }
+                          userCapabilities: [
+                              { userId: user.id, capability: 'OWNER' },
+                          ],
+                      }
                     : { userCapabilities: [] }),
                 ...(body.entityOwnershipGroupId
                     ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
@@ -102,7 +100,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
                 entityId: id,
                 userId: user.id,
-                capabilityAtLeastOne
+                capabilityAtLeastOne,
             }),
         );
         if (!res) {
@@ -117,11 +115,14 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         queriesAndPaths: Optional<AccountSearchParamsDTO>,
     ) {
         // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
-        if (queriesAndPaths == null) {
+        if (!queriesAndPaths) {
             queriesAndPaths = {};
         }
         const isUserAdmin = user?.roles?.includes('ADMIN');
         const isAdminSearchMode = queriesAndPaths?.admin === 'true';
+        // exec(
+        //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
+        // );
         if (!isUserAdmin && isAdminSearchMode) {
             throw new UnauthorizedException(
                 'Only admins can search with admin=true',
@@ -131,11 +132,8 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
         if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
-        } else if (
-            !isAdminSearchMode &&
-            queriesAndPaths?.entityOwnershipGroupId
-        ) {
-            return queriesAndPaths;
         }
+
+        return queriesAndPaths;
     }
 }

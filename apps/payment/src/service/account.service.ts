@@ -32,6 +32,7 @@ import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper'
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+// import { exec } from 'child_process';
 
 @Injectable()
 export class AccountService extends BaseCrudService<
@@ -76,7 +77,8 @@ export class AccountService extends BaseCrudService<
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.admin !== 'true' && s?.entityOwnershipGroupId == null) {
+        // exec(`kdialog --msgbox "Searching accounts with params: ${JSON.stringify(s)}"`);
+        if (s?.admin !== 'true') {
             ids = await lastValueFrom(
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
