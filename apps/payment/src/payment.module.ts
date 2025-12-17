@@ -41,13 +41,11 @@ import { AccountNewController } from './controller/account-controller';
             entities: PaymentsEntities,
             synchronize: true,
             metadataTableName: '',
+            logging: ['query', 'error'],
         }),
         ClientsModule.register([
             {
-                ...MicroserviceSetupUtil.setupClient(
-                    '',
-                    'MICROSERVICE_CLIENT',
-                ),
+                ...MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT'),
             },
         ]),
         BackendJwtUtilsModule,
@@ -67,7 +65,7 @@ import { AccountNewController } from './controller/account-controller';
         PaymentTaxMapper,
         ItemPriceMapper,
         ItemPriceService,
-        PaymentTransactionService
+        PaymentTransactionService,
     ],
     controllers: [
         PaymentController,
@@ -75,7 +73,7 @@ import { AccountNewController } from './controller/account-controller';
         ItemSellerController,
         ItemAdminController,
         AccountNewController,
-        DummyEcommercePaymentChannelController
+        DummyEcommercePaymentChannelController,
     ],
 })
 export class PaymentModule {}
