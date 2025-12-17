@@ -32,6 +32,7 @@ import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper'
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { exec } from 'child_process';
 // import { exec } from 'child_process';
 
 @Injectable()
@@ -111,10 +112,23 @@ export class AccountService extends BaseCrudService<
         if (s?.entityOwnershipGroupId) {
             where.entityOwnershipGroupId = s.entityOwnershipGroupId;
         }
-        if (ids != null && ids.length >= 0) {
-            where.id = In(ids);
+        // exec(
+        //     `kdialog --msgbox "Account IDs from EO Service: ${JSON.stringify(ids)}"`,
+        // );
+        if (ids != null && ids.length > 0) {
+            where.id = In(this.uuidStringToBinArray(ids));
         }
 
         return where;
     }
+    uuidStringToBinArray(
+        ids: string[],
+    ): readonly unknown[] | import('typeorm').FindOperator<unknown> {
+        return ids.map((id) =>
+            Buffer.from(id.replace(/-/g, ''), 'hex').toString(),
+        );
+    }
+    // binToUuidArray(ids: string[]): readonly unknown[] | import("typeorm").FindOperator<unknown> {
+    //     return ids.map((id) => Buffer.from(id, 'hex'));
+    // }
 }
