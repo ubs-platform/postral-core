@@ -98,7 +98,8 @@ export class AccountNewController extends BaseCrudControllerGenerator<
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                entityId: id,
+                ...((typeof id == 'string' && id) || id != null ? { entityId: id } : {}),
+                ...(!id && (typeof queriesAndPaths?.entityOwnershipGroupId == "string" && queriesAndPaths?.entityOwnershipGroupId) ? { entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId } : {}),
                 userId: user.id,
                 capabilityAtLeastOne,
             }),
