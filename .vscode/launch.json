@@ -13,7 +13,6 @@
                 "<node_internals>/**"
             ],
             "command": "npm run start payment",
-            "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ]
