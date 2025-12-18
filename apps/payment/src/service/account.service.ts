@@ -106,28 +106,14 @@ export class AccountService extends BaseCrudService<
         if (s?.type) {
             where.type = s.type;
         }
-        if (s?.ownerUserId) {
-            where.ownerUserId = s.ownerUserId;
-        }
-        if (s?.entityOwnershipGroupId) {
-            where.entityOwnershipGroupId = s.entityOwnershipGroupId;
-        }
-        // exec(
-        //     `kdialog --msgbox "Account IDs from EO Service: ${JSON.stringify(ids)}"`,
-        // );
+
         if (ids != null && ids.length > 0) {
-            where.id = In(this.uuidStringToBinArray(ids));
+            where.id = In(ids);
         }
 
         return where;
     }
-    uuidStringToBinArray(
-        ids: string[],
-    ): readonly unknown[] | import('typeorm').FindOperator<unknown> {
-        return ids.map((id) =>
-            Buffer.from(id.replace(/-/g, ''), 'hex').toString(),
-        );
-    }
+
     // binToUuidArray(ids: string[]): readonly unknown[] | import("typeorm").FindOperator<unknown> {
     //     return ids.map((id) => Buffer.from(id, 'hex'));
     // }
