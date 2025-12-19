@@ -27,6 +27,9 @@ import { ItemSellerController } from './controller/item-seller.controller';
 import { PaymentTransactionService } from './service/transaction.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
 import { AccountNewController } from './controller/account-controller';
+import { AddressController } from './controller/address-controller';
+import { AddressService } from './service/address.service';
+import { AddressMapper } from './mapper/address.mapper';
 
 @Module({
     imports: [
@@ -66,9 +69,12 @@ import { AccountNewController } from './controller/account-controller';
         ItemPriceMapper,
         ItemPriceService,
         PaymentTransactionService,
+        AddressService,
+        AddressMapper
     ],
     controllers: [
         PaymentController,
+        AddressController,
         AppComissionController,
         ItemSellerController,
         ItemAdminController,

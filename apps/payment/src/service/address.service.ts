@@ -32,7 +32,7 @@ export class AddressService extends BaseCrudService<
     }
 
     getIdFieldNameFromInput(i: AddressDto): string {
-        return i.id;
+        return i.id!;
     }
 
     getIdFieldNameFromModel(i: Address): string {

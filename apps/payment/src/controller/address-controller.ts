@@ -59,14 +59,15 @@ export class AddressController extends BaseCrudControllerGenerator<
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ADDRESS,
-                entityId: id,
+                ...((typeof id == 'string' && id) || id != null ? { entityId: id } : {}),
+                ...(!id && (typeof queriesAndPaths?.entityOwnershipGroupId == "string" && queriesAndPaths?.entityOwnershipGroupId) ? { entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId } : {}),
                 userId: user.id,
-                capabilityAtLeastOne
+                capabilityAtLeastOne,
             }),
         );
         if (!res) {
             throw new UnauthorizedException(
-                `User does not have ownership for address ${id}`,
+                `User does not have ownership for account ${id}`,
             );
         }
     }
@@ -76,11 +77,14 @@ export class AddressController extends BaseCrudControllerGenerator<
         queriesAndPaths: Optional<AddressSearchParamsDTO>,
     ) {
         // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
-        if (queriesAndPaths == null) {
+        if (!queriesAndPaths) {
             queriesAndPaths = {};
         }
         const isUserAdmin = user?.roles?.includes('ADMIN');
         const isAdminSearchMode = queriesAndPaths?.admin === 'true';
+        // exec(
+        //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
+        // );
         if (!isUserAdmin && isAdminSearchMode) {
             throw new UnauthorizedException(
                 'Only admins can search with admin=true',
@@ -90,11 +94,8 @@ export class AddressController extends BaseCrudControllerGenerator<
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
         if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
-        } else if (
-            !isAdminSearchMode &&
-            queriesAndPaths?.entityOwnershipGroupId
-        ) {
-            return queriesAndPaths;
         }
+
+        return queriesAndPaths;
     }
 }
