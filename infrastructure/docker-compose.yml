@@ -1,4 +1,4 @@
-version: '3.5'
+# version: '3.5'
 
 services:
     mariadb:
@@ -14,7 +14,7 @@ services:
         volumes:
             - './init.sql:/docker-entrypoint-initdb.d/1.sql'
 
-    engine5:
-        image: hcangunduz/engine5:0.0.9-alpha
-        ports:
-            - 3535:3535
+    # engine5:
+    #     image: hcangunduz/engine5:0.0.9-alpha
+    #     ports:
+    #         - 3535:3535

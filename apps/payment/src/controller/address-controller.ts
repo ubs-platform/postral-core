@@ -1,10 +1,15 @@
 import {
+    Body,
     Controller,
+    Post,
     UnauthorizedException,
+    UseGuards,
 } from '@nestjs/common';
-import { AddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
+import { AccountAddressDto, AccountDTO, AddressSearchParamsDTO } from '@tk-postral/payment-common';
 import {
+    CurrentUser,
     EntityOwnershipService,
+    JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
@@ -18,8 +23,8 @@ import { Address } from '../entity/address.entity';
 export class AddressController extends BaseCrudControllerGenerator<
     Address,
     string,
-    AddressDto,
-    AddressDto,
+    AccountAddressDto,
+    AccountAddressDto,
     AddressSearchParamsDTO
 >({
     authorization: {
@@ -33,13 +38,40 @@ export class AddressController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-
+    @Post('')
+    @UseGuards(JwtAuthGuard)
+    async add(
+        @Body() body: AccountAddressDto,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<AccountAddressDto> {
+        const createdAccount = await this.service.create(body);
+        // After creating the account, assign ownership to the user
+        if (user) {
+            const eo = await this.eoClient.insertOwnership({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ADDRESS,
+                entityId: createdAccount.id!,
+                overriderRoles: ['ADMIN'],
+                ...(!body.entityOwnershipGroupId
+                    ? {
+                          userCapabilities: [
+                              { userId: user.id, capability: 'OWNER' },
+                          ],
+                      }
+                    : { userCapabilities: [] }),
+                ...(body.entityOwnershipGroupId
+                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
+                    : { entityOwnershipGroupId: '' }),
+            });
+        }
+        return createdAccount;
+    }
 
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<{ [key: string]: any }>,
-        body: Optional<AddressDto>,
+        body: Optional<AccountAddressDto>,
     ): Promise<void> {
         let id = '';
         let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
@@ -67,7 +99,7 @@ export class AddressController extends BaseCrudControllerGenerator<
         );
         if (!res) {
             throw new UnauthorizedException(
-                `User does not have ownership for account ${id}`,
+                `User does not have ownership for address ${id}`,
             );
         }
     }

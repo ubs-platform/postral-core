@@ -1,7 +1,11 @@
-export class AddressDto {
+export class AccountAddressDto {
     id?: string;
 
     name: string;
+
+    entityOwnershipGroupId?: string;
+
+    
 
     // UBL Address Fields
 

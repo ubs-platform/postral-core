@@ -1,12 +1,12 @@
-import { AccountDTO, AddressDto } from '@tk-postral/payment-common';
+import { AccountDTO, AccountAddressDto } from '@tk-postral/payment-common';
 import { Account } from '../entity/account.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Address } from '../entity/address.entity';
 
 @Injectable()
 export class AddressMapper {
-    async toDtoList(exist: Address[]): Promise<AddressDto[]> {
-        const items: AddressDto[] = [];
+    async toDtoList(exist: Address[]): Promise<AccountAddressDto[]> {
+        const items: AccountAddressDto[] = [];
         for (let index = 0; index < exist.length; index++) {
             const existAddress = exist[index];
             items.push(await this.toDto(existAddress));
@@ -14,7 +14,7 @@ export class AddressMapper {
         return items;
     }
 
-    async toDto(ac: Address): Promise<AddressDto> {
+    async toDto(ac: Address): Promise<AccountAddressDto> {
         return {
             id: ac.id,
             name: ac.name,
@@ -46,9 +46,9 @@ export class AddressMapper {
         };
     }
 
-    async updateEntity(entity: Address, dto: AddressDto): Promise<Address> {
+    async updateEntity(entity: Address, dto: AccountAddressDto): Promise<Address> {
         // existing.id = dto.id,
-        entity.id = dto.id;
+        // entity.id = dto.id;
         entity.name = dto.name;
         entity.streetName = dto.streetName;
         entity.buildingNumber = dto.buildingNumber;

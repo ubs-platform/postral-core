@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Account } from '../entity';
-import { AccountDTO, AccountSearchParamsDTO, AddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
+import { AccountDTO, AccountSearchParamsDTO, AccountAddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, In, Like, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
@@ -13,13 +13,14 @@ import { lastValueFrom } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { Address } from '../entity/address.entity';
 import { AddressMapper } from '../mapper/address.mapper';
+import { exec } from 'child_process';
 
 @Injectable()
 export class AddressService extends BaseCrudService<
     Address,
     string,
-    AddressDto,
-    AddressDto,
+    AccountAddressDto,
+    AccountAddressDto,
     AddressSearchParamsDTO
 > {
     constructor(
@@ -31,7 +32,7 @@ export class AddressService extends BaseCrudService<
         super(new TypeormRepositoryWrap<Address, string>(repo));
     }
 
-    getIdFieldNameFromInput(i: AddressDto): string {
+    getIdFieldNameFromInput(i: AccountAddressDto): string {
         return i.id!;
     }
 
@@ -42,10 +43,10 @@ export class AddressService extends BaseCrudService<
     generateNewModel(): Address {
         return new Address();
     }
-    toOutput(m: Address): Promise<AddressDto> | AddressDto {
+    toOutput(m: Address): Promise<AccountAddressDto> | AccountAddressDto {
         return this.addressMapper.toDto(m);
     }
-    moveIntoModel(model: Address, i: AddressDto): Promise<Address> | Address {
+    moveIntoModel(model: Address, i: AccountAddressDto): Promise<Address> | Address {
         return this.addressMapper.updateEntity(model, i);
     }
 
@@ -75,7 +76,10 @@ export class AddressService extends BaseCrudService<
         if (s?.name) {
             where.name = Like(`%${s.name}%`);
         }
-       
+        if (ids != null) {
+            where.id = In(ids.length > 0 ? ids : ['']);
+        }
+        // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
 
         return where;
     }
