@@ -20,6 +20,10 @@ export class ItemAddDTO {
     sellerAccountId: string;
 
     baseCurrency: string;
+
+    entityOwnershipGroupId?: string;
+    
+
 }
 
 export class ItemDTO {
@@ -66,4 +70,10 @@ export class ItemSearchDTO {
     entityName?: string;
 
     entityId?: string;
+
+    entityOwnershipGroupId?: string;
+
+    admin?: 'true' | 'false';
+
+    name?: string;
 }
