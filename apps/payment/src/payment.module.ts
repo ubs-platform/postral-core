@@ -30,6 +30,8 @@ import { AccountNewController } from './controller/account-controller';
 import { AddressController } from './controller/address-controller';
 import { AddressService } from './service/address.service';
 import { AddressMapper } from './mapper/address.mapper';
+import { ItemCrudService } from './service/item-crud.service';
+import { ItemController } from './controller/item-controller';
 
 @Module({
     imports: [
@@ -65,6 +67,7 @@ import { AddressMapper } from './mapper/address.mapper';
         EventSenderService,
         ItemMapper,
         ItemService,
+        ItemCrudService,
         PaymentTaxMapper,
         ItemPriceMapper,
         ItemPriceService,
@@ -76,8 +79,9 @@ import { AddressMapper } from './mapper/address.mapper';
         PaymentController,
         AddressController,
         AppComissionController,
-        ItemSellerController,
-        ItemAdminController,
+        // ItemSellerController,
+        // ItemAdminController,
+        ItemController,
         AccountNewController,
         DummyEcommercePaymentChannelController,
     ],
