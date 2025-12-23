@@ -24,14 +24,14 @@ export class Item {
     @Column()
     baseCurrency: string;
 
-    @Column({type: 'float'})
-    taxPercent: number;
+    // @Column({type: 'float'})
+    // taxPercent: number;
 
-    @Column({type: 'float'})
-    unitAmount: number;
+    // @Column({type: 'float'})
+    // unitAmount: number;
 
-    @Column({type: 'float'})
-    originalUnitAmount: number;
+    // @Column({type: 'float'})
+    // originalUnitAmount: number;
 
     @Column()
     sellerAccountId: string;
