@@ -15,12 +15,17 @@ export class Account {
     @Column()
     type: 'INDIVIDUAL' | 'COMMERCIAL';
 
-    // EO APIsi yerine burada ownerUserId ve eogId kullanabiliriz. Çünkü EO biraz karmaşık bir yapı ve Account
-    // devredilen bir yapıdan çok kişisel bir yapı... Bir müşterinin kendi hesabı
-    @Column({ nullable: true, type: "varchar" })
-    ownerUserId?: string;
+    @Column({ nullable: true })
+    defaultAddressId?: string;
 
-    @Column({ nullable: true, type: "varchar" })
-    entityOwnershipGroupId?: string;
+    // 
+    // // EO APIsi yerine burada ownerUserId ve eogId kullanabiliriz. Çünkü EO biraz karmaşık bir yapı ve Account
+    // // devredilen bir yapıdan çok kişisel bir yapı... Bir müşterinin kendi hesabı
+    // Ama şimdilik EO yapısını koruyalım ileride değiştirebiliriz. 
+    // @Column({ nullable: true, type: "varchar" })
+    // ownerUserId?: string;
+
+    // @Column({ nullable: true, type: "varchar" })
+    // entityOwnershipGroupId?: string;
 
 }

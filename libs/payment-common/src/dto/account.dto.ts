@@ -8,9 +8,12 @@ export class AccountDTO {
     legalIdentity: string;
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
-
+    
+    defaultAddressId?: string;
+    
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
+
 }
 
 export class AccountSearchParamsDTO {

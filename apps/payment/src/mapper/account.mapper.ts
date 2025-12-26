@@ -19,6 +19,7 @@ export class AccountMapper {
             legalIdentity: ac.legalIdentity,
             name: ac.name,
             type: ac.type,
+            defaultAddressId: ac.defaultAddressId,
         };
     }
 
@@ -27,7 +28,7 @@ export class AccountMapper {
         entity.legalIdentity = dto.legalIdentity;
         entity.name = dto.name;
         entity.type = dto.type;
-
+        entity.defaultAddressId = dto.defaultAddressId;
         return entity;
     }
 }
