@@ -119,6 +119,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         if (!queriesAndPaths) {
             queriesAndPaths = {};
         }
+
         const isUserAdmin = user?.roles?.includes('ADMIN');
         const isAdminSearchMode = queriesAndPaths?.admin === 'true';
         // exec(
@@ -128,6 +129,11 @@ export class AccountNewController extends BaseCrudControllerGenerator<
             throw new UnauthorizedException(
                 'Only admins can search with admin=true',
             );
+        }
+
+        if (queriesAndPaths?.deactivated === undefined) {
+            // Varsayılan olarak sadece deaktive edilmemiş hesapları getir
+            queriesAndPaths.deactivated = 'NOT_DEACTIVATED';
         }
 
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle

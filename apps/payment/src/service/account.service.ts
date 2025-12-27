@@ -70,6 +70,14 @@ export class AccountService extends BaseCrudService<
         return this.accountMapper.updateEntity(model, i);
     }
 
+    override async remove(
+        id: string,
+        user?: UserAuthBackendDTO,
+    ): Promise<AccountDTO> {
+        await this.repo.update(id, { deactivated: true });
+        return this.fetchOne(id, user);
+    }
+
     async searchParams(
         s?: Partial<AccountSearchParamsDTO>,
         u?: UserAuthBackendDTO,
@@ -96,6 +104,12 @@ export class AccountService extends BaseCrudService<
         const where: any = {};
         if (s?.name) {
             where.name = s.name;
+        }
+        if (s?.deactivated == 'ONLY_DEACTIVATED') {
+            where.deactivated = true;
+        } else if (s?.deactivated == 'NOT_DEACTIVATED') {
+            // default to NOT_DEACTIVATED
+            where.deactivated = false;
         }
         // if (s?.number) {
         //     where.number = s.number;

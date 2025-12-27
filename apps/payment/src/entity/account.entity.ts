@@ -18,14 +18,7 @@ export class Account {
     @Column({ nullable: true })
     defaultAddressId?: string;
 
-    // 
-    // // EO APIsi yerine burada ownerUserId ve eogId kullanabiliriz. Çünkü EO biraz karmaşık bir yapı ve Account
-    // // devredilen bir yapıdan çok kişisel bir yapı... Bir müşterinin kendi hesabı
-    // Ama şimdilik EO yapısını koruyalım ileride değiştirebiliriz. 
-    // @Column({ nullable: true, type: "varchar" })
-    // ownerUserId?: string;
-
-    // @Column({ nullable: true, type: "varchar" })
-    // entityOwnershipGroupId?: string;
-
+    @Column({ nullable: false, type: 'boolean', default: false })
+    deactivated: boolean;
+    
 }

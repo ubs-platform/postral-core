@@ -13,6 +13,7 @@ export class AccountDTO {
     
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
+    deactivated?: boolean;
 
 }
 
@@ -27,5 +28,5 @@ export class AccountSearchParamsDTO {
     entityOwnershipGroupId?: string;
     admin?: "true" | "false";
     entityIds?: string[];
-    
+    deactivated?: "NOT_DEACTIVATED" | "ONLY_DEACTIVATED" | "ALL";
 }
