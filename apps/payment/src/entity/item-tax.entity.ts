@@ -1,6 +1,8 @@
 import {
     Column,
     Entity,
+    JoinColumn,
+    JoinTable,
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
@@ -17,6 +19,7 @@ export class ItemTaxEntity {
     @OneToMany(() => ItemTaxVariation, (variation) => variation.itemTax, {
         cascade: true,
     })
+    @JoinColumn()
     variations: ItemTaxVariation[];
 }
 @Entity()

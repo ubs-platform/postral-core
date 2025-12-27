@@ -27,7 +27,7 @@ export class ItemTaxService extends BaseCrudService<
         private readonly itemTaxMapper: ItemTaxMapper,
         private eoService: EntityOwnershipService,
     ) {
-        super(new TypeormRepositoryWrap<ItemTaxEntity, string>(repo));
+        super(new TypeormRepositoryWrap<ItemTaxEntity, string>(repo, ["variations"]));
     }
 
     generateNewModel(): ItemTaxEntity {

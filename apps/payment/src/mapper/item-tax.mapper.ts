@@ -5,6 +5,7 @@ import { ItemTaxDTO } from "@tk-postral/payment-common";
 @Injectable()
 export class ItemTaxMapper {
     toDTO(entity: ItemTaxEntity): ItemTaxDTO {
+        // exec(`kdialog --msgbox 'ItemTaxMapper toDTO entity variations length: ${entity.variations?.length}'`);
         return {
             id: entity.id,
             taxName: entity.taxName,
