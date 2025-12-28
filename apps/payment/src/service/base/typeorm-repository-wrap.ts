@@ -5,10 +5,13 @@ import { TypeormSearchUtil } from './typeorm-search-util';
 export class TypeormRepositoryWrap<MODEL extends ObjectLiteral, ID>
     implements IRepositoryWrap<MODEL, ID, Repository<MODEL>>
 {
-    constructor(private repository: Repository<MODEL>, private relations: string[]) {}
+    constructor(private repository: Repository<MODEL>, private relations?: string[]) {}
 
     async findById(id: ID): Promise<MODEL | null> {
-        return this.repository.findOneBy({ id } as any);
+        return this.repository.findOne({
+            where: { id: id } as any,
+            relations: this.relations || [],
+        });
     }
     async saveModel(m: MODEL): Promise<MODEL> {
         return this.repository.save(m);
@@ -39,7 +42,7 @@ export class TypeormRepositoryWrap<MODEL extends ObjectLiteral, ID>
             size,
             page,
             sort,
-            this.relations,
+            this.relations || [],
             ...searchParamsQuery,
         );
     }
