@@ -100,7 +100,7 @@ export class ItemTaxController extends BaseCrudControllerGenerator<
         const res = await lastValueFrom(
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ITEM,
+                entityName: PostralConstants.ENTITY_NAME_TAX,
                 ...((typeof id == 'string' && id) || id != null ? { entityId: id } : {}),
                 ...(!id && (typeof queriesAndPaths?.entityOwnershipGroupId == "string" && queriesAndPaths?.entityOwnershipGroupId) ? { entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId } : {}),
                 userId: user.id,
