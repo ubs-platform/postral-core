@@ -18,6 +18,8 @@ export class ItemTaxEntity {
 
     @OneToMany(() => ItemTaxVariation, (variation) => variation.itemTax, {
         cascade: true,
+        onDelete: 'CASCADE',
+        orphanedRowAction: 'delete',
     })
     @JoinColumn()
     variations: ItemTaxVariation[];
