@@ -80,8 +80,8 @@ export class ItemCrudService extends BaseCrudService<
         if (s?.name) {
             where.name = Like(`%${s.name}%`);
         }
-        if (ids != null) {
-            where.id = In(ids.length > 0 ? ids : ['']);
+        if (ids != null && ids.length > 0) {
+            where.id = In(ids);
         }
         // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
 
