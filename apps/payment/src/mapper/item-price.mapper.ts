@@ -4,7 +4,7 @@ import { ItemPriceDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class ItemPriceMapper {
-    async toDtoList(exist: ItemPrice[]): Promise<ItemPrice[]> {
+    async toDtoList(exist: ItemPrice[]): Promise<ItemPriceDTO[]> {
         const items: ItemPrice[] = [];
         for (let index = 0; index < exist.length; index++) {
             const existAccount = exist[index];

@@ -12,7 +12,7 @@ import {
     Query,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
-import { AccountDTO, AccountSearchParamsDTO, ItemAddDTO, ItemDTO, ItemEditDTO, ItemSearchDTO } from '@tk-postral/payment-common';
+import { AccountDTO, AccountSearchParamsDTO, ItemAddDTO, ItemDTO, ItemEditDTO, ItemPriceDTO, ItemSearchDTO } from '@tk-postral/payment-common';
 import {
     CurrentUser,
     EntityOwnershipGroupClientService,
@@ -27,6 +27,7 @@ import { Account } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { Item } from '../entity/item.entity';
 import { ItemCrudService } from '../service/item-crud.service';
+import { ItemPriceService } from '../service/item-price.service';
 
 @Controller('item')
 export class ItemController extends BaseCrudControllerGenerator<
@@ -43,8 +44,23 @@ export class ItemController extends BaseCrudControllerGenerator<
     constructor(
         protected readonly service: ItemCrudService,
         protected readonly eoClient: EntityOwnershipService,
+        protected readonly pricesService: ItemPriceService
     ) {
         super(service);
+    }
+
+    @Get(':id/prices/default')
+    @UseGuards(JwtAuthGuard)
+    async getDefaultPrices(
+        @Param('id') id: string,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<ItemPriceDTO[]> {
+        await this.checkUser('GETID', user, { id }, undefined);
+        const item = await this.pricesService.allDefaultPrices({ itemId: id });
+        if (!item) {
+            throw new NotFoundException(`Item with id ${id} not found`);
+        }
+        return item;
     }
 
     @Post('')

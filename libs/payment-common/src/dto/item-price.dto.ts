@@ -33,7 +33,7 @@ export interface ItemPriceSearchDTO {
 
     variation?: string;
 
-    currency: string;
+    currency?: string;
 
     region?: string;
 }
