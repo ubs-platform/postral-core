@@ -63,6 +63,20 @@ export class ItemController extends BaseCrudControllerGenerator<
         return item;
     }
 
+    @Post(':id/prices/default')
+    @UseGuards(JwtAuthGuard)
+    async addDefaultPrice(
+        @Param('id') id: string,
+        @Body() body: ItemPriceDTO,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<ItemPriceDTO> {
+        body.itemId = id;
+        
+        // await this.checkUser('ADD', user, { id }, body);
+        const createdPrice = await this.pricesService.setDefaultPrice(body);
+        return createdPrice;
+    }
+
     @Post('')
     @UseGuards(JwtAuthGuard)
     async add(
