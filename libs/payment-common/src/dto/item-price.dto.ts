@@ -25,6 +25,7 @@ export interface ItemPriceDTO {
 
     activeExpireAt?: Date;
 
+    /** Farklı para biriminde dönüşebilir... (sonra kullanılabilir) */
     automaticExchangeFromCurrency?: string;
 }
 
