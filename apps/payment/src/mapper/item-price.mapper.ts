@@ -23,7 +23,7 @@ export class ItemPriceMapper {
 
             itemPrice: ac.itemPrice,
 
-            taxPercent: ac.taxPercent,
+            // taxPercent: ac.taxPercent,
             region: ac.region,
             currency: ac.currency,
             activityOrder: ac.activityOrder,
@@ -41,7 +41,7 @@ export class ItemPriceMapper {
         entity.itemId = dto.itemId;
         entity.variation = dto.variation;
         entity.itemPrice = dto.itemPrice;
-        entity.taxPercent = dto.taxPercent;
+        // entity.taxPercent = dto.taxPercent;
         entity.region = dto.region;
         entity.currency = dto.currency;
         entity.activityOrder = dto.activityOrder;

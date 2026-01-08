@@ -18,8 +18,8 @@ export class ItemPrice {
     @Column({ default: 0, type: 'float' })
     itemPrice: number;
 
-    @Column({ default: 0, type: 'float' })
-    taxPercent: number;
+    // @Column({ default: 0, type: 'float' })
+    // taxPercent: number;
 
     @Column({ default: ItemPriceDefaults.REGION_ANY })
     region: string;

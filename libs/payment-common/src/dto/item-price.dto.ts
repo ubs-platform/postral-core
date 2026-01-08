@@ -14,7 +14,7 @@ export interface ItemPriceDTO {
 
     currency: string;
 
-    taxPercent: number;
+    // taxPercent: number;
 
     region: string;
 
