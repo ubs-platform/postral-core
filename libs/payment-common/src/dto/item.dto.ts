@@ -11,6 +11,8 @@ export class ItemAddDTO {
 
     unit: string;
 
+    itemTaxId: string;
+
     // taxPercent: number;
 
     // unitAmount: number;
@@ -39,6 +41,9 @@ export class ItemDTO {
 
     unit: string;
 
+    itemTaxId: string;
+
+
     // taxPercent: number;
 
     // unitAmount: number;
@@ -56,6 +61,9 @@ export class ItemEditDTO {
     name: string;
 
     unit: string;
+
+    itemTaxId: string;
+
 
     // taxPercent: number;
 

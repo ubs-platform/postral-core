@@ -24,6 +24,9 @@ export class Item {
     @Column()
     baseCurrency: string;
 
+    @Column()
+    itemTaxId: string;
+
     // @Column({type: 'float'})
     // taxPercent: number;
 

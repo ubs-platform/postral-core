@@ -58,7 +58,7 @@ export class ItemPriceService {
                     itemId: itemPriceSearchDto.itemId,
                     variation: itemPriceSearchDto.variation?.toString() || '',
                     region: itemPriceSearchDto.region?.toString() || '',
-                    currency: itemPriceSearchDto.currency.toString(),
+                    currency: itemPriceSearchDto.currency?.toString() || '',
                     currentDate: now,
                 },
             )

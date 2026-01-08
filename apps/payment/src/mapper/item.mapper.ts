@@ -18,6 +18,8 @@ export class ItemMapper {
     async toDto(ac: Item): Promise<ItemDTO> {
         
         return {
+            itemTaxId: ac.itemTaxId,
+
             id: ac.id,
 
             name: ac.name,
@@ -51,7 +53,7 @@ export class ItemMapper {
 
         entity.sellerAccountId = dto.sellerAccountId;
         entity.baseCurrency = dto.baseCurrency;
-
+        entity.itemTaxId = dto.itemTaxId;
         return entity;
     }
 
@@ -62,7 +64,7 @@ export class ItemMapper {
         entity.name = dto.name;
 
         entity.unit = dto.unit;
-
+        entity.itemTaxId = dto.itemTaxId;
         return entity;
     }
 }
