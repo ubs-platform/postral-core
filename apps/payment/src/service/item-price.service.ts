@@ -18,6 +18,15 @@ import * as moment from 'moment';
 
 @Injectable()
 export class ItemPriceService {
+    async deletePrice(itemId: string, priceId: string) {
+        const price = await this.itemRepo.findOne({
+            where: { id: priceId, itemId },
+        });
+        if (!price) {
+            throw new NotFoundException(`Price with id ${priceId} not found`);
+        }
+        await this.itemRepo.remove(price);
+    }
     constructor(
         @InjectRepository(ItemPrice)
         private readonly itemRepo: Repository<ItemPrice>,

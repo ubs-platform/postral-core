@@ -21,7 +21,7 @@ import {
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
-import { lastValueFrom } from 'rxjs';
+import { identity, lastValueFrom } from 'rxjs';
 import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
 import { Account } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
@@ -47,6 +47,17 @@ export class ItemController extends BaseCrudControllerGenerator<
         protected readonly pricesService: ItemPriceService
     ) {
         super(service);
+    }
+
+    @Delete(':id/prices/:priceId')
+    @UseGuards(JwtAuthGuard)
+    async deletePrice(
+        @Param('id') itemId: string,
+        @Param('priceId') priceId: string,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<void> {
+        // await this.checkUser('REMOVE', user, { id: priceId }, undefined);
+        await this.pricesService.deletePrice(itemId, priceId);
     }
 
     @Get(':id/prices/default')
