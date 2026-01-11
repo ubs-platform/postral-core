@@ -22,6 +22,7 @@ import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-in
 import { PaymentTransactionService } from './transaction.service';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { ItemTaxService } from './item-tax.service';
 
 @Injectable()
 export class PaymentService {
@@ -36,6 +37,7 @@ export class PaymentService {
         private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
         @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
+        private itemTaxService: ItemTaxService,
     ) {}
 
     async findAllRaw(): Promise<Payment[]> {
@@ -131,6 +133,9 @@ export class PaymentService {
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
+        if (pdto.saleMode === undefined || pdto.saleMode.trim() === '') {
+            pdto.saleMode = 'DEFAULT';
+        }
         let taxesFromItems: TaxDTO[] = [],
             items: PostralPaymentItem[] = [];
         // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
@@ -151,6 +156,29 @@ export class PaymentService {
                           },
                 )
             )[0];
+
+            if (!realItemFind) {
+                throw new NotFoundException('Item not found for payment init');
+            }
+
+            const itemTax = await this.itemTaxService.fetchOne(
+                realItemFind.itemTaxId!,
+            );
+            if (!itemTax) {
+                throw new NotFoundException(
+                    'Item tax not found for payment init',
+                );
+            }
+
+            const taxPercentBySaleMode = itemTax.variations.find(
+                (v) => v.taxMode === pdto.saleMode,
+            )?.taxRate;
+
+            if (taxPercentBySaleMode === undefined) {
+                throw new NotFoundException(
+                    `Item tax variation not found for sale mode: ${pdto.saleMode}`,
+                );
+            }
 
             const itemPriceActive = await this.itemPriceService.allLatestPrices(
                 {
@@ -178,22 +206,28 @@ export class PaymentService {
                     itemPriceActive[0].itemPrice,
                     paymentItemDto.quantity,
                 );
-            paymentItem.taxPercent = itemPriceActive[0].taxPercent;
+            paymentItem.taxPercent = taxPercentBySaleMode;
             paymentItem.variation = paymentItem.entityOwnerAccountId =
                 realItemFind.sellerAccountId;
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
-                
-            totalAmt = ItemCalculationUtil.addNumberValues(totalAmt, paymentItem.totalAmount);
-            
-            const taxDto = TaxCalculationUtil.generateTaxDto(
-                itemPriceActive[0].taxPercent.toString(),
+
+            totalAmt = ItemCalculationUtil.addNumberValues(
+                totalAmt,
                 paymentItem.totalAmount,
-                itemPriceActive[0].taxPercent,
             );
-            taxTotal = ItemCalculationUtil.addNumberValues(taxTotal, taxDto.taxAmount);
+
+            const taxDto = TaxCalculationUtil.generateTaxDto(
+                itemTax.taxName + ' - ' + pdto.saleMode,
+                paymentItem.totalAmount,
+                taxPercentBySaleMode,
+            );
+            taxTotal = ItemCalculationUtil.addNumberValues(
+                taxTotal,
+                taxDto.taxAmount,
+            );
 
             taxesFromItems.push(taxDto);
 
