@@ -84,5 +84,11 @@ export class ItemSearchDTO {
     // admin?: 'true' | 'false';
     // ownerUserId?: string;
     fetchAll?: 'true' | 'false';
+    ownerUserId?: string;
+
+    // admin?: 'true' | 'false';
+
+    // fetchAll?: "true" | "false";
+
     name?: string;
 }
