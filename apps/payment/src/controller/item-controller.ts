@@ -156,27 +156,27 @@ export class ItemController extends BaseCrudControllerGenerator<
 
     async manipulateSearch(
         user: Optional<UserAuthBackendDTO>,
-        queriesAndPaths: Optional<AccountSearchParamsDTO>,
+        queriesAndPaths: Optional<ItemSearchDTO>,
     ) {
         // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
-        if (!queriesAndPaths) {
-            queriesAndPaths = {};
-        }
-        const isUserAdmin = user?.roles?.includes('ADMIN');
-        const isAdminSearchMode = queriesAndPaths?.admin === 'true';
+        // if (!queriesAndPaths) {
+        //     queriesAndPaths = {};
+        // }
+        // const isUserAdmin = user?.roles?.includes('ADMIN');
+        // const isAdminSearchMode = queriesAndPaths?.admin === 'true';
         // exec(
         //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
         // );
-        if (!isUserAdmin && isAdminSearchMode) {
-            throw new UnauthorizedException(
-                'Only admins can search with admin=true',
-            );
-        }
+        // if (!isUserAdmin && isAdminSearchMode) {
+        //     throw new UnauthorizedException(
+        //         'Only admins can search with admin=true',
+        //     );
+        // }
 
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
-        if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
-            queriesAndPaths.ownerUserId = user?.id;
-        }
+        // if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
+        //     queriesAndPaths.ownerUserId = user?.id;
+        // }
 
         return queriesAndPaths;
     }

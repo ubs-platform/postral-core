@@ -62,7 +62,7 @@ export class ItemCrudService extends BaseCrudService<
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.admin !== 'true' && s?.entityOwnershipGroupId == null) {
+        if (s?.fetchAll !== 'true' && s?.entityOwnershipGroupId == null) {
             ids = await lastValueFrom(
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,

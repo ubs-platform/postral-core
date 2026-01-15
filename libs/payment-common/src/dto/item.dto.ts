@@ -81,7 +81,8 @@ export class ItemSearchDTO {
 
     entityOwnershipGroupId?: string;
 
-    admin?: 'true' | 'false';
-
+    // admin?: 'true' | 'false';
+    // ownerUserId?: string;
+    fetchAll?: 'true' | 'false';
     name?: string;
 }
