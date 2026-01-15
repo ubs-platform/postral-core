@@ -62,7 +62,7 @@ export class ItemCrudService extends BaseCrudService<
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.fetchAll !== 'true' && s?.entityOwnershipGroupId == null) {
+        if (s?.searchForCurrentUserEntities === 'true') {
             ids = await lastValueFrom(
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
@@ -80,7 +80,7 @@ export class ItemCrudService extends BaseCrudService<
         if (s?.name) {
             where.name = Like(`%${s.name}%`);
         }
-        if (ids != null && ids.length > 0) {
+        if (ids != null) {
             where.id = In(ids);
         }
         // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
