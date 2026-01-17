@@ -60,8 +60,8 @@ export class ItemPriceService {
                     item_price.region=ip2.region and item_price.currency=ip2.currency and item_price.itemId=ip2.itemId and item_price.variation=ip2.variation 
                     and ip2.itemId = :itemId 
                     and (:variation is null or :variation = '' or ip2.variation = :variation)
-                    and ip2.region = :region
-                    and ip2.currency = :currency
+                    and (:region is null or :region = '' or ip2.region = :region)
+                    and (:currency is null or :currency = '' or ip2.currency = :currency)
                     and ( (ip2.activeStartAt is null) or (ip2.activeStartAt < :currentDate)) and ( (ip2.activeExpireAt is null) or  (ip2.activeExpireAt > :currentDate) ) order by ip2.activityOrder desc limit 1 offset 0 )`,
                 {
                     itemId: itemPriceSearchDto.itemId,
@@ -76,7 +76,7 @@ export class ItemPriceService {
     }
 
     private nowString(): any {
-        return moment().utc().format('yyyy-MM-DD hh:mm:ss');
+        return moment().utc().format('yyyy-MM-DD HH:mm:ss');
     }
 
     async setDefaultPrice(dto: ItemPriceDTO) {

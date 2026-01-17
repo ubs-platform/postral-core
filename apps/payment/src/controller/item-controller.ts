@@ -88,7 +88,7 @@ export class ItemController extends BaseCrudControllerGenerator<
         @Param('id') id: string,
         @CurrentUser() user?: UserAuthBackendDTO,
     ): Promise<ItemPriceDTO[]> {
-        await this.checkUser('GETID', user, { id }, undefined);
+        // await this.checkUser('GETID', user, { id }, undefined);
         const item = await this.pricesService.allLatestPrices({ itemId: id });
         if (!item) {
             throw new NotFoundException(`Item with id ${id} not found`);
