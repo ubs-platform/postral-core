@@ -23,6 +23,7 @@ import { PaymentTransactionService } from './transaction.service';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { ItemTaxService } from './item-tax.service';
+import { AccountService } from './account.service';
 
 @Injectable()
 export class PaymentService {
@@ -38,7 +39,8 @@ export class PaymentService {
         private transactionService: PaymentTransactionService,
         @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
         private itemTaxService: ItemTaxService,
-    ) {}
+        private accountService: AccountService
+    ) { }
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
@@ -133,32 +135,53 @@ export class PaymentService {
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
+        const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
+        const customerAccount = await this.accountService.fetchOne(customerAccountId);
+
+        if (!customerAccount) {
+            throw new NotFoundException('Customer account not found for payment init');
+        }
+
         if (pdto.saleMode === undefined || pdto.saleMode.trim() === '') {
             pdto.saleMode = 'DEFAULT';
         }
+
         let taxesFromItems: TaxDTO[] = [],
             items: PostralPaymentItem[] = [];
         // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
         let totalAmt = 0,
             taxTotal = 0;
 
-        for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
-            const paymentItemDto = pdto.items[itemIndex];
 
+        for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
+
+            const paymentItemDto = pdto.items[itemIndex];
+            
+            if (!paymentItemDto.itemId && (!paymentItemDto.entityGroup || !paymentItemDto.entityId || !paymentItemDto.entityName)) {
+                throw new NotFoundException('Item identification is missing for payment init');
+            }
             const realItemFind = (
                 await this.itemService.fetchAll(
                     paymentItemDto.itemId
                         ? { id: paymentItemDto.itemId }
                         : {
-                              entityGroup: paymentItemDto.entityGroup,
-                              entityId: paymentItemDto.entityId,
-                              entityName: paymentItemDto.entityName,
-                          },
+                            entityGroup: paymentItemDto.entityGroup,
+                            entityId: paymentItemDto.entityId,
+                            entityName: paymentItemDto.entityName,
+                        },
                 )
             )[0];
 
             if (!realItemFind) {
                 throw new NotFoundException('Item not found for payment init');
+            }
+
+            const itemAccount = await this.accountService.fetchOne(realItemFind.sellerAccountId);
+            if (!itemAccount) {
+                throw new NotFoundException('Seller account not found for payment init');
+            }
+            if (itemAccount.type !== "COMMERCIAL") {
+                throw new NotFoundException(`Item that is named "${realItemFind.name}" seller account is not commercial for payment init.`);
             }
 
             const itemTax = await this.itemTaxService.fetchOne(
@@ -244,12 +267,8 @@ export class PaymentService {
         p.totalAmount = totalAmt;
         p.taxAmount = taxTotal;
         p.items = items;
-        //todo: anon yerine gerçek id olması gerekiyor...
-        p.customerAccountId = 'anon';
+        p.customerAccountId = customerAccountId;
         p.paymentStatus = 'INITIATED';
-        // Entity tarafında otomatik atılıyor... sanırım
-        // p.createdAt = new Date();
-        // p.updatedAt = new Date();
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {
                 const ppt = new PostralPaymentTax();

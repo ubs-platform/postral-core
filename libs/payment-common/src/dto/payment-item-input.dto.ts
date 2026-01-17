@@ -1,17 +1,12 @@
 export interface PaymentItemInputDto {
-    itemId: string;
+    itemId?: string;
 
-    entityGroup: string;
+    entityGroup?: string;
 
-    entityName: string;
+    entityName?: string;
 
-    entityId: string;
-
-    variation: string;
+    entityId?: string;
+    variation?: string;
 
     quantity: number;
-
-    totalAmount: number;
-
-    taxPercent: number;
 }
