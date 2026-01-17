@@ -12,7 +12,15 @@ import {
     Query,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
-import { AccountDTO, AccountSearchParamsDTO, ItemAddDTO, ItemDTO, ItemEditDTO, ItemPriceDTO, ItemSearchDTO } from '@tk-postral/payment-common';
+import {
+    AccountDTO,
+    AccountSearchParamsDTO,
+    ItemAddDTO,
+    ItemDTO,
+    ItemEditDTO,
+    ItemPriceDTO,
+    ItemSearchDTO,
+} from '@tk-postral/payment-common';
 import {
     CurrentUser,
     EntityOwnershipGroupClientService,
@@ -44,7 +52,7 @@ export class ItemController extends BaseCrudControllerGenerator<
     constructor(
         protected readonly service: ItemCrudService,
         protected readonly eoClient: EntityOwnershipService,
-        protected readonly pricesService: ItemPriceService
+        protected readonly pricesService: ItemPriceService,
     ) {
         super(service);
     }
@@ -74,6 +82,20 @@ export class ItemController extends BaseCrudControllerGenerator<
         return item;
     }
 
+    @Get(':id/prices/latest')
+    @UseGuards(JwtAuthGuard)
+    async getLatestPrices(
+        @Param('id') id: string,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ): Promise<ItemPriceDTO[]> {
+        await this.checkUser('GETID', user, { id }, undefined);
+        const item = await this.pricesService.allLatestPrices({ itemId: id });
+        if (!item) {
+            throw new NotFoundException(`Item with id ${id} not found`);
+        }
+        return item;
+    }
+
     @Post(':id/prices/default')
     @UseGuards(JwtAuthGuard)
     async addDefaultPrice(
@@ -82,7 +104,7 @@ export class ItemController extends BaseCrudControllerGenerator<
         @CurrentUser() user?: UserAuthBackendDTO,
     ): Promise<ItemPriceDTO> {
         body.itemId = id;
-        
+
         // await this.checkUser('ADD', user, { id }, body);
         const createdPrice = await this.pricesService.setDefaultPrice(body);
         return createdPrice;
@@ -141,8 +163,17 @@ export class ItemController extends BaseCrudControllerGenerator<
             this.eoClient.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ITEM,
-                ...((typeof id == 'string' && id) || id != null ? { entityId: id } : {}),
-                ...(!id && (typeof queriesAndPaths?.entityOwnershipGroupId == "string" && queriesAndPaths?.entityOwnershipGroupId) ? { entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId } : {}),
+                ...((typeof id == 'string' && id) || id != null
+                    ? { entityId: id }
+                    : {}),
+                ...(!id &&
+                typeof queriesAndPaths?.entityOwnershipGroupId == 'string' &&
+                queriesAndPaths?.entityOwnershipGroupId
+                    ? {
+                          entityOwnershipGroupId:
+                              queriesAndPaths.entityOwnershipGroupId,
+                      }
+                    : {}),
                 userId: user.id,
                 capabilityAtLeastOne,
             }),
