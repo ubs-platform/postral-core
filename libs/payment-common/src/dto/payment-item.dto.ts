@@ -8,6 +8,13 @@ export interface PaymentItemDto {
     taxAmount: number;
     variation: string;
     sellerAccountId: string;
+    entityGroup: string;
+    entityId: string;
+    entityName: string;
+    entityOwnerAccountId: string;
+    unTaxAmount: number;
+    originalUnitAmount: number;
+    unitAmount: number;
     // itemType: 'PRODUCT' | 'DISCOUNT' | 'ADDITION' | 'OTHER';
     // taxPercent: number;
 }

@@ -100,6 +100,15 @@ export class CalculationService {
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
+            paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
+            paymentItem.unitAmount = itemPriceActive[0].itemPrice;
+            paymentItem.itemId = realItemFind.id;
+            paymentItem.sellerAccountId = realItemFind.sellerAccountId;
+            paymentItem.entityOwnerAccountId = itemAccount.id;
+            paymentItem.entityGroup = realItemFind.entityGroup;
+            paymentItem.entityId = realItemFind.entityId;
+            paymentItem.entityName = realItemFind.entityName;
+            paymentItem.sellerAccountId = realItemFind.sellerAccountId;
 
             totalAmt = ItemCalculationUtil.addNumberValues(
                 totalAmt,

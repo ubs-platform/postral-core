@@ -24,6 +24,7 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { ItemTaxService } from './item-tax.service';
 import { AccountService } from './account.service';
+import { CalculationService } from './calculation.service';
 
 @Injectable()
 export class PaymentService {
@@ -39,7 +40,8 @@ export class PaymentService {
         private transactionService: PaymentTransactionService,
         @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
         private itemTaxService: ItemTaxService,
-        private accountService: AccountService
+        private accountService: AccountService,
+        private calcService: CalculationService
     ) { }
 
     async findAllRaw(): Promise<Payment[]> {
@@ -152,114 +154,35 @@ export class PaymentService {
         let totalAmt = 0,
             taxTotal = 0;
 
+        const calculationResult = await this.calcService.calculateTotalAmount({
+            items: pdto.items,
+            saleMode: pdto.saleMode,
+            currency: pdto.currency,
+        });
 
-        for (let itemIndex = 0; itemIndex < pdto.items.length; itemIndex++) {
+        totalAmt = calculationResult.totalAmount;
+        taxTotal = calculationResult.totalTaxAmount;
+        taxesFromItems = calculationResult.taxes;
 
-            const paymentItemDto = pdto.items[itemIndex];
-            
-            if (!paymentItemDto.itemId && (!paymentItemDto.entityGroup || !paymentItemDto.entityId || !paymentItemDto.entityName)) {
-                throw new NotFoundException('Item identification is missing for payment init');
-            }
-            const realItemFind = (
-                await this.itemService.fetchAll(
-                    paymentItemDto.itemId
-                        ? { id: paymentItemDto.itemId }
-                        : {
-                            entityGroup: paymentItemDto.entityGroup,
-                            entityId: paymentItemDto.entityId,
-                            entityName: paymentItemDto.entityName,
-                        },
-                )
-            )[0];
-
-            if (!realItemFind) {
-                throw new NotFoundException('Item not found for payment init');
-            }
-
-            const itemAccount = await this.accountService.fetchOne(realItemFind.sellerAccountId);
-            if (!itemAccount) {
-                throw new NotFoundException('Seller account not found for payment init');
-            }
-            if (itemAccount.type !== "COMMERCIAL") {
-                throw new NotFoundException(`Item that is named "${realItemFind.name}" seller account is not commercial for payment init.`);
-            }
-
-            const itemTax = await this.itemTaxService.fetchOne(
-                realItemFind.itemTaxId!,
-            );
-            if (!itemTax) {
-                throw new NotFoundException(
-                    'Item tax not found for payment init',
-                );
-            }
-
-            const taxPercentBySaleMode = itemTax.variations.find(
-                (v) => v.taxMode === pdto.saleMode,
-            )?.taxRate;
-
-            if (taxPercentBySaleMode === undefined) {
-                throw new NotFoundException(
-                    `Item tax variation not found for sale mode: ${pdto.saleMode}`,
-                );
-            }
-
-            const itemPriceActive = await this.itemPriceService.allLatestPrices(
-                {
-                    currency: pdto.currency,
-                    itemId: realItemFind.id,
-                    // region:
-                    variation: paymentItemDto.variation,
-                },
-            );
-            const itemPriceDefault =
-                await this.itemPriceService.allDefaultPrices({
-                    currency: pdto.currency,
-                    itemId: realItemFind.id,
-                    // region:
-                    variation: paymentItemDto.variation,
-                });
-
-            const paymentItem = new PostralPaymentItem();
-            paymentItem.variation = itemPriceActive[0].variation;
-            paymentItem.entityGroup = realItemFind.entityGroup;
-            paymentItem.entityId = realItemFind.entityId;
-            paymentItem.entityName = realItemFind.entityName;
-            paymentItem.totalAmount =
-                ItemCalculationUtil.calculateTotalItemPrice(
-                    itemPriceActive[0].itemPrice,
-                    paymentItemDto.quantity,
-                );
-            paymentItem.taxPercent = taxPercentBySaleMode;
-            paymentItem.variation = paymentItem.entityOwnerAccountId =
-                realItemFind.sellerAccountId;
-            paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
-            paymentItem.unitAmount = itemPriceActive[0].itemPrice;
-            paymentItem.itemId = realItemFind.id;
-            paymentItem.sellerAccountId = realItemFind.sellerAccountId;
-
-            totalAmt = ItemCalculationUtil.addNumberValues(
-                totalAmt,
-                paymentItem.totalAmount,
-            );
-
-            const taxDto = TaxCalculationUtil.generateTaxDto(
-                itemTax.taxName + ' - ' + pdto.saleMode,
-                paymentItem.totalAmount,
-                taxPercentBySaleMode,
-            );
-            taxTotal = ItemCalculationUtil.addNumberValues(
-                taxTotal,
-                taxDto.taxAmount,
-            );
-
-            taxesFromItems.push(taxDto);
-
-            paymentItem.name = realItemFind.name;
-            paymentItem.taxAmount = taxDto.taxAmount!;
-            paymentItem.unTaxAmount = taxDto.untaxAmount!;
-            paymentItem.quantity = paymentItemDto.quantity;
-            items.push(paymentItem);
-        }
+        items = calculationResult.items.map((ci) => {
+            const pi = new PostralPaymentItem();
+            pi.itemId = ci.itemId;
+            pi.name = ci.name;
+            pi.quantity = ci.quantity;
+            pi.unitAmount = ci.unitAmount;
+            pi.originalUnitAmount = ci.originalUnitAmount;
+            pi.totalAmount = ci.totalAmount;
+            pi.taxPercent = ci.taxPercent;
+            pi.taxAmount = ci.taxAmount;
+            pi.unTaxAmount = ci.unTaxAmount;
+            pi.variation = ci.variation;
+            pi.entityGroup = ci.entityGroup;
+            pi.entityId = ci.entityId;
+            pi.entityName = ci.entityName;
+            pi.sellerAccountId = ci.sellerAccountId;
+            pi.entityOwnerAccountId = ci.entityOwnerAccountId;
+            return pi;
+        });
 
         const p = new Payment();
         p.type = pdto.type;
