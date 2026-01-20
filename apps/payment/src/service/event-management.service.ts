@@ -5,6 +5,7 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 import { lastValueFrom } from 'rxjs';
 @Injectable()
 export class EventSenderService {
+
     /**
      *
      */
@@ -15,7 +16,7 @@ export class EventSenderService {
     }
 
     async paymentChannelStarted(pd: PaymentFullDTO): Promise<PaymentChannelStatusDTO> {
-        
+
         return await lastValueFrom(
             this.kfk.send(`postral/payment-channel/${pd.captureInfo.paymentChannelId}/start`, pd),
         );
@@ -32,6 +33,19 @@ export class EventSenderService {
             ),
         );
     }
+
+    async paymentChannelCancelled(id: string): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(
+            this.kfk.emit(`postral/payment/cancel`, id),
+        );
+    }
+
+    async sendPaymentInitEvent(pd: PaymentFullDTO): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(
+            this.kfk.emit(`postral/payment/init`, pd),
+        );
+    }
+
 
     // async paymentCompleted(pd: PaymentDTO) {
     //     await this.kfk.emit('POSTRAL_PAYMENT_COMPLETED', pd);

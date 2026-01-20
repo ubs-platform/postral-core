@@ -212,6 +212,21 @@ export class PaymentService {
         return paymentDtoFinal;
     }
 
+    async cancelPayment(id: string) {
+
+        await this.editPaymentOperationInformation(id, {
+            "paymentChannelId": "",
+            "paymentChannelOperationId": "",
+            "redirectUrl": "",
+            "paymentStatus": "FAILED",
+            "paymentErrorStatus": "CANCELLED"
+        });
+
+        await this.eventSenderService.paymentChannelCancelled(
+            id,
+        );
+    }
+
     async startPaymentOperation(
         id: string,
         captureInfo: PaymentCaptureInfoDTO,
