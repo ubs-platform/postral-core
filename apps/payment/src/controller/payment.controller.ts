@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     NotFoundException,
     Param,
@@ -59,5 +60,14 @@ export class PaymentController {
     @Get('/:id/tax')
     public async fetchTaxes(@Param() { id }: { id: string }) {
         return await this.ps.findTaxes(id);
+    }
+
+    @Delete('/:id')
+    public async cancelPayment(@Param() { id }: { id: string }) {
+        const payment = await this.ps.findPaymentById(id);
+        if (!payment) {
+            throw new NotFoundException(`Payment with id ${id} not found`);
+        }
+        return await this.ps.cancelPayment(id);
     }
 }
