@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Post, Query, Redirect } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Redirect, Response } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PaymentDTO, PaymentFullDTO, PaymentStatus } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
+import { ReturnDocument } from 'typeorm';
 
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
@@ -37,7 +38,7 @@ export class DummyEcommercePaymentChannelController {
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
-            redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentDto.id}`,
+            redirectUrl: `dummy-ecommerce-payment-channel/operation/${paymentDto.id}`,
             paymentStatus: 'WAITING',
 
         } as PaymentChannelStatusDTO;
@@ -47,8 +48,22 @@ export class DummyEcommercePaymentChannelController {
     async getPaymentOperationDummyPage(
         @Param('operationId') operationId: string,
         @Query('redirectUrl') redirectUrlBackToApp: string,
+        @Response() res,
     ) {
+        res.type('html').send(
+            this.generateDummyEcommercePaymentPage(
+                operationId,
+                redirectUrlBackToApp,
+            ),
+        );
+    }
+
+    generateDummyEcommercePaymentPage(
+        operationId: string,
+        redirectUrlBackToApp: string,
+    ): string {
         // This would normally return an HTML page for the dummy ecommerce payment
+        // For simplicity, we return a simple HTML string here
         return `<html>
             <body>
                 <h1>Dummy Ecommerce Payment Page</h1>
@@ -57,18 +72,19 @@ export class DummyEcommercePaymentChannelController {
                 <button onclick="completePayment()">Complete Payment</button>
                 <button onclick="refusePayment()">Refuse Payment</button>
                 <script>
+                    const redirectUrlBackToApp = '${redirectUrlBackToApp}';
                     function completePayment() {
-                        window.location.href = './status/COMPLETED?redirectUrl=${redirectUrlBackToApp}';
+                        window.location.href = '${operationId}' + '/status/COMPLETED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                     function refusePayment() {
-                        window.location.href = './status/EXPIRED?redirectUrl=${redirectUrlBackToApp}';
+                        window.location.href = '${operationId}' + '/status/EXPIRED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                 </script>
             </body>
         </html>`;
     }
 
-    @Post('/operation/:operationId/status/:set')
+    @Get('/operation/:operationId/status/:set')
     async setPaymentStatusAndRedirect(
         @Param('operationId') operationId: string,
         @Param('set') set: 'COMPLETED' | 'FAILED',

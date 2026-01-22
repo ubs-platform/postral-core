@@ -1,7 +1,7 @@
-import { Inject, Injectable, NotFoundException, Post } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { Repository, Transaction } from 'typeorm';
+import { Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -15,14 +15,10 @@ import {
     TaxDTO,
     PaymentTransactionDTO,
 } from '@tk-postral/payment-common';
-import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
-import { ItemPriceService } from './item-price.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { PaymentTransactionService } from './transaction.service';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
-import { ItemCalculationUtil } from '../util/calcs/item-calculations';
-import { ItemTaxService } from './item-tax.service';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 
@@ -35,11 +31,7 @@ export class PaymentService {
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
         private eventSenderService: EventSenderService,
-        private itemService: ItemService,
-        private itemPriceService: ItemPriceService,
         private transactionService: PaymentTransactionService,
-        @Inject('MICROSERVICE_CLIENT') private readonly kafkaClient: any,
-        private itemTaxService: ItemTaxService,
         private accountService: AccountService,
         private calcService: CalculationService
     ) { }
@@ -94,7 +86,7 @@ export class PaymentService {
                 paymentReal.paymentStatus === 'COMPLETED'
             ) {
                 // already finalized
-                return;
+                return this.paymentMapper.toDto(paymentReal);
             }
 
             paymentReal.paymentChannelId =
@@ -105,11 +97,13 @@ export class PaymentService {
 
             paymentReal.paymentStatus = info.paymentStatus;
             paymentReal.errorStatus = info.paymentErrorStatus;
-            await this.paymentrepo.save(paymentReal);
+            const paymentFinal = await this.paymentrepo.save(paymentReal);
 
             if (paymentReal.paymentStatus === 'COMPLETED') {
                 await this.generateTransactions(paymentReal, info);
             }
+            return this.paymentMapper.toDto(paymentFinal);
+
         } else {
             throw new NotFoundException('payment', id);
         }
@@ -214,7 +208,7 @@ export class PaymentService {
 
     async cancelPayment(id: string) {
 
-        await this.editPaymentOperationInformation(id, {
+        const payment = await this.editPaymentOperationInformation(id, {
             "paymentChannelId": "",
             "paymentChannelOperationId": "",
             "redirectUrl": "",
@@ -225,6 +219,8 @@ export class PaymentService {
         await this.eventSenderService.paymentChannelCancelled(
             id,
         );
+
+        return payment;
     }
 
     async startPaymentOperation(
