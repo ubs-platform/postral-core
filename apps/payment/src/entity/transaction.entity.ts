@@ -66,6 +66,12 @@ export class PaymentTransaction {
     @Column({ type: 'varchar' })
     transactionType: TransactionType;
 
+    @Column({ type: 'int', nullable: true })
+    installmentNumber: number; // Kaçıncı taksit (null ise tek çekim)
+
+    @Column({ type: 'int', nullable: true })
+    totalInstallments: number; // Toplam taksit sayısı
+
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 

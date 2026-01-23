@@ -1,8 +1,9 @@
 // * INITIATED: Payment oluşturuldu, ancak henüz ödeme kanalı ile işlem başlatılmadı.
 // * WAITING: Ödeme kanalı ile işlem başlatıldı, ancak ödeme henüz tamamlanmadı.
+// * WAITING_AUTHORIZED: Ödeme, kullanıcı tarafından yetkilendirildi ancak henüz tamamlanmadı.
 // * COMPLETED: Ödeme başarıyla tamamlandı.
 // * EXPIRED: Ödeme işlemi süresi doldu veya iptal edildi.
-export type PaymentStatus = 'INITIATED' | 'WAITING' | 'COMPLETED' | 'FAILED';
+export type PaymentStatus = 'INITIATED' | 'WAITING' | "WAITING_AUTHORIZED" | 'COMPLETED' | 'FAILED';
 
 /**
  * * FAILED: Ödeme işlemi başarısız oldu.

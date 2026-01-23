@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { Repository } from 'typeorm';
+import { Or, Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -23,10 +23,11 @@ import { ArrayToObjectUtil } from '../util/array-to-object';
 import { error } from 'console';
 @Injectable()
 export class PaymentTransactionService {
+
     constructor(
         @InjectRepository(PaymentTransaction)
         private transactionRepository: Repository<PaymentTransaction>,
-    ) {}
+    ) { }
 
     toDto(entity: PaymentTransaction): PaymentTransactionDTO {
         const dto = new PaymentTransactionDTO();
@@ -40,6 +41,11 @@ export class PaymentTransactionService {
         dto.paymentStatus = entity.paymentStatus;
         dto.untaxedAmount = entity.untaxedAmount;
         dto.taxAmount = entity.taxAmount;
+        dto.transactionType = entity.transactionType;
+        dto.operationNote = entity.operationNote;
+        dto.errorStatus = entity.errorStatus;
+        dto.installmentNumber = entity.installmentNumber;
+        dto.totalInstallments = entity.totalInstallments;
         return dto;
     }
 
@@ -63,7 +69,23 @@ export class PaymentTransactionService {
         entity.errorStatus = dto.errorStatus;
         entity.transactionType = dto.transactionType;
         entity.operationNote = dto.operationNote;
+        entity.installmentNumber = dto.installmentNumber || 0;
+        entity.totalInstallments = dto.totalInstallments || 0;
         return entity;
+    }
+
+    async calculateRequiredCaptureAmount(paymentId: string): Promise<number> {
+        const transactions = await this.transactionRepository.find({ where: [{ paymentId }, Or({ paymentStatus: "COMPLETED" }, { paymentStatus: "WAITING_AUTHORIZED" })], order: { createdAt: 'ASC' } });
+        const totale = transactions.reduce((acc, tr) => {
+            if (tr.transactionType === 'CREDIT') {
+                acc += tr.amount;
+            } else if (tr.transactionType === 'DEBIT') {
+                acc -= tr.amount;
+            }
+            return acc;
+        }, 0);
+        // Implement the logic to calculate the required capture amount based on the transactions
+        return totale; // Placeholder return value
     }
 
     addTransaction(tr: PaymentTransactionDTO): Promise<PaymentTransactionDTO> {
@@ -73,13 +95,13 @@ export class PaymentTransactionService {
         return Promise.resolve(this.toDto(entity));
     }
 
-    async addTransactions(transactions: PaymentTransactionDTO[]): Promise<void> {
+    async addTransactions(transactionsIncoming: PaymentTransactionDTO[]): Promise<void> {
         const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(
-            transactions,
+            transactionsIncoming,
             (a) => {
-                return a.sourceAccountId + '|' + a.targetAccountId  + '|' + a.paymentId + '|' + a.paymentChannelId + '|' + a.currency + '|' + a.status + '|' + a.approved;
+                return a.sourceAccountId + '|' + a.targetAccountId + '|' + a.paymentId + '|' + a.paymentChannelId + '|' + a.currency + '|' + a.status + '|' + a.approved;
             },
-            (object, key, mappingObject)=> {
+            (object, key, mappingObject) => {
                 const mappedObject = mappingObject[key];
                 if (mappedObject == null) {
                     mappingObject[key] = {
@@ -94,15 +116,42 @@ export class PaymentTransactionService {
                         errorStatus: object.errorStatus,
                         operationNote: object.operationNote,
                         transactionType: object.transactionType,
-                
+
                     };
                 }
                 mappingObject[key].totalAmount += object.amount;
                 mappingObject[key].taxAmount += object.taxAmount;
             }
         );
-        for (const tr of transactions) {
+        for (const tr of transactionsIncoming) {
             await this.addTransaction(tr);
         }
+    }
+
+    async getTransactionsByPaymentId(paymentId: string): Promise<PaymentTransactionDTO[]> {
+        const transactions = await this.transactionRepository.find({
+            where: { paymentId },
+            order: { createdAt: 'ASC' }
+        });
+        return transactions.map(t => this.toDto(t));
+    }
+
+    async getTransactionsByPaymentChannelId(paymentChannelId: string): Promise<PaymentTransactionDTO[]> {
+        const transactions = await this.transactionRepository.find({
+            where: { paymentChannelId },
+            order: { createdAt: 'ASC' }
+        });
+        return transactions.map(t => this.toDto(t));
+    }
+
+    async getTransactionsByAccountId(accountId: string): Promise<PaymentTransactionDTO[]> {
+        const transactions = await this.transactionRepository.find({
+            where: [
+                { sourceAccountId: accountId },
+                { targetAccountId: accountId }
+            ],
+            order: { createdAt: 'DESC' }
+        });
+        return transactions.map(t => this.toDto(t));
     }
 }
