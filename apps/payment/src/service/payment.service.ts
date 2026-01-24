@@ -114,14 +114,11 @@ export class PaymentService {
         captureInfo: PaymentChannelStatusDTO,
     ) {
         const items = await this.findItems(paymentReal.id);
-        const installmentInfo = captureInfo.installmentInfo; // PaymentChannelStatusDTO'ya eklenirse
-
         for (let index = 0; index < items.length; index++) {
             const paymentItem = items[index];
             const transaction = new PaymentTransactionDTO();
             transaction.amount = paymentItem.totalAmount;
             transaction.taxAmount = paymentItem.taxAmount;
-            transaction.untaxedAmount = paymentItem.unTaxAmount;
             transaction.currency = paymentReal.currency;
             transaction.paymentChannelId = captureInfo.paymentChannelId!;
             transaction.paymentId = paymentReal.id;
@@ -129,14 +126,6 @@ export class PaymentService {
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
             transaction.transactionType = 'CREDIT';
-            transaction.operationNote = `Item: ${paymentItem.name}`;
-
-            // Taksit bilgisi varsa ekle
-            if (installmentInfo) {
-                transaction.installmentNumber = installmentInfo.installmentNumber;
-                transaction.totalInstallments = installmentInfo.totalInstallments;
-            }
-
             await this.transactionService.addTransaction(transaction);
         }
     }
@@ -238,7 +227,6 @@ export class PaymentService {
         id: string,
         captureInfo: PaymentCaptureInfoDTO,
     ) {
-        const requiredAmount = await this.transactionService.calculateRequiredCaptureAmount(id);
         const paymentDto = await this.findPaymentById(id);
         const paymentItems = await this.findItems(id);
         const paymentTaxes = await this.findTaxes(id);
@@ -247,10 +235,9 @@ export class PaymentService {
             captureInfo.paidAmount !== undefined &&
             captureInfo.paidAmount <= 0
         ) {
-            captureInfo.paidAmount = Math.min(requiredAmount, captureInfo.paidAmount);;
-        } else {
-            captureInfo.paidAmount = requiredAmount;
+            captureInfo.paidAmount = paymentDto.totalAmount;
         }
+
         try {
             const result = await this.eventSenderService.paymentChannelStarted({
                 ...paymentDto,
@@ -266,7 +253,6 @@ export class PaymentService {
         }
     }
 
-
     async checkPaymentStatus(id: string) {
         const paymentDto = await this.findPaymentById(id);
         const result =
@@ -276,14 +262,7 @@ export class PaymentService {
             );
         await this.editPaymentOperationInformation(id, result);
 
-        // Transaction'ları kontrol et
-        const transactions = await this.transactionService.getTransactionsByPaymentId(id);
-
-        return {
-            ...result,
-            transactions: transactions,
-            transactionCount: transactions.length,
-            completedTransactions: transactions.filter(t => t.paymentStatus === 'COMPLETED').length
-        };
+        return result;
+        // return this.transactionService.checkTransactionsStatus(id, captureInfo);
     }
 }

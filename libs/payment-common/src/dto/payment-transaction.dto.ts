@@ -15,6 +15,4 @@ export class PaymentTransactionDTO {
     errorStatus?: PaymentErrorStatus;
     operationNote: string;
     transactionType: TransactionType;
-    installmentNumber?: number;
-    totalInstallments?: number;
 }
