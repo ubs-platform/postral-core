@@ -1,9 +1,9 @@
-import { PaymentErrorStatus, PaymentStatus } from "../type/status";
+import { PaymentErrorStatus, PaymentOperationStatus, PaymentStatus } from "../type/status";
 
 export class PaymentChannelStatusDTO {
     paymentChannelId?: string;
     paymentChannelOperationId: string;
     redirectUrl: string;
-    paymentStatus: PaymentStatus;
+    paymentStatus: PaymentOperationStatus;
     paymentErrorStatus?: PaymentErrorStatus;
 }

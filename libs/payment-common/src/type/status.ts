@@ -5,6 +5,14 @@
 export type PaymentStatus = 'INITIATED' | 'WAITING' | 'COMPLETED' | 'FAILED';
 
 /**
+ * * * WAITING: Ödeme işlemi başlatıldı ve kullanıcıdan ödeme bekleniyor.
+ * * READY: Ödeme işlemi kullanıcı tarafından tamamlandı ve ödeme onay bekliyor.
+ * * COMPLETED: Ödeme işlemi başarıyla tamamlandı.
+ * * FAILED: Ödeme işlemi başarısız oldu.
+ */
+export type PaymentOperationStatus = 'WAITING' | 'READY' | 'COMPLETED' | 'FAILED';
+
+/**
  * * FAILED: Ödeme işlemi başarısız oldu.
  * * CANCELLED: Ödeme işlemi kullanıcı veya sistem tarafından iptal edildi.
  * * EXPIRED: Ödeme işlemi süresi doldu.

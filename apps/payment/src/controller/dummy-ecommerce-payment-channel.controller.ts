@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post, Query, Redirect, Response } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { PaymentDTO, PaymentFullDTO, PaymentStatus } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentFullDTO, PaymentOperationStatus, PaymentStatus } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { ReturnDocument } from 'typeorm';
 
@@ -10,7 +10,7 @@ export class DummyEcommercePaymentChannelController {
 
     readonly statusMapByOperationId: Map<
         string,
-        PaymentStatus
+        PaymentOperationStatus
     > = new Map();
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/start')

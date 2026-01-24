@@ -9,6 +9,7 @@ import { Payment } from './payment.entity';
 import { PaymentTransaction } from './transaction.entity';
 import { Address } from './address.entity';
 import { ItemTaxEntity, ItemTaxVariation } from './item-tax.entity';
+import { PaymentChannelOperation } from './payment-channel-operation.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -21,6 +22,7 @@ export * from "./item.entity"
 export * from "./item-price.entity"
 export * from "./transaction.entity"
 export * from "./item-tax.entity"
+export * from "./payment-channel-operation.entity"
 export const PaymentsEntities = [
     PostralPaymentItem,
     Payment,
@@ -33,5 +35,6 @@ export const PaymentsEntities = [
     PaymentTransaction,
     Address,
     ItemTaxEntity,
-    ItemTaxVariation
+    ItemTaxVariation,
+    PaymentChannelOperation
 ];

@@ -38,7 +38,7 @@ export class PaymentController {
     public async checkOperation(
         @Param() { id }: { id: string }
     ) {
-        return await this.ps.checkPaymentStatus(id);
+        return await this.ps.updatePaymentByOperationStatuses(id);
         //   return await this.ps.generateTransactions(id, captureInfo);
     }
 
