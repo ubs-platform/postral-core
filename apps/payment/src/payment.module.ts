@@ -38,6 +38,7 @@ import { ItemTaxMapper } from './mapper/item-tax.mapper';
 import { MicroserviceController } from './controller/microservice-controller';
 import { CalculationController } from './controller/calculation.controller';
 import { CalculationService } from './service/calculation.service';
+import { PaymentOperationManagementService } from './service/payment-operation-management.service';
 
 @Module({
     imports: [
@@ -82,7 +83,8 @@ import { CalculationService } from './service/calculation.service';
         AddressMapper,
         ItemTaxMapper,
         ItemTaxService,
-        CalculationService
+        CalculationService,
+        PaymentOperationManagementService
     ],
     controllers: [
         PaymentController,

@@ -1,6 +1,20 @@
-import { Controller, Get, Param, Post, Query, Redirect, Response } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Param,
+    Post,
+    Query,
+    Redirect,
+    Response,
+} from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { PaymentDTO, PaymentFullDTO, PaymentOperationStatus, PaymentStatus } from '@tk-postral/payment-common';
+import {
+    PaymentDTO,
+    PaymentFullDTO,
+    PaymentFullWithCaptureInfoDTO,
+    PaymentOperationStatus,
+    PaymentStatus,
+} from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { ReturnDocument } from 'typeorm';
 
@@ -8,39 +22,70 @@ import { ReturnDocument } from 'typeorm';
 export class DummyEcommercePaymentChannelController {
     // This is a dummy controller for ecommerce payment channel simulation
 
-    readonly statusMapByOperationId: Map<
-        string,
-        PaymentOperationStatus
-    > = new Map();
+    readonly statusMapByOperationId: Map<string, PaymentOperationStatus> =
+        new Map();
 
-    @MessagePattern('postral/payment-channel/dummy-ecommerce/start')
-    async handleStartPaymentOperation(paymentDto: PaymentFullDTO) {
-        
+        // # MessagePattern handlers for microservice communication
+    @MessagePattern('postral/payment-channel/dummy-ecommerce/init')
+    async handleStartPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         return this.startPaymentOperation(paymentDto);
     }
 
+    @MessagePattern('postral/payment-channel/dummy-ecommerce/fire')
+    async fireTheAuthorizedPayment(operationId: string) {
+        if (!this.statusMapByOperationId.has(operationId)) {
+            throw new Error('Operation not found');
+        }
+        if (this.statusMapByOperationId.get(operationId) === 'FAILED') {
+            throw new Error('Payment operation is not success, cannot fire.');
+        }
+        this.statusMapByOperationId.set(operationId, 'COMPLETED');
+        return {
+            paymentChannelId: 'dummy-ecommerce',
+            paymentChannelOperationId: operationId,
+            redirectUrl: `dummy-ecommerce-payment-channel/pay/${operationId}`,
+            paymentStatus: 'COMPLETED',
+        } as PaymentChannelStatusDTO;
+    }
+
+    @MessagePattern('postral/payment-channel/dummy-ecommerce/cancel')
+    async cancelPayment(operationId: string) {
+        if (!this.statusMapByOperationId.has(operationId)) {
+            throw new Error('Operation not found');
+        }
+        this.statusMapByOperationId.set(operationId, 'FAILED');
+        return {
+            paymentChannelId: 'dummy-ecommerce',
+            paymentChannelOperationId: operationId,
+            redirectUrl: `dummy-ecommerce-payment-channel/pay/${operationId}`,
+            paymentStatus: 'FAILED',
+        } as PaymentChannelStatusDTO;
+    }
+
     @MessagePattern('postral/payment-channel/dummy-ecommerce/check')
-    async checkPayment(paymentOperationId: string): Promise<PaymentChannelStatusDTO> {
-        
+    async checkPayment(
+        paymentOperationId: string,
+    ): Promise<PaymentChannelStatusDTO> {
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentOperationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
             paymentStatus:
-                this.statusMapByOperationId.get(paymentOperationId) || 'EXPIRED',
+                this.statusMapByOperationId.get(paymentOperationId) || 'FAILED',
         } as PaymentChannelStatusDTO;
     }
 
+
+    // HTTP Endpoints for simulating payment process
+
     @Post('/operation')
-    async startPaymentOperation(paymentDto: PaymentFullDTO) {
-        
+    async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
             redirectUrl: `dummy-ecommerce-payment-channel/operation/${paymentDto.id}`,
             paymentStatus: 'WAITING',
-
         } as PaymentChannelStatusDTO;
     }
 
@@ -51,20 +96,7 @@ export class DummyEcommercePaymentChannelController {
         @Response() res,
     ) {
         res.type('html').send(
-            this.generateDummyEcommercePaymentPage(
-                operationId,
-                redirectUrlBackToApp,
-            ),
-        );
-    }
-
-    generateDummyEcommercePaymentPage(
-        operationId: string,
-        redirectUrlBackToApp: string,
-    ): string {
-        // This would normally return an HTML page for the dummy ecommerce payment
-        // For simplicity, we return a simple HTML string here
-        return `<html>
+            `<html>
             <body>
                 <h1>Dummy Ecommerce Payment Page</h1>
                 <p>Operation ID: ${operationId}</p>
@@ -81,7 +113,8 @@ export class DummyEcommercePaymentChannelController {
                     }
                 </script>
             </body>
-        </html>`;
+        </html>`,
+        );
     }
 
     @Get('/operation/:operationId/status/:set')

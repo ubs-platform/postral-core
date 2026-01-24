@@ -25,6 +25,7 @@ import { PaymentChannelOperation } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TypeAssertionUtil } from '../util/type-assertion';
 import { PaymentStatus } from 'dist/libs/payments/type/status';
+import { PaymentOperationManagementService } from './payment-operation-management.service';
 
 @Injectable()
 export class PaymentService {
@@ -38,8 +39,7 @@ export class PaymentService {
         private transactionService: PaymentTransactionService,
         private accountService: AccountService,
         private calcService: CalculationService,
-        @InjectRepository(PaymentChannelOperation)
-        private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
+        private paymentOperationManagementService: PaymentOperationManagementService,
     ) {}
 
     async findAllRaw(): Promise<Payment[]> {
@@ -69,7 +69,13 @@ export class PaymentService {
 
     async findPaymentById(id: string) {
         const paymentReal = await this.findPaymentByIdRaw(id);
-        const p = this.paymentMapper.toDto(paymentReal!);
+        const paymentItems = await this.findItems(id);
+        const paymentTaxes = await this.findTaxes(id);
+        const p = {
+            ...this.paymentMapper.toDto(paymentReal!),
+            items: paymentItems,
+            taxes: paymentTaxes,
+        };
         return p;
     }
 
@@ -82,8 +88,7 @@ export class PaymentService {
     }
 
     async generateTransactions(
-        paymentReal: Payment,
-        captureInfo: PaymentChannelStatusDTO,
+        paymentReal: Payment
     ) {
         const items = await this.findItems(paymentReal.id);
         for (let index = 0; index < items.length; index++) {
@@ -92,7 +97,7 @@ export class PaymentService {
             transaction.amount = paymentItem.totalAmount;
             transaction.taxAmount = paymentItem.taxAmount;
             transaction.currency = paymentReal.currency;
-            transaction.paymentChannelId = captureInfo.paymentChannelId!;
+            transaction.paymentChannelId = paymentReal.paymentChannelId!;
             transaction.paymentId = paymentReal.id;
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
@@ -182,136 +187,84 @@ export class PaymentService {
     }
 
     async cancelPayment(id: string) {
-        const payment = await this.editPaymentOperationInformation(id, {
-            paymentChannelId: '',
-            paymentChannelOperationId: '',
-            redirectUrl: '',
-            paymentStatus: 'FAILED',
-            paymentErrorStatus: 'CANCELLED',
-        });
+        const payment = await this.findPaymentByIdRaw(id);
+        if (!payment) {
+            throw new NotFoundException('Payment not found');
+        }
 
-        await this.eventSenderService.paymentChannelCancelled(id);
-
-        return payment;
-    }
-
-    async totalPaidOrAuthorizedOf(paymentId: string) {
-        const paymentOperations = await this.paymentChannelOperationRepo.find({
-            where: [
-                { paymentId: paymentId, status: 'READY' },
-                { paymentId: paymentId, status: 'COMPLETED' },
-            ],
-        });
-
-        return ItemCalculationUtil.addNumberValues(
-            ...paymentOperations.map((op) => op.amount),
+        this.paymentOperationManagementService.cancelPaymentOperationsByPaymentId(
+            id,
         );
+        payment.paymentStatus = 'FAILED';
+        payment.errorStatus = 'CANCELLED';
+        await this.paymentrepo.save(payment);
+
+        return this.paymentMapper.toDto(payment);
     }
 
     async startPaymentOperation(
         id: string,
         captureInfo: PaymentCaptureInfoDTO,
     ) {
-        TypeAssertionUtil.assertIsNumber(
-            captureInfo.paidAmount,
-            'paidAmount must be a number',
-        );
-
-        const paymentDto = await this.findPaymentById(id);
+        const payment = await this.findPaymentByIdRaw(id);
+        if (!payment) {
+            throw new NotFoundException('Payment not found');
+        }
+        if (payment.paymentStatus === 'COMPLETED') {
+            throw new Error('Payment is already completed');
+        }
+        if (payment.paymentStatus === 'FAILED') {
+            throw new Error('Payment has already failed');
+        }
         const paymentItems = await this.findItems(id);
         const paymentTaxes = await this.findTaxes(id);
-        const paid = await this.totalPaidOrAuthorizedOf(id);
 
-        const remainingAmount = paymentDto.totalAmount - paid;
-
-        captureInfo.paidAmount = captureInfo.paidAmount || 0;
-
-        if (captureInfo.paidAmount > remainingAmount) {
-            captureInfo.paidAmount = remainingAmount;
-        }
-
-        if (
-            captureInfo.paidAmount !== undefined &&
-            captureInfo.paidAmount <= 0
-        ) {
-            captureInfo.paidAmount = paymentDto.totalAmount;
-        }
-
-        try {
-            const result = await this.eventSenderService.paymentChannelStarted({
-                ...paymentDto,
-                items: paymentItems,
-                taxes: paymentTaxes,
-                captureInfo: captureInfo,
-            });
-            const paymentOperationRecord = new PaymentChannelOperation();
-            paymentOperationRecord.amount = captureInfo.paidAmount!;
-
-            return await this.savePaymentChannelRecord(
-                paymentOperationRecord,
-                result,
-                id,
+        const result =
+            await this.paymentOperationManagementService.startPaymentOperation(
+                {
+                    ...this.paymentMapper.toDto(payment),
+                    items: paymentItems,
+                    taxes: paymentTaxes,
+                    captureInfo: captureInfo,
+                },
+                captureInfo,
             );
-
-            // await this.editPaymentOperationInformation(id, result);
-            // return result;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
-
-    async checkAndUpdateOperationStatuses(
-        paymentId: string,
-    ): Promise<PaymentChannelStatusDTO> {
-        const paymentOperations = await this.paymentChannelOperationRepo.find({
-            where: [{ paymentId: paymentId, status: 'WAITING' }],
-        });
-
-        for (let index = 0; index < paymentOperations.length; index++) {
-            const paymentOperation = paymentOperations[index];
-            const result =
-                await this.eventSenderService.paymentChannelStatusChecked(
-                    paymentOperation.paymentChannelId,
-                    paymentId,
-                );
-            await this.savePaymentChannelRecord(
-                paymentOperation,
-                result,
-                paymentId,
-            );
-        }
-
-        const finalResult =
-            await this.eventSenderService.paymentChannelStatusChecked(
-                '',
-                paymentId,
-            );
-        return finalResult;
-    }
-
-    private async savePaymentChannelRecord(
-        paymentOperationRecord: PaymentChannelOperation,
-        result: PaymentChannelStatusDTO,
-        paymentId: string,
-    ) {
-        paymentOperationRecord.id = result.paymentChannelOperationId!;
-        paymentOperationRecord.operationId = result.paymentChannelOperationId!;
-        paymentOperationRecord.paymentId = paymentId;
-        paymentOperationRecord.paymentChannelId = result.paymentChannelId!;
-        paymentOperationRecord.status = result.paymentStatus;
-
-        await this.paymentChannelOperationRepo.save(paymentOperationRecord);
+        payment.paymentStatus = 'WAITING';
+        await this.paymentrepo.save(payment);
         return result;
     }
 
+    private async assertPaymentIsNotResolved(paymentId: string) {
+        const payment = await this.findPaymentByIdRaw(paymentId);
+        if (!payment) {
+            throw new NotFoundException('Payment not found');
+        }
+        if (
+            payment.paymentStatus === 'COMPLETED' ||
+            payment.paymentStatus === 'FAILED'
+        ) {
+            throw new Error('Payment has already been resolved');
+        }
+    }
+
+    // Güncellenmiş ödeme operasyon durumlarına göre ödemeyi günceller
     async updatePaymentByOperationStatuses(id: string) {
+        await this.assertPaymentIsNotResolved(id);
+        // Ödeme operasyonlarının durumlarını kontrol et ve güncelle
+        await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
+            id,
+        );
+
         const payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
             throw new NotFoundException('Payment not found');
         }
 
-        const paidAmount = await this.totalPaidOrAuthorizedOf(id);
+        // Toplam ödenen veya yetkilendirilen miktarı hesapla
+        const paidAmount =
+            await this.paymentOperationManagementService.totalPaidOrAuthorizedOf(
+                id,
+            );
 
         if (paidAmount >= payment.totalAmount) {
             payment.paymentStatus = 'COMPLETED';
@@ -320,10 +273,14 @@ export class PaymentService {
         await this.paymentrepo.save(payment);
 
         if (payment.paymentStatus === 'COMPLETED') {
-            // TODO: Ön onaydaki ödeme operasyonları da tamamlama sinyali gönderilecek.
-            
+            // Ödeme tamamlandıysa, yetkilendirilmiş ödemeleri tetikle
+            await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
+                id,
+            );
+            await this.generateTransactions(
+                payment
+            );
         }
         return this.paymentMapper.toDto(payment);
-  
     }
 }

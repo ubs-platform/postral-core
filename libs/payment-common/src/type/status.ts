@@ -10,7 +10,17 @@ export type PaymentStatus = 'INITIATED' | 'WAITING' | 'COMPLETED' | 'FAILED';
  * * COMPLETED: Ödeme işlemi başarıyla tamamlandı.
  * * FAILED: Ödeme işlemi başarısız oldu.
  */
-export type PaymentOperationStatus = 'WAITING' | 'READY' | 'COMPLETED' | 'FAILED';
+export type PaymentOperationStatus =
+    | 'WAITING'
+    | 'READY'
+    | 'COMPLETED'
+    | 'FAILED';
+export type PaymentOperationFailReason =
+    | 'INSUFFICIENT_FUNDS'
+    | 'EXPIRED'
+    | 'CARD_DECLINED'
+    | 'NETWORK_ERROR'
+    | 'UNKNOWN';
 
 /**
  * * FAILED: Ödeme işlemi başarısız oldu.

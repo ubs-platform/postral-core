@@ -5,24 +5,16 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 import { lastValueFrom } from 'rxjs';
 @Injectable()
 export class EventSenderService {
-
     /**
      *
      */
-    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) { }
+    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) {}
 
     async onPaymentInitialized(pd: PaymentDTO) {
         await this.kfk.emit('POSTRAL_PAYMENT_INITIALIZED', pd);
     }
 
-    async paymentChannelStarted(pd: PaymentFullDTO): Promise<PaymentChannelStatusDTO> {
-
-        return await lastValueFrom(
-            this.kfk.send(`postral/payment-channel/${pd.captureInfo.paymentChannelId}/start`, pd),
-        );
-    }
-
-    async paymentChannelStatusChecked(
+    async paymentChannelStatusCheck(
         paymentChannelId: string,
         paymentOperationId: string,
     ): Promise<PaymentChannelStatusDTO> {
@@ -34,22 +26,35 @@ export class EventSenderService {
         );
     }
 
-    async paymentChannelCancelled(id: string): Promise<PaymentChannelStatusDTO> {
-        return await lastValueFrom(
-            this.kfk.emit(`postral/payment/cancel`, id),
-        );
+    /**
+     * Ödeme kanalının iptal edildiğini bildirir.
+     * @param id Ödeme kanalı kimliği
+     * @returns 
+     */
+    async paymentChannelCancelled(
+        paymentChannelId: string,
+        paymentOperationId: string,
+    ): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/cancel`, paymentOperationId));
     }
 
-    async sendPaymentInitEvent(pd: PaymentFullDTO): Promise<PaymentChannelStatusDTO> {
-        return await lastValueFrom(
-            this.kfk.emit(`postral/payment/init`, pd),
-        );
+    /**
+     * Ödeme kanalının yetkilendirilip yetkilendirilmediğini kontrol eder ve yetkilendirilmişse ödeme kanalını tetikler.
+     * @param id Ödeme kanalının kimliği
+     * @returns 
+     */
+    async paymentChannelFireIfAuthorized(
+        paymentChannelId: string,
+        paymentOperationId: string,
+    ): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/fire`, paymentOperationId));
     }
 
-
-    // async paymentCompleted(pd: PaymentDTO) {
-    //     await this.kfk.emit('POSTRAL_PAYMENT_COMPLETED', pd);
-    // }
-
+    async initializePaymentChannelOperation(
+        paymentChannelId: string,
+        pd: PaymentFullDTO,
+    ): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd));
+    }
 
 }

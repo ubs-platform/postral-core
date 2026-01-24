@@ -33,7 +33,6 @@ export class PaymentTransactionService {
         dto.id = entity.id;
         dto.amount = entity.amount;
         dto.currency = entity.currency;
-        dto.paymentChannelId = entity.paymentChannelId;
         dto.paymentId = entity.paymentId;
         dto.targetAccountId = entity.targetAccountId;
         dto.sourceAccountId = entity.sourceAccountId;
@@ -54,8 +53,7 @@ export class PaymentTransactionService {
         );
         entity.taxAmount = dto.taxAmount;
         entity.amount = dto.amount;
-        entity.currency = dto.currency;
-        entity.paymentChannelId = dto.paymentChannelId;
+        entity.currency = dto.currency;;
         entity.paymentId = dto.paymentId;
         entity.targetAccountId = dto.targetAccountId;
         entity.sourceAccountId = dto.sourceAccountId;
@@ -66,11 +64,11 @@ export class PaymentTransactionService {
         return entity;
     }
 
-    addTransaction(tr: PaymentTransactionDTO): Promise<PaymentTransactionDTO> {
+    async addTransaction(tr: PaymentTransactionDTO): Promise<PaymentTransactionDTO> {
         const entity = this.fromDto(tr);
-        this.transactionRepository.save(entity);
+        await this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)
-        return Promise.resolve(this.toDto(entity));
+        return await this.toDto(entity);
     }
 
     async addTransactions(transactions: PaymentTransactionDTO[]): Promise<void> {
@@ -101,8 +99,9 @@ export class PaymentTransactionService {
                 mappingObject[key].taxAmount += object.taxAmount;
             }
         );
-        for (const tr of transactions) {
-            await this.addTransaction(tr);
+        
+        for (const tr of Object.values(transactionGrouped).flat().flat()) {
+            await this.addTransaction(tr as PaymentTransactionDTO);
         }
     }
 }

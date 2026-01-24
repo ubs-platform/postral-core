@@ -13,8 +13,8 @@ export class PaymentChannelOperation {
     @Column()
     paymentChannelId: string;
 
-    @Column()
-    operationType: string;
+    // @Column()
+    // operationType: string;
 
     @Column({ type: 'varchar', nullable: true })
     operationId: string;

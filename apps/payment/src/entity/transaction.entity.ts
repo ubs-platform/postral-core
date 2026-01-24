@@ -32,9 +32,6 @@ export class PaymentTransaction {
     currency: string;
 
     @Column()
-    paymentChannelId: string;
-
-    @Column()
     paymentId: string;
 
     @Column()

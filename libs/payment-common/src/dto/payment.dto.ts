@@ -27,8 +27,13 @@ export interface PaymentDTO {
     currency: string;
 }
 
-export interface PaymentFullDTO extends PaymentDTO {
+export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     items: PaymentItemDto[];
     taxes: TaxDTO[];
     captureInfo: PaymentCaptureInfoDTO;
+}
+
+export interface PaymentFullDTO extends PaymentDTO {
+    items: PaymentItemDto[];
+    taxes: TaxDTO[];
 }
