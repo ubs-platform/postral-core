@@ -1,13 +1,14 @@
 import {
     Controller,
     Get,
+    Inject,
     Param,
     Post,
     Query,
     Redirect,
     Response,
 } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { ClientKafka, MessagePattern } from '@nestjs/microservices';
 import {
     PaymentDTO,
     PaymentFullDTO,
@@ -21,6 +22,13 @@ import { ReturnDocument } from 'typeorm';
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
     // This is a dummy controller for ecommerce payment channel simulation
+
+    /**
+     *
+     */
+    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) {
+        
+    }
 
     readonly statusMapByOperationId: Map<string, PaymentOperationStatus> =
         new Map();
@@ -124,6 +132,10 @@ export class DummyEcommercePaymentChannelController {
         @Query('redirectUrl') redirectUrlBackToApp: string,
     ) {
         this.statusMapByOperationId.set(operationId, set);
+        this.kfk.emit(
+            'postral/payment-operation-status-updated',
+            operationId,
+        );
         // Redirect back to the application with status
         return Redirect(
             `${redirectUrlBackToApp}?operationId=${operationId}&status=${set}`,

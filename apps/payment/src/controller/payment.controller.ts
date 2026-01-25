@@ -6,11 +6,13 @@ import {
     NotFoundException,
     Param,
     Post,
+    Sse,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import { PaymentInitDTO } from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
+import { EventPattern } from '@nestjs/microservices';
 
 @Controller('payment')
 export class PaymentController {
@@ -35,9 +37,7 @@ export class PaymentController {
     }
 
     @Post('/:id/operation/check')
-    public async checkOperation(
-        @Param() { id }: { id: string }
-    ) {
+    public async checkOperation(@Param() { id }: { id: string }) {
         return await this.ps.updatePaymentByOperationStatuses(id);
         //   return await this.ps.generateTransactions(id, captureInfo);
     }
@@ -69,5 +69,15 @@ export class PaymentController {
             throw new NotFoundException(`Payment with id ${id} not found`);
         }
         return await this.ps.cancelPayment(id);
+    }
+
+    @Sse('/:id/operation/stream')
+    public async streamPaymentStatus(@Param() { id }: { id: string }) {
+        return this.ps.streamPaymentStatus(id);
+    }
+
+    @EventPattern('postral/payment-operation-status-updated')
+    public handlePaymentOperationStatusUpdated(operationId: string) {
+        return this.ps.handlePaymentOperationStatusUpdated(operationId);
     }
 }

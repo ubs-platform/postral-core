@@ -17,6 +17,8 @@ import {
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil } from '../util/type-assertion';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { PaymentFullWithCaptureInfoDTO } from 'dist/libs/payments/dto/payment.dto';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -36,7 +38,6 @@ export class PaymentOperationManagementService {
         result: PaymentChannelStatusDTO,
         paymentId: string,
     ) {
-
         paymentOperationRecord.id = result.paymentChannelOperationId!;
         paymentOperationRecord.operationId = result.paymentChannelOperationId!;
         paymentOperationRecord.paymentId = paymentId;
@@ -59,10 +60,8 @@ export class PaymentOperationManagementService {
         );
     }
 
-    async startPaymentOperation(
-        paymentFullDto: PaymentFullDTO,
-        captureInfo: PaymentCaptureInfoDTO,
-    ) {
+    async startPaymentOperation(paymentFullDto: PaymentFullWithCaptureInfoDTO) {
+        const captureInfo = paymentFullDto.captureInfo;
         TypeAssertionUtil.assertIsNumber(
             captureInfo.paidAmount,
             'paidAmount must be a number',
@@ -105,22 +104,47 @@ export class PaymentOperationManagementService {
         }
     }
 
+    async checkAndUpdateOperationStatusByOpId(operationId: string): Promise<void> {
+        const paymentOperations = await this.paymentChannelOperationRepo.find({
+            where: [{ operationId: operationId, status: 'WAITING' }],
+        });
+
+        await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
+    }
+
     async checkAndUpdateOperationStatuses(paymentId: string): Promise<void> {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: paymentId, status: 'WAITING' }],
         });
 
+        await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
+    }
+
+    // @Cron('*/5 * * * * *')
+    // async checkAndUpdateAllOperationStatuses(): Promise<void> {
+    //     const paymentOperations = await this.paymentChannelOperationRepo.find({
+    //         where: [{ status: 'WAITING' }],
+    //     });
+    //     if (paymentOperations.length == 0) {
+    //         return;
+    //     }
+    //     await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
+    // }
+
+    private async checkAndUpdateOperationStatusesRaw(
+        paymentOperations: PaymentChannelOperation[],
+    ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
             const result =
                 await this.eventSenderService.paymentChannelStatusCheck(
                     paymentOperation.paymentChannelId,
-                    paymentId,
+                    paymentOperation.paymentId,
                 );
             await this.savePaymentChannelRecord(
                 paymentOperation,
                 result,
-                paymentId,
+                paymentOperation.paymentId,
             );
         }
     }
