@@ -16,3 +16,4 @@ export * from './type/transaction-type';
 export * from './dto/item-tax.dto';
 export * from './dto/calculation.dto';
 export * from './dto/payment-channel-status';
+export * from './dto/payment-search.dto';

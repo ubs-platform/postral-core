@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { Repository } from 'typeorm';
+import { In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -14,6 +14,8 @@ import {
     PaymentDTO,
     TaxDTO,
     PaymentTransactionDTO,
+    PaymentSearchDTO,
+    PaymentSearchPaginationDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
@@ -27,6 +29,7 @@ import { TypeAssertionUtil } from '../util/type-assertion';
 import { PaymentStatus } from 'dist/libs/payments/type/status';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
+import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 @Injectable()
 export class PaymentService {
@@ -55,10 +58,66 @@ export class PaymentService {
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
     }
+
     async findAll(): Promise<PaymentDTO[]> {
         return (await this.findAllRaw()).map((p) =>
             this.paymentMapper.toDto(p),
         );
+    }
+
+    async modelSearch(
+        modelSearch : PaymentSearchPaginationDTO
+    ) {
+        const where = {};
+        if (modelSearch.paymentStatus) {
+            Object.assign(where, { paymentStatus: modelSearch.paymentStatus });
+        }
+        if (modelSearch.customerAccountId) {
+            Object.assign(where, {
+                customerAccountId: modelSearch.customerAccountId,
+            });
+        }
+        if (modelSearch.sellerAccountIds && modelSearch.sellerAccountIds.length > 0) {
+            Object.assign(where, {
+                items: {
+                    sellerAccountId: In(
+                        modelSearch.sellerAccountIds,
+                    ),
+                },
+            });
+        }
+        if (modelSearch.paymentChannelId) {
+            Object.assign(where, {
+                paymentChannelId: modelSearch.paymentChannelId,
+            });
+        }
+        if (modelSearch.dateFrom) {
+            Object.assign(where, {
+                createdAt: MoreThanOrEqual(
+                    modelSearch.dateFrom,
+                ),
+            });
+        }
+        if (modelSearch.dateTo) {
+            Object.assign(where, {
+                createdAt: LessThanOrEqual(
+                    modelSearch.dateTo,
+                ),
+            });
+        }
+        
+        const sortKey = modelSearch.sortBy || 'createdAt';
+        const sortOrder = modelSearch.sortRotation || 'desc';
+        return (
+            await TypeormSearchUtil.modelSearch<Payment>(
+                this.paymentrepo,
+                modelSearch.size,
+                modelSearch.page,
+                { [sortKey]: sortOrder },
+                [],
+                where,
+            )
+        ).map((p) => this.paymentMapper.toDto(p));
     }
 
     async findItems(id: string): Promise<PaymentItemDto[]> {
@@ -283,6 +342,8 @@ export class PaymentService {
     }
 
     handlePaymentOperationStatusUpdated(operationId: string) {
-        this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(operationId);
+        this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(
+            operationId,
+        );
     }
 }
