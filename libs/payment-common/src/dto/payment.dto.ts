@@ -14,17 +14,19 @@ export interface PaymentDTO {
     totalAmount: number;
     taxAmount: number;
     customerAccountId: string;
-
+    customerAccountName?: string;
     paymentChannelId: string;
     paymentChannelOperationId?: string;
     paymentChannelOperationUrl?: string;
     paymentStatus: PaymentStatus;
     errorStatus: PaymentErrorStatus;
-    
+
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
     currency: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {

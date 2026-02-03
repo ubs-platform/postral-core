@@ -44,6 +44,9 @@ export class Payment {
     @Column()
     customerAccountId: string;
 
+    @Column({ nullable: true })
+    customerAccountName: string;
+
     @Column({ type: 'varchar' })
     paymentStatus: PaymentStatus;
 

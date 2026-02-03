@@ -5,8 +5,8 @@ export interface PaymentSearchDTO  {
     type?: 'PURCHASE' | 'REFUND';
     customerAccountId?: string;
     sellerAccountIds?: string[];
-    paymentChannelId?: string;
-    paymentStatus?: string;
+    paymentChannelId?: string[];
+    paymentStatus?: string[];
     currency?: string;
     dateFrom?: string;
     dateTo?: string;

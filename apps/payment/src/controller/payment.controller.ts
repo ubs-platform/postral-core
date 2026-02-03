@@ -6,10 +6,11 @@ import {
     NotFoundException,
     Param,
     Post,
+    Query,
     Sse,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
-import { PaymentInitDTO } from '@tk-postral/payment-common';
+import { PaymentInitDTO, PaymentSearchPaginationDTO } from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { EventPattern } from '@nestjs/microservices';
@@ -43,8 +44,14 @@ export class PaymentController {
     }
 
     @Get()
-    public async fetchAll() {
-        return await this.ps.findAll();
+    public async fetchAll(@Query() search : PaymentSearchPaginationDTO) {
+        return await this.ps.findAll(search);
+    }
+
+
+    @Get("/_search")
+    public async searchAll(@Query() search : PaymentSearchPaginationDTO) {
+        return await this.ps.modelSearch(search);
     }
 
     @Get('/:id')

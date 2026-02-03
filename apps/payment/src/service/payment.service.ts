@@ -26,7 +26,7 @@ import { CalculationService } from './calculation.service';
 import { PaymentChannelOperation } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TypeAssertionUtil } from '../util/type-assertion';
-import { PaymentStatus } from 'dist/libs/payments/type/status';
+// import { PaymentStatus } from 'dist/libs/payments/type/status';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
@@ -46,7 +46,7 @@ export class PaymentService {
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
-    ) {}
+    ) { }
 
     streamPaymentStatus(id: string): Observable<PaymentDTO> {
         return this.paymentStream.pipe(
@@ -59,53 +59,20 @@ export class PaymentService {
         return this.paymentrepo.find();
     }
 
-    async findAll(): Promise<PaymentDTO[]> {
-        return (await this.findAllRaw()).map((p) =>
+    async findAll(
+        modelSearch: PaymentSearchPaginationDTO
+    ): Promise<PaymentDTO[]> {
+        const where = this.searchWhereQuery(modelSearch);
+        return (await this.paymentrepo.find({ where })).map((p) =>
             this.paymentMapper.toDto(p),
         );
     }
 
     async modelSearch(
-        modelSearch : PaymentSearchPaginationDTO
+        modelSearch: PaymentSearchPaginationDTO
     ) {
-        const where = {};
-        if (modelSearch.paymentStatus) {
-            Object.assign(where, { paymentStatus: modelSearch.paymentStatus });
-        }
-        if (modelSearch.customerAccountId) {
-            Object.assign(where, {
-                customerAccountId: modelSearch.customerAccountId,
-            });
-        }
-        if (modelSearch.sellerAccountIds && modelSearch.sellerAccountIds.length > 0) {
-            Object.assign(where, {
-                items: {
-                    sellerAccountId: In(
-                        modelSearch.sellerAccountIds,
-                    ),
-                },
-            });
-        }
-        if (modelSearch.paymentChannelId) {
-            Object.assign(where, {
-                paymentChannelId: modelSearch.paymentChannelId,
-            });
-        }
-        if (modelSearch.dateFrom) {
-            Object.assign(where, {
-                createdAt: MoreThanOrEqual(
-                    modelSearch.dateFrom,
-                ),
-            });
-        }
-        if (modelSearch.dateTo) {
-            Object.assign(where, {
-                createdAt: LessThanOrEqual(
-                    modelSearch.dateTo,
-                ),
-            });
-        }
-        
+        const where = this.searchWhereQuery(modelSearch);
+
         const sortKey = modelSearch.sortBy || 'createdAt';
         const sortOrder = modelSearch.sortRotation || 'desc';
         return (
@@ -118,6 +85,49 @@ export class PaymentService {
                 where,
             )
         ).map((p) => this.paymentMapper.toDto(p));
+    }
+
+    private searchWhereQuery(modelSearch: PaymentSearchPaginationDTO) {
+        const where = {};
+        if (modelSearch.paymentStatus && modelSearch.paymentStatus.length > 0) {
+            Object.assign(where, { paymentStatus: In(modelSearch.paymentStatus) });
+        }
+        if (modelSearch.customerAccountId) {
+            Object.assign(where, {
+                customerAccountId: modelSearch.customerAccountId,
+            });
+        }
+        if (modelSearch.sellerAccountIds && modelSearch.sellerAccountIds.length > 0) {
+            Object.assign(where, {
+                items: {
+                    sellerAccountId: In(
+                        modelSearch.sellerAccountIds
+                    ),
+                },
+            });
+        }
+        if (modelSearch.paymentChannelId && modelSearch.paymentChannelId.length > 0) {
+            Object.assign(where, {
+                paymentChannelId: In(
+                    modelSearch.paymentChannelId
+                ),
+            });
+        }
+        if (modelSearch.dateFrom) {
+            Object.assign(where, {
+                createdAt: MoreThanOrEqual(
+                    modelSearch.dateFrom
+                ),
+            });
+        }
+        if (modelSearch.dateTo) {
+            Object.assign(where, {
+                createdAt: LessThanOrEqual(
+                    modelSearch.dateTo
+                ),
+            });
+        }
+        return where;
     }
 
     async findItems(id: string): Promise<PaymentItemDto[]> {
@@ -232,6 +242,7 @@ export class PaymentService {
         p.taxAmount = taxTotal;
         p.items = items;
         p.customerAccountId = customerAccountId;
+        p.customerAccountName = customerAccount.name;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {

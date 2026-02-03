@@ -4,6 +4,14 @@ import { PaymentDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class PaymentMapper {
+
+    /**
+     *
+     */
+    constructor() {
+        
+    }
+
     toDto(saved: Payment): PaymentDTO {
         
         return {
@@ -13,19 +21,13 @@ export class PaymentMapper {
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
             customerAccountId: saved.customerAccountId,
+            customerAccountName: saved.customerAccountName,
             paymentChannelId: saved.paymentChannelId,
-            paymentChannelOperationId: saved.paymentChannelOperationId,
-            paymentChannelOperationUrl: saved.paymentChannelOperationUrl,
             paymentStatus: saved.paymentStatus,
             errorStatus: saved.errorStatus,
-            //   items: saved.items.map((a) => {
-            //     return {
-            //       name: a.name,
-            //       id: a.id,
-            //       totalAmount: a.totalAmount,
-            //       quantity: a.quantity,
-            //     };
-            //   }),
+            createdAt: saved.createdAt,
+            updatedAt: saved.updatedAt,
+
         };
     }
 }
