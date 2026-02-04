@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { In, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import {
+    In,
+    Repository,
+    MoreThanOrEqual,
+    LessThanOrEqual,
+    Between,
+} from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -30,6 +36,7 @@ import { TypeAssertionUtil } from '../util/type-assertion';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
+import { model } from 'mongoose';
 
 @Injectable()
 export class PaymentService {
@@ -46,7 +53,7 @@ export class PaymentService {
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
-    ) { }
+    ) {}
 
     streamPaymentStatus(id: string): Observable<PaymentDTO> {
         return this.paymentStream.pipe(
@@ -60,7 +67,7 @@ export class PaymentService {
     }
 
     async findAll(
-        modelSearch: PaymentSearchPaginationDTO
+        modelSearch: PaymentSearchPaginationDTO,
     ): Promise<PaymentDTO[]> {
         const where = this.searchWhereQuery(modelSearch);
         return (await this.paymentrepo.find({ where })).map((p) =>
@@ -68,11 +75,8 @@ export class PaymentService {
         );
     }
 
-    async modelSearch(
-        modelSearch: PaymentSearchPaginationDTO
-    ) {
+    async modelSearch(modelSearch: PaymentSearchPaginationDTO) {
         const where = this.searchWhereQuery(modelSearch);
-
         const sortKey = modelSearch.sortBy || 'createdAt';
         const sortOrder = modelSearch.sortRotation || 'desc';
         return (
@@ -82,7 +86,7 @@ export class PaymentService {
                 modelSearch.page,
                 { [sortKey]: sortOrder },
                 [],
-                where,
+                {$match: where},
             )
         ).map((p) => this.paymentMapper.toDto(p));
     }
@@ -90,41 +94,44 @@ export class PaymentService {
     private searchWhereQuery(modelSearch: PaymentSearchPaginationDTO) {
         const where = {};
         if (modelSearch.paymentStatus && modelSearch.paymentStatus.length > 0) {
-            Object.assign(where, { paymentStatus: In(modelSearch.paymentStatus) });
+            Object.assign(where, {
+                paymentStatus: In(modelSearch.paymentStatus),
+            });
         }
         if (modelSearch.customerAccountId) {
             Object.assign(where, {
                 customerAccountId: modelSearch.customerAccountId,
             });
         }
-        if (modelSearch.sellerAccountIds && modelSearch.sellerAccountIds.length > 0) {
+        if (
+            modelSearch.sellerAccountIds &&
+            modelSearch.sellerAccountIds.length > 0
+        ) {
             Object.assign(where, {
                 items: {
-                    sellerAccountId: In(
-                        modelSearch.sellerAccountIds
-                    ),
+                    sellerAccountId: In(modelSearch.sellerAccountIds),
                 },
             });
         }
-        if (modelSearch.paymentChannelId && modelSearch.paymentChannelId.length > 0) {
+        if (
+            modelSearch.paymentChannelId &&
+            modelSearch.paymentChannelId.length > 0
+        ) {
             Object.assign(where, {
-                paymentChannelId: In(
-                    modelSearch.paymentChannelId
-                ),
+                paymentChannelId: In(modelSearch.paymentChannelId),
             });
         }
-        if (modelSearch.dateFrom) {
+        if (modelSearch.dateFrom && modelSearch.dateTo) {
             Object.assign(where, {
-                createdAt: MoreThanOrEqual(
-                    modelSearch.dateFrom
-                ),
+                createdAt: Between(modelSearch.dateFrom, modelSearch.dateTo),
             });
-        }
-        if (modelSearch.dateTo) {
+        } else if (modelSearch.dateFrom) {
             Object.assign(where, {
-                createdAt: LessThanOrEqual(
-                    modelSearch.dateTo
-                ),
+                createdAt: MoreThanOrEqual(modelSearch.dateFrom),
+            });
+        } else if (modelSearch.dateTo) {
+            Object.assign(where, {
+                createdAt: LessThanOrEqual(modelSearch.dateTo),
             });
         }
         return where;
