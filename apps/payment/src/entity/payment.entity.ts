@@ -4,6 +4,7 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     OneToOne,
+    ManyToOne,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';

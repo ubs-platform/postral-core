@@ -109,10 +109,12 @@ export class PaymentService {
         ) {
             Object.assign(where, {
                 items: {
-                    sellerAccountId: In(modelSearch.sellerAccountIds),
+                    entityOwnerAccountId: In(modelSearch.sellerAccountIds),
                 },
             });
         }
+
+
         if (
             modelSearch.paymentChannelId &&
             modelSearch.paymentChannelId.length > 0
