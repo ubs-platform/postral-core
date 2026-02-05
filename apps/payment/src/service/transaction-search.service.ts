@@ -46,7 +46,7 @@ export class TransactionSearchService {
         modelSearch: PaymentTransactionSearchDTO,
         user?: UserAuthBackendDTO,
     ): Promise<PaymentTransactionDTO[]> {
-        const where = await this.buildSearchWhereQuery(modelSearch, user);
+        const where = await this.searchWhereQuery(modelSearch, user);
         return (await this.transactionRepo.find({ where })).map((p) =>
             this.transactionMapper.toDto(p),
         );
@@ -56,7 +56,7 @@ export class TransactionSearchService {
         modelSearch: PaymentTransactionSearchPaginationDTO,
         user?: UserAuthBackendDTO,
     ) {
-        const where = await this.buildSearchWhereQuery(modelSearch, user);
+        const where = await this.searchWhereQuery(modelSearch, user);
         const sortKey = modelSearch.sortBy || 'createdAt';
         const sortOrder = modelSearch.sortRotation || 'desc';
         return (
@@ -66,26 +66,19 @@ export class TransactionSearchService {
                 modelSearch.page,
                 { [sortKey]: sortOrder },
                 [],
-                { $match: where },
+                where,
             )
         ).map((p) => this.transactionMapper.toDto(p));
     }
 
-    private async buildSearchWhereQuery(
-        modelSearch: PaymentTransactionSearchDTO,
-        user?: UserAuthBackendDTO,
-    ) {
-        const where = await this.searchWhereQuery(modelSearch, user);
-        return where;
-    }
+
 
     private async searchWhereQuery(
         modelSearch: PaymentTransactionSearchDTO,
         user?: UserAuthBackendDTO,
     ) {
-
         const where = {};
-        const orClause = [{}];
+        let orClause = [{}];
         let authorizedAccountIds: string[] = [];
 
         if (modelSearch.admin !== "true") {
@@ -117,10 +110,10 @@ export class TransactionSearchService {
                     });
                 }
             } else {
-                orClause.push(
+                orClause = [
                     { sourceAccountId: In(authorizedAccountIds) },
                     { targetAccountId: In(authorizedAccountIds) },
-                );
+                ];
             }
 
         }

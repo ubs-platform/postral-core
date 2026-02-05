@@ -43,6 +43,7 @@ import { CalculationService } from './service/calculation.service';
 import { PaymentOperationManagementService } from './service/payment-operation-management.service';
 import { TransactionSearchController } from './controller/transaction-search.controller';
 import { TransactionSearchService } from './service/transaction-search.service';
+import { TransactionMapper } from './mapper/transaction.mapper';
 
 @Module({
     imports: [
@@ -90,7 +91,8 @@ import { TransactionSearchService } from './service/transaction-search.service';
         ItemTaxService,
         CalculationService,
         PaymentOperationManagementService,
-        TransactionSearchService
+        TransactionSearchService,
+        TransactionMapper
     ],
     controllers: [
         PaymentController,

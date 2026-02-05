@@ -102,7 +102,6 @@ export class PaymentService {
             transaction.amount = paymentItem.totalAmount;
             transaction.taxAmount = paymentItem.taxAmount;
             transaction.currency = paymentReal.currency;
-            transaction.paymentChannelId = paymentReal.paymentChannelId!;
             transaction.paymentId = paymentReal.id;
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
