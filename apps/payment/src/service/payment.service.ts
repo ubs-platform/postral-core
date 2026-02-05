@@ -4,9 +4,6 @@ import { Payment } from '../entity/payment.entity';
 import {
     In,
     Repository,
-    MoreThanOrEqual,
-    LessThanOrEqual,
-    Between,
 } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
@@ -20,13 +17,10 @@ import {
     PaymentDTO,
     TaxDTO,
     PaymentTransactionDTO,
-    PaymentSearchDTO,
-    PaymentSearchPaginationDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { PaymentTransactionService } from './transaction.service';
-import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { PaymentChannelOperation } from '../entity';
@@ -35,8 +29,6 @@ import { TypeAssertionUtil } from '../util/type-assertion';
 // import { PaymentStatus } from 'dist/libs/payments/type/status';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
-import { TypeormSearchUtil } from './base/typeorm-search-util';
-import { model } from 'mongoose';
 
 @Injectable()
 export class PaymentService {
@@ -64,79 +56,6 @@ export class PaymentService {
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
-    }
-
-    async findAll(
-        modelSearch: PaymentSearchPaginationDTO,
-    ): Promise<PaymentDTO[]> {
-        const where = this.searchWhereQuery(modelSearch);
-        return (await this.paymentrepo.find({ where })).map((p) =>
-            this.paymentMapper.toDto(p),
-        );
-    }
-
-    async modelSearch(modelSearch: PaymentSearchPaginationDTO) {
-        const where = this.searchWhereQuery(modelSearch);
-        const sortKey = modelSearch.sortBy || 'createdAt';
-        const sortOrder = modelSearch.sortRotation || 'desc';
-        return (
-            await TypeormSearchUtil.modelSearch<Payment>(
-                this.paymentrepo,
-                modelSearch.size,
-                modelSearch.page,
-                { [sortKey]: sortOrder },
-                [],
-                {$match: where},
-            )
-        ).map((p) => this.paymentMapper.toDto(p));
-    }
-
-    private searchWhereQuery(modelSearch: PaymentSearchPaginationDTO) {
-        const where = {};
-        if (modelSearch.paymentStatus && modelSearch.paymentStatus.length > 0) {
-            Object.assign(where, {
-                paymentStatus: In(modelSearch.paymentStatus),
-            });
-        }
-        if (modelSearch.customerAccountId) {
-            Object.assign(where, {
-                customerAccountId: modelSearch.customerAccountId,
-            });
-        }
-        if (
-            modelSearch.sellerAccountIds &&
-            modelSearch.sellerAccountIds.length > 0
-        ) {
-            Object.assign(where, {
-                items: {
-                    entityOwnerAccountId: In(modelSearch.sellerAccountIds),
-                },
-            });
-        }
-
-
-        if (
-            modelSearch.paymentChannelId &&
-            modelSearch.paymentChannelId.length > 0
-        ) {
-            Object.assign(where, {
-                paymentChannelId: In(modelSearch.paymentChannelId),
-            });
-        }
-        if (modelSearch.dateFrom && modelSearch.dateTo) {
-            Object.assign(where, {
-                createdAt: Between(modelSearch.dateFrom, modelSearch.dateTo),
-            });
-        } else if (modelSearch.dateFrom) {
-            Object.assign(where, {
-                createdAt: MoreThanOrEqual(modelSearch.dateFrom),
-            });
-        } else if (modelSearch.dateTo) {
-            Object.assign(where, {
-                createdAt: LessThanOrEqual(modelSearch.dateTo),
-            });
-        }
-        return where;
     }
 
     async findItems(id: string): Promise<PaymentItemDto[]> {

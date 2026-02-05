@@ -4,6 +4,8 @@ import { Payment } from './entity/payment.entity';
 import { PostralPaymentItem } from './entity/payment-item.entity';
 import { PaymentService } from './service/payment.service';
 import { PaymentController } from './controller/payment.controller';
+import { PaymentSearchService } from './service/payment-search.service';
+import { PaymentSearchController } from './controller/payment-search.controller';
 import { PaymentMapper } from './mapper/payment.mapper';
 import { PaymentItemMapper } from './mapper/payment-item.mapper';
 import { EventSenderService } from './service/event-management.service';
@@ -69,6 +71,7 @@ import { PaymentOperationManagementService } from './service/payment-operation-m
         AppComissionService,
         AppComissionMapper,
         PaymentService,
+        PaymentSearchService,
         PaymentMapper,
         PaymentItemMapper,
         EventSenderService,
@@ -88,6 +91,7 @@ import { PaymentOperationManagementService } from './service/payment-operation-m
     ],
     controllers: [
         PaymentController,
+        PaymentSearchController,
         AddressController,
         AppComissionController,
         MicroserviceController,
