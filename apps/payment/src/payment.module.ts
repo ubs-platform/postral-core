@@ -41,6 +41,8 @@ import { MicroserviceController } from './controller/microservice-controller';
 import { CalculationController } from './controller/calculation.controller';
 import { CalculationService } from './service/calculation.service';
 import { PaymentOperationManagementService } from './service/payment-operation-management.service';
+import { TransactionSearchController } from './controller/transaction-search.controller';
+import { TransactionSearchService } from './service/transaction-search.service';
 
 @Module({
     imports: [
@@ -87,7 +89,8 @@ import { PaymentOperationManagementService } from './service/payment-operation-m
         ItemTaxMapper,
         ItemTaxService,
         CalculationService,
-        PaymentOperationManagementService
+        PaymentOperationManagementService,
+        TransactionSearchService
     ],
     controllers: [
         PaymentController,
@@ -101,7 +104,8 @@ import { PaymentOperationManagementService } from './service/payment-operation-m
         AccountNewController,
         DummyEcommercePaymentChannelController,
         ItemTaxController,
-        CalculationController
+        CalculationController,
+        TransactionSearchController
     ],
 })
 export class PaymentModule {}

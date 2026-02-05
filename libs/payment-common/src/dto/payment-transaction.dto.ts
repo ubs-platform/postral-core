@@ -7,7 +7,6 @@ export class PaymentTransactionDTO {
     taxAmount: number;
     untaxedAmount: number;
     currency: string;
-    paymentChannelId: string;
     paymentId: string;
     targetAccountId: string;
     sourceAccountId: string;
@@ -15,4 +14,30 @@ export class PaymentTransactionDTO {
     errorStatus?: PaymentErrorStatus;
     operationNote: string;
     transactionType: TransactionType;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    lastOperationDate: string | Date;
+    description?: string;
+}
+
+export class PaymentTransactionSearchDTO {
+    id?: string;
+    paymentId?: string;
+    // Çoklu arama için virgül ile ayrılmış değerler
+    targetAccountIds?: string;
+    // Çoklu arama için virgül ile ayrılmış değerler
+    sourceAccountIds?: string;
+    paymentStatus?: PaymentStatus;
+    currency?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    admin: "true" | "false";
+    // searchSide?: 'CUSTOMER' | 'SELLER' | "ADMIN";
+}
+
+export class PaymentTransactionSearchPaginationDTO extends PaymentTransactionSearchDTO {
+    page: number;
+    size: number;
+    sortBy: string;
+    sortRotation: 'asc' | 'desc';
 }
