@@ -3,10 +3,11 @@ import { PaymentSearchService } from '../service/payment-search.service';
 import { PaymentSearchPaginationFlatDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { CurrentUser, UserIntercept } from '@ubs-platform/users-microservice-helper';
+import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 
 @Controller('payment')
 export class PaymentSearchController {
-    constructor(private pss: PaymentSearchService) {}
+    constructor(private pss: PaymentSearchService) { }
 
     @Get()
     public async fetchAll(
@@ -24,4 +25,14 @@ export class PaymentSearchController {
     ) {
         return await this.pss.modelSearch(search, user);
     }
+
+    @Get('/related-accounts')
+    @UseGuards(UserIntercept)
+    public async fetchRelatedAccounts(
+        @Query() search: PaymentSearchFlatDTO,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ) {
+        return await this.pss.accountIdsInPayment(search, user);
+    }
+
 }

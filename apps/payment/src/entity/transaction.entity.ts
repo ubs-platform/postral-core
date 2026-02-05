@@ -46,6 +46,9 @@ export class PaymentTransaction {
     @Column({ type: 'varchar', nullable: true })
     errorStatus: PaymentErrorStatus;
 
+    // faturalar için burası kullanılabilir
+    // invoiceId: string;
+
     /**
      * 
      * Transaction 1 (A'nın bakiyesi için):

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import {
+    AccountDTO,
     PaymentDTO,
     PaymentSearchPaginationFlatDTO,
 } from '@tk-postral/payment-common';
@@ -18,7 +19,9 @@ import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper'
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
-import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { AccountMapper } from '../mapper/account.mapper';
+import { AccountService } from './account.service';
+import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class PaymentSearchService {
@@ -27,6 +30,8 @@ export class PaymentSearchService {
         private readonly paymentrepo: Repository<Payment>,
         private paymentMapper: PaymentMapper,
         private eoService: EntityOwnershipService,
+        private accountMapper: AccountMapper,
+        private accountService: AccountService
     ) { }
 
     async findAll(
@@ -59,7 +64,7 @@ export class PaymentSearchService {
     }
 
     private async buildSearchWhereQuery(
-        modelSearch: PaymentSearchPaginationFlatDTO,
+        modelSearch: PaymentSearchFlatDTO,
         user?: UserAuthBackendDTO,
     ) {
         const where = await this.searchWhereQuery(modelSearch, user);
@@ -67,15 +72,20 @@ export class PaymentSearchService {
     }
 
     private async searchWhereQuery(
-        modelSearch: PaymentSearchPaginationFlatDTO,
+        modelSearch: PaymentSearchFlatDTO,
         user?: UserAuthBackendDTO,
     ) {
 
         const where = {};
+        let authorizedAccountIds: string[] = [];
 
-        // Eğer admin değilse, sadece kendi sellerAccountId'lerinden getir
-        if (user && modelSearch.admin !== 'true') {
-            const sellerIdsResult = await lastValueFrom(
+        if (modelSearch.searchSide !== "ADMIN") {
+            if (!user) {
+                throw new Error('Unauthorized');
+            }
+
+            // Kullanıcının yetkili olduğu hesapları getir
+            authorizedAccountIds = await lastValueFrom(
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                     entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
@@ -84,18 +94,71 @@ export class PaymentSearchService {
                 }),
             );
 
-            // sellerIds string olarak gelebiliyor, array'e dönüştür
-            let sellerIds: string[] = [];
-            if (Array.isArray(sellerIdsResult)) {
-                sellerIds = sellerIdsResult;
-            } else if (typeof sellerIdsResult === 'string') {
-                sellerIds = [sellerIdsResult];
+            // DİKKAT : modelSearch.sellerAccountIds bir stringtir, virgülle ayrılmış id'ler içerebilir bu nedenle aşağıda kontrol ediliyor
+            if (modelSearch.searchSide === "SELLER") {
+                // Aramada belirtilen sellerAccountIds ile kullanıcının yetkili olduğu hesapların kesişimini al
+                let entityOwnerAccountIds: string[] = authorizedAccountIds;
+                if (
+                    modelSearch.sellerAccountIds &&
+                    modelSearch.sellerAccountIds.length > 0) {
+                    const requestedSellerAccountIds = modelSearch.sellerAccountIds.split(',');
+                    const intersection = this.getIntersections(authorizedAccountIds, requestedSellerAccountIds);
+                    if (intersection.length === 0) {
+                        // Kesişim boşsa, kullanıcı yetkili olmadığı sellerAccountId ile arama yapmaya çalışıyor
+                        throw new Error('Unauthorized: No access to the specified seller accounts');
+                    }
+                    entityOwnerAccountIds = intersection;
+                }
+
+
+                // Kesişimi where koşuluna ekle
+                Object.assign(where, {
+                    items: {
+                        entityOwnerAccountId: In(entityOwnerAccountIds),
+                    },
+                });
+
+                if (modelSearch.customerAccountId && modelSearch.customerAccountId.length > 0) {
+                    Object.assign(where, {
+                        customerAccountId: In(modelSearch.customerAccountId.split(',')),
+                    });
+                }
             }
 
-            if (sellerIds && sellerIds.length > 0) {
-                where["items"] = {
-                    entityOwnerAccountId: In(sellerIds),
-                };
+            if (modelSearch.searchSide === "CUSTOMER") {
+                let entityOwnerAccountIds: string[] = authorizedAccountIds;
+
+                if (modelSearch.customerAccountId &&
+                    modelSearch.customerAccountId.length > 0) {
+                    const requestedCustomerAccountIds = modelSearch.customerAccountId.split(',');
+                    const intersection = this.getIntersections(authorizedAccountIds, requestedCustomerAccountIds);
+                    if (intersection.length === 0) {
+                        // Kesişim boşsa, kullanıcı yetkili olmadığı customerAccountId ile arama yapmaya çalışıyor
+                        throw new Error('Unauthorized: No access to the specified customer accounts');
+                    }
+                    entityOwnerAccountIds = intersection;
+                }
+
+                // Kesişimi where koşuluna ekle
+                Object.assign(where, {
+                    customerAccountId: In(entityOwnerAccountIds),
+                });
+                // Aramada belirtilen customerAccountId ile kullanıcının yetkili olduğu hesapların kesişimini al
+                // const requestedCustomerAccountIds = modelSearch.customerAccountId.split(',');
+                // const intersection = this.getIntersections(authorizedAccountIds, requestedCustomerAccountIds);
+
+                // // Kesişimi where koşuluna ekle
+                // Object.assign(where, {
+                //     customerAccountId: In(intersection),
+                // });
+
+                if (modelSearch.sellerAccountIds && modelSearch.sellerAccountIds.length > 0) {
+                    Object.assign(where, {
+                        items: {
+                            entityOwnerAccountId: In(modelSearch.sellerAccountIds.split(',')),
+                        },
+                    });
+                }
             }
         }
 
@@ -142,5 +205,48 @@ export class PaymentSearchService {
             });
         }
         return where;
+    }
+
+    private getIntersections(authorizedAccountIds: string[], requestedCustomerAccountIds: string[]) {
+        const intersection = authorizedAccountIds.filter(id => requestedCustomerAccountIds.includes(id)
+        );
+        if (intersection.length === 0) {
+            // Kesişim boşsa, kullanıcı yetkili olmadığı customerAccountId ile arama yapmaya çalışıyor
+            throw new Error('Unauthorized: No access to the specified customer accounts');
+        }
+        return intersection;
+    }
+
+    async accountIdsInPayment(search: PaymentSearchFlatDTO, user?: UserAuthBackendDTO): Promise<AccountDTO[]> {
+        const where = await this.buildSearchWhereQuery(search, user);
+        const payments = await this.paymentrepo.find({ where, relations: ['items'] });
+
+        if (search.searchSide == "CUSTOMER") {
+            // Müşteri tarafında bütün satın aldığı itemlerin accountları gelir. Müşterinin kendisi hariç.
+            const accountIds = new Set<string>();
+            payments.forEach(payment => {
+                payment.items.forEach(item => {
+                    if (item.entityOwnerAccountId !== search.customerAccountId) {
+                        accountIds.add(item.entityOwnerAccountId);
+                    }
+                });
+            });
+
+
+            return this.accountService.fetchManyByIds(Array.from(accountIds));
+        }
+
+        else if (search.searchSide == "SELLER") {
+            // Satıcı bütün müşterilerinin hesaplarını görür.
+            const accountIds = new Set<string>();
+            payments.forEach(payment => {
+                accountIds.add(payment.customerAccountId);
+            });
+
+            return this.accountService.fetchManyByIds(Array.from(accountIds));
+        }
+        else {
+            return [];
+        }
     }
 }

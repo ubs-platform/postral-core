@@ -14,7 +14,13 @@ export interface PaymentSearchFlatDTO  {
     currency?: string;
     dateFrom?: string;
     dateTo?: string;
-    admin?: 'true' | 'false';
+    // admin?: 'true' | 'false';
+    /**
+     * Satıcı Tarafından Arama Yapılıyor ise 'SELLER', Müşteri Tarafından Arama Yapılıyor ise 'CUSTOMER' değeri gönderilmelidir.
+     * Bu alan, kullanıcının yetkilerine göre arama sonuçlarını filtrelemek için kullanılır.
+     * Örneğin, bir satıcı kendi hesaplarına ait ödemeleri görmelidir, müşteri ise sadece kendi yaptığı ödemeleri görmelidir.
+     */
+    searchSide?: 'CUSTOMER' | 'SELLER' | "ADMIN";
 }
 
 export interface PaymentSearchPaginationFlatDTO extends PaymentSearchFlatDTO, SearchRequest {

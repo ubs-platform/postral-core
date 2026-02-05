@@ -43,6 +43,7 @@ export class AccountService extends BaseCrudService<
     AccountDTO,
     AccountSearchParamsDTO
 > {
+
     constructor(
         @InjectRepository(Account)
         public repo: Repository<Account>,
@@ -131,4 +132,9 @@ export class AccountService extends BaseCrudService<
     // binToUuidArray(ids: string[]): readonly unknown[] | import("typeorm").FindOperator<unknown> {
     //     return ids.map((id) => Buffer.from(id, 'hex'));
     // }
+
+    async fetchManyByIds(accountIds: string[]): Promise<AccountDTO[]> {
+        const pments = await this.repo.findBy({ id: In(accountIds) });
+        return this.accountMapper.toDtoList(pments);
+    }
 }
