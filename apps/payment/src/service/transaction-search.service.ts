@@ -27,6 +27,7 @@ import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 import { TransactionMapper } from '../mapper/transaction.mapper';
 import { PaymentTransaction } from '../entity';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
+import { exec } from 'child_process';
 
 @Injectable()
 export class TransactionSearchService {
@@ -117,7 +118,6 @@ export class TransactionSearchService {
             }
 
         }
-
         if (modelSearch.paymentStatus) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
@@ -137,6 +137,7 @@ export class TransactionSearchService {
                 createdAt: LessThanOrEqual(modelSearch.dateTo),
             });
         }
+        // exec(`kdialog --msgbox "Search where clause: ${JSON.stringify(where)}  admin ${modelSearch.admin}  clauses ${JSON.stringify(orClause)}  user ${user ? user.id : 'null'}"`);
         return orClause.map((clause) => ({ ...where, ...clause }));
     }
 

@@ -20,23 +20,16 @@ export class TypeormSearchUtil {
         // sortByType: 'desc' | 'asc' | '' | null | undefined,
         ...searchParamsQuery: any[]
     ) {
-        const whereCondition = {
-            ...searchParamsQuery.reduce(
-                (previousValue, currentValue) => ({
-                    ...previousValue,
-                    ...currentValue['$match'],
-                }),
-                {},
-            ),
-        };
-
+        if (searchParamsQuery.length == 1 && searchParamsQuery[0]["$match"]) {
+            searchParamsQuery = searchParamsQuery[0]["$match"];
+        }
         //@ts-ignore
         size = parseInt(size) || 10;
         //@ts-ignore
         page = parseInt(page) || 0;
 
         const count = await model.count({
-            where: { ...whereCondition },
+            where: searchParamsQuery,
             relations: relations,
         });
 
@@ -48,7 +41,7 @@ export class TypeormSearchUtil {
             }
         }
         const content = await model.find({
-            where: whereCondition,
+            where: searchParamsQuery,
             relations: relations,
             skip: page * size,
             take: size,
