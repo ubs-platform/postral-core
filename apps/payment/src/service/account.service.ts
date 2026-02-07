@@ -43,7 +43,6 @@ export class AccountService extends BaseCrudService<
     AccountDTO,
     AccountSearchParamsDTO
 > {
-
     constructor(
         @InjectRepository(Account)
         public repo: Repository<Account>,
@@ -136,5 +135,32 @@ export class AccountService extends BaseCrudService<
     async fetchManyByIds(accountIds: string[]): Promise<AccountDTO[]> {
         const pments = await this.repo.findBy({ id: In(accountIds) });
         return this.accountMapper.toDtoList(pments);
+    }
+
+    async fetchFromRelatedTransactions(
+        userRelatedAccountIds: string[],
+    ): Promise<AccountDTO[]> {
+
+        const accounts = await this.repo.find({
+            where: {
+                id: In([
+                    this.repo
+                        .createQueryBuilder('account')
+                        .select('DISTINCT payment_transaction.sourceAccountId')
+                        .from('payment_transaction', 'payment_transaction')
+                        .where(
+                            'payment_transaction.sourceAccountId IN (:...userRelatedAccountIds)',
+                            { userRelatedAccountIds },
+                        )
+                        .orWhere(
+                            'payment_transaction.targetAccountId IN (:...userRelatedAccountIds)',
+                            { userRelatedAccountIds },
+                        )
+                        .getQuery(),
+                ]),
+            },
+        });
+
+        return this.accountMapper.toDtoList(accounts);
     }
 }
