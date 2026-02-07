@@ -5,6 +5,8 @@ import {
     OneToMany,
     OneToOne,
     Transaction,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
@@ -13,19 +15,20 @@ import {
     PaymentStatus,
     TransactionType,
 } from '@tk-postral/payment-common';
+import { Account } from './account.entity';
 
 @Entity()
 export class PaymentTransaction {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({type: 'float'})
+    @Column({ type: 'float' })
     amount: number;
 
-    @Column({type: 'float'})
+    @Column({ type: 'float' })
     taxAmount: number;
 
-    @Column({type: 'float'})
+    @Column({ type: 'float' })
     untaxedAmount: number;
 
     @Column()
@@ -37,8 +40,16 @@ export class PaymentTransaction {
     @Column()
     targetAccountId: string;
 
+    @ManyToOne(() => Account, { eager: true })
+    @JoinColumn({ name: 'targetAccountId' })
+    targetAccount: Account;
+
     @Column()
     sourceAccountId: string;
+
+    @ManyToOne(() => Account, { eager: true })
+    @JoinColumn({ name: 'sourceAccountId' })
+    sourceAccount: Account;
 
     @Column({ type: 'varchar' })
     paymentStatus: PaymentStatus;

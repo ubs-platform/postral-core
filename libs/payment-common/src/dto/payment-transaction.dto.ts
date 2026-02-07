@@ -9,7 +9,9 @@ export class PaymentTransactionDTO {
     currency: string;
     paymentId: string;
     targetAccountId: string;
+    targetAccountName?: string;
     sourceAccountId: string;
+    sourceAccountName?: string;
     paymentStatus: PaymentStatus;
     errorStatus?: PaymentErrorStatus;
     operationNote: string;

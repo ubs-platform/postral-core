@@ -3,6 +3,7 @@ import { Payment } from '../entity/payment.entity';
 import { PaymentDTO } from '@tk-postral/payment-common';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { PaymentTransaction } from '../entity';
+import { exec } from 'child_process';
 
 @Injectable()
 export class TransactionMapper {
@@ -15,6 +16,7 @@ export class TransactionMapper {
     }
 
     toDto(saved: PaymentTransaction): PaymentTransactionDTO {
+        // exec('kdialog --msgbox "toDto called with id: ' + saved.id + "  Accountlar: " + saved.sourceAccount?.name + " -> " + saved.targetAccount?.name + '" 10 50');
         return {
             amount: saved.amount,
             taxAmount: saved.taxAmount,
@@ -30,7 +32,9 @@ export class TransactionMapper {
             lastOperationDate: saved.lastOperationDate,
             operationNote: saved.operationNote,
             sourceAccountId: saved.sourceAccountId,
+            sourceAccountName: saved.sourceAccount?.name,
             targetAccountId: saved.targetAccountId,
+            targetAccountName: saved.targetAccount?.name,
             untaxedAmount: saved.untaxedAmount,
         };
     }
