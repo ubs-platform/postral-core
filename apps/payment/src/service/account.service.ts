@@ -158,7 +158,7 @@ export class AccountService extends BaseCrudService<
                     )
                     .getQuery();
 
-                return 'account.id IN ' + relatedAccountIds;
+                return 'account.id IN (:...userRelatedAccountIds) OR account.id IN ' + relatedAccountIds;
             })
             .setParameter('userRelatedAccountIds', userRelatedAccountIds)
             .getMany();

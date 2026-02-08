@@ -98,14 +98,14 @@ export class TransactionSearchService {
             );
             if (modelSearch.sourceAccountIds || modelSearch.targetAccountIds) {
                 if (modelSearch.sourceAccountIds) {
-                    const intersection = this.getIntersections(authorizedAccountIds, modelSearch.sourceAccountIds.split(','));
+                    const intersection = modelSearch.sourceAccountIds.split(','); //this.getIntersections(authorizedAccountIds, );
                     Object.assign(where, {
                         sourceAccountId: In(intersection),
                     });
                 }
 
                 if (modelSearch.targetAccountIds) {
-                    const intersection = this.getIntersections(authorizedAccountIds, modelSearch.targetAccountIds.split(','));
+                    const intersection = modelSearch.targetAccountIds.split(','); //this.getIntersections(authorizedAccountIds, );
                     Object.assign(where, {
                         targetAccountId: In(intersection),
                     });
@@ -141,15 +141,15 @@ export class TransactionSearchService {
         return orClause.map((clause) => ({ ...where, ...clause }));
     }
 
-    private getIntersections(authorizedAccountIds: string[], requestedCustomerAccountIds: string[]) {
-        const intersection = authorizedAccountIds.filter(id => requestedCustomerAccountIds.includes(id)
-        );
-        if (intersection.length === 0) {
-            // Kesişim boşsa, kullanıcı yetkili olmadığı customerAccountId ile arama yapmaya çalışıyor
-            throw new Error('Unauthorized: No access to the specified customer accounts');
-        }
-        return intersection;
-    }
+    // private getIntersections(authorizedAccountIds: string[], requestedCustomerAccountIds: string[]) {
+    //     const intersection = authorizedAccountIds.filter(id => requestedCustomerAccountIds.includes(id)
+    //     );
+    //     if (intersection.length === 0) {
+    //         // Kesişim boşsa, kullanıcı yetkili olmadığı customerAccountId ile arama yapmaya çalışıyor
+    //         throw new Error('Unauthorized: No access to the specified customer accounts');
+    //     }
+    //     return intersection;
+    // }
 
     // async accountIdsInPayment(search: PaymentSearchFlatDTO, user?: UserAuthBackendDTO): Promise<AccountDTO[]> {
     //     const where = await this.buildSearchWhereQuery(search, user);
