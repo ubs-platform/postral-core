@@ -140,27 +140,31 @@ export class AccountService extends BaseCrudService<
     async fetchFromRelatedTransactions(
         userRelatedAccountIds: string[],
     ): Promise<AccountDTO[]> {
+        const accounts = await this.repo
+            .createQueryBuilder('account')
+            .where((qb) => {
+                const relatedAccountIds = qb
+                    .subQuery()
+                    .select(
+                        `DISTINCT CASE
+                            WHEN payment_transaction.sourceAccountId IN (:...userRelatedAccountIds)
+                                THEN payment_transaction.targetAccountId
+                            ELSE payment_transaction.sourceAccountId
+                        END`,
+                    )
+                    .from('payment_transaction', 'payment_transaction')
+                    .where(
+                        'payment_transaction.sourceAccountId IN (:...userRelatedAccountIds) OR payment_transaction.targetAccountId IN (:...userRelatedAccountIds)',
+                    )
+                    .getQuery();
 
-        const accounts = await this.repo.find({
-            where: {
-                id: In([
-                    this.repo
-                        .createQueryBuilder('account')
-                        .select('DISTINCT payment_transaction.sourceAccountId')
-                        .from('payment_transaction', 'payment_transaction')
-                        .where(
-                            'payment_transaction.sourceAccountId IN (:...userRelatedAccountIds)',
-                            { userRelatedAccountIds },
-                        )
-                        .orWhere(
-                            'payment_transaction.targetAccountId IN (:...userRelatedAccountIds)',
-                            { userRelatedAccountIds },
-                        )
-                        .getQuery(),
-                ]),
-            },
-        });
+                return 'account.id IN ' + relatedAccountIds;
+            })
+            .setParameter('userRelatedAccountIds', userRelatedAccountIds)
+            .getMany();
 
         return this.accountMapper.toDtoList(accounts);
+
+      
     }
 }

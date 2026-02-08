@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import {
-    In,
-    Repository,
-} from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -196,7 +193,7 @@ export class PaymentService {
         if (!payment) {
             throw new NotFoundException('Payment not found');
         }
-
+        this.assertPaymentIsNotResolved(payment);
         this.paymentOperationManagementService.cancelPaymentOperationsByPaymentId(
             id,
         );
@@ -208,6 +205,17 @@ export class PaymentService {
         return this.paymentMapper.toDto(payment);
     }
 
+    private assertPaymentIsNotResolved(payment: Payment) {
+        if (
+            payment.paymentStatus === 'COMPLETED' ||
+            payment.paymentStatus === 'FAILED'
+        ) {
+            throw new Error(
+                'Payment is already resolved and cannot be cancelled again.',
+            );
+        }
+    }
+
     async startPaymentOperation(
         id: string,
         captureInfo: PaymentCaptureInfoDTO,
@@ -216,12 +224,8 @@ export class PaymentService {
         if (!payment) {
             throw new NotFoundException('Payment not found');
         }
-        if (payment.paymentStatus === 'COMPLETED') {
-            throw new Error('Payment is already completed');
-        }
-        if (payment.paymentStatus === 'FAILED') {
-            throw new Error('Payment has already failed');
-        }
+        this.assertPaymentIsNotResolved(payment);
+
         const paymentItems = await this.findItems(id);
         const paymentTaxes = await this.findTaxes(id);
 
