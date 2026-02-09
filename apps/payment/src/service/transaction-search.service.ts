@@ -31,6 +31,7 @@ import { exec } from 'child_process';
 
 @Injectable()
 export class TransactionSearchService {
+
     constructor(
         @InjectRepository(PaymentTransaction)
         private readonly transactionRepo: Repository<PaymentTransaction>,
@@ -41,7 +42,15 @@ export class TransactionSearchService {
         private accountService: AccountService
     ) { }
 
-
+    async fetchById(id: string, user: UserAuthBackendDTO | undefined) {
+        // TODO: Rol kontrolü eklenebilir. Şu an sadece authentication var. Admin olmayan kullanıcılar sadece kendi hesaplarıyla ilişkili transactionları görebilmeli.
+        // this.checkAuthorizationForTransaction(id, user);
+        const transaction = await this.transactionRepo.findOne({ where: { id } });
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+        return this.transactionMapper.toDto(transaction);
+    }
 
     async findAll(
         modelSearch: PaymentTransactionSearchDTO,

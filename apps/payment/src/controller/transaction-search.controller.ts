@@ -26,4 +26,13 @@ export class TransactionSearchController {
         return await this.tss.modelSearch(search, user);
     }
 
+    @Get('/:id')
+    @UseGuards(UserIntercept)
+    public async fetchById(
+        @Query('id') id: string,
+        @CurrentUser() user?: UserAuthBackendDTO,
+    ) {
+        return await this.tss.fetchById(id, user);
+    }
+
 }

@@ -44,6 +44,8 @@ import { PaymentOperationManagementService } from './service/payment-operation-m
 import { TransactionSearchController } from './controller/transaction-search.controller';
 import { TransactionSearchService } from './service/transaction-search.service';
 import { TransactionMapper } from './mapper/transaction.mapper';
+import { PaymentItemSearchController } from './controller/payment-item.search.controller';
+import { PaymentItemSearchService } from './service/payment-item-search.service';
 
 @Module({
     imports: [
@@ -92,7 +94,9 @@ import { TransactionMapper } from './mapper/transaction.mapper';
         CalculationService,
         PaymentOperationManagementService,
         TransactionSearchService,
-        TransactionMapper
+        TransactionMapper,
+        PaymentSearchService,
+        PaymentItemSearchService
     ],
     controllers: [
         PaymentController,
@@ -107,7 +111,8 @@ import { TransactionMapper } from './mapper/transaction.mapper';
         DummyEcommercePaymentChannelController,
         ItemTaxController,
         CalculationController,
-        TransactionSearchController
+        TransactionSearchController,
+        PaymentItemSearchController
     ],
 })
 export class PaymentModule {}
