@@ -94,7 +94,8 @@ export class CalculationService {
                     paymentItemDto.quantity,
                 );
             paymentItem.taxPercent = taxPercentBySaleMode;
-            paymentItem.variation = paymentItem.entityOwnerAccountId =
+            paymentItem.variation = itemPriceActive[0].variation;
+            paymentItem.entityOwnerAccountId =
                 realItemFind.sellerAccountId;
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;

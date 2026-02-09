@@ -34,6 +34,7 @@ export class ItemMapper {
 
             sellerAccountId: ac.sellerAccountId,
             baseCurrency: ac.baseCurrency,
+            
         };
     }
 
