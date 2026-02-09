@@ -9,7 +9,7 @@ import {
     Sse,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
-import { PaymentInitDTO } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentFullDTO, PaymentInitDTO } from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { EventPattern } from '@nestjs/microservices';
@@ -19,7 +19,7 @@ export class PaymentController {
     constructor(
         private ps: PaymentService,
         private as: AccountService,
-    ) {}
+    ) { }
 
     @Post()
     public async initialize(@Body() body: PaymentInitDTO) {
@@ -44,7 +44,13 @@ export class PaymentController {
 
     @Get('/:id')
     public async fetchPaymentInformation(@Param() { id }: { id: string }) {
-        return await this.ps.findPaymentById(id);
+        return await this.ps.findPaymentById(id, false) as PaymentDTO;
+    }
+
+
+    @Get('/:id/full')
+    public async fetchPaymentFull(@Param() { id }: { id: string }) {
+        return await this.ps.findPaymentById(id, true) as PaymentFullDTO;
     }
 
     @Get('/:id/item')
