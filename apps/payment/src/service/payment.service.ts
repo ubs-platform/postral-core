@@ -104,10 +104,14 @@ export class PaymentService {
                 'Only completed payments can generate transactions.',
             );
         }
-        let items = this.paymentItemMapper.toDto(paymentReal.items);
-        if (items.length === 0) { 
+        let items : PaymentItemDto[] = []; 
+        if (paymentReal.items?.length > 0) {
+            items = this.paymentItemMapper.toDto(paymentReal.items);
+        }
+        else { 
             items = await this.findItems(paymentReal.id);
         }
+        const transactions: PaymentTransactionDTO[] = [];
         for (let index = 0; index < items.length; index++) {
             const paymentItem = items[index];
             const transaction = new PaymentTransactionDTO();
@@ -119,8 +123,11 @@ export class PaymentService {
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
             transaction.transactionType = 'CREDIT';
-            await this.transactionService.addTransaction(transaction);
+            transactions.push(transaction);
         }
+
+        await this.transactionService.addTransactions(transactions);
+
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
@@ -170,7 +177,6 @@ export class PaymentService {
             pi.entityId = ci.entityId;
             pi.entityName = ci.entityName;
             pi.sellerAccountId = ci.sellerAccountId;
-            pi.entityOwnerAccountId = ci.entityOwnerAccountId;
             return pi;
         });
 

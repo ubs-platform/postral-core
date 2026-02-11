@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { PaymentSearchService } from '../service/payment-search.service';
 import { PaymentSearchPaginationFlatDTO, PaymentTransactionSearchPaginationDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
@@ -29,9 +29,12 @@ export class TransactionSearchController {
     @Get('/:id')
     @UseGuards(UserIntercept)
     public async fetchById(
-        @Query('id') id: string,
+        @Param('id') id: string,
         @CurrentUser() user?: UserAuthBackendDTO,
     ) {
+        if (!id) {
+            throw new Error('ID is required');
+        }
         return await this.tss.fetchById(id, user);
     }
 

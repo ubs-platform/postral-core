@@ -53,7 +53,7 @@ export class PaymentTransactionService {
         );
         entity.taxAmount = dto.taxAmount;
         entity.amount = dto.amount;
-        entity.currency = dto.currency;;
+        entity.currency = dto.currency;
         entity.paymentId = dto.paymentId;
         entity.targetAccountId = dto.targetAccountId;
         entity.sourceAccountId = dto.sourceAccountId;
@@ -64,43 +64,59 @@ export class PaymentTransactionService {
         return entity;
     }
 
-    async addTransaction(tr: PaymentTransactionDTO): Promise<PaymentTransactionDTO> {
+    async addTransaction(
+        tr: PaymentTransactionDTO,
+    ): Promise<PaymentTransactionDTO> {
         const entity = this.fromDto(tr);
         await this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)
         return await this.toDto(entity);
     }
 
-    async addTransactions(transactions: PaymentTransactionDTO[]): Promise<void> {
+    async addTransactions(
+        transactions: PaymentTransactionDTO[],
+    ): Promise<void> {
         const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(
             transactions,
-            (a) => {
-                return a.sourceAccountId + '|' + a.targetAccountId  + '|' + a.paymentId + '|' + a.paymentChannelId + '|' + a.currency + '|' + a.status + '|' + a.approved;
+            (a: PaymentTransactionDTO) => {
+                return (
+                    a.sourceAccountId +
+                    '|' +
+                    a.targetAccountId +
+                    '|' +
+                    a.transactionType +
+                    '|' +
+                    a.paymentId +
+                    '|' +
+                    a.currency +
+                    '|' +
+                    a.paymentStatus
+                );
             },
-            (object, key, mappingObject)=> {
+            (object, key, mappingObject) => {
                 const mappedObject = mappingObject[key];
                 if (mappedObject == null) {
                     mappingObject[key] = {
-                        totalAmount: 0,
+                        amount: 0,
                         taxAmount: 0,
                         currency: object.currency,
-                        paymentChannelId: object.paymentChannelId,
                         paymentId: object.paymentId,
                         sourceAccountId: object.sourceAccountId,
                         targetAccountId: object.targetAccountId,
-                        status: object.status,
+                        paymentStatus: object.paymentStatus,
                         errorStatus: object.errorStatus,
                         operationNote: object.operationNote,
                         transactionType: object.transactionType,
-                
-                    };
+                    } as PaymentTransactionDTO;
                 }
-                mappingObject[key].totalAmount += object.amount;
-                mappingObject[key].taxAmount += object.taxAmount;
-            }
+                const ptdto = mappingObject[key] as PaymentTransactionDTO;
+                ptdto.amount += object.amount;
+                ptdto.taxAmount += object.taxAmount;
+            },
         );
         
-        for (const tr of Object.values(transactionGrouped).flat().flat()) {
+        const values = Object.values(transactionGrouped).flat().flat();
+        for (const tr of values) {
             await this.addTransaction(tr as PaymentTransactionDTO);
         }
     }

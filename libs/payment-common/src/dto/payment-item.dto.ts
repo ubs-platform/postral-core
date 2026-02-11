@@ -11,7 +11,6 @@ export interface PaymentItemDto {
     entityGroup: string;
     entityId: string;
     entityName: string;
-    entityOwnerAccountId: string;
     unTaxAmount: number;
     originalUnitAmount: number;
     unitAmount: number;
