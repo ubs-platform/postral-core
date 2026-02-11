@@ -45,7 +45,8 @@ export class TransactionSearchService {
     async fetchById(id: string, user: UserAuthBackendDTO | undefined) {
         // TODO: Rol kontrolü eklenebilir. Şu an sadece authentication var. Admin olmayan kullanıcılar sadece kendi hesaplarıyla ilişkili transactionları görebilmeli.
         // this.checkAuthorizationForTransaction(id, user);
-        const transaction = await this.transactionRepo.findOne({ where: { id } });
+        const transaction = await this.transactionRepo.findOneBy({ id });
+        exec(`kdialog --msgbox "${transaction?.id == id ? 'Doğru transaction geldi: ' + transaction.id : 'Yanlış transaction geldi: ' + (transaction ? transaction.id : 'null')}"`);
         if (!transaction) {
             throw new Error('Transaction not found');
         }

@@ -9,6 +9,7 @@ import {
 } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '../entity';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
+import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentItemSearchService {
@@ -43,7 +44,7 @@ export class PaymentItemSearchService {
         if (criteria.entityId) {
             where.entityId = criteria.entityId;
         }
-
+        // exec(`kdialog --msgbox "Criteria sellerAccountId: ${criteria.sellerAccountId}, paymentId: ${criteria.paymentId}"`);
         const items = await this.paymentrepo.find({ where });
         return this.paymentItemMapper.toDto(items);
     }
