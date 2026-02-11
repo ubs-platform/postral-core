@@ -176,6 +176,12 @@ export class PaymentOperationManagementService {
         }
     }
 
+    async findOperationById(operationId: string) {
+        return await this.paymentChannelOperationRepo.findOneBy({
+            id: operationId,
+        });
+    }
+
     async firePaymentOperationsByPaymentId(id: string) {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: id, status: 'READY' }],

@@ -21,7 +21,6 @@ export class PaymentItemMapper {
                 entityGroup: a.entityGroup,
                 entityId: a.entityId,
                 entityName: a.entityName,
-                entityOwnerAccountId: a.entityOwnerAccountId,
                 unTaxAmount: a.unTaxAmount,
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,

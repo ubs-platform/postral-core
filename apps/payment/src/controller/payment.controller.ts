@@ -13,6 +13,7 @@ import { PaymentDTO, PaymentFullDTO, PaymentInitDTO } from '@tk-postral/payment-
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { EventPattern } from '@nestjs/microservices';
+import { filter } from 'rxjs';
 
 @Controller('payment')
 export class PaymentController {
@@ -74,11 +75,13 @@ export class PaymentController {
 
     @Sse('/:id/operation/stream')
     public async streamPaymentStatus(@Param() { id }: { id: string }) {
-        return this.ps.streamPaymentStatus(id);
+        return this.ps.paymentStream.pipe(
+            filter((p) => p.id === id),
+        );
     }
 
     @EventPattern('postral/payment-operation-status-updated')
-    public handlePaymentOperationStatusUpdated(operationId: string) {
-        return this.ps.handlePaymentOperationStatusUpdated(operationId);
+    public async handlePaymentOperationStatusUpdated(operationId: string) {
+        return await this.ps.handlePaymentOperationStatusUpdated(operationId);
     }
 }
