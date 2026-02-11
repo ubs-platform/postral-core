@@ -46,6 +46,12 @@ import { TransactionSearchService } from './service/transaction-search.service';
 import { TransactionMapper } from './mapper/transaction.mapper';
 import { PaymentItemSearchController } from './controller/payment-item.search.controller';
 import { PaymentItemSearchService } from './service/payment-item-search.service';
+import { InvoiceController } from './controller/invoice.controller';
+import { InvoiceService } from './service/invoice.service';
+import { InvoiceMapper } from './mapper/invoice.mapper';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Module({
     imports: [
@@ -68,6 +74,16 @@ import { PaymentItemSearchService } from './service/payment-item-search.service'
             },
         ]),
         BackendJwtUtilsModule,
+        MulterModule.register({
+            storage: diskStorage({
+                destination: './uploads/invoices',
+                filename: (req, file, cb) => {
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                    const ext = extname(file.originalname);
+                    cb(null, `invoice-${uniqueSuffix}${ext}`);
+                },
+            }),
+        }),
     ],
     exports: [TypeOrmModule],
     providers: [
@@ -96,7 +112,9 @@ import { PaymentItemSearchService } from './service/payment-item-search.service'
         TransactionSearchService,
         TransactionMapper,
         PaymentSearchService,
-        PaymentItemSearchService
+        PaymentItemSearchService,
+        InvoiceService,
+        InvoiceMapper
     ],
     controllers: [
         PaymentController,
@@ -112,7 +130,8 @@ import { PaymentItemSearchService } from './service/payment-item-search.service'
         ItemTaxController,
         CalculationController,
         TransactionSearchController,
-        PaymentItemSearchController
+        PaymentItemSearchController,
+        InvoiceController
     ],
 })
 export class PaymentModule {}

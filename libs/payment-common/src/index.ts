@@ -18,3 +18,4 @@ export * from './dto/calculation.dto';
 export * from './dto/payment-channel-status';
 export * from './dto/payment-search.dto';
 export * from './dto/payment-item-search.dto';
+export * from './dto/invoice.dto';

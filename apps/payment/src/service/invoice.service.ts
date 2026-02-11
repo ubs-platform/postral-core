@@ -1,0 +1,168 @@
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Invoice } from '../entity/invoice.entity';
+import {
+    InvoiceMapper,
+} from '../mapper/invoice.mapper';
+import { InvoiceCreateDTO, InvoiceDTO, InvoiceUpdateDTO } from '@tk-postral/payment-common';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
+@Injectable()
+export class InvoiceService {
+    constructor(
+        @InjectRepository(Invoice)
+        private readonly invoiceRepo: Repository<Invoice>,
+        private readonly invoiceMapper: InvoiceMapper,
+    ) {}
+
+    /**
+     * Yeni fatura kaydı oluşturur
+     */
+    async create(createDto: InvoiceCreateDTO): Promise<InvoiceDTO> {
+        // Eğer paymentId veya transactionId belirtilmişse, en az biri olmalı
+        if (!createDto.paymentId && !createDto.transactionId) {
+            throw new BadRequestException(
+                'PaymentId veya TransactionId belirtilmelidir',
+            );
+        }
+
+        const entity = this.invoiceMapper.toEntity(createDto);
+        const saved = await this.invoiceRepo.save(entity);
+        return this.invoiceMapper.toDto(saved);
+    }
+
+    /**
+     * ID'ye göre fatura getirir
+     */
+    async findById(id: string): Promise<InvoiceDTO> {
+        const invoice = await this.invoiceRepo.findOne({ where: { id } });
+        
+        if (!invoice) {
+            throw new NotFoundException(`Invoice with id ${id} not found`);
+        }
+
+        return this.invoiceMapper.toDto(invoice);
+    }
+
+    /**
+     * PaymentId'ye göre faturaları listeler
+     */
+    async findByPaymentId(paymentId: string): Promise<InvoiceDTO[]> {
+        const invoices = await this.invoiceRepo.find({
+            where: { paymentId },
+            order: { createdAt: 'DESC' },
+        });
+
+        return invoices.map((inv) => this.invoiceMapper.toDto(inv));
+    }
+
+    /**
+     * TransactionId'ye göre faturaları listeler
+     */
+    async findByTransactionId(transactionId: string): Promise<InvoiceDTO[]> {
+        const invoices = await this.invoiceRepo.find({
+            where: { transactionId },
+            order: { createdAt: 'DESC' },
+        });
+
+        return invoices.map((inv) => this.invoiceMapper.toDto(inv));
+    }
+
+    /**
+     * Fatura bilgilerini günceller
+     */
+    async update(id: string, updateDto: InvoiceUpdateDTO): Promise<InvoiceDTO> {
+        const invoice = await this.invoiceRepo.findOne({ where: { id } });
+
+        if (!invoice) {
+            throw new NotFoundException(`Invoice with id ${id} not found`);
+        }
+
+        if (updateDto.invoiceNumber !== undefined) {
+            invoice.invoiceNumber = updateDto.invoiceNumber;
+        }
+        if (updateDto.invoiceDate !== undefined) {
+            invoice.invoiceDate = updateDto.invoiceDate;
+        }
+        if (updateDto.status !== undefined) {
+            invoice.status = updateDto.status;
+        }
+        if (updateDto.notes !== undefined) {
+            invoice.notes = updateDto.notes;
+        }
+
+        const updated = await this.invoiceRepo.save(invoice);
+        return this.invoiceMapper.toDto(updated);
+    }
+
+    /**
+     * Faturayı siler (hem veritabanından hem de dosya sisteminden)
+     */
+    async delete(id: string): Promise<void> {
+        const invoice = await this.invoiceRepo.findOne({ where: { id } });
+
+        if (!invoice) {
+            throw new NotFoundException(`Invoice with id ${id} not found`);
+        }
+
+        // Önce dosyayı silmeyi dene (optional - hata olursa da devam edebiliriz)
+        try {
+            await fs.unlink(invoice.filePath);
+        } catch (error) {
+            console.warn(`Could not delete file at ${invoice.filePath}:`, error);
+            // Dosya silinemese bile veritabanı kaydını sileceğiz
+        }
+
+        await this.invoiceRepo.remove(invoice);
+    }
+
+    /**
+     * Tüm faturaları listeler (opsiyonel pagination için genişletilebilir)
+     */
+    async findAll(skip?: number, take?: number): Promise<InvoiceDTO[]> {
+        const invoices = await this.invoiceRepo.find({
+            skip: skip || 0,
+            take: take || 50,
+            order: { createdAt: 'DESC' },
+        });
+
+        return invoices.map((inv) => this.invoiceMapper.toDto(inv));
+    }
+
+    /**
+     * Fatura dosyasının var olup olmadığını kontrol eder
+     */
+    async checkFileExists(id: string): Promise<boolean> {
+        const invoice = await this.invoiceRepo.findOne({ where: { id } });
+
+        if (!invoice) {
+            throw new NotFoundException(`Invoice with id ${id} not found`);
+        }
+
+        try {
+            await fs.access(invoice.filePath);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Fatura dosya yolunu döndürür (download için kullanılabilir)
+     */
+    async getFilePath(id: string): Promise<string> {
+        const invoice = await this.invoiceRepo.findOne({ where: { id } });
+
+        if (!invoice) {
+            throw new NotFoundException(`Invoice with id ${id} not found`);
+        }
+
+        return invoice.filePath;
+    }
+}
