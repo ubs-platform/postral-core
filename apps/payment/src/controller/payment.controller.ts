@@ -9,18 +9,21 @@ import {
     Sse,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
-import { PaymentDTO, PaymentFullDTO, PaymentInitDTO } from '@tk-postral/payment-common';
+import {
+    PaymentDTO,
+    PaymentFullDTO,
+    PaymentInitDTO,
+} from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
-import { EventPattern } from '@nestjs/microservices';
+import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { filter } from 'rxjs';
-
 @Controller('payment')
 export class PaymentController {
     constructor(
         private ps: PaymentService,
         private as: AccountService,
-    ) { }
+    ) {}
 
     @Post()
     public async initialize(@Body() body: PaymentInitDTO) {
@@ -45,13 +48,12 @@ export class PaymentController {
 
     @Get('/:id')
     public async fetchPaymentInformation(@Param() { id }: { id: string }) {
-        return await this.ps.findPaymentById(id, false) as PaymentDTO;
+        return (await this.ps.findPaymentById(id, false)) as PaymentDTO;
     }
-
 
     @Get('/:id/full')
     public async fetchPaymentFull(@Param() { id }: { id: string }) {
-        return await this.ps.findPaymentById(id, true) as PaymentFullDTO;
+        return (await this.ps.findPaymentById(id, true)) as PaymentFullDTO;
     }
 
     @Get('/:id/item')
@@ -75,13 +77,8 @@ export class PaymentController {
 
     @Sse('/:id/operation/stream')
     public async streamPaymentStatus(@Param() { id }: { id: string }) {
-        return this.ps.paymentStream.pipe(
-            filter((p) => p.id === id),
-        );
+        return this.ps.paymentStream.pipe(filter((p) => p.id === id));
     }
 
-    @EventPattern('postral/payment-operation-status-updated')
-    public async handlePaymentOperationStatusUpdated(operationId: string) {
-        return await this.ps.handlePaymentOperationStatusUpdated(operationId);
-    }
+
 }
