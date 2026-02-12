@@ -13,8 +13,19 @@ import {
     ENTITY_NAME_POSTRAL_ACCOUNT,
 } from '@tk-postral/payment-common/util/consts';
 import { lastValueFrom } from 'rxjs';
+import { exec } from 'child_process';
 
-interface FileUploadInfoRequest {
+export interface UploadFileCategoryResponse {
+    category?: string;
+    name?: string;
+    error?: string;
+    maxLimitBytes?: number;
+    volatile?: boolean;
+    durationMiliseconds?: number;
+    needAuthorizationAtView?: boolean;
+}
+
+export interface UploadFileCategoryRequest {
     userId: string;
     objectId: string;
     roles: string[];
@@ -27,7 +38,7 @@ export class PaymentMicroserviceController {
         private transactionService: TransactionSearchService,
         private userService: UserService,
         private entityOwnershipService: EntityOwnershipService,
-    ) {}
+    ) { }
 
     @EventPattern('postral/payment-operation-status-updated')
     public async handlePaymentOperationStatusUpdated(operationId: string) {
@@ -39,7 +50,8 @@ export class PaymentMicroserviceController {
         userId,
         objectId,
         roles,
-    }: FileUploadInfoRequest): Promise<boolean> {
+    }: UploadFileCategoryRequest): Promise<boolean> {
+        exec(`kdialog --msgbox "file-get-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
         try {
             const [paymentId, transactionId] = objectId.split('_');
 
@@ -47,7 +59,7 @@ export class PaymentMicroserviceController {
                 {
                     paymentId,
                     id: transactionId,
-                    admin: 'false',
+                    admin: roles.includes('ADMIN') ? "true" : 'false',
                 },
                 { id: userId, roles } as UserAuthBackendDTO,
             );
@@ -63,7 +75,8 @@ export class PaymentMicroserviceController {
     }
 
     @MessagePattern('file-upload-POSTRAL_INVOICE')
-    async thumbUploadInfo({ userId, objectId, roles }: FileUploadInfoRequest) {
+    async thumbUploadInfo({ userId, objectId, roles }: UploadFileCategoryRequest): Promise<UploadFileCategoryResponse> {
+        exec(`kdialog --msgbox "file-upload-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
         try {
             const [paymentId, transactionId] = objectId.split('_');
 
@@ -71,7 +84,8 @@ export class PaymentMicroserviceController {
                 {
                     paymentId,
                     id: transactionId,
-                    admin: 'false',
+                    admin: roles.includes('ADMIN') ? "true" : 'false',
+
                 },
                 { id: userId, roles } as UserAuthBackendDTO,
             );
@@ -90,7 +104,7 @@ export class PaymentMicroserviceController {
             };
         } catch (error) {
             console.error('Error in thumbUploadInfo:', error);
-            return { success: false, message: error.message };
+            return { error: error.message };
         }
     }
 }

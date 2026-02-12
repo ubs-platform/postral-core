@@ -46,6 +46,7 @@ import { TransactionSearchService } from './service/transaction-search.service';
 import { TransactionMapper } from './mapper/transaction.mapper';
 import { PaymentItemSearchController } from './controller/payment-item.search.controller';
 import { PaymentItemSearchService } from './service/payment-item-search.service';
+import { PaymentMicroserviceController } from './controller/payment-microservice.controller';
 
 @Module({
     imports: [
@@ -112,7 +113,8 @@ import { PaymentItemSearchService } from './service/payment-item-search.service'
         ItemTaxController,
         CalculationController,
         TransactionSearchController,
-        PaymentItemSearchController
+        PaymentItemSearchController,
+        PaymentMicroserviceController
     ],
 })
 export class PaymentModule {}

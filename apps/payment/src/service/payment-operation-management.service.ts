@@ -17,7 +17,7 @@ import {
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil } from '../util/type-assertion';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
-import { PaymentFullWithCaptureInfoDTO } from 'dist/libs/payments/dto/payment.dto';
+import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
