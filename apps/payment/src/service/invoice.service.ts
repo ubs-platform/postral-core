@@ -9,9 +9,11 @@ import { Invoice } from '../entity/invoice.entity';
 import {
     InvoiceMapper,
 } from '../mapper/invoice.mapper';
-import { InvoiceCreateDTO, InvoiceDTO, InvoiceUpdateDTO } from '@tk-postral/payment-common';
+import { InvoiceCreateDTO, InvoiceDTO, InvoiceSearchDTO, InvoiceSearchPaginationDTO, InvoiceUpdateDTO } from '@tk-postral/payment-common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { SearchResult } from '@ubs-platform/crud-base-common';
+import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 @Injectable()
 export class InvoiceService {
@@ -19,7 +21,7 @@ export class InvoiceService {
         @InjectRepository(Invoice)
         private readonly invoiceRepo: Repository<Invoice>,
         private readonly invoiceMapper: InvoiceMapper,
-    ) {}
+    ) { }
 
     /**
      * Yeni fatura kaydı oluşturur
@@ -42,7 +44,7 @@ export class InvoiceService {
      */
     async findById(id: string): Promise<InvoiceDTO> {
         const invoice = await this.invoiceRepo.findOne({ where: { id } });
-        
+
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
@@ -123,17 +125,53 @@ export class InvoiceService {
         await this.invoiceRepo.remove(invoice);
     }
 
-    /**
-     * Tüm faturaları listeler (opsiyonel pagination için genişletilebilir)
-     */
-    async findAll(skip?: number, take?: number): Promise<InvoiceDTO[]> {
+    async findAll(search: InvoiceSearchDTO): Promise<InvoiceDTO[]> {
+        const where = await this.whereClause(search);
         const invoices = await this.invoiceRepo.find({
-            skip: skip || 0,
-            take: take || 50,
+            where,
             order: { createdAt: 'DESC' },
         });
 
         return invoices.map((inv) => this.invoiceMapper.toDto(inv));
+    }
+
+    async search(search: InvoiceSearchPaginationDTO): Promise<SearchResult<InvoiceDTO>> {
+        const where = await this.whereClause(search);
+        const sortKey = search.sortBy || 'createdAt';
+        const sortOrder = search.sortRotation || 'desc';
+        return (
+            await TypeormSearchUtil.modelSearch<Invoice>(
+                this.invoiceRepo,
+                search.size,
+                search.page,
+                { [sortKey]: sortOrder },
+                ['customerInvoiceAddress', 'customerAccount', 'sellerInvoiceAddress', 'sellerInvoiceAccount'],
+                where,
+            )
+        ).map((p) => this.invoiceMapper.toDto(p));
+    }
+
+
+    async whereClause(search: InvoiceSearchDTO): Promise<any> {
+        const where: any = {};
+        if (search.finalized !== undefined) {
+            where.finalized = search.finalized === 'true' || search.finalized === true ? true : false;
+        }
+
+        if (search.paymentId) {
+            where.paymentId = search.paymentId;
+        }
+        if (search.transactionId) {
+            where.transactionId = search.transactionId;
+        }
+        if (search.invoiceNumber) {
+            where.invoiceNumber = search.invoiceNumber;
+        }
+        if (search.status) {
+            where.status = search.status;
+        }
+
+        return where;
     }
 
 

@@ -6,18 +6,8 @@ import {
     Delete,
     Param,
     Body,
-    Query,
-    UploadedFile,
     UseInterceptors,
-    Res,
-    BadRequestException,
-    StreamableFile,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { createReadStream } from 'fs';
 import { InvoiceService } from '../service/invoice.service';
 import {
     InvoiceDTO,
@@ -49,7 +39,7 @@ export class InvoiceController {
     constructor(private readonly invoiceService: InvoiceService,
         private readonly transactionService: TransactionSearchService,
         private readonly paymentService: PaymentService,
-    ) {}
+    ) { }
 
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.
     @Post()
@@ -120,16 +110,30 @@ export class InvoiceController {
     }: UploadFileCategoryRequest): Promise<UploadFileCategoryResponse> {
         // exec(`kdialog --msgbox "file-upload-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
         try {
-            const [paymentId, transactionId] = objectId.split('_');
+            const invoiceId = objectId;
+
+            const invoice = await this.invoiceService.findById(invoiceId);
+
+            const finalizedInvoices = await this.invoiceService.findAll(
+                {
+                    paymentId: invoice.paymentId,
+                    finalized: 'true',
+                },
+            );
+
+            if (finalizedInvoices.length > 0) {
+                throw new Error('A finalized invoice already exists for this payment');
+            }
 
             const transaction = await this.transactionService.findAll(
                 {
-                    paymentId,
-                    id: transactionId,
+                    paymentId: invoice.paymentId,
+                    id: invoice.transactionId,
                     admin: roles.includes('ADMIN') ? 'true' : 'false',
                 },
                 { id: userId, roles } as UserAuthBackendDTO,
             );
+
             if (!transaction) {
                 throw new Error('Transaction not found');
             }

@@ -1,3 +1,4 @@
+import { SearchRequest } from '@ubs-platform/crud-base-common';
 import { InvoiceAccountDTO } from './account.dto';
 import { InvoiceAddressDto } from './invoice-address.dto';
 
@@ -51,8 +52,8 @@ export interface InvoiceSearchDTO {
     uploadedByUserId?: string;
     dateFrom?: Date;
     dateTo?: Date;
-    page?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
+    finalized?: "true" | "false" | boolean | undefined;
+}
+
+export interface InvoiceSearchPaginationDTO extends SearchRequest, InvoiceSearchDTO {
 }

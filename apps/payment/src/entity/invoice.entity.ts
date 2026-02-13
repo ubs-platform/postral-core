@@ -77,6 +77,9 @@ export class Invoice {
     @Column({ type: 'text', nullable: true })
     notes: string;
 
+    @Column({ type: "bool", default: false })
+    finalized: boolean;
+
     @CreateDateColumn()
     createdAt: Date;
 
