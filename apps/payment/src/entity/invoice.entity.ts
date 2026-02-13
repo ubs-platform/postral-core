@@ -6,9 +6,12 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToOne,
 } from 'typeorm';
 import { Payment } from './payment.entity';
 import { PaymentTransaction } from './transaction.entity';
+import { InvoiceAddress } from './invoice-address.entity';
+import { InvoiceAccount } from './invoice-account.entity';
 
 @Entity()
 export class Invoice {
@@ -29,33 +32,24 @@ export class Invoice {
     @JoinColumn({ name: 'transactionId' })
     transaction: PaymentTransaction;
 
-    /**
-     * Fatura dosya yolu
-     */
-    @Column({ length: 500 })
-    filePath: string;
+    @OneToOne(() => InvoiceAddress, { cascade: true, eager: true })
+    @JoinColumn()
+    customerInvoiceAddress?: InvoiceAddress;
 
-    /**
-     * Orijinal dosya adı
-     */
-    @Column({ length: 255 })
-    originalFileName: string;
+    @OneToOne(() => InvoiceAccount, { cascade: true, eager: true })
+    @JoinColumn()
+    customerAccount?: InvoiceAccount;
 
-    /**
-     * Dosya boyutu (bytes)
-     */
-    @Column({ type: 'int' })
-    fileSize: number;
+    @OneToOne(() => InvoiceAccount, { cascade: true, eager: true })
+    @JoinColumn()
+    sellerInvoiceAccount?: InvoiceAccount;
 
-    /**
-     * MIME type (application/pdf, image/jpeg, vb.)
-     */
-    @Column({ length: 100 })
-    mimeType: string;
+    @OneToOne(() => InvoiceAddress, { cascade: true, eager: true })
+    @JoinColumn()
+    sellerInvoiceAddress?: InvoiceAddress;
 
-    /**
-     * Fatura numarası (opsiyonel)
-     */
+    // Dosyayı file servisi ile tutabilirim o nedenle sadece müşteri bilgilerini tutuyorum
+
     @Column({ length: 100, nullable: true })
     invoiceNumber: string;
 

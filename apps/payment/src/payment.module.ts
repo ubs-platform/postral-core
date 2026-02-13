@@ -49,6 +49,8 @@ import { PaymentItemSearchService } from './service/payment-item-search.service'
 import { InvoiceController } from './controller/invoice.controller';
 import { InvoiceService } from './service/invoice.service';
 import { InvoiceMapper } from './mapper/invoice.mapper';
+import { InvoiceAddressMapper } from './mapper/invoice-address.mapper';
+import { InvoiceAccountMapper } from './mapper/invoice-account.mapper';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -115,7 +117,9 @@ import { PaymentMicroserviceController } from './controller/payment-microservice
         PaymentSearchService,
         PaymentItemSearchService,
         InvoiceService,
-        InvoiceMapper
+        InvoiceMapper,
+        InvoiceAddressMapper,
+        InvoiceAccountMapper,
     ],
     controllers: [
         PaymentController,

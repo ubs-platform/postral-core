@@ -111,13 +111,14 @@ export class InvoiceService {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
 
-        // Önce dosyayı silmeyi dene (optional - hata olursa da devam edebiliriz)
-        try {
-            await fs.unlink(invoice.filePath);
-        } catch (error) {
-            console.warn(`Could not delete file at ${invoice.filePath}:`, error);
-            // Dosya silinemese bile veritabanı kaydını sileceğiz
-        }
+        // TODO: Dosya silme işlemi için dosya servisine event atacağız. şimdilik kalsın
+        // // Önce dosyayı silmeyi dene (optional - hata olursa da devam edebiliriz)
+        // try {
+        //     await fs.unlink(invoice.filePath);
+        // } catch (error) {
+        //     console.warn(`Could not delete file at ${invoice.filePath}:`, error);
+        //     // Dosya silinemese bile veritabanı kaydını sileceğiz
+        // }
 
         await this.invoiceRepo.remove(invoice);
     }
@@ -135,34 +136,5 @@ export class InvoiceService {
         return invoices.map((inv) => this.invoiceMapper.toDto(inv));
     }
 
-    /**
-     * Fatura dosyasının var olup olmadığını kontrol eder
-     */
-    async checkFileExists(id: string): Promise<boolean> {
-        const invoice = await this.invoiceRepo.findOne({ where: { id } });
 
-        if (!invoice) {
-            throw new NotFoundException(`Invoice with id ${id} not found`);
-        }
-
-        try {
-            await fs.access(invoice.filePath);
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
-    /**
-     * Fatura dosya yolunu döndürür (download için kullanılabilir)
-     */
-    async getFilePath(id: string): Promise<string> {
-        const invoice = await this.invoiceRepo.findOne({ where: { id } });
-
-        if (!invoice) {
-            throw new NotFoundException(`Invoice with id ${id} not found`);
-        }
-
-        return invoice.filePath;
-    }
 }

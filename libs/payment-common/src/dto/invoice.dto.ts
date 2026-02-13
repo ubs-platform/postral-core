@@ -1,12 +1,10 @@
+import { InvoiceAccountDTO } from './account.dto';
+import { InvoiceAddressDto } from './invoice-address.dto';
 
 export interface InvoiceDTO {
     id: string;
     paymentId?: string;
     transactionId?: string;
-    filePath: string;
-    originalFileName: string;
-    fileSize: number;
-    mimeType: string;
     invoiceNumber?: string;
     invoiceDate?: Date;
     status: string;
@@ -14,6 +12,10 @@ export interface InvoiceDTO {
     notes?: string;
     createdAt: Date;
     updatedAt: Date;
+    sellerInvoiceAddress?: InvoiceAddressDto;
+    sellerInvoiceAccount?: InvoiceAccountDTO;
+    customerInvoiceAddress?: InvoiceAddressDto;
+    customerAccount?: InvoiceAccountDTO;
 }
 
 export interface InvoiceCreateDTO {
@@ -27,6 +29,10 @@ export interface InvoiceCreateDTO {
     invoiceDate?: Date;
     uploadedByUserId?: string;
     notes?: string;
+    sellerInvoiceAddress?: InvoiceAddressDto;
+    sellerInvoiceAccount?: InvoiceAccountDTO;
+    customerInvoiceAddress?: InvoiceAddressDto;
+    customerAccount?: InvoiceAccountDTO;
 }
 
 export interface InvoiceUpdateDTO {
@@ -34,4 +40,19 @@ export interface InvoiceUpdateDTO {
     invoiceDate?: Date;
     status?: string;
     notes?: string;
+}
+
+
+export interface InvoiceSearchDTO {
+    paymentId?: string;
+    transactionId?: string;
+    invoiceNumber?: string;
+    status?: string;
+    uploadedByUserId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
 }
