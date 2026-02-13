@@ -52,6 +52,7 @@ import { InvoiceMapper } from './mapper/invoice.mapper';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { PaymentMicroserviceController } from './controller/payment-microservice.controller';
 
 @Module({
     imports: [
@@ -131,7 +132,8 @@ import { extname } from 'path';
         CalculationController,
         TransactionSearchController,
         PaymentItemSearchController,
-        InvoiceController
+        InvoiceController,
+        PaymentMicroserviceController
     ],
 })
 export class PaymentModule {}
