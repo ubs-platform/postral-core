@@ -44,7 +44,7 @@ export class TransactionSearchService {
         private authUtilService: AuthUtilService,
     ) { }
 
-    async fetchById(id: string, user: UserAuthBackendDTO | undefined) {
+    async fetchById(id: string, user?: UserAuthBackendDTO | undefined) {
         // TODO: Rol kontrolü eklenebilir. Şu an sadece authentication var. Admin olmayan kullanıcılar sadece kendi hesaplarıyla ilişkili transactionları görebilmeli.
         // this.checkAuthorizationForTransaction(id, user);
         const transaction = await this.transactionRepo.findOneBy({ id });

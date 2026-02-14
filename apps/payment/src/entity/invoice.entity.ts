@@ -59,11 +59,13 @@ export class Invoice {
     @Column({ type: 'date', nullable: true })
     invoiceDate: Date;
 
+    // Zaten finalized olan onaylanmıştır. Onaylanmamış olanlar ise sadece yüklenmiş durumdadır. Onaylanmamış faturaların tekrar onaylanması veya reddedilmesi mümkün değildir.
     /**
      * Fatura durumu: UPLOADED, VERIFIED, REJECTED, vb.
+     * 
      */
-    @Column({ default: 'UPLOADED' })
-    status: string;
+    // @Column({ default: 'UPLOADED' })
+    // status: "IDLE" | "UPLOADED" | "VERIFIED" | "REJECTED";
 
     /**
      * Faturayı yükleyen kullanıcı ID

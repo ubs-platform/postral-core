@@ -19,7 +19,10 @@ import { MessagePattern } from '@nestjs/microservices';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PaymentService } from '../service/payment.service';
 import { TransactionSearchService } from '../service/transaction-search.service';
-import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
+import {
+    CurrentUser,
+    JwtAuthGuard,
+} from '@ubs-platform/users-microservice-helper';
 
 export interface UploadFileCategoryResponse {
     category?: string;
@@ -39,10 +42,12 @@ export interface UploadFileCategoryRequest {
 
 @Controller('invoice')
 export class InvoiceController {
-    constructor(private readonly invoiceService: InvoiceService,
+    constructor(
+        private readonly invoiceService: InvoiceService,
         private readonly transactionService: TransactionSearchService,
         private readonly paymentService: PaymentService,
-    ) { }
+        private readonly paymentSearchService: TransactionSearchService,
+    ) {}
 
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.
     @Post()
@@ -111,6 +116,36 @@ export class InvoiceController {
         return this.invoiceService.finalize(id);
     }
 
+    @Post('/from-transaction/:transactionId')
+    @UseGuards(JwtAuthGuard)
+    async createFromTransaction(
+        @Param('transactionId') transactionId: string,
+        @Body() createDto: InvoiceCreateDTO,
+        @CurrentUser() user: UserAuthBackendDTO,
+    ): Promise<InvoiceDTO> {
+        const transaction = await this.transactionService.fetchById(
+            transactionId,
+            user,
+        );
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+
+        const payment = await this.paymentService.findPaymentById(
+            transaction.paymentId,
+            true,
+        );
+        if (!payment) {
+            throw new Error('Payment not found');
+        }
+
+        return this.invoiceService.createFromTransaction(
+            transaction,
+            payment,
+            createDto,
+        );
+    }
+
     @MessagePattern('file-upload-POSTRAL_INVOICE')
     async thumbUploadInfo({
         userId,
@@ -118,21 +153,16 @@ export class InvoiceController {
         roles,
     }: UploadFileCategoryRequest): Promise<UploadFileCategoryResponse> {
         // exec(`kdialog --msgbox "file-upload-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
+        const user = { id: userId, roles } as UserAuthBackendDTO;
         try {
             const invoiceId = objectId;
 
             const invoice = await this.invoiceService.findById(invoiceId);
 
-            const finalizedInvoices = await this.invoiceService.findAll(
-                {
-                    paymentId: invoice.paymentId,
-                    finalized: 'true',
-                },
+            await this.assertNoFinalizedTransaction(
+                invoice.paymentId!,
+                invoice.transactionId!,
             );
-
-            if (finalizedInvoices.length > 0) {
-                throw new Error('A finalized invoice already exists for this payment');
-            }
 
             const transaction = await this.transactionService.findAll(
                 {
@@ -140,7 +170,7 @@ export class InvoiceController {
                     id: invoice.transactionId,
                     admin: roles.includes('ADMIN') ? 'true' : 'false',
                 },
-                { id: userId, roles } as UserAuthBackendDTO,
+                user,
             );
 
             if (!transaction) {
@@ -159,6 +189,23 @@ export class InvoiceController {
         } catch (error) {
             console.error('Error in thumbUploadInfo:', error);
             return { error: error.message };
+        }
+    }
+
+    private async assertNoFinalizedTransaction(
+        paymentId: string,
+        transactionId: string,
+    ) {
+        const finalizedInvoices = await this.invoiceService.findAll({
+            paymentId,
+            transactionId,
+            finalized: 'true',
+        });
+
+        if (finalizedInvoices.length > 0) {
+            throw new Error(
+                'A finalized invoice already exists for this payment',
+            );
         }
     }
 }

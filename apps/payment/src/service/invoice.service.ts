@@ -13,6 +13,9 @@ import {
     InvoiceSearchDTO,
     InvoiceSearchPaginationDTO,
     InvoiceUpdateDTO,
+    PaymentDTO,
+    PaymentFullDTO,
+    PaymentTransactionDTO,
 } from '@tk-postral/payment-common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -96,9 +99,9 @@ export class InvoiceService {
         if (updateDto.invoiceDate !== undefined) {
             invoice.invoiceDate = updateDto.invoiceDate;
         }
-        if (updateDto.status !== undefined) {
-            invoice.status = updateDto.status;
-        }
+        // if (updateDto.status !== undefined) {
+        //     invoice.status = updateDto.status;
+        // }
         if (updateDto.notes !== undefined) {
             invoice.notes = updateDto.notes;
         }
@@ -188,22 +191,45 @@ export class InvoiceService {
     }
 
     finalize(id: string): InvoiceDTO | PromiseLike<InvoiceDTO> {
-        return this.invoiceRepo.manager.transaction(async (transactionalEntityManager) => {
-            const invoice = await transactionalEntityManager.findOne(Invoice, { where: { id } });
+        return this.invoiceRepo.manager.transaction(
+            async (transactionalEntityManager) => {
+                const invoice = await transactionalEntityManager.findOne(
+                    Invoice,
+                    { where: { id } },
+                );
 
-            if (!invoice) {
-                throw new NotFoundException(`Invoice with id ${id} not found`);
-            }
+                if (!invoice) {
+                    throw new NotFoundException(
+                        `Invoice with id ${id} not found`,
+                    );
+                }
 
-            // Fatura zaten finalize edilmişse tekrar finalize etmeye gerek yok
-            if (invoice.finalized) {
-                return this.invoiceMapper.toDto(invoice);
-            }
+                // Fatura zaten finalize edilmişse tekrar finalize etmeye gerek yok
+                if (invoice.finalized) {
+                    return this.invoiceMapper.toDto(invoice);
+                }
 
-            // Faturayı finalize et
-            invoice.finalized = true;
-            const updatedInvoice = await transactionalEntityManager.save(invoice);
-            return this.invoiceMapper.toDto(updatedInvoice);
-        });
+                // Faturayı finalize et
+                invoice.finalized = true;
+                const updatedInvoice =
+                    await transactionalEntityManager.save(invoice);
+                return this.invoiceMapper.toDto(updatedInvoice);
+            },
+        );
+    }
+
+    createFromTransaction(
+        transaction: PaymentTransactionDTO,
+        payment: PaymentDTO | PaymentFullDTO,
+        createDto: InvoiceCreateDTO,
+    ): InvoiceDTO | PromiseLike<InvoiceDTO> {
+        const entity = this.invoiceMapper.toEntityFromTransaction(
+            transaction,
+            payment,
+            createDto,
+        );
+        return this.invoiceRepo.save(entity).then((saved) =>
+            this.invoiceMapper.toDto(saved),
+        );
     }
 }

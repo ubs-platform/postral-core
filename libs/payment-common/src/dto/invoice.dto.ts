@@ -4,8 +4,8 @@ import { InvoiceAddressDto } from './invoice-address.dto';
 
 export interface InvoiceDTO {
     id: string;
-    paymentId?: string;
-    transactionId?: string;
+    paymentId: string;
+    transactionId: string;
     invoiceNumber?: string;
     invoiceDate?: Date;
     status: string;
