@@ -24,6 +24,7 @@ import { AccountService } from './account.service';
 import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { exec } from 'child_process';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class PaymentSearchService {
@@ -34,6 +35,7 @@ export class PaymentSearchService {
         private eoService: EntityOwnershipService,
         private accountMapper: AccountMapper,
         private accountService: AccountService,
+        private authUtilService: AuthUtilService,
     ) {}
 
     async findAll(
@@ -80,14 +82,12 @@ export class PaymentSearchService {
             }
 
             // Kullanıcının yetkili olduğu hesapları getir
-            const authorizedAccountIds = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    userId: user.id,
-                }),
-            );
+            const authorizedAccountIds =
+                await this.authUtilService.fetchUserAccountIds(user!.id, [
+                    'OWNER',
+                    'EDITOR',
+                    'VIEWER',
+                ]);
 
             if (
                 modelSearch.customerAccountId &&
@@ -123,7 +123,7 @@ export class PaymentSearchService {
         ) {
             Object.assign(where, {
                 items: {
-                    entityOwnerAccountId: In(
+                    sellerAccountId: In(
                         modelSearch.sellerAccountIds.split(','),
                     ),
                 },
@@ -137,18 +137,6 @@ export class PaymentSearchService {
         if (modelSearch.customerAccountId) {
             Object.assign(where, {
                 customerAccountId: modelSearch.customerAccountId,
-            });
-        }
-        if (
-            modelSearch.sellerAccountIds &&
-            modelSearch.sellerAccountIds.length > 0
-        ) {
-            Object.assign(where, {
-                items: {
-                    entityOwnerAccountId: In(
-                        modelSearch.sellerAccountIds.split(','),
-                    ),
-                },
             });
         }
 
@@ -199,45 +187,14 @@ export class PaymentSearchService {
             // Admin tüm hesapları görebilir bu yüzden account servisten tüm hesapları çekebiliriz.
             return await this.accountService.fetchAll({ admin: 'true' }, user);
         }
-        const accountIdsRelated = await lastValueFrom(
-            this.eoService.searchOwnershipEntityIdsByUser({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                userId: user!.id,
-            }),
-        );
+        const accountIdsRelated =
+            await this.authUtilService.fetchUserAccountIds(user!.id, [
+                'OWNER',
+                'EDITOR',
+                'VIEWER',
+            ]);
         return await this.accountService.fetchFromRelatedTransactions(
             accountIdsRelated,
         );
-        // const where = await this.searchWhereQuery(search, user);
-        // const payments = await this.paymentrepo.find({ where, relations: ['items'] });
-
-        // if (search.searchSide == "CUSTOMER") {
-        //     // Müşteri tarafında bütün satın aldığı itemlerin accountları gelir. Müşterinin kendisi hariç.
-        //     const accountIds = new Set<string>();
-        //     payments.forEach(payment => {
-        //         payment.items.forEach(item => {
-        //             if (item.entityOwnerAccountId !== search.customerAccountId) {
-        //                 accountIds.add(item.entityOwnerAccountId);
-        //             }
-        //         });
-        //     });
-
-        //     return this.accountService.fetchManyByIds(Array.from(accountIds));
-        // }
-
-        // else if (search.searchSide == "SELLER") {
-        //     // Satıcı bütün müşterilerinin hesaplarını görür.
-        //     const accountIds = new Set<string>();
-        //     payments.forEach(payment => {
-        //         accountIds.add(payment.customerAccountId);
-        //     });
-
-        //     return this.accountService.fetchManyByIds(Array.from(accountIds));
-        // }
-        // else {
-        //     return [];
-        // }
     }
 }

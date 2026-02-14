@@ -14,6 +14,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { Address } from '../entity/address.entity';
 import { AddressMapper } from '../mapper/address.mapper';
 import { exec } from 'child_process';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class AddressService extends BaseCrudService<
@@ -28,6 +29,7 @@ export class AddressService extends BaseCrudService<
         public repo: Repository<Address>,
         private readonly addressMapper: AddressMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<Address, string>(repo));
     }
@@ -59,17 +61,14 @@ export class AddressService extends BaseCrudService<
         }
         let ids: Optional<string[]> = null;
         if (s?.admin !== 'true') {
-            ids = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ADDRESS,
-
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    ...(s?.entityOwnershipGroupId != null
-                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id }),
-                }),
+            ids = await this.authUtilService.searchOwnedIds(
+                PostralConstants.ENTITY_NAME_ADDRESS,
+                ['OWNER', 'EDITOR', 'VIEWER'],
+                (s?.entityOwnershipGroupId != null
+                        ? { ownershipGroupId: s.entityOwnershipGroupId }
+                        : { userId: u!.id })
             );
+
         }
 
         const where: any = {};

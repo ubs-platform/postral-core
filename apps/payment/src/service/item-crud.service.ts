@@ -18,6 +18,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { lastValueFrom } from 'rxjs';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class ItemCrudService extends BaseCrudService<
@@ -32,6 +33,7 @@ export class ItemCrudService extends BaseCrudService<
         public repo: Repository<Item>,
         private readonly itemMapper: ItemMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<Item, string>(repo));
     }
@@ -63,16 +65,13 @@ export class ItemCrudService extends BaseCrudService<
         }
         let ids: Optional<string[]> = null;
         if (s?.searchForCurrentUserEntities === 'true') {
-            ids = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ITEM,
-
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    ...(s?.entityOwnershipGroupId != null
-                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id }),
-                }),
+            ids = await this.authUtilService.searchOwnedIds(
+                PostralConstants.ENTITY_NAME_ITEM,
+                ['OWNER', 'EDITOR', 'VIEWER'],
+                {
+                    userId: u!.id,
+                    ownershipGroupId: s?.entityOwnershipGroupId,
+                },
             );
         }
 

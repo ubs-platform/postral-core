@@ -6,10 +6,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Invoice } from '../entity/invoice.entity';
+import { InvoiceMapper } from '../mapper/invoice.mapper';
 import {
-    InvoiceMapper,
-} from '../mapper/invoice.mapper';
-import { InvoiceCreateDTO, InvoiceDTO, InvoiceSearchDTO, InvoiceSearchPaginationDTO, InvoiceUpdateDTO } from '@tk-postral/payment-common';
+    InvoiceCreateDTO,
+    InvoiceDTO,
+    InvoiceSearchDTO,
+    InvoiceSearchPaginationDTO,
+    InvoiceUpdateDTO,
+} from '@tk-postral/payment-common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { SearchResult } from '@ubs-platform/crud-base-common';
@@ -21,7 +25,7 @@ export class InvoiceService {
         @InjectRepository(Invoice)
         private readonly invoiceRepo: Repository<Invoice>,
         private readonly invoiceMapper: InvoiceMapper,
-    ) { }
+    ) {}
 
     /**
      * Yeni fatura kaydı oluşturur
@@ -135,7 +139,9 @@ export class InvoiceService {
         return invoices.map((inv) => this.invoiceMapper.toDto(inv));
     }
 
-    async search(search: InvoiceSearchPaginationDTO): Promise<SearchResult<InvoiceDTO>> {
+    async search(
+        search: InvoiceSearchPaginationDTO,
+    ): Promise<SearchResult<InvoiceDTO>> {
         const where = await this.whereClause(search);
         const sortKey = search.sortBy || 'createdAt';
         const sortOrder = search.sortRotation || 'desc';
@@ -145,17 +151,24 @@ export class InvoiceService {
                 search.size,
                 search.page,
                 { [sortKey]: sortOrder },
-                ['customerInvoiceAddress', 'customerAccount', 'sellerInvoiceAddress', 'sellerInvoiceAccount'],
+                [
+                    'customerInvoiceAddress',
+                    'customerAccount',
+                    'sellerInvoiceAddress',
+                    'sellerInvoiceAccount',
+                ],
                 where,
             )
         ).map((p) => this.invoiceMapper.toDto(p));
     }
 
-
     async whereClause(search: InvoiceSearchDTO): Promise<any> {
         const where: any = {};
         if (search.finalized !== undefined) {
-            where.finalized = search.finalized === 'true' || search.finalized === true ? true : false;
+            where.finalized =
+                search.finalized === 'true' || search.finalized === true
+                    ? true
+                    : false;
         }
 
         if (search.paymentId) {
@@ -174,5 +187,23 @@ export class InvoiceService {
         return where;
     }
 
+    finalize(id: string): InvoiceDTO | PromiseLike<InvoiceDTO> {
+        return this.invoiceRepo.manager.transaction(async (transactionalEntityManager) => {
+            const invoice = await transactionalEntityManager.findOne(Invoice, { where: { id } });
 
+            if (!invoice) {
+                throw new NotFoundException(`Invoice with id ${id} not found`);
+            }
+
+            // Fatura zaten finalize edilmişse tekrar finalize etmeye gerek yok
+            if (invoice.finalized) {
+                return this.invoiceMapper.toDto(invoice);
+            }
+
+            // Faturayı finalize et
+            invoice.finalized = true;
+            const updatedInvoice = await transactionalEntityManager.save(invoice);
+            return this.invoiceMapper.toDto(updatedInvoice);
+        });
+    }
 }

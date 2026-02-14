@@ -7,6 +7,7 @@ import {
     Param,
     Body,
     UseInterceptors,
+    UseGuards,
 } from '@nestjs/common';
 import { InvoiceService } from '../service/invoice.service';
 import {
@@ -18,6 +19,8 @@ import { MessagePattern } from '@nestjs/microservices';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PaymentService } from '../service/payment.service';
 import { TransactionSearchService } from '../service/transaction-search.service';
+import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
+
 export interface UploadFileCategoryResponse {
     category?: string;
     name?: string;
@@ -100,6 +103,12 @@ export class InvoiceController {
             console.error('Error in fileGetAllowance:', error);
             return false;
         }
+    }
+
+    @Put(':id/finalize')
+    @UseGuards(JwtAuthGuard)
+    async finalize(@Param('id') id: string): Promise<InvoiceDTO> {
+        return this.invoiceService.finalize(id);
     }
 
     @MessagePattern('file-upload-POSTRAL_INVOICE')

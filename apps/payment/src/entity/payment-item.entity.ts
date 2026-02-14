@@ -21,9 +21,6 @@ export class PostralPaymentItem {
     @Column()
     variation: string;
 
-    // @Column()
-    // entityOwnerAccountId: string;
-
     @Column()
     name: string;
 

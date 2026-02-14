@@ -33,6 +33,7 @@ import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { exec } from 'child_process';
+import { AuthUtilService } from './auth-util.service';
 // import { exec } from 'child_process';
 
 @Injectable()
@@ -48,6 +49,7 @@ export class AccountService extends BaseCrudService<
         public repo: Repository<Account>,
         private readonly accountMapper: AccountMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<Account, string>(repo));
     }
@@ -88,16 +90,12 @@ export class AccountService extends BaseCrudService<
         let ids: Optional<string[]> = null;
         // exec(`kdialog --msgbox "Searching accounts with params: ${JSON.stringify(s)}"`);
         if (s?.admin !== 'true') {
-            ids = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    ...(s?.entityOwnershipGroupId != null
-                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id }),
-                }),
+            ids = await this.authUtilService.searchOwnedIds(
+                PostralConstants.ENTITY_NAME_ACCOUNT,
+                ['OWNER', 'EDITOR', 'VIEWER'],
+                (s?.entityOwnershipGroupId != null
+                        ? { ownershipGroupId: s.entityOwnershipGroupId }
+                        : { userId: u!.id })
             );
         }
 
@@ -158,13 +156,14 @@ export class AccountService extends BaseCrudService<
                     )
                     .getQuery();
 
-                return 'account.id IN (:...userRelatedAccountIds) OR account.id IN ' + relatedAccountIds;
+                return (
+                    'account.id IN (:...userRelatedAccountIds) OR account.id IN ' +
+                    relatedAccountIds
+                );
             })
             .setParameter('userRelatedAccountIds', userRelatedAccountIds)
             .getMany();
 
         return this.accountMapper.toDtoList(accounts);
-
-      
     }
 }

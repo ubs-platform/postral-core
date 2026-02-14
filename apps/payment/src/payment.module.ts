@@ -55,6 +55,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PaymentMicroserviceController } from './controller/payment-microservice.controller';
+import { AuthUtilService } from './service/auth-util.service';
 
 @Module({
     imports: [
@@ -120,6 +121,7 @@ import { PaymentMicroserviceController } from './controller/payment-microservice
         InvoiceMapper,
         InvoiceAddressMapper,
         InvoiceAccountMapper,
+        AuthUtilService
     ],
     controllers: [
         PaymentController,
@@ -137,7 +139,7 @@ import { PaymentMicroserviceController } from './controller/payment-microservice
         TransactionSearchController,
         PaymentItemSearchController,
         InvoiceController,
-        PaymentMicroserviceController
+        PaymentMicroserviceController,
     ],
 })
 export class PaymentModule {}

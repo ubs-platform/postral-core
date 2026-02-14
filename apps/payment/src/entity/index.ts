@@ -11,6 +11,8 @@ import { Address } from './address.entity';
 import { ItemTaxEntity, ItemTaxVariation } from './item-tax.entity';
 import { PaymentChannelOperation } from './payment-channel-operation.entity';
 import { Invoice } from './invoice.entity';
+import { InvoiceAddress } from './invoice-address.entity';
+import { InvoiceAccount } from './invoice-account.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -25,6 +27,9 @@ export * from "./transaction.entity"
 export * from "./item-tax.entity"
 export * from "./payment-channel-operation.entity"
 export * from "./invoice.entity"
+export * from "./invoice-account.entity"
+export * from "./invoice-address.entity"
+
 export const PaymentsEntities = [
     PostralPaymentItem,
     Payment,
@@ -39,5 +44,7 @@ export const PaymentsEntities = [
     ItemTaxEntity,
     ItemTaxVariation,
     PaymentChannelOperation,
-    Invoice
+    Invoice,
+    InvoiceAddress,
+    InvoiceAccount
 ];
