@@ -8,12 +8,14 @@ import {
     Body,
     UseInterceptors,
     UseGuards,
+    Query,
 } from '@nestjs/common';
 import { InvoiceService } from '../service/invoice.service';
 import {
     InvoiceDTO,
     InvoiceCreateDTO,
     InvoiceUpdateDTO,
+    InvoiceSearchPaginationDTO,
 } from '@tk-postral/payment-common';
 import { MessagePattern } from '@nestjs/microservices';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
@@ -23,6 +25,7 @@ import {
     CurrentUser,
     JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
+import { SearchResult } from '@ubs-platform/crud-base-common';
 
 export interface UploadFileCategoryResponse {
     category?: string;
@@ -61,13 +64,6 @@ export class InvoiceController {
         return this.invoiceService.findById(id);
     }
 
-    @Get('payment/:paymentId')
-    async findByPaymentId(
-        @Param('paymentId') paymentId: string,
-    ): Promise<InvoiceDTO[]> {
-        return this.invoiceService.findByPaymentId(paymentId);
-    }
-
     @Put(':id')
     async update(
         @Param('id') id: string,
@@ -79,6 +75,20 @@ export class InvoiceController {
     @Delete(':id')
     async delete(@Param('id') id: string): Promise<void> {
         return this.invoiceService.delete(id);
+    }
+
+    @Get('')
+    async fetchAll(
+        @Query() q: InvoiceSearchPaginationDTO,
+    ): Promise<InvoiceDTO[]> {
+        return await this.invoiceService.findAll(q);
+    }
+
+    @Get('_search')
+    async search(
+        @Query() q: InvoiceSearchPaginationDTO,
+    ): Promise<SearchResult<InvoiceDTO>> {
+        return await this.invoiceService.search(q);
     }
 
     @MessagePattern('file-get-POSTRAL_INVOICE')
