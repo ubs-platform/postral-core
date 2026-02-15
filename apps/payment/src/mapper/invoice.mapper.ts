@@ -24,11 +24,12 @@ export class InvoiceMapper {
             transactionId: entity.transactionId,
             invoiceNumber: entity.invoiceNumber,
             invoiceDate: entity.invoiceDate,
-            status: entity.status,
+            status: "",
             uploadedByUserId: entity.uploadedByUserId,
             notes: entity.notes,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
+            finalized: entity.finalized
         };
 
         if (entity.sellerInvoiceAddress) {
@@ -66,6 +67,7 @@ export class InvoiceMapper {
         entity.invoiceNumber = createDto.invoiceNumber || '';
         entity.invoiceDate = createDto.invoiceDate || new Date();
         entity.uploadedByUserId = createDto.uploadedByUserId || '';
+        entity.finalized = false;
         entity.notes = createDto.notes || '';
         if (createDto.sellerInvoiceAddress) {
             entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntity(
@@ -99,6 +101,7 @@ export class InvoiceMapper {
         entity.invoiceDate = dto.invoiceDate || new Date();
         entity.uploadedByUserId = dto.uploadedByUserId || '';
         entity.notes = dto.notes || '';
+        entity.finalized = false;
         if (dto.sellerInvoiceAddress) {
             entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntity(
                 dto.sellerInvoiceAddress,
@@ -119,7 +122,7 @@ export class InvoiceMapper {
                 dto.customerAccount,
             );
         }
-        entity.status = 'UPLOADED';
+        // entity.status = 'UPLOADED';
         return entity;
     }
 }

@@ -17,6 +17,7 @@ export interface InvoiceDTO {
     sellerInvoiceAccount?: InvoiceAccountDTO;
     customerInvoiceAddress?: InvoiceAddressDto;
     customerAccount?: InvoiceAccountDTO;
+    finalized: boolean;
 }
 
 export interface InvoiceCreateDTO {
