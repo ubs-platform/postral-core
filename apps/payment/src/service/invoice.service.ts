@@ -119,6 +119,9 @@ export class InvoiceService {
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
+        if (invoice.finalized) {
+            throw new BadRequestException('Kesinleştirilmiş fatura silinemez');
+        }
 
         // TODO: Dosya silme işlemi için dosya servisine event atacağız. şimdilik kalsın
         // // Önce dosyayı silmeyi dene (optional - hata olursa da devam edebiliriz)

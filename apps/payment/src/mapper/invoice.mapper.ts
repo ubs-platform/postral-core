@@ -84,10 +84,13 @@ export class InvoiceMapper {
         entity.uploadedByUserId = userId || '';
         entity.finalized = false;
         entity.notes = '';
-        entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.sourceAccount!);
-        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.targetAccount!);
-        entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(transaction.sourceAccount!.defaultAddress!);
-        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(transaction.targetAccount!.defaultAddress!);
+        // İade durumlarında transaction.transactionType source ve target hesapların yer değiştirebilir ama satıcının müşteri olarak gözükmesi istenmez, bu yüzden transactionType kontrolü yapılmaz
+        const customer = transaction.sourceAccount, seller = transaction.targetAccount;
+
+        entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
+        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(customer!);
+        entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
+        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customer!.defaultAddress!);
 
         return entity;
     }
