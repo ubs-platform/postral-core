@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Invoice } from '../entity/invoice.entity';
 import {
     InvoiceCreateDTO,
@@ -9,12 +9,18 @@ import {
 } from '@tk-postral/payment-common';
 import { InvoiceAddressMapper } from './invoice-address.mapper';
 import { InvoiceAccountMapper } from './invoice-account.mapper';
+import { PaymentTransaction } from '../entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { TransactionSearchService } from '../service/transaction-search.service';
 
 @Injectable()
 export class InvoiceMapper {
     constructor(
         private readonly invoiceAddressMapper: InvoiceAddressMapper,
         private readonly invoiceAccountMapper: InvoiceAccountMapper,
+        // private readonly transactionRepository: Repository<PaymentTransaction>,
+        private readonly transactionSearchService: TransactionSearchService,
     ) {}
 
     toDto(entity: Invoice): InvoiceDTO {
@@ -56,40 +62,33 @@ export class InvoiceMapper {
         return dto;
     }
 
-    toEntityFromTransaction(
-        transaction: PaymentTransactionDTO,
-        payment: PaymentDTO | PaymentFullDTO,
-        createDto: InvoiceCreateDTO,
+    async toEntityFromTransaction(
+        transactionId: string,
+        userId?: string,
     ) {
+        const transaction = await this.transactionSearchService.fetchByIdWithRelationsInternal(transactionId);
+        if (!transaction) {
+            throw new Error('Transaction not found for id: ' + transactionId);
+        }
+        if (!transaction.sourceAccount || !transaction.targetAccount) {
+            throw new Error('Transaction accounts not found for id: ' + transactionId);
+        }
+        if (!transaction.sourceAccount.defaultAddress || !transaction.targetAccount.defaultAddress) {
+            throw new Error('Transaction account addresses not found for id: ' + transactionId);
+        }
         const entity = new Invoice();
         entity.paymentId = transaction.paymentId;
         entity.transactionId = transaction.id!;
-        entity.invoiceNumber = createDto.invoiceNumber || '';
-        entity.invoiceDate = createDto.invoiceDate || new Date();
-        entity.uploadedByUserId = createDto.uploadedByUserId || '';
+        entity.invoiceNumber = "";
+        entity.invoiceDate = new Date(transaction.createdAt) || new Date();
+        entity.uploadedByUserId = userId || '';
         entity.finalized = false;
-        entity.notes = createDto.notes || '';
-        if (createDto.sellerInvoiceAddress) {
-            entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntity(
-                createDto.sellerInvoiceAddress,
-            );
-        }
-        if (createDto.sellerInvoiceAccount) {
-            entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntity(
-                createDto.sellerInvoiceAccount,
-            );
-        }
-        if (createDto.customerInvoiceAddress) {
-            entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntity(
-                createDto.customerInvoiceAddress,
-            );
-        }
-        if (createDto.customerAccount) {
-            entity.customerAccount = this.invoiceAccountMapper.toEntity(
-                createDto.customerAccount,
-            );
-        }
-        // entity.status = "IDLE";
+        entity.notes = '';
+        entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.sourceAccount!);
+        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.targetAccount!);
+        entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(transaction.sourceAccount!.defaultAddress!);
+        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(transaction.targetAccount!.defaultAddress!);
+
         return entity;
     }
 

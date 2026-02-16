@@ -26,6 +26,7 @@ import {
     JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { SearchResult } from '@ubs-platform/crud-base-common';
+import { exec } from 'child_process';
 
 export interface UploadFileCategoryResponse {
     category?: string;
@@ -50,7 +51,7 @@ export class InvoiceController {
         private readonly transactionService: TransactionSearchService,
         private readonly paymentService: PaymentService,
         private readonly paymentSearchService: TransactionSearchService,
-    ) {}
+    ) { }
 
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.
     @Post()
@@ -130,7 +131,7 @@ export class InvoiceController {
     @UseGuards(JwtAuthGuard)
     async createFromTransaction(
         @Param('transactionId') transactionId: string,
-        @Body() createDto: InvoiceCreateDTO,
+        // @Body() createDto: InvoiceCreateDTO,
         @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<InvoiceDTO> {
         const transaction = await this.transactionService.fetchById(
@@ -140,7 +141,7 @@ export class InvoiceController {
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-
+        // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${transactionId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
         const payment = await this.paymentService.findPaymentById(
             transaction.paymentId,
             true,
@@ -151,8 +152,6 @@ export class InvoiceController {
 
         return this.invoiceService.createFromTransaction(
             transaction,
-            payment,
-            createDto,
         );
     }
 

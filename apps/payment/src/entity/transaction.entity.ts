@@ -16,6 +16,7 @@ import {
     TransactionType,
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
+import { Payment } from './payment.entity';
 
 @Entity()
 export class PaymentTransaction {
@@ -36,6 +37,10 @@ export class PaymentTransaction {
 
     @Column()
     paymentId: string;
+
+    // @ManyToOne(() => Payment)
+    // @JoinColumn({ name: 'paymentId' })
+    // payment: Payment;
 
     @Column()
     targetAccountId: string;

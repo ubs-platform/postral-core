@@ -9,5 +9,5 @@ export class InvoiceAccountDTO {
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
     
-
+    realAccountId?: string;
 }

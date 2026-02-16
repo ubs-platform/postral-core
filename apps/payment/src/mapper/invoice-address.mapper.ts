@@ -1,9 +1,42 @@
 import { Injectable } from '@nestjs/common';
 import { InvoiceAddressDto } from '@tk-postral/payment-common';
 import { InvoiceAddress } from '../entity/invoice-address.entity';
+import { Address } from '../entity';
 
 @Injectable()
 export class InvoiceAddressMapper {
+
+    toEntityFromAccountAddress(acad: Address): InvoiceAddress {
+        const entity = new InvoiceAddress();
+        entity.name = acad.name;
+        entity.buildingNumber = acad.buildingNumber;
+        entity.buildingName = acad.buildingName;
+        entity.room = acad.room;
+        entity.floor = acad.floor;
+        entity.blockName = acad.blockName;
+        entity.streetName = acad.streetName;
+        entity.additionalStreetName = acad.additionalStreetName;
+        entity.district = acad.district;
+        entity.citySubdivisionName = acad.citySubdivisionName;
+        entity.cityName = acad.cityName;
+        entity.postalZone = acad.postalZone;
+        entity.region = acad.region;
+        entity.postbox = acad.postbox;
+        entity.country = acad.country;
+        entity.countrySubentity = acad.countrySubentity;
+        entity.countrySubentityCode = acad.countrySubentityCode;
+        entity.addressFormatCode = acad.addressFormatCode;
+        entity.addressTypeCode = acad.addressTypeCode;
+        entity.department = acad.department;
+        entity.markAttention = acad.markAttention;
+        entity.markCare = acad.markCare;
+        entity.plotIdentification = acad.plotIdentification;
+        entity.cityCode = acad.cityCode;
+        entity.inhaleName = acad.inhaleName;
+        entity.timezone = acad.timezone;
+        return entity;
+    }
+
     toDto(entity: InvoiceAddress): InvoiceAddressDto {
         return {
             id: entity.id,

@@ -218,18 +218,12 @@ export class InvoiceService {
         );
     }
 
-    createFromTransaction(
+    async createFromTransaction(
         transaction: PaymentTransactionDTO,
-        payment: PaymentDTO | PaymentFullDTO,
-        createDto: InvoiceCreateDTO,
-    ): InvoiceDTO | PromiseLike<InvoiceDTO> {
-        const entity = this.invoiceMapper.toEntityFromTransaction(
-            transaction,
-            payment,
-            createDto,
+    ): Promise<InvoiceDTO | PromiseLike<InvoiceDTO>> {
+        const entity = await this.invoiceMapper.toEntityFromTransaction(
+            transaction.id!
         );
-        return this.invoiceRepo.save(entity).then((saved) =>
-            this.invoiceMapper.toDto(saved),
-        );
+        return this.invoiceMapper.toDto(await this.invoiceRepo.save(entity));
     }
 }

@@ -152,4 +152,15 @@ export class TransactionSearchService {
         // exec(`kdialog --msgbox "Search where clause: ${JSON.stringify(where)}  admin ${modelSearch.admin}  clauses ${JSON.stringify(orClause)}  user ${user ? user.id : 'null'}"`);
         return orClause.map((clause) => ({ ...where, ...clause }));
     }
+
+    public async fetchByIdWithRelationsInternal(id: string) {
+        const transaction = await this.transactionRepo.findOne({
+            where: { id },
+            relations: ['sourceAccount', 'targetAccount',"sourceAccount.defaultAddress", "targetAccount.defaultAddress"],
+        });
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+        return transaction;
+    }
 }
