@@ -77,12 +77,11 @@ export class ItemCrudService extends BaseCrudService<
 
         const where: any = {};
         if (s?.name) {
-            where.name = Like(`%${s.name}%`);
+            where.name = Like('%' + s.name + '%');
         }
         if (ids != null) {
             where.id = In(ids);
         }
-        // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
 
         return where;
     }
