@@ -38,35 +38,6 @@ export class AddressController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-    @Post('')
-    @UseGuards(JwtAuthGuard)
-    async add(
-        @Body() body: AccountAddressDto,
-        @CurrentUser() user?: UserAuthBackendDTO,
-    ): Promise<AccountAddressDto> {
-        const createdAccount = await this.service.create(body);
-        // After creating the account, assign ownership to the user
-        if (user) {
-            const eo = await this.eoClient.insertOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ADDRESS,
-                entityId: createdAccount.id!,
-                overriderRoles: ['ADMIN'],
-                ...(!body.entityOwnershipGroupId
-                    ? {
-                          userCapabilities: [
-                              { userId: user.id, capability: 'OWNER' },
-                          ],
-                      }
-                    : { userCapabilities: [] }),
-                ...(body.entityOwnershipGroupId
-                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
-                    : { entityOwnershipGroupId: '' }),
-            });
-        }
-        return createdAccount;
-    }
-
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
@@ -113,18 +84,16 @@ export class AddressController extends BaseCrudControllerGenerator<
             queriesAndPaths = {};
         }
         const isUserAdmin = user?.roles?.includes('ADMIN');
-        const isAdminSearchMode = queriesAndPaths?.admin === 'true';
-        // exec(
-        //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
-        // );
-        if (!isUserAdmin && isAdminSearchMode) {
+        const allSearchMode = queriesAndPaths?.showOnlyUserOwned === 'true';
+
+        if (!isUserAdmin && allSearchMode) {
             throw new UnauthorizedException(
-                'Only admins can search with admin=true',
+                'Only admins can search with showOnlyUserOwned=true',
             );
         }
 
         // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
-        if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
+        if (!allSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
             queriesAndPaths.ownerUserId = user?.id;
         }
 

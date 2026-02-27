@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 
 @Injectable()
 export class AuthUtilService {
@@ -46,4 +47,26 @@ export class AuthUtilService {
             }),
         );
     }
+
+       async afterCreate(entityGroup: string, entityName: string, entityId: string, userId?: string, entityOwnershipGroupId?: string): Promise<void> {
+            if (!userId) {
+                return Promise.resolve();
+            }
+            await this.eo.insertOwnership({
+                entityGroup,
+                entityName,
+                entityId,
+                overriderRoles: ['ADMIN'],
+                ...(!entityOwnershipGroupId
+                    ? {
+                        userCapabilities: [
+                            { userId, capability: 'OWNER' },
+                        ],
+                    }
+                    : { userCapabilities: [] }),
+                ...(entityOwnershipGroupId
+                    ? { entityOwnershipGroupId }
+                    : { entityOwnershipGroupId: '' }),
+            });
+        }
 }

@@ -48,35 +48,6 @@ export class ItemTaxController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-    @Post('')
-    @UseGuards(JwtAuthGuard)
-    async add(
-        @Body() body: ItemTaxDTO,
-        @CurrentUser() user?: UserAuthBackendDTO,
-    ): Promise<ItemTaxDTO> {
-        const createdItemTax = await this.service.create(body);
-        // After creating the item tax, assign ownership to the user
-        if (user) {
-            const eo = await this.eoClient.insertOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_TAX,
-                entityId: createdItemTax.id,
-                overriderRoles: ['ADMIN'],
-                ...(!body.entityOwnershipGroupId
-                    ? {
-                          userCapabilities: [
-                              { userId: user.id, capability: 'OWNER' },
-                          ],
-                      }
-                    : { userCapabilities: [] }),
-                ...(body.entityOwnershipGroupId
-                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
-                    : { entityOwnershipGroupId: '' }),
-            });
-        }
-        return createdItemTax;
-    }
-
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,

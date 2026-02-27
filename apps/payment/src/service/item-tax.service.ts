@@ -12,6 +12,7 @@ import { FilterQuery } from 'mongoose';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { lastValueFrom } from 'rxjs';
 import { PostralConstants } from '../util/consts';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class ItemTaxService extends BaseCrudService<
@@ -26,8 +27,20 @@ export class ItemTaxService extends BaseCrudService<
         public repo: Repository<ItemTaxEntity>,
         private readonly itemTaxMapper: ItemTaxMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<ItemTaxEntity, string>(repo, ["variations"]));
+    }
+
+    async afterCreate(m: ItemTaxDTO, input: ItemTaxDTO, user?: UserAuthBackendDTO): Promise<void> {
+        await this.authUtilService.afterCreate(
+            PostralConstants.ENTITY_GROUP_POSTRAL,
+            PostralConstants.ENTITY_NAME_TAX,
+            m.id!,
+            user?.id,
+            input.entityOwnershipGroupId,
+        );
+        return Promise.resolve();
     }
 
     generateNewModel(): ItemTaxEntity {

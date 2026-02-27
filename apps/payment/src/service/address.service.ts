@@ -34,6 +34,16 @@ export class AddressService extends BaseCrudService<
         super(new TypeormRepositoryWrap<Address, string>(repo));
     }
 
+    async afterCreate(m: AccountAddressDto, input: AccountAddressDto, user?: UserAuthBackendDTO): Promise<void> {
+        return await this.authUtilService.afterCreate(
+            PostralConstants.ENTITY_GROUP_POSTRAL,
+            PostralConstants.ENTITY_NAME_ADDRESS,
+            m.id!,
+            user?.id || '',
+            input.entityOwnershipGroupId,
+        );
+    }
+
     getIdFieldNameFromInput(i: AccountAddressDto): string {
         return i.id!;
     }
@@ -60,7 +70,7 @@ export class AddressService extends BaseCrudService<
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.admin !== 'true') {
+        if (s?.showOnlyUserOwned === 'true') {
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ADDRESS,
                 ['OWNER', 'EDITOR', 'VIEWER'],

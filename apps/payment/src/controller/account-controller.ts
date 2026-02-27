@@ -45,35 +45,6 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         super(service);
     }
 
-    @Post('')
-    @UseGuards(JwtAuthGuard)
-    async add(
-        @Body() body: AccountDTO,
-        @CurrentUser() user?: UserAuthBackendDTO,
-    ): Promise<AccountDTO> {
-        const createdAccount = await this.service.create(body);
-        // After creating the account, assign ownership to the user
-        if (user) {
-            const eo = await this.eoClient.insertOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                entityId: createdAccount.id,
-                overriderRoles: ['ADMIN'],
-                ...(!body.entityOwnershipGroupId
-                    ? {
-                          userCapabilities: [
-                              { userId: user.id, capability: 'OWNER' },
-                          ],
-                      }
-                    : { userCapabilities: [] }),
-                ...(body.entityOwnershipGroupId
-                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
-                    : { entityOwnershipGroupId: '' }),
-            });
-        }
-        return createdAccount;
-    }
-
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
@@ -117,9 +88,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
     ) {
         // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
         if (!queriesAndPaths) {
-            queriesAndPaths = {};
-        }
-
+            queriesAndPaths = {};showOnlyUserOwned
         const isUserAdmin = user?.roles?.includes('ADMIN');
         const isAdminSearchMode = queriesAndPaths?.admin === 'true';
         // exec(

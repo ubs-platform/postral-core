@@ -54,6 +54,19 @@ export class AccountService extends BaseCrudService<
         super(new TypeormRepositoryWrap<Account, string>(repo));
     }
 
+    override async afterCreate(m: AccountDTO, input: AccountDTO, user?: UserAuthBackendDTO): Promise<void> {
+        if (!user) {
+            return Promise.resolve();
+        }
+        await this.authUtilService.afterCreate(
+            PostralConstants.ENTITY_GROUP_POSTRAL,
+            PostralConstants.ENTITY_NAME_ACCOUNT,
+            m.id,
+            user.id,
+            input.entityOwnershipGroupId,
+        );
+    }
+
     getIdFieldNameFromInput(i: AccountDTO): string {
         return i.id;
     }
@@ -94,8 +107,8 @@ export class AccountService extends BaseCrudService<
                 PostralConstants.ENTITY_NAME_ACCOUNT,
                 ['OWNER', 'EDITOR', 'VIEWER'],
                 (s?.entityOwnershipGroupId != null
-                        ? { ownershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id })
+                    ? { ownershipGroupId: s.entityOwnershipGroupId }
+                    : { userId: u!.id })
             );
         }
 
