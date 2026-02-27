@@ -7,7 +7,7 @@ export class AccountAddressDto {
 
     entityOwnershipGroupId?: string;
 
-    
+
 
     // UBL Address Fields
 
@@ -90,7 +90,7 @@ export class AddressSearchParamsDTO implements InternalSearchDTO {
 
     name?: string;
 
-    showOnlyUserOwned?: "true" | "false";
+    admin?: "true" | "false";
 
     ownerUserId?: string;
 

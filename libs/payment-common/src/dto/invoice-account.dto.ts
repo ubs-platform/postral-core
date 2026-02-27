@@ -27,10 +27,10 @@ export class AccountSearchParamsDTO implements InternalSearchDTO {
 
 
     deactivated?: "NOT_DEACTIVATED" | "ONLY_DEACTIVATED" | "ALL";
-    admin?: "true" | "false";
 
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
     entityIds?: string[];
+    admin?: "true" | "false";
 
 }

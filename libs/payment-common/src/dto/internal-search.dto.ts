@@ -1,6 +1,5 @@
 export interface InternalSearchDTO {
 
-    showOnlyUserOwned?: "true" | "false";
     /**
  * Eğer kullanıcı admin değilse, bu alanı kullanarak sadece 
  * kendi hesaplarını görmesi sağlanır. Admin kullanıcılar için herhangi bir 
@@ -30,4 +29,7 @@ export interface InternalSearchDTO {
 
     // iç kullanım için
     entityIds?: string[];
+
+    admin?: "true" | "false";
+
 }

@@ -23,7 +23,5 @@ export class ItemTaxSearchDTO implements InternalSearchDTO {
 
     entityOwnershipGroupId?: string;
 
-    showOnlyUserOwned?: "true" | "false";
-
     ownerUserId?: string;
 }

@@ -1,30 +1,17 @@
 import {
     Controller,
-    Get,
-    Post,
-    Put,
-    Delete,
-    Param,
-    Body,
-    UseGuards,
-    NotFoundException,
-    UnauthorizedException,
-    Query,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
 import {
     CurrentUser,
-    EntityOwnershipGroupClientService,
-    EntityOwnershipService,
-    JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
-import { lastValueFrom } from 'rxjs';
 import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
 import { Account } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { AuthUtilService } from '../service/auth-util.service';
 
 @Controller('account')
 export class AccountNewController extends BaseCrudControllerGenerator<
@@ -40,7 +27,7 @@ export class AccountNewController extends BaseCrudControllerGenerator<
 }) {
     constructor(
         protected readonly service: AccountService,
-        protected readonly eoClient: EntityOwnershipService,
+        protected readonly authUtilService: AuthUtilService,
     ) {
         super(service);
     }
@@ -51,65 +38,29 @@ export class AccountNewController extends BaseCrudControllerGenerator<
         queriesAndPaths: Optional<{ [key: string]: any }>,
         body: Optional<AccountDTO>,
     ): Promise<void> {
-        let id = '';
-        let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
-        if (operation !== 'GETALL' && operation !== 'GETID') {
-            capabilityAtLeastOne = ['OWNER', 'EDITOR'];
-        }
-        if (operation === 'ADD' || operation === 'EDIT') {
-            id = body?.id || '';
-        } else if (operation === 'REMOVE' || operation === 'GETID') {
-            id = queriesAndPaths?.id || '';
-        }
-        if (id == '' || !user) {
-            return Promise.resolve();
-        }
-
-        const res = await lastValueFrom(
-            this.eoClient.hasOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                ...((typeof id == 'string' && id) || id != null ? { entityId: id } : {}),
-                ...(!id && (typeof queriesAndPaths?.entityOwnershipGroupId == "string" && queriesAndPaths?.entityOwnershipGroupId) ? { entityOwnershipGroupId: queriesAndPaths.entityOwnershipGroupId } : {}),
-                userId: user.id,
-                capabilityAtLeastOne,
-            }),
+        return await this.authUtilService.checkUserEntityOwnership(
+            operation,
+            user,
+            queriesAndPaths,
+            body,
+            PostralConstants.ENTITY_NAME_ACCOUNT,
+            'account',
         );
-        if (!res) {
-            throw new UnauthorizedException(
-                `User does not have ownership for account ${id}`,
-            );
-        }
     }
 
     async manipulateSearch(
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<AccountSearchParamsDTO>,
     ) {
-        // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
-        if (!queriesAndPaths) {
-            queriesAndPaths = {};showOnlyUserOwned
-        const isUserAdmin = user?.roles?.includes('ADMIN');
-        const isAdminSearchMode = queriesAndPaths?.admin === 'true';
-        // exec(
-        //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
-        // );
-        if (!isUserAdmin && isAdminSearchMode) {
-            throw new UnauthorizedException(
-                'Only admins can search with admin=true',
-            );
+        const manipulatedQueries = queriesAndPaths || {};
+
+        if (manipulatedQueries.deactivated === undefined) {
+            manipulatedQueries.deactivated = 'NOT_DEACTIVATED';
         }
 
-        if (queriesAndPaths?.deactivated === undefined) {
-            // Varsayılan olarak sadece deaktive edilmemiş hesapları getir
-            queriesAndPaths.deactivated = 'NOT_DEACTIVATED';
-        }
-
-        // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
-        if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
-            queriesAndPaths.ownerUserId = user?.id;
-        }
-
-        return queriesAndPaths;
+        return this.authUtilService.manipulateSearchOwnership(
+            user,
+            manipulatedQueries,
+        );
     }
 }
