@@ -4,6 +4,7 @@ import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { exec } from 'child_process';
 
 @Injectable()
 export class AuthUtilService {
@@ -12,11 +13,11 @@ export class AuthUtilService {
      */
     constructor(private eo: EntityOwnershipService) {}
 
-    private resolveIdByOperation(
+    public async resolveIdByOperation(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         queriesAndPaths?: Optional<{ [key: string]: any }>,
         body?: Optional<{ id?: string }>,
-    ): string {
+    ): Promise<string> {
         if (operation === 'ADD' || operation === 'EDIT') {
             return body?.id || '';
         }
@@ -43,7 +44,7 @@ export class AuthUtilService {
         entityName: string,
         unauthorizedMessageEntityName: string,
     ): Promise<void> {
-        const id = this.resolveIdByOperation(operation, queriesAndPaths, body);
+        const id = await this.resolveIdByOperation(operation, queriesAndPaths, body);
 
         if (!id || !user) {
             return Promise.resolve();

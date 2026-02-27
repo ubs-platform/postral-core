@@ -16,6 +16,14 @@ export class ItemTaxEntity {
     @Column()
     taxName: string;
 
+    /**
+     * This field is used to determine if the tax is public or private.
+     *  If it's public, it can be used by any account. If it's private, 
+     * it can only be used by the account that created it.
+     */
+    @Column()
+    isPublic: boolean;
+
     @OneToMany(() => ItemTaxVariation, (variation) => variation.itemTax, {
         cascade: true,
         onDelete: 'CASCADE',
