@@ -1,3 +1,4 @@
+import { InternalSearchDTO } from "./internal-search.dto";
 
 
 export class AccountDTO {
@@ -8,25 +9,28 @@ export class AccountDTO {
     legalIdentity: string;
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
-    
+
     defaultAddressId?: string;
-    
+
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
     deactivated?: boolean;
 
 }
 
-export class AccountSearchParamsDTO {
+export class AccountSearchParamsDTO implements InternalSearchDTO {
     name?: string;
 
     legalIdentity?: string;
 
     type?: 'INDIVIDUAL' | 'COMMERCIAL';
 
+
+    deactivated?: "NOT_DEACTIVATED" | "ONLY_DEACTIVATED" | "ALL";
+    admin?: "true" | "false";
+
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
-    admin?: "true" | "false";
     entityIds?: string[];
-    deactivated?: "NOT_DEACTIVATED" | "ONLY_DEACTIVATED" | "ALL";
+
 }

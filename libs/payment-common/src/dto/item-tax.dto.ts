@@ -1,3 +1,4 @@
+import { InternalSearchDTO } from "./internal-search.dto";
 
 export class ItemTaxVariationDTO {
     taxMode: string;
@@ -15,12 +16,14 @@ export class ItemTaxDTO {
     entityOwnershipGroupId?: string;
 }
 
-export class ItemTaxSearchDTO {
+export class ItemTaxSearchDTO implements InternalSearchDTO {
 
     
     taxName: string;
 
     entityOwnershipGroupId?: string;
 
-    admin?: 'true' | 'false';
+    showOnlyUserOwned?: "true" | "false";
+
+    ownerUserId?: string;
 }

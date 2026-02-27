@@ -1,3 +1,5 @@
+import { InternalSearchDTO } from "./internal-search.dto";
+
 export class AccountAddressDto {
     id?: string;
 
@@ -83,12 +85,12 @@ export class AccountAddressDto {
     timezone?: string;
 }
 
-export class AddressSearchParamsDTO {
+export class AddressSearchParamsDTO implements InternalSearchDTO {
     id?: string;
 
     name?: string;
 
-    admin?: 'true' | 'false';
+    showOnlyUserOwned?: "true" | "false";
 
     ownerUserId?: string;
 
