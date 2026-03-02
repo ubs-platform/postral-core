@@ -55,4 +55,7 @@ export class PostralPaymentItem {
 
     @Column()
     sellerAccountName: string;
+
+    @Column()
+    unit: string;
 }

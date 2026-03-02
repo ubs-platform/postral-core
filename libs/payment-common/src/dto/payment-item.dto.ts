@@ -15,6 +15,7 @@ export interface PaymentItemDto {
     unTaxAmount: number;
     originalUnitAmount: number;
     unitAmount: number;
+    unit: string;
     // itemType: 'PRODUCT' | 'DISCOUNT' | 'ADDITION' | 'OTHER';
     // taxPercent: number;
 }

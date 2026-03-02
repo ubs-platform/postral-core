@@ -177,6 +177,7 @@ export class PaymentService {
             pi.entityName = ci.entityName;
             pi.sellerAccountId = ci.sellerAccountId;
             pi.sellerAccountName = ci.sellerAccountName;
+            pi.unit = ci.unit;
             return pi;
         });
 

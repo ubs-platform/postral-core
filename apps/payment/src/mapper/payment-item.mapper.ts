@@ -25,6 +25,7 @@ export class PaymentItemMapper {
                 unTaxAmount: a.unTaxAmount,
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,
+                unit: a.unit,
             });
         }
         return dtos;
