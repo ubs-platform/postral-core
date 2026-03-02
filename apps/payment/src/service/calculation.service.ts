@@ -96,6 +96,7 @@ export class CalculationService {
             paymentItem.taxPercent = taxPercentBySaleMode;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
+            paymentItem.sellerAccountName = itemAccount.name;
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
 

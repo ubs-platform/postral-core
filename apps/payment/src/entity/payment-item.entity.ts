@@ -52,4 +52,7 @@ export class PostralPaymentItem {
     
     @Column()
     sellerAccountId: string;
+
+    @Column()
+    sellerAccountName: string;
 }
