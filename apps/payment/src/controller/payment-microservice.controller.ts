@@ -20,14 +20,26 @@ export class PaymentMicroserviceController {
     constructor(
         private ps: PaymentService,
         private transactionService: TransactionSearchService,
+        private paymentTransactionService: PaymentTransactionService,
         private userService: UserService,
         private entityOwnershipService: EntityOwnershipService,
-    ) { }
+    ) {}
 
     @EventPattern('postral/payment-operation-status-updated')
     public async handlePaymentOperationStatusUpdated(operationId: string) {
         return await this.ps.handlePaymentOperationStatusUpdated(operationId);
     }
 
-
+    @EventPattern('POSTRAL_INVOICE_UPDATED')
+    public async handleInvoiceUpdated(data: {
+        transactionId: string;
+        invoiceCount: number;
+        hasFinalizedInvoice: boolean;
+    }) {
+        await this.paymentTransactionService.updateInvoiceStatus(
+            data.transactionId,
+            data.invoiceCount,
+            data.hasFinalizedInvoice,
+        );
+    }
 }

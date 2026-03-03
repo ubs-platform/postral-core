@@ -7,13 +7,10 @@ import { exec } from 'child_process';
 
 @Injectable()
 export class TransactionMapper {
-
     /**
      *
      */
-    constructor() {
-
-    }
+    constructor() {}
 
     toDto(saved: PaymentTransaction): PaymentTransactionDTO {
         // exec('kdialog --msgbox "toDto called with id: ' + saved.id + "  Accountlar: " + saved.sourceAccount?.name + " -> " + saved.targetAccount?.name + '" 10 50');
@@ -36,6 +33,8 @@ export class TransactionMapper {
             targetAccountId: saved.targetAccountId,
             targetAccountName: saved.targetAccount?.name,
             untaxedAmount: saved.untaxedAmount,
+            invoiceCount: saved.invoiceCount,
+            hasFinalizedInvoice: saved.hasFinalizedInvoice,
         };
     }
 }

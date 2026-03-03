@@ -7,6 +7,7 @@ import {
     Transaction,
     ManyToOne,
     JoinColumn,
+    BaseEntity,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
@@ -16,10 +17,9 @@ import {
     TransactionType,
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
-import { Payment } from './payment.entity';
 
 @Entity()
-export class PaymentTransaction {
+export class PaymentTransaction extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -61,6 +61,12 @@ export class PaymentTransaction {
 
     @Column({ type: 'varchar', nullable: true })
     errorStatus: PaymentErrorStatus;
+
+    @Column({ type: 'int', default: 0 })
+    invoiceCount: number;
+
+    @Column({ type: 'boolean', default: false })
+    hasFinalizedInvoice: boolean;
 
     // faturalar için burası kullanılabilir
     // invoiceId: string;
@@ -104,5 +110,6 @@ export class PaymentTransaction {
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
     description: string;
+
     // Additional fields can be added as needed
 }

@@ -1,5 +1,5 @@
-import { PaymentErrorStatus, PaymentStatus } from "../type/status";
-import { TransactionType } from "../type/transaction-type";
+import { PaymentErrorStatus, PaymentStatus } from '../type/status';
+import { TransactionType } from '../type/transaction-type';
 
 export class PaymentTransactionDTO {
     id?: string;
@@ -20,6 +20,8 @@ export class PaymentTransactionDTO {
     updatedAt: string | Date;
     lastOperationDate: string | Date;
     description?: string;
+    invoiceCount?: number;
+    hasFinalizedInvoice?: boolean;
 }
 
 export class PaymentTransactionSearchDTO {
@@ -33,7 +35,7 @@ export class PaymentTransactionSearchDTO {
     currency?: string;
     dateFrom?: string;
     dateTo?: string;
-    admin: "true" | "false";
+    admin: 'true' | 'false';
     // searchSide?: 'CUSTOMER' | 'SELLER' | "ADMIN";
 }
 

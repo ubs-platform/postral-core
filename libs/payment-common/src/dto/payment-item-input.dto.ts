@@ -9,4 +9,5 @@ export interface PaymentItemInputDto {
     variation?: string;
 
     quantity: number;
+    unit?: string;
 }

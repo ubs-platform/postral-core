@@ -2,9 +2,11 @@ import {
     Injectable,
     NotFoundException,
     BadRequestException,
+    Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientKafka } from '@nestjs/microservices';
 import { Invoice } from '../entity/invoice.entity';
 import { InvoiceMapper } from '../mapper/invoice.mapper';
 import {
@@ -28,7 +30,25 @@ export class InvoiceService {
         @InjectRepository(Invoice)
         private readonly invoiceRepo: Repository<Invoice>,
         private readonly invoiceMapper: InvoiceMapper,
+        @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
     ) {}
+
+    private async emitInvoiceUpdatedEvent(transactionId: string) {
+        if (!transactionId) return;
+
+        const invoices = await this.invoiceRepo.find({
+            where: { transactionId },
+        });
+
+        const invoiceCount = invoices.length;
+        const hasFinalizedInvoice = invoices.some((inv) => inv.finalized);
+
+        this.kfk.emit('POSTRAL_INVOICE_UPDATED', {
+            transactionId,
+            invoiceCount,
+            hasFinalizedInvoice,
+        });
+    }
 
     /**
      * Yeni fatura kaydı oluşturur
@@ -43,6 +63,11 @@ export class InvoiceService {
 
         const entity = this.invoiceMapper.toEntity(createDto);
         const saved = await this.invoiceRepo.save(entity);
+
+        if (saved.transactionId) {
+            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        }
+
         return this.invoiceMapper.toDto(saved);
     }
 
@@ -133,6 +158,10 @@ export class InvoiceService {
         // }
 
         await this.invoiceRepo.remove(invoice);
+
+        if (invoice.transactionId) {
+            await this.emitInvoiceUpdatedEvent(invoice.transactionId);
+        }
     }
 
     async findAll(search: InvoiceSearchDTO): Promise<InvoiceDTO[]> {
@@ -216,6 +245,14 @@ export class InvoiceService {
                 invoice.finalized = true;
                 const updatedInvoice =
                     await transactionalEntityManager.save(invoice);
+
+                if (updatedInvoice.transactionId) {
+                    // Veritabanı transaction işlemi tamamlandıktan sonra emit etmek daha garantilidir ama
+                    // TypeORM transaction callback içinde await olduğu için manager commit olana kadar bekleyecektir.
+                    // Microservice emit, manager.save'den sonra yapılabilir.
+                    this.emitInvoiceUpdatedEvent(updatedInvoice.transactionId);
+                }
+
                 return this.invoiceMapper.toDto(updatedInvoice);
             },
         );
@@ -225,8 +262,14 @@ export class InvoiceService {
         transaction: PaymentTransactionDTO,
     ): Promise<InvoiceDTO | PromiseLike<InvoiceDTO>> {
         const entity = await this.invoiceMapper.toEntityFromTransaction(
-            transaction.id!
+            transaction.id!,
         );
-        return this.invoiceMapper.toDto(await this.invoiceRepo.save(entity));
+        const saved = await this.invoiceRepo.save(entity);
+
+        if (saved.transactionId) {
+            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        }
+
+        return this.invoiceMapper.toDto(saved);
     }
 }
