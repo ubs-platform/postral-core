@@ -18,4 +18,15 @@ export class InvoiceAccount {
     @Column()
     type: 'INDIVIDUAL' | 'COMMERCIAL';
 
+    @Column({ nullable: true })
+    bankName?: string;
+
+    @Column({ nullable: true })
+    bankIban?: string;
+
+    @Column({ nullable: true })
+    bankBic?: string;
+
+    @Column({ nullable: true })
+    bankSwift?: string;
 }

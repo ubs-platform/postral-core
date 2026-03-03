@@ -1,7 +1,4 @@
-import { InternalSearchDTO } from "./internal-search.dto";
-
-
-export class AccountDTO {
+export class InvoiceAccountDTO {
     id: string;
 
     name: string;
@@ -10,27 +7,13 @@ export class AccountDTO {
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
 
-    defaultAddressId?: string;
+    realAccountId?: string;
 
-    ownerUserId?: string;
-    entityOwnershipGroupId?: string;
-    deactivated?: boolean;
+    bankName?: string;
 
-}
+    bankIban?: string;
 
-export class AccountSearchParamsDTO implements InternalSearchDTO {
-    name?: string;
+    bankBic?: string;
 
-    legalIdentity?: string;
-
-    type?: 'INDIVIDUAL' | 'COMMERCIAL';
-
-
-    deactivated?: "NOT_DEACTIVATED" | "ONLY_DEACTIVATED" | "ALL";
-
-    ownerUserId?: string;
-    entityOwnershipGroupId?: string;
-    entityIds?: string[];
-    admin?: "true" | "false";
-
+    bankSwift?: string;
 }

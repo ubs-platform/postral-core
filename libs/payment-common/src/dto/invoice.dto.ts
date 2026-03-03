@@ -1,6 +1,6 @@
 import { SearchRequest } from '@ubs-platform/crud-base-common';
-import { InvoiceAccountDTO } from './account.dto';
 import { InvoiceAddressDto } from './invoice-address.dto';
+import { InvoiceAccountDTO } from './invoice-account.dto';
 
 export interface InvoiceDTO {
     id: string;
@@ -44,7 +44,6 @@ export interface InvoiceUpdateDTO {
     notes?: string;
 }
 
-
 export interface InvoiceSearchDTO {
     paymentId?: string;
     transactionId?: string;
@@ -53,8 +52,9 @@ export interface InvoiceSearchDTO {
     uploadedByUserId?: string;
     dateFrom?: Date;
     dateTo?: Date;
-    finalized?: "true" | "false" | boolean | undefined;
+    finalized?: 'true' | 'false' | boolean | undefined;
 }
 
-export interface InvoiceSearchPaginationDTO extends SearchRequest, InvoiceSearchDTO {
-}
+export interface InvoiceSearchPaginationDTO
+    extends SearchRequest,
+        InvoiceSearchDTO {}
