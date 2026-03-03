@@ -29,4 +29,7 @@ export class InvoiceAccount {
 
     @Column({ nullable: true })
     bankSwift?: string;
+
+    @Column({ nullable: true })
+    taxOffice?: string;
 }

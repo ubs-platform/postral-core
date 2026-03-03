@@ -51,4 +51,7 @@ export class Account {
 
     @Column({ nullable: true })
     bankSwift?: string;
+
+    @Column({ nullable: true })
+    taxOffice?: string;
 }

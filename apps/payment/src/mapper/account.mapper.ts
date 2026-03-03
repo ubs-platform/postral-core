@@ -23,6 +23,7 @@ export class AccountMapper {
             bankName: ac.bankName,
             bankIban: ac.bankIban,
             bankBic: ac.bankBic,
+            taxOffice: ac.taxOffice,
         };
     }
 
@@ -35,6 +36,7 @@ export class AccountMapper {
         entity.bankName = dto.bankName;
         entity.bankIban = dto.bankIban;
         entity.bankBic = dto.bankBic;
+        entity.taxOffice = dto.taxOffice;
         return entity;
     }
 }

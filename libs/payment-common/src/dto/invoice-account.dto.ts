@@ -16,4 +16,6 @@ export class InvoiceAccountDTO {
     bankBic?: string;
 
     bankSwift?: string;
+
+    taxOffice?: string;
 }

@@ -14,6 +14,7 @@ export class AccountDTO {
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
     deactivated?: boolean;
+    taxOffice?: string;
     bankName?: string;
     bankIban?: string;
     bankBic?: string;
@@ -28,6 +29,7 @@ export class AccountSearchParamsDTO implements InternalSearchDTO {
     type?: 'INDIVIDUAL' | 'COMMERCIAL';
 
     deactivated?: 'NOT_DEACTIVATED' | 'ONLY_DEACTIVATED' | 'ALL';
+    taxOffice?: string;
 
     ownerUserId?: string;
     entityOwnershipGroupId?: string;

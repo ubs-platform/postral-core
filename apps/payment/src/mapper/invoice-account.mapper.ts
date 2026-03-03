@@ -29,6 +29,7 @@ export class InvoiceAccountMapper {
             bankIban: entity.bankIban,
             bankBic: entity.bankBic,
             bankSwift: entity.bankSwift,
+            taxOffice: entity.taxOffice,
         };
     }
 
@@ -45,6 +46,7 @@ export class InvoiceAccountMapper {
         entity.bankIban = dto.bankIban;
         entity.bankBic = dto.bankBic;
         entity.bankSwift = dto.bankSwift;
+        entity.taxOffice = dto.taxOffice;
         return entity;
     }
 }
