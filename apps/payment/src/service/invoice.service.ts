@@ -215,9 +215,9 @@ export class InvoiceService {
         if (search.invoiceNumber) {
             where.invoiceNumber = search.invoiceNumber;
         }
-        if (search.status) {
-            where.status = search.status;
-        }
+        // if (search.status) {
+        //     where.status = search.status;
+        // }
 
         return where;
     }
