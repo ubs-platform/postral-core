@@ -12,6 +12,7 @@ import { FilterQuery } from 'mongoose';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { lastValueFrom } from 'rxjs';
 import { PostralConstants } from '../util/consts';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class ItemTaxService extends BaseCrudService<
@@ -26,8 +27,20 @@ export class ItemTaxService extends BaseCrudService<
         public repo: Repository<ItemTaxEntity>,
         private readonly itemTaxMapper: ItemTaxMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<ItemTaxEntity, string>(repo, ["variations"]));
+    }
+
+    async afterCreate(m: ItemTaxDTO, input: ItemTaxDTO, user?: UserAuthBackendDTO): Promise<void> {
+        await this.authUtilService.afterCreate(
+            PostralConstants.ENTITY_GROUP_POSTRAL,
+            PostralConstants.ENTITY_NAME_TAX,
+            m.id!,
+            user?.id,
+            input.entityOwnershipGroupId,
+        );
+        return Promise.resolve();
     }
 
     generateNewModel(): ItemTaxEntity {
@@ -58,12 +71,21 @@ export class ItemTaxService extends BaseCrudService<
         s?: Partial<ItemTaxSearchDTO>,
         u?: UserAuthBackendDTO,
     ): Promise<any> {
+        const orClauses: any[] = [];
+
         if (!u) {
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.admin !== 'true') {
-            ids = await lastValueFrom(
+        if (s?.admin === 'true') {
+            orClauses.push({});
+        }
+
+        if (s?.admin !== 'true' && (s?.visibility === 'PUBLIC' || s?.visibility === 'NONE' || s?.visibility === undefined)) {
+            orClauses.push({ isPublic: true });
+        }
+        if (s?.admin !== 'true' && (s?.visibility === 'PRIVATE' || s?.visibility === 'NONE' || s?.visibility === undefined) && u) {
+            const ids = await lastValueFrom(
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                     entityName: PostralConstants.ENTITY_NAME_TAX,
@@ -74,17 +96,14 @@ export class ItemTaxService extends BaseCrudService<
                         : { userId: u!.id }),
                 }),
             );
+            orClauses.push({ id: In(ids.length > 0 ? ids : ['']) });
         }
 
         const where: any = {};
         if (s?.taxName) {
             where.taxName = Like(`%${s.taxName}%`);
         }
-        if (ids != null) {
-            where.id = In(ids.length > 0 ? ids : ['']);
-        }
-        // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
 
-        return where;
+        return orClauses.map(clause => ({ ...where, ...clause }));
     }
 }

@@ -1,13 +1,11 @@
-import { InternalSearchDTO } from "./internal-search.dto";
-
-export class AccountAddressDto {
+export class InvoiceAddressDto {
     id?: string;
 
     name: string;
 
     entityOwnershipGroupId?: string;
 
-
+    
 
     // UBL Address Fields
 
@@ -83,16 +81,4 @@ export class AccountAddressDto {
 
     /** Zaman dilimi (örn: "Europe/Istanbul") */
     timezone?: string;
-}
-
-export class AddressSearchParamsDTO implements InternalSearchDTO {
-    id?: string;
-
-    name?: string;
-
-    admin?: "true" | "false";
-
-    ownerUserId?: string;
-
-    entityOwnershipGroupId?: string;
 }

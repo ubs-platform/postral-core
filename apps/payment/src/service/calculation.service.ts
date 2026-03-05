@@ -1,38 +1,62 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { ItemService } from "./item.service";
-import { PaymentItemDto, PaymentItemInputDto } from "@tk-postral/payment-common";
-import { ItemListCalculationInputDto, ItemListCalculationDto } from "@tk-postral/payment-common/dto/calculation.dto";
-import { PostralPaymentItem } from "../entity";
-import { ItemCalculationUtil } from "../util/calcs/item-calculations";
-import { TaxCalculationUtil } from "../util/calcs/tax-calculations";
-import { ItemTaxService } from "./item-tax.service";
-import { AccountService } from "./account.service";
-import { ItemPriceService } from "./item-price.service";
-import { TaxDTO } from "@tk-postral/payment-common";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ItemService } from './item.service';
+import {
+    PaymentItemDto,
+    PaymentItemInputDto,
+} from '@tk-postral/payment-common';
+import {
+    ItemListCalculationInputDto,
+    ItemListCalculationDto,
+} from '@tk-postral/payment-common/dto/calculation.dto';
+import { PostralPaymentItem } from '../entity';
+import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
+import { ItemTaxService } from './item-tax.service';
+import { AccountService } from './account.service';
+import { ItemPriceService } from './item-price.service';
+import { TaxDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class CalculationService {
+    constructor(
+        private itemService: ItemService,
+        private accountService: AccountService,
+        private itemTaxService: ItemTaxService,
+        private itemPriceService: ItemPriceService,
+    ) {}
 
-    constructor(private itemService: ItemService, private accountService: AccountService, private itemTaxService: ItemTaxService, private itemPriceService: ItemPriceService) { }
-
-    async calculateTotalAmount(paymentItems: ItemListCalculationInputDto): Promise<ItemListCalculationDto> {
-        let totalAmt = 0, taxTotal = 0;
+    async calculateTotalAmount(
+        paymentItems: ItemListCalculationInputDto,
+    ): Promise<ItemListCalculationDto> {
+        let totalAmt = 0,
+            taxTotal = 0;
         const items: PaymentItemDto[] = [];
         const taxesFromItems: TaxDTO[] = [];
-        for (let itemIndex = 0; itemIndex < paymentItems.items.length; itemIndex++) {
+        for (
+            let itemIndex = 0;
+            itemIndex < paymentItems.items.length;
+            itemIndex++
+        ) {
             const paymentItemDto = paymentItems.items[itemIndex];
-            if (!paymentItemDto.itemId && (!paymentItemDto.entityGroup || !paymentItemDto.entityId || !paymentItemDto.entityName)) {
-                throw new NotFoundException('Item identification is missing for payment init');
+            if (
+                !paymentItemDto.itemId &&
+                (!paymentItemDto.entityGroup ||
+                    !paymentItemDto.entityId ||
+                    !paymentItemDto.entityName)
+            ) {
+                throw new NotFoundException(
+                    'Item identification is missing for payment init',
+                );
             }
             const realItemFind = (
                 await this.itemService.fetchAll(
                     paymentItemDto.itemId
                         ? { id: paymentItemDto.itemId }
                         : {
-                            entityGroup: paymentItemDto.entityGroup,
-                            entityId: paymentItemDto.entityId,
-                            entityName: paymentItemDto.entityName,
-                        },
+                              entityGroup: paymentItemDto.entityGroup,
+                              entityId: paymentItemDto.entityId,
+                              entityName: paymentItemDto.entityName,
+                          },
                 )
             )[0];
 
@@ -40,12 +64,18 @@ export class CalculationService {
                 throw new NotFoundException('Item not found for payment init');
             }
 
-            const itemAccount = await this.accountService.fetchOne(realItemFind.sellerAccountId);
+            const itemAccount = await this.accountService.fetchOne(
+                realItemFind.sellerAccountId,
+            );
             if (!itemAccount) {
-                throw new NotFoundException('Seller account not found for payment init');
+                throw new NotFoundException(
+                    'Seller account not found for payment init',
+                );
             }
-            if (itemAccount.type !== "COMMERCIAL") {
-                throw new NotFoundException(`Item that is named "${realItemFind.name}" seller account is not commercial for payment init.`);
+            if (itemAccount.type !== 'COMMERCIAL') {
+                throw new NotFoundException(
+                    `Item that is named "${realItemFind.name}" seller account is not commercial for payment init.`,
+                );
             }
 
             const itemTax = await this.itemTaxService.fetchOne(
@@ -96,9 +126,10 @@ export class CalculationService {
             paymentItem.taxPercent = taxPercentBySaleMode;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
+            paymentItem.sellerAccountName = itemAccount.name;
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
-
+            paymentItem.unit = realItemFind.unit;
             totalAmt = ItemCalculationUtil.addNumberValues(
                 totalAmt,
                 paymentItem.totalAmount,
@@ -129,7 +160,4 @@ export class CalculationService {
             taxesFromItems,
         );
     }
-
-
-
 }

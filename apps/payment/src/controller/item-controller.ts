@@ -116,26 +116,8 @@ export class ItemController extends BaseCrudControllerGenerator<
         @Body() body: ItemAddDTO,
         @CurrentUser() user?: UserAuthBackendDTO,
     ): Promise<ItemDTO> {
-        const createdItem = await this.service.create(body);
-        // After creating the item, assign ownership to the user
-        if (user) {
-            const eo = await this.eoClient.insertOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ITEM,
-                entityId: createdItem.id,
-                overriderRoles: ['ADMIN'],
-                ...(!body.entityOwnershipGroupId
-                    ? {
-                          userCapabilities: [
-                              { userId: user.id, capability: 'OWNER' },
-                          ],
-                      }
-                    : { userCapabilities: [] }),
-                ...(body.entityOwnershipGroupId
-                    ? { entityOwnershipGroupId: body.entityOwnershipGroupId }
-                    : { entityOwnershipGroupId: '' }),
-            });
-        }
+        const createdItem = await this.service.create(body, user);
+      
         return createdItem;
     }
 

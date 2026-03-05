@@ -7,6 +7,7 @@ import {
     Transaction,
     ManyToOne,
     JoinColumn,
+    BaseEntity,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
@@ -18,7 +19,7 @@ import {
 import { Account } from './account.entity';
 
 @Entity()
-export class PaymentTransaction {
+export class PaymentTransaction extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -36,6 +37,10 @@ export class PaymentTransaction {
 
     @Column()
     paymentId: string;
+
+    // @ManyToOne(() => Payment)
+    // @JoinColumn({ name: 'paymentId' })
+    // payment: Payment;
 
     @Column()
     targetAccountId: string;
@@ -56,6 +61,12 @@ export class PaymentTransaction {
 
     @Column({ type: 'varchar', nullable: true })
     errorStatus: PaymentErrorStatus;
+
+    @Column({ type: 'int', default: 0 })
+    invoiceCount: number;
+
+    @Column({ type: 'boolean', default: false })
+    hasFinalizedInvoice: boolean;
 
     // faturalar için burası kullanılabilir
     // invoiceId: string;
@@ -99,5 +110,6 @@ export class PaymentTransaction {
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
     description: string;
+
     // Additional fields can be added as needed
 }

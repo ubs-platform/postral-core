@@ -114,10 +114,21 @@ export class PaymentTransactionService {
                 ptdto.taxAmount += object.taxAmount;
             },
         );
-        
+
         const values = Object.values(transactionGrouped).flat().flat();
         for (const tr of values) {
             await this.addTransaction(tr as PaymentTransactionDTO);
         }
+    }
+
+    async updateInvoiceStatus(
+        id: string,
+        invoiceCount: number,
+        hasFinalizedInvoice: boolean,
+    ): Promise<void> {
+        await this.transactionRepository.update(id, {
+            invoiceCount,
+            hasFinalizedInvoice,
+        });
     }
 }

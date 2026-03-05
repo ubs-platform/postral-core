@@ -21,9 +21,6 @@ export class PostralPaymentItem {
     @Column()
     variation: string;
 
-    // @Column()
-    // entityOwnerAccountId: string;
-
     @Column()
     name: string;
 
@@ -55,4 +52,10 @@ export class PostralPaymentItem {
     
     @Column()
     sellerAccountId: string;
+
+    @Column()
+    sellerAccountName: string;
+
+    @Column()
+    unit: string;
 }

@@ -28,6 +28,7 @@ import { TransactionMapper } from '../mapper/transaction.mapper';
 import { PaymentTransaction } from '../entity';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { exec } from 'child_process';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class TransactionSearchService {
@@ -39,10 +40,11 @@ export class TransactionSearchService {
 
         private eoService: EntityOwnershipService,
         private accountMapper: AccountMapper,
-        private accountService: AccountService
+        private accountService: AccountService,
+        private authUtilService: AuthUtilService,
     ) { }
 
-    async fetchById(id: string, user: UserAuthBackendDTO | undefined) {
+    async fetchById(id: string, user?: UserAuthBackendDTO | undefined) {
         // TODO: Rol kontrolü eklenebilir. Şu an sadece authentication var. Admin olmayan kullanıcılar sadece kendi hesaplarıyla ilişkili transactionları görebilmeli.
         // this.checkAuthorizationForTransaction(id, user);
         const transaction = await this.transactionRepo.findOneBy({ id });
@@ -127,6 +129,7 @@ export class TransactionSearchService {
             }
 
         }
+        
         if (modelSearch.paymentStatus) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
@@ -150,46 +153,14 @@ export class TransactionSearchService {
         return orClause.map((clause) => ({ ...where, ...clause }));
     }
 
-    // private getIntersections(authorizedAccountIds: string[], requestedCustomerAccountIds: string[]) {
-    //     const intersection = authorizedAccountIds.filter(id => requestedCustomerAccountIds.includes(id)
-    //     );
-    //     if (intersection.length === 0) {
-    //         // Kesişim boşsa, kullanıcı yetkili olmadığı customerAccountId ile arama yapmaya çalışıyor
-    //         throw new Error('Unauthorized: No access to the specified customer accounts');
-    //     }
-    //     return intersection;
-    // }
-
-    // async accountIdsInPayment(search: PaymentSearchFlatDTO, user?: UserAuthBackendDTO): Promise<AccountDTO[]> {
-    //     const where = await this.buildSearchWhereQuery(search, user);
-    //     const payments = await this.transactionRepo.find({ where, relations: ['items'] });
-
-    //     if (search.searchSide == "CUSTOMER") {
-    //         // Müşteri tarafında bütün satın aldığı itemlerin accountları gelir. Müşterinin kendisi hariç.
-    //         const accountIds = new Set<string>();
-    //         payments.forEach(payment => {
-    //             payment.items.forEach(item => {
-    //                 if (item.entityOwnerAccountId !== search.customerAccountId) {
-    //                     accountIds.add(item.entityOwnerAccountId);
-    //                 }
-    //             });
-    //         });
-
-
-    //         return this.accountService.fetchManyByIds(Array.from(accountIds));
-    //     }
-
-    //     else if (search.searchSide == "SELLER") {
-    //         // Satıcı bütün müşterilerinin hesaplarını görür.
-    //         const accountIds = new Set<string>();
-    //         payments.forEach(payment => {
-    //             accountIds.add(payment.customerAccountId);
-    //         });
-
-    //         return this.accountService.fetchManyByIds(Array.from(accountIds));
-    //     }
-    //     else {
-    //         return [];
-    //     }
-    // }
+    public async fetchByIdWithRelationsInternal(id: string) {
+        const transaction = await this.transactionRepo.findOne({
+            where: { id },
+            relations: ['sourceAccount', 'targetAccount',"sourceAccount.defaultAddress", "targetAccount.defaultAddress"],
+        });
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+        return transaction;
+    }
 }

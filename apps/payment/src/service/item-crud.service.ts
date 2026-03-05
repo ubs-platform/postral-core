@@ -18,6 +18,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { lastValueFrom } from 'rxjs';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class ItemCrudService extends BaseCrudService<
@@ -32,8 +33,19 @@ export class ItemCrudService extends BaseCrudService<
         public repo: Repository<Item>,
         private readonly itemMapper: ItemMapper,
         private eoService: EntityOwnershipService,
+        private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<Item, string>(repo));
+    }
+
+    async afterCreate(m: ItemDTO, input: ItemAddDTO, user?: UserAuthBackendDTO): Promise<void> {
+        return await this.authUtilService.afterCreate(
+            PostralConstants.ENTITY_GROUP_POSTRAL,
+            PostralConstants.ENTITY_NAME_ITEM,
+            m.id!,
+            user?.id,
+            input.entityOwnershipGroupId,
+        );
     }
 
     getIdFieldNameFromInput(i: ItemDTO): string {
@@ -62,28 +74,24 @@ export class ItemCrudService extends BaseCrudService<
             throw new Error('User information is required for search');
         }
         let ids: Optional<string[]> = null;
-        if (s?.searchForCurrentUserEntities === 'true') {
-            ids = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ITEM,
-
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    ...(s?.entityOwnershipGroupId != null
-                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id }),
-                }),
+        if (s?.showOnlyUserOwned === 'true') {
+            ids = await this.authUtilService.searchOwnedIds(
+                PostralConstants.ENTITY_NAME_ITEM,
+                ['OWNER', 'EDITOR', 'VIEWER'],
+                {
+                    userId: u!.id,
+                    ownershipGroupId: s?.entityOwnershipGroupId,
+                },
             );
         }
 
         const where: any = {};
         if (s?.name) {
-            where.name = Like(`%${s.name}%`);
+            where.name = Like('%' + s.name + '%');
         }
         if (ids != null) {
             where.id = In(ids);
         }
-        // exec(`kdialog --msgbox "${JSON.stringify(ids)}"`);
 
         return where;
     }

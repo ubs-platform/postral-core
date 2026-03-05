@@ -18,12 +18,14 @@ export class PaymentItemMapper {
                 taxPercent: a.taxPercent,
                 variation: a.variation,
                 sellerAccountId: a.sellerAccountId,
+                sellerAccountName: a.sellerAccountName,
                 entityGroup: a.entityGroup,
                 entityId: a.entityId,
                 entityName: a.entityName,
                 unTaxAmount: a.unTaxAmount,
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,
+                unit: a.unit,
             });
         }
         return dtos;

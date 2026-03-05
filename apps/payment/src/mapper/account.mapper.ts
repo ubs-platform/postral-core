@@ -20,6 +20,10 @@ export class AccountMapper {
             name: ac.name,
             type: ac.type,
             defaultAddressId: ac.defaultAddressId,
+            bankName: ac.bankName,
+            bankIban: ac.bankIban,
+            bankBic: ac.bankBic,
+            taxOffice: ac.taxOffice,
         };
     }
 
@@ -29,6 +33,10 @@ export class AccountMapper {
         entity.name = dto.name;
         entity.type = dto.type;
         entity.defaultAddressId = dto.defaultAddressId;
+        entity.bankName = dto.bankName;
+        entity.bankIban = dto.bankIban;
+        entity.bankBic = dto.bankBic;
+        entity.taxOffice = dto.taxOffice;
         return entity;
     }
 }
