@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { In, Repository } from 'typeorm';
@@ -133,7 +133,9 @@ export class PaymentService {
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount =
             await this.accountService.fetchOne(customerAccountId);
-
+        if (pdto.type === "REFUND" && !pdto.refundPaymentId) {
+            throw new BadRequestException('Refund payment ID is required for REFUND type');
+        }
         if (!customerAccount) {
             throw new NotFoundException(
                 'Customer account not found for payment init',

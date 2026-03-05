@@ -78,4 +78,9 @@ export class Payment {
         onUpdate: 'CURRENT_TIMESTAMP',
     })
     updatedAt: Date;
+
+    @OneToMany(() => PostralPaymentItem, (item) => item.refundPayment, {
+        cascade: true,
+    })
+    refundItems: PostralPaymentItem[];
 }

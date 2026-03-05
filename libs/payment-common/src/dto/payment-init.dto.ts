@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+
 import { PaymentItemDto } from './payment-item.dto';
 import { PaymentItemInputDto } from './payment-item-input.dto';
 
@@ -16,6 +17,8 @@ export interface PaymentInitDTO {
     saleMode: string;
 
     items: PaymentItemInputDto[];
+
+    refundPaymentId?: string; // Only for REFUND type
 
     customerAccountId: string;
 }
