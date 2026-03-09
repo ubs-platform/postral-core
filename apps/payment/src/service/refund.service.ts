@@ -296,31 +296,31 @@ export class RefundService {
 
     async searchRefundRequests(
         searchParams: RefundRequestSearchDTO,
-    ): Promise<RawSearchResult> {
-        const query = this.refundRequestRepo
-            .createQueryBuilder('request')
-            .leftJoinAndSelect('request.items', 'items');
+    ): Promise<RawSearchResult<RefundRequestDTO>> {
+        const query = {}
 
-        if (searchParams.status) {
-            query.andWhere('request.status = :status', {
-                status: searchParams.status,
-            });
-        }
+        // if (searchParams.status) {
+        //     query.andWhere('request.status = :status', {
+        //         status: searchParams.status,
+        //     });
+        // }
 
-        if (searchParams.paymentId) {
-            query.andWhere('request.paymentId = :paymentId', {
-                paymentId: searchParams.paymentId,
-            });
-        }
+        // if (searchParams.paymentId) {
+        //     query.andWhere('request.paymentId = :paymentId', {
+        //         paymentId: searchParams.paymentId,
+        //     });
+        // }
 
-        return TypeormSearchUtil.modelSearch(
+        return (await TypeormSearchUtil.modelSearch<RefundRequestDTO>(
             this.refundRequestRepo,
             searchParams.size,
             searchParams.page,
             {},
             ['items'],
             query,
-        );
+        )).map((result) => ({
+            ...result,
+        }));
     }
 
     async getRefundRequestById(id: string): Promise<RefundRequestDTO> {
