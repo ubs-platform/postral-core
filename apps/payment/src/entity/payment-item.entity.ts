@@ -62,6 +62,9 @@ export class PostralPaymentItem {
     @Column({ default: false })
     refunded: boolean;
 
+    @Column({ type: 'float', default: 0 })
+    refundCount: number;
+
     @Column({ nullable: true })
     refundPaymentId?: string;
 

@@ -56,6 +56,8 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PaymentMicroserviceController } from './controller/payment-microservice.controller';
 import { AuthUtilService } from './service/auth-util.service';
+import { RefundService } from './service/refund.service';
+import { RefundController } from './refund.controller';
 
 @Module({
     imports: [
@@ -121,7 +123,8 @@ import { AuthUtilService } from './service/auth-util.service';
         InvoiceMapper,
         InvoiceAddressMapper,
         InvoiceAccountMapper,
-        AuthUtilService
+        AuthUtilService,
+        RefundService
     ],
     controllers: [
         PaymentController,
@@ -140,6 +143,7 @@ import { AuthUtilService } from './service/auth-util.service';
         PaymentItemSearchController,
         InvoiceController,
         PaymentMicroserviceController,
+        RefundController,
     ],
 })
 export class PaymentModule {}

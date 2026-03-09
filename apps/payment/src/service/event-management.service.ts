@@ -57,4 +57,17 @@ export class EventSenderService {
         return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd));
     }
 
+    /**
+     * Ödeme kanalından iade işlemini başlatır.
+     * @param paymentChannelId Ödeme kanalının kimliği
+     * @param paymentOperationId Orjinal ödeme operasyon kimliği
+     * @returns 
+     */
+    async paymentChannelRefund(
+        paymentChannelId: string,
+        paymentOperationId: string,
+    ): Promise<PaymentChannelStatusDTO> {
+        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/refund`, paymentOperationId));
+    }
+
 }

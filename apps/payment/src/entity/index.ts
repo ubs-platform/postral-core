@@ -14,6 +14,8 @@ import { Invoice } from './invoice.entity';
 import { InvoiceAddress } from './invoice-address.entity';
 import { InvoiceAccount } from './invoice-account.entity';
 import { PostralPaymentEvent } from './payment-event.entity';
+import { RefundRequest } from './refund-request.entity';
+import { RefundRequestItem } from './refund-request-item.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -31,6 +33,8 @@ export * from "./invoice.entity"
 export * from "./invoice-account.entity"
 export * from "./invoice-address.entity"
 export * from './payment-event.entity';
+export * from './refund-request.entity';
+export * from './refund-request-item.entity';
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -49,5 +53,7 @@ export const PaymentsEntities = [
     Invoice,
     InvoiceAddress,
     InvoiceAccount,
-    PostralPaymentEvent
+    PostralPaymentEvent,
+    RefundRequest,
+    RefundRequestItem
 ];
