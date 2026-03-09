@@ -16,6 +16,7 @@ export interface PaymentItemDto {
     originalUnitAmount: number;
     unitAmount: number;
     unit: string;
+    refundCount?: number;
     // itemType: 'PRODUCT' | 'DISCOUNT' | 'ADDITION' | 'OTHER';
     // taxPercent: number;
 }
