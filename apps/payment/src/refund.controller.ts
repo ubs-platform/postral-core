@@ -1,6 +1,6 @@
-import { Controller, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Req, Get } from '@nestjs/common';
 import { RefundService } from './service/refund.service';
-import { CreateRefundRequestDTO, RefundRequestDTO } from '@tk-postral/payment-common';
+import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { AuthGuard } from '@nestjs/passport'; // Assuming basic auth setup
 
@@ -34,5 +34,21 @@ export class RefundController {
     ): Promise<RefundRequestDTO> {
         const user: UserAuthBackendDTO = req.user;
         return this.refundService.rejectRefundRequest(user, id);
+    }
+
+    @Post('request/_search')
+    async searchRefundRequests(
+        @Body() searchDTO: RefundRequestSearchDTO,
+        @Req() req: any
+    ) {
+        // You could enforce seller account restrictions here if needed
+        return this.refundService.searchRefundRequests(searchDTO);
+    }
+
+    @Get('request/:id')
+    async getRefundRequestById(
+        @Param('id') id: string
+    ): Promise<RefundRequestDTO> {
+        return this.refundService.getRefundRequestById(id);
     }
 }

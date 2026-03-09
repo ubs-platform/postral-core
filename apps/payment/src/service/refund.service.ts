@@ -7,7 +7,7 @@ import { Payment } from '../entity/payment.entity';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentService } from './payment.service';
 import { AuthUtilService } from './auth-util.service';
-import { CreateRefundRequestDTO, RefundRequestDTO } from '@tk-postral/payment-common';
+import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO } from '@tk-postral/payment-common';
 import { PostralConstants } from '../util/consts';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EventSenderService } from './event-management.service';
@@ -246,5 +246,45 @@ export class RefundService {
                 refundCount: i.refundCount
             })) || []
         };
+    }
+
+    async searchRefundRequests(searchParams: RefundRequestSearchDTO): Promise<{ data: RefundRequestDTO[], total: number }> {
+        const query = this.refundRequestRepo.createQueryBuilder('request')
+            .leftJoinAndSelect('request.items', 'items');
+
+        if (searchParams.status) {
+            query.andWhere('request.status = :status', { status: searchParams.status });
+        }
+
+        if (searchParams.paymentId) {
+            query.andWhere('request.paymentId = :paymentId', { paymentId: searchParams.paymentId });
+        }
+        
+        // Pagination
+        const page = searchParams.page || 0;
+        const limit = searchParams.limit || 20;
+        
+        query.skip(page * limit).take(limit);
+        query.orderBy('request.createdAt', 'DESC');
+
+        const [results, total] = await query.getManyAndCount();
+        
+        return {
+            data: results.map(r => this.mapToDTO(r)),
+            total
+        };
+    }
+
+    async getRefundRequestById(id: string): Promise<RefundRequestDTO> {
+        const request = await this.refundRequestRepo.findOne({
+            where: { id },
+            relations: ['items'],
+        });
+
+        if (!request) {
+            throw new NotFoundException(`RefundRequest with id ${id} not found`);
+        }
+
+        return this.mapToDTO(request);
     }
 }

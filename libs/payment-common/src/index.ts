@@ -23,3 +23,4 @@ export * from "./dto/invoice-address.dto";
 export * from "./dto/invoice-account.dto";
 export * from "./util/unit-types";
 export * from './dto/refund-request.dto';
+export * from './dto/refund-search.dto';
