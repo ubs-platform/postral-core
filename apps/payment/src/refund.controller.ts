@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UseGuards, Req, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Req, Get, Query } from '@nestjs/common';
 import { RefundService } from './service/refund.service';
 import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
@@ -36,9 +36,9 @@ export class RefundController {
         return this.refundService.rejectRefundRequest(user, id);
     }
 
-    @Post('request/_search')
+    @Get('request/_search')
     async searchRefundRequests(
-        @Body() searchDTO: RefundRequestSearchDTO,
+        @Query() searchDTO: RefundRequestSearchDTO,
         @Req() req: any
     ) {
         // You could enforce seller account restrictions here if needed

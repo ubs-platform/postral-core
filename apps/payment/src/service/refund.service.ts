@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { RefundRequest } from '../entity/refund-request.entity';
@@ -7,10 +12,16 @@ import { Payment } from '../entity/payment.entity';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentService } from './payment.service';
 import { AuthUtilService } from './auth-util.service';
-import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO } from '@tk-postral/payment-common';
+import {
+    CreateRefundRequestDTO,
+    RefundRequestDTO,
+    RefundRequestSearchDTO,
+} from '@tk-postral/payment-common';
 import { PostralConstants } from '../util/consts';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EventSenderService } from './event-management.service';
+import { RawSearchResult, SearchResult } from '@ubs-platform/crud-base-common';
+import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 @Injectable()
 export class RefundService {
@@ -47,12 +58,21 @@ export class RefundService {
 
         // Validate items and refund counts
         for (const reqItem of dto.items) {
-            const paymentItem = payment.items.find(i => i.id === reqItem.paymentItemId);
+            const paymentItem = payment.items.find(
+                (i) => i.id === reqItem.paymentItemId,
+            );
             if (!paymentItem) {
-                throw new BadRequestException(`Payment item ${reqItem.paymentItemId} not found in this payment`);
+                throw new BadRequestException(
+                    `Payment item ${reqItem.paymentItemId} not found in this payment`,
+                );
             }
-            if (paymentItem.refundCount + reqItem.refundCount > paymentItem.quantity) {
-                 throw new BadRequestException(`Cannot refund more than purchased quantity for item ${paymentItem.name}`);
+            if (
+                paymentItem.refundCount + reqItem.refundCount >
+                paymentItem.quantity
+            ) {
+                throw new BadRequestException(
+                    `Cannot refund more than purchased quantity for item ${paymentItem.name}`,
+                );
             }
         }
 
@@ -61,7 +81,7 @@ export class RefundService {
         request.requestedByAccountId = user.id; // Or customer account id if appropriate
         request.status = 'PENDING';
 
-        request.items = dto.items.map(i => {
+        request.items = dto.items.map((i) => {
             const item = new RefundRequestItem();
             item.paymentItemId = i.paymentItemId;
             item.refundCount = i.refundCount;
@@ -86,7 +106,9 @@ export class RefundService {
         }
 
         if (request.status !== 'PENDING') {
-            throw new BadRequestException('Refund request is not in PENDING state');
+            throw new BadRequestException(
+                'Refund request is not in PENDING state',
+            );
         }
 
         const payment = await this.paymentRepo.findOne({
@@ -95,27 +117,35 @@ export class RefundService {
         });
 
         if (!payment) {
-            throw new NotFoundException('Payment associated with request not found');
+            throw new NotFoundException(
+                'Payment associated with request not found',
+            );
         }
 
         // Verify Roles
-        const sellerAccountIds = payment.items.map(i => i.sellerAccountId);
+        const sellerAccountIds = payment.items.map((i) => i.sellerAccountId);
         const uniqueSellerIds = [...new Set(sellerAccountIds)];
 
         const ownedSellerIds = await this.authUtilService.searchOwnedIds(
             PostralConstants.ENTITY_NAME_ACCOUNT,
             ['OWNER', 'EDITOR'],
-            { userId: user.id }
+            { userId: user.id },
         );
 
         if (!ownedSellerIds) {
-             throw new ForbiddenException('User is not authorized to approve this refund');
+            throw new ForbiddenException(
+                'User is not authorized to approve this refund',
+            );
         }
 
-        const isAuthorizedToApproveAll = uniqueSellerIds.every(id => ownedSellerIds.includes(id));
-        
+        const isAuthorizedToApproveAll = uniqueSellerIds.every((id) =>
+            ownedSellerIds.includes(id),
+        );
+
         if (!isAuthorizedToApproveAll) {
-             throw new ForbiddenException('User does not have EDITOR or OWNER rights for the relevant seller accounts');
+            throw new ForbiddenException(
+                'User does not have EDITOR or OWNER rights for the relevant seller accounts',
+            );
         }
 
         // Create the Refund Payment
@@ -128,7 +158,9 @@ export class RefundService {
                     (i) => i.id === reqItem.paymentItemId,
                 );
                 if (!originalItem) {
-                    throw new NotFoundException(`Original item not found for refund item ${reqItem.id}`);
+                    throw new NotFoundException(
+                        `Original item not found for refund item ${reqItem.id}`,
+                    );
                 }
                 const mappedItem: any = {
                     itemId: originalItem.itemId,
@@ -152,24 +184,28 @@ export class RefundService {
         };
 
         if (payment.paymentChannelId && payment.paymentChannelOperationId) {
-             await this.eventSenderService.paymentChannelRefund(
-                  payment.paymentChannelId,
-                  payment.paymentChannelOperationId
-             );
+            await this.eventSenderService.paymentChannelRefund(
+                payment.paymentChannelId,
+                payment.paymentChannelOperationId,
+            );
         }
 
         await this.paymentService.init(refundInitPayload);
 
         // Update Original Items refundCount
         for (const reqItem of request.items) {
-             const originalItem = payment.items.find(i => i.id === reqItem.paymentItemId);
-             if (originalItem) {
-                 originalItem.refundCount += reqItem.refundCount;
-                 if(originalItem.refundCount >= originalItem.quantity){
-                     originalItem.refunded = true;
-                 }
-                 await this.paymentItemRepo.save(originalItem as PostralPaymentItem);
-             }
+            const originalItem = payment.items.find(
+                (i) => i.id === reqItem.paymentItemId,
+            );
+            if (originalItem) {
+                originalItem.refundCount += reqItem.refundCount;
+                if (originalItem.refundCount >= originalItem.quantity) {
+                    originalItem.refunded = true;
+                }
+                await this.paymentItemRepo.save(
+                    originalItem as PostralPaymentItem,
+                );
+            }
         }
 
         request.status = 'APPROVED';
@@ -182,7 +218,7 @@ export class RefundService {
         user: UserAuthBackendDTO,
         requestId: string,
     ): Promise<RefundRequestDTO> {
-          const request = await this.refundRequestRepo.findOne({
+        const request = await this.refundRequestRepo.findOne({
             where: { id: requestId },
             relations: ['items'],
         });
@@ -192,7 +228,9 @@ export class RefundService {
         }
 
         if (request.status !== 'PENDING') {
-            throw new BadRequestException('Refund request is not in PENDING state');
+            throw new BadRequestException(
+                'Refund request is not in PENDING state',
+            );
         }
 
         // Role verification (Same as approve)
@@ -202,26 +240,34 @@ export class RefundService {
         });
 
         if (!payment) {
-            throw new NotFoundException('Payment associated with request not found');
+            throw new NotFoundException(
+                'Payment associated with request not found',
+            );
         }
 
-        const sellerAccountIds = payment.items.map(i => i.sellerAccountId);
+        const sellerAccountIds = payment.items.map((i) => i.sellerAccountId);
         const uniqueSellerIds = [...new Set(sellerAccountIds)];
 
         const ownedSellerIds = await this.authUtilService.searchOwnedIds(
             PostralConstants.ENTITY_NAME_ACCOUNT,
             ['OWNER', 'EDITOR'],
-            { userId: user.id }
+            { userId: user.id },
         );
 
         if (!ownedSellerIds) {
-             throw new ForbiddenException('User is not authorized to reject this refund');
+            throw new ForbiddenException(
+                'User is not authorized to reject this refund',
+            );
         }
 
-        const isAuthorizedToApproveAll = uniqueSellerIds.every(id => ownedSellerIds.includes(id));
-        
+        const isAuthorizedToApproveAll = uniqueSellerIds.every((id) =>
+            ownedSellerIds.includes(id),
+        );
+
         if (!isAuthorizedToApproveAll) {
-             throw new ForbiddenException('User does not have EDITOR or OWNER rights for the relevant seller accounts');
+            throw new ForbiddenException(
+                'User does not have EDITOR or OWNER rights for the relevant seller accounts',
+            );
         }
 
         request.status = 'REJECTED';
@@ -229,7 +275,6 @@ export class RefundService {
         const savedRequest = await this.refundRequestRepo.save(request);
         return this.mapToDTO(savedRequest);
     }
-
 
     private mapToDTO(entity: RefundRequest): RefundRequestDTO {
         return {
@@ -240,39 +285,42 @@ export class RefundService {
             resolvedByAccountId: entity.resolvedByAccountId,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
-            items: entity.items?.map(i => ({
-                id: i.id,
-                paymentItemId: i.paymentItemId,
-                refundCount: i.refundCount
-            })) || []
+            items:
+                entity.items?.map((i) => ({
+                    id: i.id,
+                    paymentItemId: i.paymentItemId,
+                    refundCount: i.refundCount,
+                })) || [],
         };
     }
 
-    async searchRefundRequests(searchParams: RefundRequestSearchDTO): Promise<{ data: RefundRequestDTO[], total: number }> {
-        const query = this.refundRequestRepo.createQueryBuilder('request')
+    async searchRefundRequests(
+        searchParams: RefundRequestSearchDTO,
+    ): Promise<RawSearchResult> {
+        const query = this.refundRequestRepo
+            .createQueryBuilder('request')
             .leftJoinAndSelect('request.items', 'items');
 
         if (searchParams.status) {
-            query.andWhere('request.status = :status', { status: searchParams.status });
+            query.andWhere('request.status = :status', {
+                status: searchParams.status,
+            });
         }
 
         if (searchParams.paymentId) {
-            query.andWhere('request.paymentId = :paymentId', { paymentId: searchParams.paymentId });
+            query.andWhere('request.paymentId = :paymentId', {
+                paymentId: searchParams.paymentId,
+            });
         }
-        
-        // Pagination
-        const page = searchParams.page || 0;
-        const limit = searchParams.limit || 20;
-        
-        query.skip(page * limit).take(limit);
-        query.orderBy('request.createdAt', 'DESC');
 
-        const [results, total] = await query.getManyAndCount();
-        
-        return {
-            data: results.map(r => this.mapToDTO(r)),
-            total
-        };
+        return TypeormSearchUtil.modelSearch(
+            this.refundRequestRepo,
+            searchParams.size,
+            searchParams.page,
+            {},
+            ['items'],
+            query,
+        );
     }
 
     async getRefundRequestById(id: string): Promise<RefundRequestDTO> {
@@ -282,7 +330,9 @@ export class RefundService {
         });
 
         if (!request) {
-            throw new NotFoundException(`RefundRequest with id ${id} not found`);
+            throw new NotFoundException(
+                `RefundRequest with id ${id} not found`,
+            );
         }
 
         return this.mapToDTO(request);
