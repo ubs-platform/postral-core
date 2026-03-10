@@ -5,7 +5,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RefundRequest } from '../entity/refund-request.entity';
 import { RefundRequestItem } from '../entity/refund-request-item.entity';
 import { Payment } from '../entity/payment.entity';
@@ -20,7 +20,7 @@ import {
 import { PostralConstants } from '../util/consts';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EventSenderService } from './event-management.service';
-import { RawSearchResult, SearchResult } from '@ubs-platform/crud-base-common';
+import { RawSearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 @Injectable()
@@ -82,9 +82,32 @@ export class RefundService {
         request.status = 'PENDING';
 
         request.items = dto.items.map((i) => {
+            const originalItem = payment.items.find(
+                (paymentItem) => paymentItem.id === i.paymentItemId,
+            );
+
+            if (!originalItem) {
+                throw new BadRequestException(
+                    `Payment item ${i.paymentItemId} not found in this payment`,
+                );
+            }
+
             const item = new RefundRequestItem();
             item.paymentItemId = i.paymentItemId;
             item.refundCount = i.refundCount;
+            item.itemName = originalItem.name;
+
+            const perUnitWithoutTax =
+                originalItem.quantity > 0
+                    ? originalItem.unTaxAmount / originalItem.quantity
+                    : 0;
+
+            item.unitAmount = originalItem.unitAmount;
+            item.unitAmountWithoutTax = perUnitWithoutTax;
+            item.refundAmount = originalItem.unitAmount * i.refundCount;
+            item.refundAmountWithoutTax = perUnitWithoutTax * i.refundCount;
+            item.refundTaxAmount =
+                item.refundAmount - item.refundAmountWithoutTax;
             return item;
         });
 
@@ -290,6 +313,12 @@ export class RefundService {
                     id: i.id,
                     paymentItemId: i.paymentItemId,
                     refundCount: i.refundCount,
+                    itemName: i.itemName,
+                    unitAmount: i.unitAmount,
+                    unitAmountWithoutTax: i.unitAmountWithoutTax,
+                    refundAmount: i.refundAmount,
+                    refundAmountWithoutTax: i.refundAmountWithoutTax,
+                    refundTaxAmount: i.refundTaxAmount,
                 })) || [],
         };
     }

@@ -16,6 +16,12 @@ export class RefundRequestDTO {
         id: string;
         paymentItemId: string;
         refundCount: number;
+        itemName?: string;
+        unitAmount?: number;
+        unitAmountWithoutTax?: number;
+        refundAmount?: number;
+        refundAmountWithoutTax?: number;
+        refundTaxAmount?: number;
     }[];
     requestedByAccountId: string;
     resolvedByAccountId?: string;

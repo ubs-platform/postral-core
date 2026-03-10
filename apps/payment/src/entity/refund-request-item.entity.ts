@@ -22,4 +22,22 @@ export class RefundRequestItem extends BaseEntity {
 
     @Column({ type: 'float' })
     refundCount: number;
+
+    @Column({ nullable: true })
+    itemName?: string;
+
+    @Column({ type: 'float', nullable: true })
+    unitAmount?: number;
+
+    @Column({ type: 'float', nullable: true })
+    unitAmountWithoutTax?: number;
+
+    @Column({ type: 'float', nullable: true })
+    refundAmount?: number;
+
+    @Column({ type: 'float', nullable: true })
+    refundAmountWithoutTax?: number;
+
+    @Column({ type: 'float', nullable: true })
+    refundTaxAmount?: number;
 }
