@@ -1,5 +1,5 @@
 import { PaymentErrorStatus, PaymentStatus } from '../type/status';
-import { TransactionType } from '../type/transaction-type';
+import { SellerPaymentOrderType, } from '../type/transaction-type';
 
 export class PaymentTransactionDTO {
     id?: string;
@@ -15,7 +15,7 @@ export class PaymentTransactionDTO {
     paymentStatus: PaymentStatus;
     errorStatus?: PaymentErrorStatus;
     operationNote: string;
-    transactionType: TransactionType;
+    transactionType: SellerPaymentOrderType;
     createdAt: string | Date;
     updatedAt: string | Date;
     lastOperationDate: string | Date;

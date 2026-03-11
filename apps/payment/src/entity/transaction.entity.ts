@@ -14,7 +14,7 @@ import { PostralPaymentTax } from './payment-tax.entity';
 import {
     PaymentErrorStatus,
     PaymentStatus,
-    TransactionType,
+    SellerPaymentOrderType,
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
 
@@ -76,17 +76,17 @@ export class SellerPaymentOrder extends BaseEntity {
      * Transaction 1 (A'nın bakiyesi için):
     * - sourceAccountId: A
     * - targetAccountId: B
-    * - transactionType: DEBIT (A'dan para çıkışı)
+    * - transactionType: DEBIT_FROM_SELLER (A'dan para çıkışı)
     * - amount: 100
 
     * Transaction 2 (B'nin bakiyesi için):
     * - sourceAccountId: A
     * - targetAccountId: B
-    * - transactionType: CREDIT (B'ye para girişi)
+    * - transactionType: CREDIT_TO_SELLER (B'ye para girişi)
     * - amount: 100
      */
     @Column({ type: 'varchar' })
-    transactionType: TransactionType;
+    sellerOrderType: SellerPaymentOrderType;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;

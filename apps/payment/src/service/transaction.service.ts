@@ -59,7 +59,7 @@ export class SellerPaymentOrderService {
         entity.sourceAccountId = dto.sourceAccountId;
         entity.paymentStatus = dto.paymentStatus;
         entity.errorStatus = dto.errorStatus;
-        entity.transactionType = dto.transactionType;
+        entity.sellerOrderType = dto.transactionType;
         entity.operationNote = dto.operationNote;
         return entity;
     }

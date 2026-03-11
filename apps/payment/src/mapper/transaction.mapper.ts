@@ -22,7 +22,7 @@ export class TransactionMapper {
             id: saved.id,
             paymentId: saved.paymentId,
             paymentStatus: saved.paymentStatus,
-            transactionType: saved.transactionType,
+            transactionType: saved.sellerOrderType,
             updatedAt: saved.updatedAt,
             description: saved.description,
             errorStatus: saved.errorStatus,
