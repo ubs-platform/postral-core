@@ -39,7 +39,7 @@ export class RefundService {
         private readonly paymentService: PaymentService,
         private readonly authUtilService: AuthUtilService,
         private readonly eventSenderService: EventSenderService,
-    ) {}
+    ) { }
 
     async createRefundRequest(
         user: UserAuthBackendDTO,
