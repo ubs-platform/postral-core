@@ -18,6 +18,9 @@ export class RefundRequestItem extends BaseEntity {
     refundRequest: RefundRequest;
 
     @Column()
+    variation: string;
+
+    @Column()
     paymentItemId: string;
 
     @Column({ type: 'float' })

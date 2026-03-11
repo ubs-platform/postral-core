@@ -22,6 +22,7 @@ export class RefundRequestDTO {
         refundAmount?: number;
         refundAmountWithoutTax?: number;
         refundTaxAmount?: number;
+        variation?: string;
     }[];
     requestedByAccountId: string;
     resolvedByAccountId?: string;
