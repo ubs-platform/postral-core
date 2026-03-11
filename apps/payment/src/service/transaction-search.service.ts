@@ -25,17 +25,17 @@ import { AccountMapper } from '../mapper/account.mapper';
 import { AccountService } from './account.service';
 import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 import { TransactionMapper } from '../mapper/transaction.mapper';
-import { PaymentTransaction } from '../entity';
+import { SellerPaymentOrder } from '../entity';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { exec } from 'child_process';
 import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
-export class TransactionSearchService {
+export class SellerPaymentOrderSearchService {
 
     constructor(
-        @InjectRepository(PaymentTransaction)
-        private readonly transactionRepo: Repository<PaymentTransaction>,
+        @InjectRepository(SellerPaymentOrder)
+        private readonly transactionRepo: Repository<SellerPaymentOrder>,
         private transactionMapper: TransactionMapper,
 
         private eoService: EntityOwnershipService,
@@ -72,7 +72,7 @@ export class TransactionSearchService {
         const sortKey = modelSearch.sortBy || 'createdAt';
         const sortOrder = modelSearch.sortRotation || 'desc';
         return (
-            await TypeormSearchUtil.modelSearch<PaymentTransaction>(
+            await TypeormSearchUtil.modelSearch<SellerPaymentOrder>(
                 this.transactionRepo,
                 modelSearch.size,
                 modelSearch.page,

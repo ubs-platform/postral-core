@@ -18,7 +18,7 @@ import {
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
-import { PaymentTransactionService } from './transaction.service';
+import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { PaymentChannelOperation } from '../entity';
@@ -41,7 +41,7 @@ export class PaymentService {
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
         private eventSenderService: EventSenderService,
-        private transactionService: PaymentTransactionService,
+        private transactionService: SellerPaymentOrderService,
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,

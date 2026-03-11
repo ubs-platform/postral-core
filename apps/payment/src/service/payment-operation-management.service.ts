@@ -8,7 +8,7 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { EventSenderService } from './event-management.service';
-import { PaymentTransactionService } from './transaction.service';
+import { SellerPaymentOrderService } from './transaction.service';
 import {
     PaymentChannelStatusDTO,
     PaymentCaptureInfoDTO,

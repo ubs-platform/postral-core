@@ -9,7 +9,7 @@ import {
     OneToOne,
 } from 'typeorm';
 import { Payment } from './payment.entity';
-import { PaymentTransaction } from './transaction.entity';
+import { SellerPaymentOrder } from './transaction.entity';
 import { InvoiceAddress } from './invoice-address.entity';
 import { InvoiceAccount } from './invoice-account.entity';
 
@@ -26,11 +26,11 @@ export class Invoice {
     payment: Payment;
 
     @Column({ nullable: true })
-    transactionId: string;
+    sellerPaymentOrderId: string;
 
-    @ManyToOne(() => PaymentTransaction, { nullable: true, eager: false })
-    @JoinColumn({ name: 'transactionId' })
-    transaction: PaymentTransaction;
+    @ManyToOne(() => SellerPaymentOrder, { nullable: true, eager: false })
+    @JoinColumn({ name: 'sellerPaymentOrderId' })
+    sellerPaymentOrder: SellerPaymentOrder;
 
     @OneToOne(() => InvoiceAddress, { cascade: true, eager: true })
     @JoinColumn()

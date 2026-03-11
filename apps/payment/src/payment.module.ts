@@ -26,7 +26,7 @@ import { ItemPriceService } from './service/item-price.service';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
 import { ItemSellerController } from './controller/item-seller.controller';
-import { PaymentTransactionService } from './service/transaction.service';
+import { SellerPaymentOrderService } from './service/transaction.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
 import { AccountNewController } from './controller/account-controller';
 import { AddressController } from './controller/address-controller';
@@ -42,7 +42,7 @@ import { CalculationController } from './controller/calculation.controller';
 import { CalculationService } from './service/calculation.service';
 import { PaymentOperationManagementService } from './service/payment-operation-management.service';
 import { TransactionSearchController } from './controller/transaction-search.controller';
-import { TransactionSearchService } from './service/transaction-search.service';
+import { SellerPaymentOrderSearchService } from './service/transaction-search.service';
 import { TransactionMapper } from './mapper/transaction.mapper';
 import { PaymentItemSearchController } from './controller/payment-item.search.controller';
 import { PaymentItemSearchService } from './service/payment-item-search.service';
@@ -108,14 +108,14 @@ import { RefundController } from './refund.controller';
         PaymentTaxMapper,
         ItemPriceMapper,
         ItemPriceService,
-        PaymentTransactionService,
+        SellerPaymentOrderService,
         AddressService,
         AddressMapper,
         ItemTaxMapper,
         ItemTaxService,
         CalculationService,
         PaymentOperationManagementService,
-        TransactionSearchService,
+        SellerPaymentOrderSearchService,
         TransactionMapper,
         PaymentSearchService,
         PaymentItemSearchService,

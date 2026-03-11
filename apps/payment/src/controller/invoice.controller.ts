@@ -20,7 +20,7 @@ import {
 import { MessagePattern } from '@nestjs/microservices';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PaymentService } from '../service/payment.service';
-import { TransactionSearchService } from '../service/transaction-search.service';
+import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 import {
     CurrentUser,
     JwtAuthGuard,
@@ -48,9 +48,9 @@ export interface UploadFileCategoryRequest {
 export class InvoiceController {
     constructor(
         private readonly invoiceService: InvoiceService,
-        private readonly transactionService: TransactionSearchService,
+        private readonly transactionService: SellerPaymentOrderSearchService,
         private readonly paymentService: PaymentService,
-        private readonly paymentSearchService: TransactionSearchService,
+        private readonly paymentSearchService: SellerPaymentOrderSearchService,
     ) { }
 
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.

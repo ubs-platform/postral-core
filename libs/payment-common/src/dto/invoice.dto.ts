@@ -5,7 +5,7 @@ import { InvoiceAccountDTO } from './invoice-account.dto';
 export interface InvoiceDTO {
     id: string;
     paymentId: string;
-    transactionId: string;
+    sellerPaymentOrderId: string;
     invoiceNumber?: string;
     invoiceDate?: Date;
     status: string;
@@ -22,7 +22,7 @@ export interface InvoiceDTO {
 
 export interface InvoiceCreateDTO {
     paymentId: string;
-    transactionId: string;
+    sellerPaymentOrderId: string;
     filePath: string;
     originalFileName: string;
     fileSize: number;
@@ -46,7 +46,7 @@ export interface InvoiceUpdateDTO {
 
 export interface InvoiceSearchDTO {
     paymentId?: string;
-    transactionId?: string;
+    sellerPaymentOrderId?: string;
     invoiceNumber?: string;
     status?: string;
     uploadedByUserId?: string;

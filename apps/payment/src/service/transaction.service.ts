@@ -18,17 +18,17 @@ import {
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
-import { PaymentTransaction } from '../entity/transaction.entity';
+import { SellerPaymentOrder } from '../entity/transaction.entity';
 import { ArrayToObjectUtil } from '../util/array-to-object';
 import { error } from 'console';
 @Injectable()
-export class PaymentTransactionService {
+export class SellerPaymentOrderService {
     constructor(
-        @InjectRepository(PaymentTransaction)
-        private transactionRepository: Repository<PaymentTransaction>,
+        @InjectRepository(SellerPaymentOrder)
+        private transactionRepository: Repository<SellerPaymentOrder>,
     ) {}
 
-    toDto(entity: PaymentTransaction): PaymentTransactionDTO {
+    toDto(entity: SellerPaymentOrder): PaymentTransactionDTO {
         const dto = new PaymentTransactionDTO();
         dto.id = entity.id;
         dto.amount = entity.amount;
@@ -42,8 +42,8 @@ export class PaymentTransactionService {
         return dto;
     }
 
-    fromDto(dto: PaymentTransactionDTO): PaymentTransaction {
-        const entity = new PaymentTransaction();
+    fromDto(dto: PaymentTransactionDTO): SellerPaymentOrder {
+        const entity = new SellerPaymentOrder();
         if (dto.id) {
             entity.id = dto.id;
         }

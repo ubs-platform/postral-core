@@ -19,7 +19,7 @@ import {
 import { Account } from './account.entity';
 
 @Entity()
-export class PaymentTransaction extends BaseEntity {
+export class SellerPaymentOrder extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
