@@ -100,12 +100,12 @@ export class InvoiceController {
     }: UploadFileCategoryRequest): Promise<boolean> {
         // exec(`kdialog --msgbox "file-get-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
         try {
-            const [paymentId, transactionId] = objectId.split('_');
+            const [paymentId, sellerPaymentOrderId] = objectId.split('_');
 
             const transaction = await this.transactionService.findAll(
                 {
                     paymentId,
-                    id: transactionId,
+                    id: sellerPaymentOrderId,
                     admin: roles.includes('ADMIN') ? 'true' : 'false',
                 },
                 { id: userId, roles } as UserAuthBackendDTO,
@@ -170,13 +170,13 @@ export class InvoiceController {
 
             await this.assertNoFinalizedTransaction(
                 invoice.paymentId!,
-                invoice.transactionId!,
+                invoice.sellerPaymentOrderId!,
             );
 
             const transaction = await this.transactionService.findAll(
                 {
                     paymentId: invoice.paymentId,
-                    id: invoice.transactionId,
+                    id: invoice.sellerPaymentOrderId,
                     admin: roles.includes('ADMIN') ? 'true' : 'false',
                 },
                 user,
@@ -203,11 +203,11 @@ export class InvoiceController {
 
     private async assertNoFinalizedTransaction(
         paymentId: string,
-        transactionId: string,
+        sellerPaymentOrderId: string,
     ) {
         const finalizedInvoices = await this.invoiceService.findAll({
             paymentId,
-            transactionId,
+            sellerPaymentOrderId: sellerPaymentOrderId,
             finalized: 'true',
         });
 

@@ -32,12 +32,12 @@ export class PaymentMicroserviceController {
 
     @EventPattern('POSTRAL_INVOICE_UPDATED')
     public async handleInvoiceUpdated(data: {
-        transactionId: string;
+        sellerPaymentOrderId: string;
         invoiceCount: number;
         hasFinalizedInvoice: boolean;
     }) {
         await this.paymentTransactionService.updateInvoiceStatus(
-            data.transactionId,
+            data.sellerPaymentOrderId,
             data.invoiceCount,
             data.hasFinalizedInvoice,
         );

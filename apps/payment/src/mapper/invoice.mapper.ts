@@ -27,7 +27,7 @@ export class InvoiceMapper {
         const dto: InvoiceDTO = {
             id: entity.id,
             paymentId: entity.paymentId,
-            transactionId: entity.transactionId,
+            sellerPaymentOrderId: entity.sellerPaymentOrderId,
             invoiceNumber: entity.invoiceNumber,
             invoiceDate: entity.invoiceDate,
             status: "",
