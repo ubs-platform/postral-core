@@ -127,21 +127,21 @@ export class InvoiceController {
         return this.invoiceService.finalize(id);
     }
 
-    @Post('/from-transaction/:transactionId')
+    @Post('/from-transaction/:sellerPaymentOrderId')
     @UseGuards(JwtAuthGuard)
     async createFromTransaction(
-        @Param('transactionId') transactionId: string,
+        @Param('sellerPaymentOrderId') sellerPaymentOrderId: string,
         // @Body() createDto: InvoiceCreateDTO,
         @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<InvoiceDTO> {
         const transaction = await this.transactionService.fetchById(
-            transactionId,
+            sellerPaymentOrderId,
             user,
         );
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-        // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${transactionId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
+        // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${sellerPaymentOrderId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
         const payment = await this.paymentService.findPaymentById(
             transaction.paymentId,
             true,

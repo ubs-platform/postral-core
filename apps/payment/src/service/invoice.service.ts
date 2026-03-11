@@ -33,18 +33,18 @@ export class InvoiceService {
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
     ) {}
 
-    private async emitInvoiceUpdatedEvent(transactionId: string) {
-        if (!transactionId) return;
+    private async emitInvoiceUpdatedEvent(sellerPaymentOrderId: string) {
+        if (!sellerPaymentOrderId) return;
 
         const invoices = await this.invoiceRepo.find({
-            where: { transactionId },
+            where: { sellerPaymentOrderId },
         });
 
         const invoiceCount = invoices.length;
         const hasFinalizedInvoice = invoices.some((inv) => inv.finalized);
 
         this.kfk.emit('POSTRAL_INVOICE_UPDATED', {
-            transactionId,
+            sellerPaymentOrderId,
             invoiceCount,
             hasFinalizedInvoice,
         });
@@ -54,18 +54,18 @@ export class InvoiceService {
      * Yeni fatura kaydı oluşturur
      */
     async create(createDto: InvoiceCreateDTO): Promise<InvoiceDTO> {
-        // Eğer paymentId veya transactionId belirtilmişse, en az biri olmalı
-        if (!createDto.paymentId && !createDto.transactionId) {
+        // Eğer paymentId veya sellerPaymentOrderId belirtilmişse, en az biri olmalı
+        if (!createDto.paymentId && !createDto.sellerPaymentOrderId) {
             throw new BadRequestException(
-                'PaymentId veya TransactionId belirtilmelidir',
+                'PaymentId veya sellerPaymentOrderId belirtilmelidir',
             );
         }
 
         const entity = this.invoiceMapper.toEntity(createDto);
         const saved = await this.invoiceRepo.save(entity);
 
-        if (saved.transactionId) {
-            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        if (saved.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
         }
 
         return this.invoiceMapper.toDto(saved);
@@ -97,11 +97,11 @@ export class InvoiceService {
     }
 
     /**
-     * TransactionId'ye göre faturaları listeler
+     * sellerPaymentOrderId'ye göre faturaları listeler
      */
-    async findByTransactionId(transactionId: string): Promise<InvoiceDTO[]> {
+    async findBysellerPaymentOrderId(sellerPaymentOrderId: string): Promise<InvoiceDTO[]> {
         const invoices = await this.invoiceRepo.find({
-            where: { transactionId },
+            where: { sellerPaymentOrderId },
             order: { createdAt: 'DESC' },
         });
 
@@ -159,8 +159,8 @@ export class InvoiceService {
 
         await this.invoiceRepo.remove(invoice);
 
-        if (invoice.transactionId) {
-            await this.emitInvoiceUpdatedEvent(invoice.transactionId);
+        if (invoice.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(invoice.sellerPaymentOrderId);
         }
     }
 
@@ -209,8 +209,8 @@ export class InvoiceService {
         if (search.paymentId) {
             where.paymentId = search.paymentId;
         }
-        if (search.transactionId) {
-            where.transactionId = search.transactionId;
+        if (search.sellerPaymentOrderId) {
+            where.sellerPaymentOrderId = search.sellerPaymentOrderId;
         }
         if (search.invoiceNumber) {
             where.invoiceNumber = search.invoiceNumber;
@@ -246,11 +246,11 @@ export class InvoiceService {
                 const updatedInvoice =
                     await transactionalEntityManager.save(invoice);
 
-                if (updatedInvoice.transactionId) {
+                if (updatedInvoice.sellerPaymentOrderId) {
                     // Veritabanı transaction işlemi tamamlandıktan sonra emit etmek daha garantilidir ama
                     // TypeORM transaction callback içinde await olduğu için manager commit olana kadar bekleyecektir.
                     // Microservice emit, manager.save'den sonra yapılabilir.
-                    this.emitInvoiceUpdatedEvent(updatedInvoice.transactionId);
+                    this.emitInvoiceUpdatedEvent(updatedInvoice.sellerPaymentOrderId);
                 }
 
                 return this.invoiceMapper.toDto(updatedInvoice);
@@ -266,8 +266,8 @@ export class InvoiceService {
         );
         const saved = await this.invoiceRepo.save(entity);
 
-        if (saved.transactionId) {
-            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        if (saved.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
         }
 
         return this.invoiceMapper.toDto(saved);

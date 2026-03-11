@@ -146,7 +146,7 @@ DROP TABLE IF EXISTS `invoice`;
 CREATE TABLE `invoice` (
   `id` uuid NOT NULL,
   `paymentId` uuid DEFAULT NULL,
-  `transactionId` uuid DEFAULT NULL,
+  `sellerPaymentOrderId` uuid DEFAULT NULL,
   `invoiceNumber` varchar(100) DEFAULT NULL,
   `invoiceDate` date DEFAULT NULL,
   `uploadedByUserId` varchar(255) DEFAULT NULL,
@@ -164,13 +164,13 @@ CREATE TABLE `invoice` (
   UNIQUE KEY `REL_49fd7d5e5ecdc03a802ffe7f66` (`sellerInvoiceAccountId`),
   UNIQUE KEY `REL_2e8ca57c01ef57486ce9bbd3ca` (`sellerInvoiceAddressId`),
   KEY `FK_03ccf846238db85401525e07cd2` (`paymentId`),
-  KEY `FK_f803cfe7b8417f03ac350374af8` (`transactionId`),
+  KEY `FK_f803cfe7b8417f03ac350374af8` (`sellerPaymentOrderId`),
   CONSTRAINT `FK_03ccf846238db85401525e07cd2` FOREIGN KEY (`paymentId`) REFERENCES `payment` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_2e8ca57c01ef57486ce9bbd3cab` FOREIGN KEY (`sellerInvoiceAddressId`) REFERENCES `invoice_address` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_49fd7d5e5ecdc03a802ffe7f66c` FOREIGN KEY (`sellerInvoiceAccountId`) REFERENCES `invoice_account` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_9c3999d01f068a9476b225bba62` FOREIGN KEY (`customerAccountId`) REFERENCES `invoice_account` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_bb1192d730c0fa301d850183419` FOREIGN KEY (`customerInvoiceAddressId`) REFERENCES `invoice_address` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `FK_f803cfe7b8417f03ac350374af8` FOREIGN KEY (`transactionId`) REFERENCES `payment_transaction` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `FK_f803cfe7b8417f03ac350374af8` FOREIGN KEY (`sellerPaymentOrderId`) REFERENCES `payment_transaction` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

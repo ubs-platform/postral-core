@@ -63,18 +63,18 @@ export class InvoiceMapper {
     }
 
     async toEntityFromTransaction(
-        transactionId: string,
+        sellerPaymentOrderId: string,
         userId?: string,
     ) {
-        const transaction = await this.transactionSearchService.fetchByIdWithRelationsInternal(transactionId);
+        const transaction = await this.transactionSearchService.fetchByIdWithRelationsInternal(sellerPaymentOrderId);
         if (!transaction) {
-            throw new Error('Transaction not found for id: ' + transactionId);
+            throw new Error('Transaction not found for id: ' + sellerPaymentOrderId);
         }
         if (!transaction.sourceAccount || !transaction.targetAccount) {
-            throw new Error('Transaction accounts not found for id: ' + transactionId);
+            throw new Error('Transaction accounts not found for id: ' + sellerPaymentOrderId);
         }
         if (!transaction.sourceAccount.defaultAddress || !transaction.targetAccount.defaultAddress) {
-            throw new Error('Transaction account addresses not found for id: ' + transactionId);
+            throw new Error('Transaction account addresses not found for id: ' + sellerPaymentOrderId);
         }
         const entity = new Invoice();
         entity.paymentId = transaction.paymentId;
