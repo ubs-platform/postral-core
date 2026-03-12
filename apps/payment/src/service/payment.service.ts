@@ -122,7 +122,7 @@ export class PaymentService {
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = 'CREDIT';
+            transaction.transactionType = "CREDIT_TO_SELLER";
             transactions.push(transaction);
         }
 
