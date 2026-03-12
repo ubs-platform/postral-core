@@ -6,7 +6,7 @@ import { CurrentUser, UserIntercept } from '@ubs-platform/users-microservice-hel
 import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 
-@Controller('transaction')
+@Controller('seller-payment-order')
 export class TransactionSearchController {
     constructor(private tss: SellerPaymentOrderSearchService) { }
     @Get()
