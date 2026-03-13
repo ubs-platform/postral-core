@@ -99,37 +99,26 @@ export class SellerPaymentOrderSearchService {
             }
 
             // Kullanıcının yetkili olduğu hesapları getir
-            authorizedAccountIds = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    userId: user.id,
-                }),
-            );
-            if (modelSearch.sourceAccountIds || modelSearch.targetAccountIds) {
-                if (modelSearch.sourceAccountIds) {
-                    const intersection = modelSearch.sourceAccountIds.split(','); //this.getIntersections(authorizedAccountIds, );
-                    Object.assign(where, {
-                        sourceAccountId: In(intersection),
-                    });
-                }
+            authorizedAccountIds = await this.fetchAccountIds(user);
+            // Eğer targetAccountIds ile arama yapılacaksa, kullanıcının yetkili olduğu hesaplarla kesişen targetAccountIds'leri al
+            // Aksi halde, kullanıcının yetkili olduğu tüm hesapları targetAccountIds olarak kullan
+            if (modelSearch.targetAccountIds) {
 
-                if (modelSearch.targetAccountIds) {
-                    const intersection = modelSearch.targetAccountIds.split(','); //this.getIntersections(authorizedAccountIds, );
-                    Object.assign(where, {
-                        targetAccountId: In(intersection),
-                    });
-                }
+                const intersection = modelSearch.targetAccountIds.split(','); //this.getIntersections(authorizedAccountIds, );
+                Object.assign(where, {
+                    targetAccountId: In(intersection),
+                });
+
             } else {
-                orClause = [
-                    { sourceAccountId: In(authorizedAccountIds) },
-                    { targetAccountId: In(authorizedAccountIds) },
-                ];
+                Object.assign(where, {
+                    targetAccountId: In(authorizedAccountIds),
+                });
             }
 
         }
-        
+
+
+
         if (modelSearch.paymentStatus) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
@@ -153,14 +142,35 @@ export class SellerPaymentOrderSearchService {
         return orClause.map((clause) => ({ ...where, ...clause }));
     }
 
+    private async fetchAccountIds(user: UserAuthBackendDTO) {
+        const authorizedAccountIds = await lastValueFrom(
+            this.eoService.searchOwnershipEntityIdsByUser({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                userId: user.id,
+            })
+        );
+        return authorizedAccountIds;
+    }
+
     public async fetchByIdWithRelationsInternal(id: string) {
         const transaction = await this.transactionRepo.findOne({
             where: { id },
-            relations: ['sourceAccount', 'targetAccount',"sourceAccount.defaultAddress", "targetAccount.defaultAddress"],
+            relations: ['sourceAccount', 'targetAccount', "sourceAccount.defaultAddress", "targetAccount.defaultAddress"],
         });
         if (!transaction) {
             throw new Error('Transaction not found');
         }
         return transaction;
+    }
+
+
+    async fetchSourceAccounts(user: UserAuthBackendDTO, admin = false) {
+        if (!user.roles.includes('ADMIN') && admin) { 
+            throw new Error('Unauthorized');
+        }
+        const authorizedAccountIds = await this.fetchAccountIds(user);
+        
     }
 }

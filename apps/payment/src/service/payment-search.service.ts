@@ -129,6 +129,7 @@ export class PaymentSearchService {
                 },
             });
         }
+        
         if (modelSearch.paymentStatus && modelSearch.paymentStatus.length > 0) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
