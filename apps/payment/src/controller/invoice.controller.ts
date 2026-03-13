@@ -59,21 +59,7 @@ export class InvoiceController {
         private readonly eoService: EntityOwnershipService,
     ) { }
 
-    private async assertSellerIsOwner(user: UserAuthBackendDTO, accountId: string) {
-        const sellerIncludes = await lastValueFrom(
-            this.eoService.hasOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                capabilityAtLeastOne: ['OWNER', 'EDITOR'],
-                userId: user.id,
-                entityId: accountId,
-            })
-        );
 
-        if (!sellerIncludes) {
-            throw new Error('User does not have access to the seller account');
-        }
-    }
 
     private async assertNoFinalizedTransaction(
         paymentId: string,
@@ -115,8 +101,9 @@ export class InvoiceController {
     }
 
     @Delete(':id')
-    async delete(@Param('id') id: string): Promise<void> {
-        return this.invoiceService.delete(id);
+    @UseGuards(JwtAuthGuard)
+    async delete(@Param('id') id: string, @CurrentUser() user: UserAuthBackendDTO): Promise<void> {
+        return await this.invoiceService.delete(id, user);
     }
 
     @Get('')
@@ -136,8 +123,8 @@ export class InvoiceController {
 
     @Put(':id/finalize')
     @UseGuards(JwtAuthGuard)
-    async finalize(@Param('id') id: string): Promise<InvoiceDTO> {
-        return this.invoiceService.finalize(id);
+    async finalize(@Param('id') id: string, @CurrentUser() user: UserAuthBackendDTO): Promise<InvoiceDTO> {
+        return this.invoiceService.finalize(id, user);
     }
 
     @Post('/from-transaction/:sellerPaymentOrderId')
@@ -156,7 +143,7 @@ export class InvoiceController {
             throw new Error('Transaction not found');
         }
 
-        await this.assertSellerIsOwner(user, transaction.targetAccountId);
+        await this.invoiceService.assertSellerIsOwner(user, transaction.targetAccountId);
         // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${sellerPaymentOrderId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
         const payment = await this.paymentService.findPaymentById(
             transaction.paymentId,
@@ -192,7 +179,7 @@ export class InvoiceController {
                 invoice.sellerPaymentOrderId!,
             );
 
-            const transaction = await this.transactionService.findAll(
+            const sellerOrderPayments = await this.transactionService.findAll(
                 {
                     paymentId: invoice.paymentId,
                     id: invoice.sellerPaymentOrderId,
@@ -201,9 +188,11 @@ export class InvoiceController {
                 user,
             );
 
-            if (!transaction) {
-                throw new Error('Transaction not found');
+            if (!sellerOrderPayments?.length) {
+                throw new Error('Seller order payments not found');
             }
+
+            await this.invoiceService.assertSellerIsOwner(user, sellerOrderPayments[0].targetAccountId);
 
             const name = objectId,
                 category = 'POSTRAL_INVOICE';
@@ -230,7 +219,7 @@ export class InvoiceController {
         try {
             const [paymentId, sellerPaymentOrderId] = objectId.split('_');
 
-            const transaction = await this.transactionService.findAll(
+            const transactions = await this.transactionService.findAll(
                 {
                     paymentId,
                     id: sellerPaymentOrderId,
@@ -238,7 +227,7 @@ export class InvoiceController {
                 },
                 { id: userId, roles } as UserAuthBackendDTO,
             );
-            if (!transaction) {
+            if (!transactions?.length) {
                 return false;
             }
 

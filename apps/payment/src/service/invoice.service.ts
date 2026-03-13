@@ -23,6 +23,10 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
+import { PostralConstants } from '../util/consts';
+import { lastValueFrom } from 'rxjs';
+import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 
 @Injectable()
 export class InvoiceService {
@@ -31,7 +35,24 @@ export class InvoiceService {
         private readonly invoiceRepo: Repository<Invoice>,
         private readonly invoiceMapper: InvoiceMapper,
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
-    ) {}
+        private readonly eoService: EntityOwnershipService,
+    ) { }
+
+    async assertSellerIsOwner(user: UserAuthBackendDTO, accountId: string) {
+        const sellerIncludes = await lastValueFrom(
+            this.eoService.hasOwnership({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                capabilityAtLeastOne: ['OWNER', 'EDITOR'],
+                userId: user.id,
+                entityId: accountId,
+            })
+        );
+
+        if (!sellerIncludes) {
+            throw new Error('User does not have access to the seller account');
+        }
+    }
 
     private async emitInvoiceUpdatedEvent(sellerPaymentOrderId: string) {
         if (!sellerPaymentOrderId) return;
@@ -138,9 +159,12 @@ export class InvoiceService {
     /**
      * Faturayı siler (hem veritabanından hem de dosya sisteminden)
      */
-    async delete(id: string): Promise<void> {
+    async delete(id: string, user: UserAuthBackendDTO): Promise<void> {
+        if (!id) {
+            throw new BadRequestException('Invoice id must be provided');
+        }
         const invoice = await this.invoiceRepo.findOne({ where: { id } });
-
+        await this.assertSellerIsOwner(user, invoice?.sellerInvoiceAccount?.realAccountId!);
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
@@ -222,7 +246,7 @@ export class InvoiceService {
         return where;
     }
 
-    finalize(id: string): InvoiceDTO | PromiseLike<InvoiceDTO> {
+    finalize(id: string, user: UserAuthBackendDTO): InvoiceDTO | PromiseLike<InvoiceDTO> {
         return this.invoiceRepo.manager.transaction(
             async (transactionalEntityManager) => {
                 const invoice = await transactionalEntityManager.findOne(
@@ -236,10 +260,16 @@ export class InvoiceService {
                     );
                 }
 
+
                 // Fatura zaten finalize edilmişse tekrar finalize etmeye gerek yok
                 if (invoice.finalized) {
                     return this.invoiceMapper.toDto(invoice);
                 }
+
+                await this.assertSellerIsOwner(
+                    user,
+                    invoice.sellerInvoiceAccount?.realAccountId!,
+                );
 
                 // Faturayı finalize et
                 invoice.finalized = true;
