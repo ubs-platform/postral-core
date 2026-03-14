@@ -164,13 +164,4 @@ export class SellerPaymentOrderSearchService {
         }
         return transaction;
     }
-
-
-    async fetchSourceAccounts(user: UserAuthBackendDTO, admin = false) {
-        if (!user.roles.includes('ADMIN') && admin) { 
-            throw new Error('Unauthorized');
-        }
-        const authorizedAccountIds = await this.fetchAccountIds(user);
-        
-    }
 }
