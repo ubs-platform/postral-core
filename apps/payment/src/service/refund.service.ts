@@ -49,7 +49,7 @@ export class RefundService {
         const payment = await this.findPaymentWithItems(dto.paymentId);
         this.assertPaymentIsRefundable(payment);
         this.validateRefundItems(payment, dto.items);
-        this.assertRefundItemsBelongToSingleSeller(payment, dto.items);
+        this.assertItemsBelongToSingleSeller(payment, dto.items);
 
         const request = this.buildRefundRequestEntity(user, dto, payment);
 
@@ -65,7 +65,7 @@ export class RefundService {
             await this.loadPendingRefundRequestWithPayment(requestId);
 
         await this.authorizeRefundAction(user, payment, 'approve');
-        this.assertRefundRequestItemsBelongToSingleSeller(payment, request.items);
+        this.assertItemsBelongToSingleSeller(payment, request.items);
         await this.triggerPaymentChannelRefund(payment);
         await this.paymentService.init(
             this.buildRefundPaymentInitPayload(payment, request),
@@ -175,37 +175,16 @@ export class RefundService {
         );
     }
 
-    private assertRefundItemsBelongToSingleSeller(
+    private assertItemsBelongToSingleSeller(
         payment: Payment,
-        items: CreateRefundRequestDTO['items'],
+        items: { paymentItemId: string }[],
     ): void {
         const sellerAccountIds = new Set(
             items.map(
-                (requestItem) =>
+                (item) =>
                     this.getPaymentItemForRefundRequest(
                         payment,
-                        requestItem.paymentItemId,
-                    ).sellerAccountId,
-            ),
-        );
-
-        if (sellerAccountIds.size > 1) {
-            throw new BadRequestException(
-                'Refund items must belong to the same seller account. Create separate refund requests for each seller.',
-            );
-        }
-    }
-
-    private assertRefundRequestItemsBelongToSingleSeller(
-        payment: Payment,
-        items: RefundRequestItem[],
-    ): void {
-        const sellerAccountIds = new Set(
-            items.map(
-                (requestItem) =>
-                    this.getPaymentItemForRefundRequest(
-                        payment,
-                        requestItem.paymentItemId,
+                        item.paymentItemId,
                     ).sellerAccountId,
             ),
         );
@@ -366,19 +345,21 @@ export class RefundService {
         payment: Payment,
         requestItems: RefundRequestItem[],
     ): Promise<void> {
-        for (const requestItem of requestItems) {
-            const originalItem = this.getPaymentItemForRefundRequest(
-                payment,
-                requestItem.paymentItemId,
-            );
+        await Promise.all(
+            requestItems.map((requestItem) => {
+                const originalItem = this.getPaymentItemForRefundRequest(
+                    payment,
+                    requestItem.paymentItemId,
+                );
 
-            originalItem.refundCount += requestItem.refundCount;
-            if (originalItem.refundCount >= originalItem.quantity) {
-                originalItem.refunded = true;
-            }
+                originalItem.refundCount += requestItem.refundCount;
+                if (originalItem.refundCount >= originalItem.quantity) {
+                    originalItem.refunded = true;
+                }
 
-            await this.paymentItemRepo.save(originalItem);
-        }
+                return this.paymentItemRepo.save(originalItem);
+            }),
+        );
     }
 
     private async resolveRefundRequest(
@@ -425,7 +406,7 @@ export class RefundService {
         const query = {};
         const orClauses: any[] = [];
         // todo: Admin modu kontrolü eklenmeli. Admin modunda accountId'ye göre filtreleme yapmayacak. Aksi halde yapacak. Entity Ownership'ten account idler çekilecek
-        if (true) {
+        if (searchParams.mode != 'ADMIN') {
             const ids = await this.authUtilService.fetchUserAccountIds(
                 user.id,
                 ['OWNER', 'EDITOR', 'VIEWER'],
@@ -436,16 +417,14 @@ export class RefundService {
             orClauses.push({})
         }
         // TODO: Diğer filtreleme kriterleri eklenecek (status, date range vb.)
-        return (await TypeormSearchUtil.modelSearch<RefundRequestDTO>(
+        return TypeormSearchUtil.modelSearch<RefundRequestDTO>(
             this.refundRequestRepo,
             searchParams.size,
             searchParams.page,
             {},
             ['items'],
             orClauses.map((clause) => ({ ...clause, ...query })),
-        )).map((result) => ({
-            ...result,
-        }));
+        );
     }
 
     async getRefundRequestById(id: string): Promise<RefundRequestDTO> {

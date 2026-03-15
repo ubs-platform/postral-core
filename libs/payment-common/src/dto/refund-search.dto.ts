@@ -8,4 +8,5 @@ export class RefundRequestSearchDTO implements SearchRequest {
     status?: 'PENDING' | 'APPROVED' | 'REJECTED';
     paymentId?: string;
     sellerAccountId?: string;
+    mode: "ADMIN" | "USER";
 }

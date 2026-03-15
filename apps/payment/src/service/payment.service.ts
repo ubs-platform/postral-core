@@ -29,6 +29,7 @@ import { PaymentOperationManagementService } from './payment-operation-managemen
 import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { RefundRequestDTO } from 'dist/libs/payments';
 
 @Injectable()
 export class PaymentService {
@@ -45,7 +46,7 @@ export class PaymentService {
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
-    ) {}
+    ) { }
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
@@ -129,16 +130,59 @@ export class PaymentService {
         await this.transactionService.addTransactions(transactions);
     }
 
+    async generateRefundPayment(refundRequest: RefundRequestDTO) {
+        if (refundRequest.status !== 'APPROVED') {
+            throw new Error('Only approved refund requests can generate refund payments.');
+        }
+        const originalPayment = await this.findPaymentByIdRaw(refundRequest.paymentId, true);
+        if (!originalPayment) {
+            throw new NotFoundException('Original payment not found for refund generation');
+        }
+
+        const paymentInit = new PaymentInitDTO({
+            type: 'REFUND',
+            currency: originalPayment.currency,
+            customerAccountId: originalPayment.customerAccountId,
+            items: refundRequest.items.map((item) => {
+                const pi = new PaymentItemDto({
+                    itemId: item.paymentItemId,
+                    variation: item.variation,
+                    quantity: item.refundCount,
+                    unitAmount: item.unitAmount,
+                    totalAmount: item.refundAmount,
+                    taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
+                    sellerAccountId: refundRequest.sellerAccountId,
+                });
+
+                return pi;
+            })
+        });
+
+
+        return await this.init(paymentInit);
+    }
+
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
+        const p = await this.generateEntityFromInitDto(pdto);
+        const paymentSaved = await this.paymentrepo.save(p);
+        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        try {
+            await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
+        } catch (error) {
+            console.error(error);
+        }
+        return paymentDtoFinal;
+    }
+
+    private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
-        const customerAccount =
-            await this.accountService.fetchOne(customerAccountId);
+        const customerAccount = await this.accountService.fetchOne(customerAccountId);
         if (pdto.type === "REFUND" && !pdto.refundPaymentId) {
             throw new BadRequestException('Refund payment ID is required for REFUND type');
         }
         if (!customerAccount) {
             throw new NotFoundException(
-                'Customer account not found for payment init',
+                'Customer account not found for payment init'
             );
         }
 
@@ -146,11 +190,9 @@ export class PaymentService {
             pdto.saleMode = 'DEFAULT';
         }
 
-        let taxesFromItems: TaxDTO[] = [],
-            items: PostralPaymentItem[] = [];
+        let taxesFromItems: TaxDTO[] = [], items: PostralPaymentItem[] = [];
         // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
-        let totalAmt = 0,
-            taxTotal = 0;
+        let totalAmt = 0, taxTotal = 0;
 
         const calculationResult = await this.calcService.calculateTotalAmount({
             items: pdto.items,
@@ -200,16 +242,9 @@ export class PaymentService {
                 ppt.taxAmount = a.taxAmount;
                 ppt.untaxAmount = a.untaxAmount;
                 return ppt;
-            },
+            }
         );
-        const paymentSaved = await this.paymentrepo.save(p);
-        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
-        try {
-            await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
-        } catch (error) {
-            console.error(error);
-        }
-        return paymentDtoFinal;
+        return p;
     }
 
     async cancelPayment(id: string) {

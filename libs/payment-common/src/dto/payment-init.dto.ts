@@ -22,3 +22,9 @@ export interface PaymentInitDTO {
 
     customerAccountId: string;
 }
+
+export class PaymentInitDTO implements PaymentInitDTO {
+    constructor(partial: Partial<PaymentInitDTO>) {
+        Object.assign(this, partial);
+    }
+}
