@@ -4,8 +4,11 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     BaseEntity,
+    OneToOne,
+    JoinColumn,
 } from 'typeorm';
 import { RefundRequestItem } from './refund-request-item.entity';
+import { Payment } from './payment.entity';
 
 export type RefundRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -16,6 +19,10 @@ export class RefundRequest extends BaseEntity {
 
     @Column()
     paymentId: string;
+
+    @OneToOne(() => Payment, (payment) => payment.refundRequest, { nullable: true, cascade: false, eager: false })
+    @JoinColumn({ name: 'paymentId' })
+    payment: Payment;
 
     @Column({
         type: 'varchar',
@@ -32,9 +39,30 @@ export class RefundRequest extends BaseEntity {
     )
     items: RefundRequestItem[];
 
+    /**
+     * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin oluşturduğunu ve kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.
+     */
     @Column()
     requestedByAccountId: string;
 
+    /**
+     * Payment Account Id. Bu, refund request'i kimin oluşturduğunu takip etmek için kullanılabilir. 
+     * Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
+     */
+    @Column()
+    requestedByPaymentAccountId: string;
+
+    /**
+ * Payment Account Id. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
+ */
+    @Column()
+    requestedToPaymentAccountId: string;
+
+    
+
+    /**
+     * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.
+     */
     @Column({ nullable: true })
     resolvedByAccountId: string;
 

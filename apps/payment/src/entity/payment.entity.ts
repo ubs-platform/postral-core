@@ -9,6 +9,7 @@ import {
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
+import { RefundRequest } from './refund-request.entity';
 
 @Entity()
 export class Payment {
@@ -83,4 +84,7 @@ export class Payment {
         cascade: true,
     })
     refundItems: PostralPaymentItem[];
+
+    @OneToOne(() => RefundRequest, (refundRequest) => refundRequest.payment, { nullable: true, cascade: false, eager: false })
+    refundRequest: RefundRequest;
 }

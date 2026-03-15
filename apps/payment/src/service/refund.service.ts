@@ -5,7 +5,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { RefundRequest } from '../entity/refund-request.entity';
 import { RefundRequestItem } from '../entity/refund-request-item.entity';
 import { Payment } from '../entity/payment.entity';
@@ -24,6 +24,7 @@ import { EventSenderService } from './event-management.service';
 import { RawSearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { RefundRequestStatus } from '../entity/refund-request.entity';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class RefundService {
@@ -224,6 +225,8 @@ export class RefundService {
         const request = new RefundRequest();
         request.paymentId = dto.paymentId;
         request.requestedByAccountId = user.id;
+        request.requestedByPaymentAccountId = payment.customerAccountId;
+        request.requestedToPaymentAccountId = payment.items[0].sellerAccountId;
         request.status = 'PENDING';
         request.items = this.buildRefundRequestItems(payment, dto.items);
         return request;
@@ -279,7 +282,6 @@ export class RefundService {
         payment: Payment,
         action: 'approve' | 'reject',
     ): Promise<void> {
-        const sellerAccountIds = this.getUniqueSellerIds(payment);
         const ownedSellerIds = await this.authUtilService.searchOwnedIds(
             PostralConstants.ENTITY_NAME_ACCOUNT,
             ['OWNER', 'EDITOR'],
@@ -291,6 +293,7 @@ export class RefundService {
                 `User is not authorized to ${action} this refund`,
             );
         }
+        const sellerAccountIds = this.getUniqueSellerIds(payment);
 
         const isAuthorizedForAllSellers = sellerAccountIds.every((id) =>
             ownedSellerIds.includes(id),
@@ -416,29 +419,30 @@ export class RefundService {
     }
 
     async searchRefundRequests(
+        user: UserAuthBackendDTO,
         searchParams: RefundRequestSearchDTO,
     ): Promise<RawSearchResult<RefundRequestDTO>> {
         const query = {};
-
-        // if (searchParams.status) {
-        //     query.andWhere('request.status = :status', {
-        //         status: searchParams.status,
-        //     });
-        // }
-
-        // if (searchParams.paymentId) {
-        //     query.andWhere('request.paymentId = :paymentId', {
-        //         paymentId: searchParams.paymentId,
-        //     });
-        // }
-
+        const orClauses: any[] = [];
+        // todo: Admin modu kontrolü eklenmeli. Admin modunda accountId'ye göre filtreleme yapmayacak. Aksi halde yapacak. Entity Ownership'ten account idler çekilecek
+        if (true) {
+            const ids = await this.authUtilService.fetchUserAccountIds(
+                user.id,
+                ['OWNER', 'EDITOR', 'VIEWER'],
+            )
+            orClauses.push({ requestedByPaymentAccountId: In(ids) });
+            orClauses.push({ requestedToPaymentAccountId: In(ids) });
+        } else {
+            orClauses.push({})
+        }
+        // TODO: Diğer filtreleme kriterleri eklenecek (status, date range vb.)
         return (await TypeormSearchUtil.modelSearch<RefundRequestDTO>(
             this.refundRequestRepo,
             searchParams.size,
             searchParams.page,
             {},
             ['items'],
-            query,
+            orClauses.map((clause) => ({ ...clause, ...query })),
         )).map((result) => ({
             ...result,
         }));
