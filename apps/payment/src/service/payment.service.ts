@@ -101,11 +101,11 @@ export class PaymentService {
     }
 
     async generateTransactions(paymentReal: Payment) {
-        if (paymentReal.paymentStatus !== 'COMPLETED') {
-            throw new Error(
-                'Only completed payments can generate transactions.',
-            );
-        }
+        // if (paymentReal.paymentStatus !== 'COMPLETED') {
+        //     throw new Error(
+        //         'Only completed payments can generate transactions.',
+        //     );
+        // }
         let items: PaymentItemDto[] = [];
         if (paymentReal.items?.length > 0) {
             items = this.paymentItemMapper.toDto(paymentReal.items);
@@ -123,16 +123,17 @@ export class PaymentService {
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = "CREDIT_TO_SELLER";
+            debugger
+            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
             transactions.push(transaction);
         }
 
         await this.transactionService.addTransactions(transactions);
     }
 
-    async generateRefundPayment(refundRequest: RefundRequestDTO) {
-        if (refundRequest.status !== 'APPROVED') {
-            throw new Error('Only approved refund requests can generate refund payments.');
+    async createRefundPayment(refundRequest: RefundRequestDTO) {
+        if (refundRequest.status=== 'APPROVED') {
+            throw new Error('Refund request is already approved. Cannot create refund payment again.');
         }
         const originalPayment = await this.findPaymentByIdRaw(refundRequest.paymentId, true);
         if (!originalPayment) {
@@ -146,13 +147,14 @@ export class PaymentService {
             refundRequestId: refundRequest.id,
             items: refundRequest.items.map((item) => {
                 const pi = new PaymentItemDto({
-                    itemId: item.paymentItemId,
+                    itemId: item.realItemId,
                     variation: item.variation,
                     quantity: item.refundCount,
                     unitAmount: item.unitAmount,
                     totalAmount: item.refundAmount,
                     taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
                     sellerAccountId: refundRequest.requestedToPaymentAccountId,
+                    
                 });
 
                 return pi;
@@ -160,8 +162,12 @@ export class PaymentService {
         });
 
         const entity = await this.generateEntityFromInitDto(paymentInit);
+        entity.paymentStatus = "WAITING";
         const paymentSaved = await this.paymentrepo.save(entity);
+        debugger
+        await this.generateTransactions(paymentSaved);
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        return paymentDtoFinal;
         // return await this.init(paymentInit);
     }
 
@@ -180,8 +186,8 @@ export class PaymentService {
     private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount = await this.accountService.fetchOne(customerAccountId);
-        if (pdto.type === "REFUND" && !pdto.refundPaymentId) {
-            throw new BadRequestException('Refund payment ID is required for REFUND type');
+        if (pdto.type === "REFUND" && !pdto.refundRequestId) {
+            throw new BadRequestException('Refund request ID is required for REFUND type');
         }
         if (!customerAccount) {
             throw new NotFoundException(

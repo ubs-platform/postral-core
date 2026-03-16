@@ -25,6 +25,7 @@ import { RawSearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { RefundRequestStatus } from '../entity/refund-request.entity';
 import { lastValueFrom } from 'rxjs';
+import { exec } from 'child_process';
 
 @Injectable()
 export class RefundService {
@@ -64,11 +65,11 @@ export class RefundService {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
 
-        await this.authorizeRefundAction(user, payment, 'approve');
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'approve');
         this.assertItemsBelongToSingleSeller(payment, request.items);
         await this.triggerPaymentChannelRefund(payment);
-        await this.paymentService.init(
-            this.buildRefundPaymentInitPayload(payment, request),
+        await this.paymentService.createRefundPayment(
+            request
         );
         await this.updateOriginalItemsRefundState(payment, request.items);
 
@@ -82,7 +83,7 @@ export class RefundService {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
 
-        await this.authorizeRefundAction(user, payment, 'reject');
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'reject');
 
         return this.resolveRefundRequest(request, user, 'REJECTED');
     }
@@ -227,6 +228,7 @@ export class RefundService {
                     : 0;
             refundItem.variation = originalItem.variation;
             refundItem.paymentItemId = requestItem.paymentItemId;
+            refundItem.realItemId = originalItem.itemId;
             refundItem.refundCount = requestItem.refundCount;
             refundItem.itemName = originalItem.name;
             refundItem.unitAmount = originalItem.unitAmount;
@@ -258,7 +260,7 @@ export class RefundService {
 
     private async authorizeRefundAction(
         user: UserAuthBackendDTO,
-        payment: Payment,
+        targetPaymentAccountId: string,
         action: 'approve' | 'reject',
     ): Promise<void> {
         const ownedSellerIds = await this.authUtilService.searchOwnedIds(
@@ -272,65 +274,14 @@ export class RefundService {
                 `User is not authorized to ${action} this refund`,
             );
         }
-        const sellerAccountIds = this.getUniqueSellerIds(payment);
 
-        const isAuthorizedForAllSellers = sellerAccountIds.every((id) =>
-            ownedSellerIds.includes(id),
-        );
-
-        if (!isAuthorizedForAllSellers) {
+        if (!ownedSellerIds.includes(targetPaymentAccountId)) {
             throw new ForbiddenException(
                 'User does not have EDITOR or OWNER rights for the relevant seller accounts',
             );
         }
     }
 
-    private getUniqueSellerIds(payment: Payment): string[] {
-        return [...new Set(payment.items.map((item) => item.sellerAccountId))];
-    }
-
-    private buildRefundPaymentInitPayload(
-        payment: Payment,
-        request: RefundRequest,
-    ): PaymentInitDTO {
-        return {
-            type: 'REFUND',
-            currency: payment.currency,
-            customerAccountId: payment.customerAccountId,
-            items: request.items.map((requestItem) =>
-                this.mapRefundPaymentItem(payment, requestItem),
-            ),
-            refundPaymentId: payment.id,
-            saleMode: 'DEFAULT',
-        };
-    }
-
-    private mapRefundPaymentItem(
-        payment: Payment,
-        requestItem: RefundRequestItem,
-    ) {
-        const originalItem = this.getPaymentItemOrThrow(
-            payment,
-            requestItem.paymentItemId,
-            `Original item not found for refund item ${requestItem.id}`,
-        );
-
-        return {
-            itemId: originalItem.itemId,
-            quantity: requestItem.refundCount,
-            unitAmount: originalItem.unitAmount,
-            originalUnitAmount: originalItem.originalUnitAmount,
-            taxPercent: originalItem.taxPercent,
-            variation: originalItem.variation,
-            entityGroup: originalItem.entityGroup,
-            entityId: originalItem.entityId,
-            entityName: originalItem.entityName,
-            sellerAccountId: originalItem.sellerAccountId,
-            sellerAccountName: originalItem.sellerAccountName,
-            unit: originalItem.unit,
-            name: originalItem.name,
-        };
-    }
 
     private async triggerPaymentChannelRefund(payment: Payment): Promise<void> {
         if (payment.paymentChannelId && payment.paymentChannelOperationId) {
@@ -387,6 +338,7 @@ export class RefundService {
                 entity.items?.map((i) => ({
                     id: i.id,
                     paymentItemId: i.paymentItemId,
+                    realItemId: i.realItemId,
                     refundCount: i.refundCount,
                     itemName: i.itemName,
                     unitAmount: i.unitAmount,

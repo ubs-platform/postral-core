@@ -23,6 +23,9 @@ export class RefundRequestItem extends BaseEntity {
     @Column()
     paymentItemId: string;
 
+    @Column()
+    realItemId: string;
+
     @Column({ type: 'float' })
     refundCount: number;
 

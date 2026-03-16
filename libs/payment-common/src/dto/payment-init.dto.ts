@@ -18,7 +18,7 @@ export interface PaymentInitDTO {
 
     items: PaymentItemInputDto[];
 
-    refundPaymentId?: string; // Only for REFUND type
+    // refundPaymentId?: string; // Only for REFUND type
 
     customerAccountId: string;
 
