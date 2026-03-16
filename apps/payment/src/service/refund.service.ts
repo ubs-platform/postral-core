@@ -176,6 +176,11 @@ export class RefundService {
         );
     }
 
+    /**
+     * Tek bir iade talebindeki tüm ürünlerin aynı satıcıya ait olduğunu doğrular. Eğer farklı satıcılara ait ürünler varsa, iade talebinin reddedilmesi için bir hata fırlatır.
+     * @param payment Ödeme bilgisi
+     * @param items İade talebindeki ürünler
+     */
     private assertItemsBelongToSingleSeller(
         payment: Payment,
         items: { paymentItemId: string }[],
@@ -205,6 +210,7 @@ export class RefundService {
         const request = new RefundRequest();
         request.paymentId = dto.paymentId;
         request.requestedByAccountId = user.id;
+        
         request.requestedByPaymentAccountId = payment.customerAccountId;
         request.requestedToPaymentAccountId = payment.items[0].sellerAccountId;
         request.status = 'PENDING';
@@ -332,6 +338,8 @@ export class RefundService {
             status: entity.status,
             requestedByAccountId: entity.requestedByAccountId,
             resolvedByAccountId: entity.resolvedByAccountId,
+            requestedByPaymentAccountId: entity.requestedByPaymentAccountId,
+            requestedToPaymentAccountId: entity.requestedToPaymentAccountId,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
             items:

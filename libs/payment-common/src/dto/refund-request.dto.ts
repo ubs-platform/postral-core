@@ -14,6 +14,7 @@ export class RefundRequestDTO {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     items: {
         id: string;
+        realItemId: string;
         paymentItemId: string;
         refundCount: number;
         itemName?: string;
@@ -28,4 +29,14 @@ export class RefundRequestDTO {
     resolvedByAccountId?: string;
     createdAt: Date;
     updatedAt: Date;
+    /**
+ * Payment Account Id. Bu, refund request'i kimin oluşturduğunu takip etmek için kullanılabilir. 
+ * Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
+ */
+    requestedByPaymentAccountId: string;
+
+    /**
+ * Payment Account Id. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
+ */
+    requestedToPaymentAccountId: string;
 }

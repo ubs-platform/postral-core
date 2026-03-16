@@ -14,6 +14,7 @@ import {
     PaymentCaptureInfoDTO,
     PaymentDTO,
     PaymentFullDTO,
+    RefundRequestDTO,
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil } from '../util/type-assertion';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
@@ -22,6 +23,7 @@ import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentOperationManagementService {
+
     /**
      *
      */
@@ -30,7 +32,7 @@ export class PaymentOperationManagementService {
         private calcService: CalculationService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
-    ) {}
+    ) { }
     // This service will handle payment operation management logic
 
     async savePaymentChannelRecord(
@@ -58,6 +60,21 @@ export class PaymentOperationManagementService {
         return ItemCalculationUtil.addNumberValues(
             ...paymentOperations.map((op) => op.amount),
         );
+    }
+
+    startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, paymentSaved: Payment) {
+        // İade talebi için ödeme işlemi başlatma
+        // Eski paymentOperation'lar getirilecek ve yeni refund miktarı kadar denkleştirilecek
+        // Örn: 30 liralık paymentta 
+        // Stripe 15tl
+        // Paytr 10 tl
+        // ve başka bir entegratör 5 tl ödeme operasyonu varsa, 
+        // refund için açılacak paymentOperation'larda bu oranlara göre açılacak.
+        // 30 liralık paymentın 20 lirası refund edilecekse, Stripe için 15tl, paytr için ise 5 tl refund operasyonu açılacak.
+        // Oranlar sonradan da konuşulabilir ancak bunu basit tutmak istiyorum.
+
+        // TODO:
+        
     }
 
     async startPaymentOperation(paymentFullDto: PaymentFullWithCaptureInfoDTO) {

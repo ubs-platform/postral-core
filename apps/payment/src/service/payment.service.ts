@@ -24,12 +24,11 @@ import { CalculationService } from './calculation.service';
 import { PaymentChannelOperation } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TypeAssertionUtil } from '../util/type-assertion';
-// import { PaymentStatus } from 'dist/libs/payments/type/status';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
-import { RefundRequestDTO } from 'dist/libs/payments';
+import { RefundRequestDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class PaymentService {
@@ -67,7 +66,8 @@ export class PaymentService {
         });
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
-
+    async findPaymentById(id: string, full : true): Promise<PaymentFullDTO>;
+    async findPaymentById(id: string, full?: false): Promise<PaymentDTO>;
     async findPaymentById(
         id: string,
         full = false,
@@ -123,7 +123,6 @@ export class PaymentService {
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
-            debugger
             transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
             transactions.push(transaction);
         }
@@ -164,8 +163,11 @@ export class PaymentService {
         const entity = await this.generateEntityFromInitDto(paymentInit);
         entity.paymentStatus = "WAITING";
         const paymentSaved = await this.paymentrepo.save(entity);
-        debugger
+        // this.paymentOperationManagementService.startPaymentOperation
         await this.generateTransactions(paymentSaved);
+
+        await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(refundRequest, paymentSaved);
+
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
         return paymentDtoFinal;
         // return await this.init(paymentInit);

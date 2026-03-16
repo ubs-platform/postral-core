@@ -36,6 +36,7 @@ export class DummyEcommercePaymentChannelController {
         // # MessagePattern handlers for microservice communication
     @MessagePattern('postral/payment-channel/dummy-ecommerce/init')
     async handleStartPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
+        // Payment geldiğinde refund olup olmadığını kontrol edebiliriz. Ödeme ile ilgili entegrasyonda bu kontrol ile ayrı istekler atabiliriz. 
         return this.startPaymentOperation(paymentDto);
     }
 
