@@ -5,6 +5,7 @@ import {
     OneToMany,
     OneToOne,
     ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
@@ -86,5 +87,11 @@ export class Payment {
     refundItems: PostralPaymentItem[];
 
     @OneToOne(() => RefundRequest, (refundRequest) => refundRequest.payment, { nullable: true, cascade: false, eager: false })
+    @JoinColumn({ name: "refundRequestId" })
     refundRequest: RefundRequest;
+
+    @Column({ nullable: true })
+    refundRequestId?: string;
+
+
 }

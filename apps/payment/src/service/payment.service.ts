@@ -143,6 +143,7 @@ export class PaymentService {
             type: 'REFUND',
             currency: originalPayment.currency,
             customerAccountId: originalPayment.customerAccountId,
+            refundRequestId: refundRequest.id,
             items: refundRequest.items.map((item) => {
                 const pi = new PaymentItemDto({
                     itemId: item.paymentItemId,
@@ -151,15 +152,17 @@ export class PaymentService {
                     unitAmount: item.unitAmount,
                     totalAmount: item.refundAmount,
                     taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
-                    sellerAccountId: refundRequest.sellerAccountId,
+                    sellerAccountId: refundRequest.requestedToPaymentAccountId,
                 });
 
                 return pi;
             })
         });
 
-
-        return await this.init(paymentInit);
+        const entity = await this.generateEntityFromInitDto(paymentInit);
+        const paymentSaved = await this.paymentrepo.save(entity);
+        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        // return await this.init(paymentInit);
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
@@ -233,6 +236,7 @@ export class PaymentService {
         p.items = items;
         p.customerAccountId = customerAccountId;
         p.customerAccountName = customerAccount.name;
+        p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {

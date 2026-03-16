@@ -21,6 +21,8 @@ export interface PaymentInitDTO {
     refundPaymentId?: string; // Only for REFUND type
 
     customerAccountId: string;
+
+    refundRequestId?: string; // Only for REFUND type
 }
 
 export class PaymentInitDTO implements PaymentInitDTO {
