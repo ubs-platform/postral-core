@@ -166,7 +166,11 @@ export class PaymentService {
         // this.paymentOperationManagementService.startPaymentOperation
         await this.generateTransactions(paymentSaved);
 
-        await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(refundRequest, paymentSaved);
+        await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
+            refundRequest, 
+            await this.findPaymentById(paymentSaved.id, true) as PaymentFullDTO, 
+            await this.findPaymentById(refundRequest.paymentId, true) as PaymentFullDTO
+        );
 
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
         return paymentDtoFinal;

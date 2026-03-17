@@ -18,12 +18,14 @@ import { TaxDTO } from '@tk-postral/payment-common';
 
 @Injectable()
 export class CalculationService {
+
     constructor(
         private itemService: ItemService,
         private accountService: AccountService,
         private itemTaxService: ItemTaxService,
         private itemPriceService: ItemPriceService,
     ) {}
+
 
     async calculateTotalAmount(
         paymentItems: ItemListCalculationInputDto,

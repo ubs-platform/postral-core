@@ -20,6 +20,7 @@ import { TypeAssertionUtil } from '../util/type-assertion';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
+import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -62,19 +63,40 @@ export class PaymentOperationManagementService {
         );
     }
 
-    startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, paymentSaved: Payment) {
-        // İade talebi için ödeme işlemi başlatma
-        // Eski paymentOperation'lar getirilecek ve yeni refund miktarı kadar denkleştirilecek
-        // Örn: 30 liralık paymentta 
-        // Stripe 15tl
-        // Paytr 10 tl
-        // ve başka bir entegratör 5 tl ödeme operasyonu varsa, 
-        // refund için açılacak paymentOperation'larda bu oranlara göre açılacak.
-        // 30 liralık paymentın 20 lirası refund edilecekse, Stripe için 15tl, paytr için ise 5 tl refund operasyonu açılacak.
-        // Oranlar sonradan da konuşulabilir ancak bunu basit tutmak istiyorum.
+    async startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, refundPayment: PaymentFullDTO, purchasePayment: PaymentFullDTO) {
+        const totalRefundAmount = refundPayment.totalAmount;
+        const totalPaidAmount = purchasePayment.totalAmount;
 
-        // TODO:
-        
+        const refundRatio = RatioCalculationUtil.calculateRefundRatio(totalRefundAmount, totalPaidAmount);
+
+        const alreadyCompletedOps = await this.paymentChannelOperationRepo.find({
+            where: [
+                { paymentId: purchasePayment.id, status: 'COMPLETED' },
+            ],
+        });
+        const refundOperationsToCreate: PaymentChannelOperation[] = [];
+        for (let index = 0; index < alreadyCompletedOps.length; index++) {
+            const element = alreadyCompletedOps[index];
+            const refundAmountForThisOp = RatioCalculationUtil.multiplyWithRatio(element.amount, refundRatio);
+            if (refundAmountForThisOp <= 0) {
+                continue;
+            }
+            const refundOp = new PaymentChannelOperation();
+            refundOp.amount = refundAmountForThisOp;
+            refundOp.currency = purchasePayment.currency;
+            refundOperationsToCreate.push(refundOp);
+        }
+        const savedList = await this.paymentChannelOperationRepo.save(refundOperationsToCreate);
+        for (let index = 0; index < savedList.length; index++) {
+            const saved = savedList[index];
+            // const result =
+            await this.eventSenderService.initializePaymentChannelOperation(
+                saved.paymentChannelId,
+                refundPayment,
+            );
+        }
+
+
     }
 
     async startPaymentOperation(paymentFullDto: PaymentFullWithCaptureInfoDTO) {
@@ -183,6 +205,7 @@ export class PaymentOperationManagementService {
                 console.warn(
                     `Payment operation ${paymentOperation.id} could not be cancelled.`,
                 );
+
                 // throw new Error(
                 //     `Payment operation ${paymentOperation.id} could not be cancelled.`,
                 // );
