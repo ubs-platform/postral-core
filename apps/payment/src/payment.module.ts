@@ -58,9 +58,13 @@ import { PaymentMicroserviceController } from './controller/payment-microservice
 import { AuthUtilService } from './service/auth-util.service';
 import { RefundService } from './service/refund.service';
 import { RefundController } from './refund.controller';
+import { ScheduleModule } from '@nestjs/schedule';
+import { LocalEventService } from './service/local-event.service';
 
 @Module({
     imports: [
+        ScheduleModule.forRoot(),
+
         TypeOrmModule.forFeature(PaymentsEntities),
         TypeOrmModule.forRoot({
             type: 'mariadb',
@@ -124,7 +128,8 @@ import { RefundController } from './refund.controller';
         InvoiceAddressMapper,
         InvoiceAccountMapper,
         AuthUtilService,
-        RefundService
+        RefundService,
+        LocalEventService
     ],
     controllers: [
         PaymentController,

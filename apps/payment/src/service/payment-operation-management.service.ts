@@ -20,6 +20,8 @@ import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
+import { exec } from 'child_process';
+import { LocalEventService } from './local-event.service';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -32,6 +34,7 @@ export class PaymentOperationManagementService {
         private calcService: CalculationService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
+        private localEventService: LocalEventService,
     ) { }
     // This service will handle payment operation management logic
 
@@ -40,7 +43,6 @@ export class PaymentOperationManagementService {
         result: PaymentChannelStatusDTO,
         paymentId: string,
     ) {
-        paymentOperationRecord.id = result.paymentChannelOperationId!;
         paymentOperationRecord.operationId = result.paymentChannelOperationId!;
         paymentOperationRecord.paymentId = paymentId;
         paymentOperationRecord.paymentChannelId = result.paymentChannelId!;
@@ -161,16 +163,23 @@ export class PaymentOperationManagementService {
         await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
     }
 
-    // @Cron('*/5 * * * * *')
-    // async checkAndUpdateAllOperationStatuses(): Promise<void> {
-    //     const paymentOperations = await this.paymentChannelOperationRepo.find({
-    //         where: [{ status: 'WAITING' }],
-    //     });
-    //     if (paymentOperations.length == 0) {
-    //         return;
-    //     }
-    //     await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
-    // }
+    @Cron('*/40 * * * * *')
+    async checkAndUpdateAllOperationStatuses(): Promise<void> {
+        const paymentOperations = await this.paymentChannelOperationRepo.find({
+            where: [{ status: 'WAITING' }],
+        });
+        if (paymentOperations.length == 0) {
+            exec(`kdialog --msgbox "Kontrol edilecek ödeme operasyonu bulunamadı. Bir sonraki kontrolde görüşmek üzere!"`);
+            return;
+        }
+        exec(`kdialog --msgbox "Bir ya da daha fazla ödeme operasyonu bulundu. Durumları güncelleniyor..."`);
+
+        await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
+        for (let index = 0; index < paymentOperations.length; index++) {
+            const paymentOperation = paymentOperations[index];
+            this.localEventService.emitOperationUpdated(paymentOperation.paymentId);
+        }
+    }
 
     private async checkAndUpdateOperationStatusesRaw(
         paymentOperations: PaymentChannelOperation[],
@@ -187,6 +196,8 @@ export class PaymentOperationManagementService {
                 result,
                 paymentOperation.paymentId,
             );
+
+
         }
     }
 
@@ -224,8 +235,11 @@ export class PaymentOperationManagementService {
         });
     }
 
+    /**
+     * Yetkilendirilmiş ve tetiklenmeye hazır olan ödeme operasyonlarını tetikler. Genellikle bir ödemenin tamamlanması için tüm operasyonların tamamlanması gerekir, bu yüzden ödeme id'sine göre çekip tetikliyoruz. Ancak bazı durumlarda operasyon bazında da tetikleme yapılabilir, bu durumda operationId'ye göre çekip tetikleyecek bir method daha ekleyebiliriz.
+     * @param id 
+     */
     async firePaymentOperationsByPaymentId(id: string) {
-        // TODO: Burada sadece READY olanları değil, WAITING olanları da kontrol edip atmamız gerekebilir. WAITING olanlar bazen READY olup atılabilir hale gelebilirler.
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: id, status: 'READY' }],
         });

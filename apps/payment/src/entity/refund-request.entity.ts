@@ -6,6 +6,7 @@ import {
     BaseEntity,
     OneToOne,
     JoinColumn,
+    ManyToOne,
 } from 'typeorm';
 import { RefundRequestItem } from './refund-request-item.entity';
 import { Payment } from './payment.entity';
@@ -23,9 +24,6 @@ export class RefundRequest extends BaseEntity {
     @Column()
     paymentId: string;
 
-    @OneToOne(() => Payment, (payment) => payment.refundRequest, { nullable: true, cascade: false, eager: false })
-    @JoinColumn({ name: 'paymentId' })
-    payment: Payment;
 
     @Column({
         type: 'varchar',

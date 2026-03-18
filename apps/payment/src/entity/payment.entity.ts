@@ -86,10 +86,6 @@ export class Payment {
     })
     refundItems: PostralPaymentItem[];
 
-    @OneToOne(() => RefundRequest, (refundRequest) => refundRequest.payment, { nullable: true, cascade: false, eager: false })
-    @JoinColumn({ name: "refundRequestId" })
-    refundRequest: RefundRequest;
-
     @Column({ nullable: true })
     refundRequestId?: string;
 

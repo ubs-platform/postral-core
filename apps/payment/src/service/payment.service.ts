@@ -29,6 +29,7 @@ import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
+import { LocalEventService } from './local-event.service';
 
 @Injectable()
 export class PaymentService {
@@ -45,7 +46,17 @@ export class PaymentService {
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
+        private localEventService: LocalEventService,
     ) { }
+
+    async onModuleInit() {
+            exec(`kdialog --msgbox "PaymentService initialized. Subscribing to local payment operation updates..."`);
+
+        this.localEventService.operationsUpdated.subscribe(async (paymentId) => {
+            exec(`kdialog --msgbox "Ödeme operasyonu güncellemesi alındı. İlgili ödeme ID: ${paymentId}. Ödeme durumu güncelleniyor..."`);
+            await this.updatePaymentByOperationStatuses(paymentId);
+        });
+    }
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
@@ -327,6 +338,7 @@ export class PaymentService {
         ) {
             return this.paymentMapper.toDto(payment);
         }
+        // if (payment.type == "REFUND") debugger
         // Ödeme operasyonlarının durumlarını kontrol et ve güncelle
         await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
             id,
@@ -353,6 +365,8 @@ export class PaymentService {
             );
             await this.generateTransactions(payment);
         }
+
+        this.localEventService.emitOperationUpdated(payment.id);
         return dto;
     }
 
