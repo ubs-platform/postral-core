@@ -101,11 +101,7 @@ export class PaymentService {
     }
 
     async generateTransactions(paymentReal: Payment) {
-        // if (paymentReal.paymentStatus !== 'COMPLETED') {
-        //     throw new Error(
-        //         'Only completed payments can generate transactions.',
-        //     );
-        // }
+
         let items: PaymentItemDto[] = [];
         if (paymentReal.items?.length > 0) {
             items = this.paymentItemMapper.toDto(paymentReal.items);

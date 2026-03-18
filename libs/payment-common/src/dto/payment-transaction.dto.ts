@@ -1,7 +1,9 @@
 import { PaymentErrorStatus, PaymentStatus } from '../type/status';
 import { SellerPaymentOrderType, } from '../type/transaction-type';
 
-export class PaymentTransactionDTO {
+
+
+export class SellerPaymentOrderDTO {
     id?: string;
     amount: number;
     taxAmount: number;
@@ -24,7 +26,7 @@ export class PaymentTransactionDTO {
     hasFinalizedInvoice?: boolean;
 }
 
-export class PaymentTransactionSearchDTO {
+export class PaymentSellerOrderSearchDTO {
     id?: string;
     paymentId?: string;
     // Çoklu arama için virgül ile ayrılmış değerler
@@ -39,9 +41,24 @@ export class PaymentTransactionSearchDTO {
     // searchSide?: 'CUSTOMER' | 'SELLER' | "ADMIN";
 }
 
-export class PaymentTransactionSearchPaginationDTO extends PaymentTransactionSearchDTO {
+export class PaymentSellerOrderSearchPaginationDTO extends PaymentSellerOrderSearchDTO {
     page: number;
     size: number;
     sortBy: string;
     sortRotation: 'asc' | 'desc';
 }
+
+/**
+ * @deprecated This DTO is renamed to SellerPaymentOrderDTO, use that instead. This will be removed in future versions.
+ */
+export class PaymentTransactionDTO extends SellerPaymentOrderDTO {}
+
+/**
+ * @deprecated This DTO is renamed to PaymentSellerOrderSearchPaginationDTO, use that instead. This will be removed in future versions.
+ */
+export class PaymentTransactionSearchPaginationDTO extends PaymentSellerOrderSearchPaginationDTO {}
+
+/**
+ * @deprecated This DTO is renamed to PaymentSellerOrderSearchDTO, use that instead. This will be removed in future versions.
+ */
+export class PaymentTransactionSearchDTO extends PaymentSellerOrderSearchDTO {}

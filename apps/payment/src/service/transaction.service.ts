@@ -67,6 +67,26 @@ export class SellerPaymentOrderService {
     async addTransaction(
         tr: PaymentTransactionDTO,
     ): Promise<PaymentTransactionDTO> {
+        // zaten varsa varolanın durumunu vs. güncelle, yoksa yenisini ekle. Miktar değişmeyecek.
+        const existing = await this.transactionRepository.findOne({
+            where: {
+                sourceAccountId: tr.sourceAccountId,
+                targetAccountId: tr.targetAccountId,
+                sellerOrderType: tr.transactionType,
+                paymentId: tr.paymentId,
+                currency: tr.currency,
+            },
+        });
+        // debugger
+        if (existing) {
+            existing.paymentStatus = tr.paymentStatus;
+            existing.updatedAt = new Date();
+            existing.errorStatus = tr.errorStatus;
+            existing.operationNote = tr.operationNote;
+            await this.transactionRepository.save(existing);
+            return this.toDto(existing);
+        }
+        
         const entity = this.fromDto(tr);
         await this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)

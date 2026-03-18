@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Payment, PaymentChannelOperation } from '../entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,7 +8,6 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { EventSenderService } from './event-management.service';
-import { SellerPaymentOrderService } from './transaction.service';
 import {
     PaymentChannelStatusDTO,
     PaymentCaptureInfoDTO,
@@ -88,14 +87,20 @@ export class PaymentOperationManagementService {
             refundOp.paymentId = refundPayment.id;
             refundOperationsToCreate.push(refundOp);
         }
-        const savedList = await this.paymentChannelOperationRepo.save(refundOperationsToCreate);
-        for (let index = 0; index < savedList.length; index++) {
-            const saved = savedList[index];
+        // const savedList = await this.paymentChannelOperationRepo.save(refundOperationsToCreate);
+        for (let index = 0; index < refundOperationsToCreate.length; index++) {
+            const refundOpToCreate = refundOperationsToCreate[index];
             // const result =
-            await this.eventSenderService.initializePaymentChannelOperation(
-                saved.paymentChannelId,
+            const result = await this.eventSenderService.initializePaymentChannelOperation(
+                refundOpToCreate.paymentChannelId,
                 refundPayment,
             );
+
+            refundOpToCreate.operationId = result.paymentChannelOperationId;
+            refundOpToCreate.status = "WAITING";
+            
+            const saved = await this.paymentChannelOperationRepo.save(refundOpToCreate);
+            console.debug(`Refund operation created with ID: ${saved.id} for refund request ${refundRequest.id}`);
         }
 
 
@@ -225,6 +230,7 @@ export class PaymentOperationManagementService {
     }
 
     async firePaymentOperationsByPaymentId(id: string) {
+        // TODO: Burada sadece READY olanları değil, WAITING olanları da kontrol edip atmamız gerekebilir. WAITING olanlar bazen READY olup atılabilir hale gelebilirler.
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: id, status: 'READY' }],
         });
