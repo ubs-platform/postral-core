@@ -73,7 +73,6 @@ export class PaymentOperationManagementService {
                 { paymentId: purchasePayment.id, status: 'COMPLETED' },
             ],
         });
-        const refundOperationsToCreate: PaymentChannelOperation[] = [];
         for (let index = 0; index < alreadyCompletedOps.length; index++) {
             const element = alreadyCompletedOps[index];
             const refundAmountForThisOp = RatioCalculationUtil.multiplyWithRatio(element.amount, refundRatio);
@@ -81,25 +80,21 @@ export class PaymentOperationManagementService {
                 continue;
             }
             const refundOp = new PaymentChannelOperation();
+
             refundOp.amount = refundAmountForThisOp;
             refundOp.currency = purchasePayment.currency;
             refundOp.paymentChannelId = element.paymentChannelId;
             refundOp.paymentId = refundPayment.id;
-            refundOperationsToCreate.push(refundOp);
-        }
-        // const savedList = await this.paymentChannelOperationRepo.save(refundOperationsToCreate);
-        for (let index = 0; index < refundOperationsToCreate.length; index++) {
-            const refundOpToCreate = refundOperationsToCreate[index];
-            // const result =
+            // refundOperationsToCreate.push(refundOp);
             const result = await this.eventSenderService.initializePaymentChannelOperation(
-                refundOpToCreate.paymentChannelId,
+                refundOp.paymentChannelId,
                 refundPayment,
             );
 
-            refundOpToCreate.operationId = result.paymentChannelOperationId;
-            refundOpToCreate.status = "WAITING";
-            
-            const saved = await this.paymentChannelOperationRepo.save(refundOpToCreate);
+            refundOp.operationId = result.paymentChannelOperationId;
+            refundOp.status = result.paymentStatus;
+
+            const saved = await this.paymentChannelOperationRepo.save(refundOp);
             console.debug(`Refund operation created with ID: ${saved.id} for refund request ${refundRequest.id}`);
         }
 
