@@ -52,7 +52,7 @@ export class RefundService {
         this.validateRefundItems(payment, dto.items);
         this.assertItemsBelongToSingleSeller(payment, dto.items);
 
-        const request = this.buildRefundRequestEntity(user, dto, payment);
+        const request = await this.buildRefundRequestEntity(user, dto, payment);
 
         const savedRequest = await this.refundRequestRepo.save(request);
         return this.mapToDTO(savedRequest);
@@ -202,17 +202,22 @@ export class RefundService {
         }
     }
 
-    private buildRefundRequestEntity(
+    private async buildRefundRequestEntity(
         user: UserAuthBackendDTO,
         dto: CreateRefundRequestDTO,
         payment: Payment,
-    ): RefundRequest {
+    ): Promise<RefundRequest> {
         const request = new RefundRequest();
         request.paymentId = dto.paymentId;
         request.requestedByAccountId = user.id;
-        
+        const firstItem = (await this.paymentItemRepo.findOne({
+            where: { id: dto.items[0].paymentItemId },
+        }));
+        if (!firstItem) {
+            throw new NotFoundException(`Payment item with id ${dto.items[0].paymentItemId} not found`);
+        }
         request.requestedByPaymentAccountId = payment.customerAccountId;
-        request.requestedToPaymentAccountId = payment.items[0].sellerAccountId;
+        request.requestedToPaymentAccountId = firstItem.sellerAccountId;
         request.status = 'PENDING';
         request.items = this.buildRefundRequestItems(payment, dto.items);
         return request;
@@ -280,7 +285,7 @@ export class RefundService {
                 `User is not authorized to ${action} this refund`,
             );
         }
-
+        // exec(`kdialog --msgbox "ownedSellerIds: ${JSON.stringify(ownedSellerIds)}, targetPaymentAccountId: ${targetPaymentAccountId}"`);
         if (!ownedSellerIds.includes(targetPaymentAccountId)) {
             throw new ForbiddenException(
                 'User does not have EDITOR or OWNER rights for the relevant seller accounts',

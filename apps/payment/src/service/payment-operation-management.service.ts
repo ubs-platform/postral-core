@@ -84,6 +84,8 @@ export class PaymentOperationManagementService {
             const refundOp = new PaymentChannelOperation();
             refundOp.amount = refundAmountForThisOp;
             refundOp.currency = purchasePayment.currency;
+            refundOp.paymentChannelId = element.paymentChannelId;
+            refundOp.paymentId = refundPayment.id;
             refundOperationsToCreate.push(refundOp);
         }
         const savedList = await this.paymentChannelOperationRepo.save(refundOperationsToCreate);
