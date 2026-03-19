@@ -163,16 +163,14 @@ export class PaymentOperationManagementService {
         await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
     }
 
-    @Cron('*/40 * * * * *')
+    @Cron('0 */2 * * * *')
     async checkAndUpdateAllOperationStatuses(): Promise<void> {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ status: 'WAITING' }],
         });
         if (paymentOperations.length == 0) {
-            exec(`kdialog --msgbox "Kontrol edilecek ödeme operasyonu bulunamadı. Bir sonraki kontrolde görüşmek üzere!"`);
             return;
         }
-        exec(`kdialog --msgbox "Bir ya da daha fazla ödeme operasyonu bulundu. Durumları güncelleniyor..."`);
 
         await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
         for (let index = 0; index < paymentOperations.length; index++) {

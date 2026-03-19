@@ -92,13 +92,10 @@ export class DummyEcommercePaymentChannelController {
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
         if (paymentDto.type == "REFUND") {
-            exec(`kdialog --msgbox "Refund payment started with id: ${paymentDto.id}. After 30 seconds, it will be automatically completed. You can also complete or refuse the payment manually by clicking the buttons."`);
             // 30 saniye sonra otomatik olarak ödemeyi tamamla.
             setTimeout(() => {
                 if (this.statusMapByOperationId.get(paymentDto.id) === 'WAITING') {
                     this.setPaymentStatusAndRedirect(paymentDto.id, 'COMPLETED', '');
-                    exec(`kdialog --msgbox "Refund operation is completed. Thank you for your patience."`);
-
                 }
             }, 30000);
         }

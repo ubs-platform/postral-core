@@ -50,10 +50,8 @@ export class PaymentService {
     ) { }
 
     async onModuleInit() {
-            exec(`kdialog --msgbox "PaymentService initialized. Subscribing to local payment operation updates..."`);
 
         this.localEventService.operationsUpdated.subscribe(async (paymentId) => {
-            exec(`kdialog --msgbox "Ödeme operasyonu güncellemesi alındı. İlgili ödeme ID: ${paymentId}. Ödeme durumu güncelleniyor..."`);
             await this.updatePaymentByOperationStatuses(paymentId);
         });
     }
@@ -326,7 +324,9 @@ export class PaymentService {
     }
 
     // Güncellenmiş ödeme operasyon durumlarına göre ödemeyi günceller
-    async updatePaymentByOperationStatuses(id: string) {
+    // checkOperations=false: operasyon durumları zaten güncel (cron'dan geliyorsa)
+    // checkOperations=true: önce operasyonları güncelle, sonra ödemeyi kontrol et (webhook'tan geliyorsa)
+    async updatePaymentByOperationStatuses(id: string, checkOperations = false) {
         let payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
             throw new NotFoundException('Payment not found');
@@ -338,11 +338,12 @@ export class PaymentService {
         ) {
             return this.paymentMapper.toDto(payment);
         }
-        // if (payment.type == "REFUND") debugger
-        // Ödeme operasyonlarının durumlarını kontrol et ve güncelle
-        await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
-            id,
-        );
+
+        if (checkOperations) {
+            await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
+                id,
+            );
+        }
 
         // Toplam ödenen veya yetkilendirilen miktarı hesapla
         const paidAmount =
@@ -366,14 +367,11 @@ export class PaymentService {
             await this.generateTransactions(payment);
         }
 
-        this.localEventService.emitOperationUpdated(payment.id);
         return dto;
     }
 
     async handlePaymentOperationStatusUpdated(operationId: string) {
-        await this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(
-            operationId,
-        );
+        await this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(operationId);
         const operation =
             await this.paymentOperationManagementService.findOperationById(
                 operationId,
@@ -382,8 +380,7 @@ export class PaymentService {
             throw new NotFoundException('Payment operation not found');
         }
 
-        await this.updatePaymentByOperationStatuses(operation.paymentId);
-
-        // await this.payment
+        // checkOperations=false: operasyon zaten yukarıda güncellendi
+        await this.updatePaymentByOperationStatuses(operation.paymentId, false);
     }
 }
