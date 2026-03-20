@@ -181,27 +181,9 @@ export class PaymentOperationManagementService {
 
     }
 
-    @Cron('0 */2 * * * *')
-    async checkAndUpdateAllOperationStatuses(): Promise<void> {
-        const paymentOperations = await this.paymentChannelOperationRepo.find({
-            where: [{ status: 'WAITING' }],
-        });
-        if (paymentOperations.length == 0) {
-            return;
-        }
-        const alreadySendPaymentId = new Set<string>();
-        await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
-        for (let index = 0; index < paymentOperations.length; index++) {
-            const paymentOperation = paymentOperations[index];
-            const paymentId = paymentOperation.paymentId
-            // Başka yerde ödeme operasyonu güncellenmiş olabilir. Cron ile anlaşılmayabilir bu yüzden event geldiği sırada ya da yine iç serviste operasyon güncellendiği sırada da kontrol edip event atmak lazım.
-            this.sendAllOperationsAreCompletedOrReadyEvent(paymentId);
-            alreadySendPaymentId.add(paymentId);
-        }
-    }
 
     private async checkAndUpdateOperationStatusesRaw(
-        paymentOperations: PaymentChannelOperation[],
+        paymentOperations: PaymentChannelOperation[], 
     ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];

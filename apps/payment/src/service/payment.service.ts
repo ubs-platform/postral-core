@@ -30,6 +30,7 @@ import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { LocalEventService } from './local-event.service';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentService {
@@ -46,14 +47,13 @@ export class PaymentService {
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
-        private localEventService: LocalEventService,
     ) { }
 
     async onModuleInit() {
 
-        this.localEventService.operationsUpdated.subscribe(async (paymentId) => {
-            await this.updatePaymentByOperationStatuses(paymentId);
-        });
+        // this.localEventService.operationsUpdated.subscribe(async (paymentId) => {
+        //     await this.updatePaymentByOperationStatuses(paymentId);
+        // });
     }
 
     async findAllRaw(): Promise<Payment[]> {
@@ -75,7 +75,24 @@ export class PaymentService {
         });
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
-    async findPaymentById(id: string, full : true): Promise<PaymentFullDTO>;
+
+    @Cron('*/30 * * * * *') //--- IGNORE ---
+    async checkAndUpdateWaitingPayments() {
+        const waitingPayments = await this.paymentrepo.find({
+            where: { paymentStatus: 'WAITING' },
+        });
+        if (waitingPayments.length === 0) {
+            // exec('kdialog --title "Postral" --passivepopup "No waiting payments to check." 5');
+            return;
+        }
+        for (const payment of waitingPayments) {
+            await this.updatePaymentByOperationStatuses(payment.id, true);
+        }
+        // exec(`kdialog --title "Postral" --passivepopup "Checked waiting payments. ${waitingPayments.length} payments checked." 5`);
+
+    }
+
+    async findPaymentById(id: string, full: true): Promise<PaymentFullDTO>;
     async findPaymentById(id: string, full?: false): Promise<PaymentDTO>;
     async findPaymentById(
         id: string,
@@ -136,7 +153,7 @@ export class PaymentService {
     }
 
     async createRefundPayment(refundRequest: RefundRequestDTO) {
-        if (refundRequest.status=== 'APPROVED') {
+        if (refundRequest.status === 'APPROVED') {
             throw new Error('Refund request is already approved. Cannot create refund payment again.');
         }
         const originalPayment = await this.findPaymentByIdRaw(refundRequest.paymentId, true);
@@ -158,7 +175,7 @@ export class PaymentService {
                     totalAmount: item.refundAmount,
                     taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
                     sellerAccountId: refundRequest.requestedToPaymentAccountId,
-                    
+
                 });
 
                 return pi;
@@ -172,8 +189,8 @@ export class PaymentService {
         await this.generateTransactions(paymentSaved);
 
         await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
-            refundRequest, 
-            await this.findPaymentById(paymentSaved.id, true) as PaymentFullDTO, 
+            refundRequest,
+            await this.findPaymentById(paymentSaved.id, true) as PaymentFullDTO,
             await this.findPaymentById(refundRequest.paymentId, true) as PaymentFullDTO
         );
 
@@ -326,7 +343,7 @@ export class PaymentService {
     // Güncellenmiş ödeme operasyon durumlarına göre ödemeyi günceller
     // checkOperations=false: operasyon durumları zaten güncel (cron'dan geliyorsa)
     // checkOperations=true: önce operasyonları güncelle, sonra ödemeyi kontrol et (webhook'tan geliyorsa)
-    async updatePaymentByOperationStatuses(id: string, checkOperations = false) {
+    async updatePaymentByOperationStatuses(id: string, validatePaymentOperationsInChannelWrapServices = false) {
         let payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
             throw new NotFoundException('Payment not found');
@@ -339,7 +356,7 @@ export class PaymentService {
             return this.paymentMapper.toDto(payment);
         }
 
-        if (checkOperations) {
+        if (validatePaymentOperationsInChannelWrapServices) {
             await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
                 id,
             );
@@ -380,7 +397,7 @@ export class PaymentService {
             throw new NotFoundException('Payment operation not found');
         }
 
-        // checkOperations=false: operasyon zaten yukarıda güncellendi
+        // validatePaymentOperationsInChannelWrapServices=false: operasyon zaten yukarıda güncellendi
         await this.updatePaymentByOperationStatuses(operation.paymentId, false);
     }
 }
