@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import {
@@ -13,6 +13,7 @@ import {
     AccountDTO,
     PaymentDTO,
     PaymentSearchPaginationFlatDTO,
+    RelatedAccountFilterDto,
 } from '@tk-postral/payment-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
@@ -129,6 +130,7 @@ export class PaymentSearchService {
                 },
             });
         }
+        
         if (modelSearch.paymentStatus && modelSearch.paymentStatus.length > 0) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
@@ -182,19 +184,25 @@ export class PaymentSearchService {
 
     async accountIdsInPayment(
         user?: UserAuthBackendDTO,
+       filter?: RelatedAccountFilterDto
     ): Promise<AccountDTO[]> {
         if (user && user.roles.includes('ADMIN')) {
             // Admin tüm hesapları görebilir bu yüzden account servisten tüm hesapları çekebiliriz.
             return await this.accountService.fetchAll({ admin: 'true' }, user);
         }
-        const accountIdsRelated =
+        const relatedAccountIds =
             await this.authUtilService.fetchUserAccountIds(user!.id, [
                 'OWNER',
                 'EDITOR',
                 'VIEWER',
             ]);
+        // exec(`kdialog --msgbox "User related account ids: ${JSON.stringify(relatedAccountIds)}"`);
         return await this.accountService.fetchFromRelatedTransactions(
-            accountIdsRelated,
+            {
+                relatedAccountIds,
+                selectFrom: filter?.selectFrom || 'BOTH',
+                filterRelatedAccountIdsIn: filter?.filterRelatedAccountIdsIn || 'BOTH',
+            }
         );
     }
 }

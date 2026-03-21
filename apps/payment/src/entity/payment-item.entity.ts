@@ -58,4 +58,21 @@ export class PostralPaymentItem {
 
     @Column()
     unit: string;
+
+    @Column({ default: false })
+    refunded: boolean;
+
+    @Column({ type: 'float', default: 0 })
+    refundCount: number;
+
+    @Column({ nullable: true })
+    refundPaymentId?: string;
+
+    @Column({ nullable: true, type: 'timestamp' })
+    refundDate?: Date;
+
+    @ManyToOne(() => Payment, (a) => a.refundItems, {
+        onDelete: 'CASCADE',
+    })
+    refundPayment: Payment;
 }

@@ -9,10 +9,10 @@ import {
 } from '@tk-postral/payment-common';
 import { InvoiceAddressMapper } from './invoice-address.mapper';
 import { InvoiceAccountMapper } from './invoice-account.mapper';
-import { PaymentTransaction } from '../entity';
+import { SellerPaymentOrder } from '../entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TransactionSearchService } from '../service/transaction-search.service';
+import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 
 @Injectable()
 export class InvoiceMapper {
@@ -20,14 +20,14 @@ export class InvoiceMapper {
         private readonly invoiceAddressMapper: InvoiceAddressMapper,
         private readonly invoiceAccountMapper: InvoiceAccountMapper,
         // private readonly transactionRepository: Repository<PaymentTransaction>,
-        private readonly transactionSearchService: TransactionSearchService,
+        private readonly transactionSearchService: SellerPaymentOrderSearchService,
     ) {}
 
     toDto(entity: Invoice): InvoiceDTO {
         const dto: InvoiceDTO = {
             id: entity.id,
             paymentId: entity.paymentId,
-            transactionId: entity.transactionId,
+            sellerPaymentOrderId: entity.sellerPaymentOrderId,
             invoiceNumber: entity.invoiceNumber,
             invoiceDate: entity.invoiceDate,
             status: "",
@@ -63,22 +63,22 @@ export class InvoiceMapper {
     }
 
     async toEntityFromTransaction(
-        transactionId: string,
+        sellerPaymentOrderId: string,
         userId?: string,
     ) {
-        const transaction = await this.transactionSearchService.fetchByIdWithRelationsInternal(transactionId);
+        const transaction = await this.transactionSearchService.fetchByIdWithRelationsInternal(sellerPaymentOrderId);
         if (!transaction) {
-            throw new Error('Transaction not found for id: ' + transactionId);
+            throw new Error('Transaction not found for id: ' + sellerPaymentOrderId);
         }
         if (!transaction.sourceAccount || !transaction.targetAccount) {
-            throw new Error('Transaction accounts not found for id: ' + transactionId);
+            throw new Error('Transaction accounts not found for id: ' + sellerPaymentOrderId);
         }
         if (!transaction.sourceAccount.defaultAddress || !transaction.targetAccount.defaultAddress) {
-            throw new Error('Transaction account addresses not found for id: ' + transactionId);
+            throw new Error('Transaction account addresses not found for id: ' + sellerPaymentOrderId);
         }
         const entity = new Invoice();
         entity.paymentId = transaction.paymentId;
-        entity.transactionId = transaction.id!;
+        entity.sellerPaymentOrderId = transaction.id!;
         entity.invoiceNumber = "";
         entity.invoiceDate = new Date(transaction.createdAt) || new Date();
         entity.uploadedByUserId = userId || '';
@@ -98,7 +98,7 @@ export class InvoiceMapper {
     toEntity(dto: InvoiceCreateDTO): Invoice {
         const entity = new Invoice();
         entity.paymentId = dto.paymentId;
-        entity.transactionId = dto.transactionId;
+        entity.sellerPaymentOrderId = dto.sellerPaymentOrderId;
         entity.invoiceNumber = dto.invoiceNumber || '';
         entity.invoiceDate = dto.invoiceDate || new Date();
         entity.uploadedByUserId = dto.uploadedByUserId || '';

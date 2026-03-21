@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Payment, PaymentChannelOperation } from '../entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,20 +8,23 @@ import { PaymentMapper } from '../mapper/payment.mapper';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { EventSenderService } from './event-management.service';
-import { PaymentTransactionService } from './transaction.service';
 import {
     PaymentChannelStatusDTO,
     PaymentCaptureInfoDTO,
     PaymentDTO,
     PaymentFullDTO,
+    RefundRequestDTO,
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil } from '../util/type-assertion';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
+import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
+import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentOperationManagementService {
+
     /**
      *
      */
@@ -30,7 +33,7 @@ export class PaymentOperationManagementService {
         private calcService: CalculationService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
-    ) {}
+    ) { }
     // This service will handle payment operation management logic
 
     async savePaymentChannelRecord(
@@ -38,7 +41,6 @@ export class PaymentOperationManagementService {
         result: PaymentChannelStatusDTO,
         paymentId: string,
     ) {
-        paymentOperationRecord.id = result.paymentChannelOperationId!;
         paymentOperationRecord.operationId = result.paymentChannelOperationId!;
         paymentOperationRecord.paymentId = paymentId;
         paymentOperationRecord.paymentChannelId = result.paymentChannelId!;
@@ -58,6 +60,45 @@ export class PaymentOperationManagementService {
         return ItemCalculationUtil.addNumberValues(
             ...paymentOperations.map((op) => op.amount),
         );
+    }
+
+    async startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, refundPayment: PaymentFullDTO, purchasePayment: PaymentFullDTO) {
+        const totalRefundAmount = refundPayment.totalAmount;
+        const totalPaidAmount = purchasePayment.totalAmount;
+
+        const refundRatio = RatioCalculationUtil.calculateRefundRatio(totalRefundAmount, totalPaidAmount);
+
+        const alreadyCompletedOps = await this.paymentChannelOperationRepo.find({
+            where: [
+                { paymentId: purchasePayment.id, status: 'COMPLETED' },
+            ],
+        });
+        for (let index = 0; index < alreadyCompletedOps.length; index++) {
+            const element = alreadyCompletedOps[index];
+            const refundAmountForThisOp = RatioCalculationUtil.multiplyWithRatio(element.amount, refundRatio);
+            if (refundAmountForThisOp <= 0) {
+                continue;
+            }
+            const refundOp = new PaymentChannelOperation();
+
+            refundOp.amount = refundAmountForThisOp;
+            refundOp.currency = purchasePayment.currency;
+            refundOp.paymentChannelId = element.paymentChannelId;
+            refundOp.paymentId = refundPayment.id;
+            // refundOperationsToCreate.push(refundOp);
+            const result = await this.eventSenderService.initializePaymentChannelOperation(
+                refundOp.paymentChannelId,
+                refundPayment,
+            );
+
+            refundOp.operationId = result.paymentChannelOperationId;
+            refundOp.status = result.paymentStatus;
+
+            const saved = await this.paymentChannelOperationRepo.save(refundOp);
+            console.debug(`Refund operation created with ID: ${saved.id} for refund request ${refundRequest.id}`);
+        }
+
+
     }
 
     async startPaymentOperation(paymentFullDto: PaymentFullWithCaptureInfoDTO) {
@@ -120,19 +161,26 @@ export class PaymentOperationManagementService {
         await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
     }
 
-    // @Cron('*/5 * * * * *')
-    // async checkAndUpdateAllOperationStatuses(): Promise<void> {
-    //     const paymentOperations = await this.paymentChannelOperationRepo.find({
-    //         where: [{ status: 'WAITING' }],
-    //     });
-    //     if (paymentOperations.length == 0) {
-    //         return;
-    //     }
-    //     await this.checkAndUpdateOperationStatusesRaw(paymentOperations);
-    // }
+    async sendAllOperationsAreCompletedOrReadyEvent(paymentId: string): Promise<void> {
+        const paymentOperations = await this.paymentChannelOperationRepo.find({
+            where: [
+                { paymentId: paymentId }
+            ],
+        });
+
+        const completedOrReadyOps = paymentOperations.filter(op => op.status === 'READY' || op.status === 'COMPLETED');
+        const waitingOps = paymentOperations.filter(op => op.status === 'WAITING');
+
+        if (waitingOps.length > 0 || (completedOrReadyOps.length === 0)) {
+            return;
+        }
+
+
+    }
+
 
     private async checkAndUpdateOperationStatusesRaw(
-        paymentOperations: PaymentChannelOperation[],
+        paymentOperations: PaymentChannelOperation[], 
     ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
@@ -146,6 +194,8 @@ export class PaymentOperationManagementService {
                 result,
                 paymentOperation.paymentId,
             );
+
+
         }
     }
 
@@ -166,6 +216,7 @@ export class PaymentOperationManagementService {
                 console.warn(
                     `Payment operation ${paymentOperation.id} could not be cancelled.`,
                 );
+
                 // throw new Error(
                 //     `Payment operation ${paymentOperation.id} could not be cancelled.`,
                 // );
@@ -182,6 +233,10 @@ export class PaymentOperationManagementService {
         });
     }
 
+    /**
+     * Yetkilendirilmiş ve tetiklenmeye hazır olan ödeme operasyonlarını tetikler. Genellikle bir ödemenin tamamlanması için tüm operasyonların tamamlanması gerekir, bu yüzden ödeme id'sine göre çekip tetikliyoruz. Ancak bazı durumlarda operasyon bazında da tetikleme yapılabilir, bu durumda operationId'ye göre çekip tetikleyecek bir method daha ekleyebiliriz.
+     * @param id 
+     */
     async firePaymentOperationsByPaymentId(id: string) {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: id, status: 'READY' }],

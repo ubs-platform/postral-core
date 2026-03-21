@@ -23,7 +23,7 @@
       "type": "library",
       "root": "libs/payment-common",
       "entryFile": "index",
-      "sourceRoot": "@tk-postral/payment-common",
+      "sourceRoot": "libs/payment-common/src",
       "compilerOptions": {
         "tsConfigPath": "libs/payment-common/tsconfig.lib.json"
       }

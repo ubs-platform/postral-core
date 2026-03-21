@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+
 import { PaymentItemDto } from './payment-item.dto';
 import { PaymentItemInputDto } from './payment-item-input.dto';
 
@@ -17,5 +18,15 @@ export interface PaymentInitDTO {
 
     items: PaymentItemInputDto[];
 
+    // refundPaymentId?: string; // Only for REFUND type
+
     customerAccountId: string;
+
+    refundRequestId?: string; // Only for REFUND type
+}
+
+export class PaymentInitDTO implements PaymentInitDTO {
+    constructor(partial: Partial<PaymentInitDTO>) {
+        Object.assign(this, partial);
+    }
 }

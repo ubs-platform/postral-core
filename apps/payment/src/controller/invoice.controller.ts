@@ -16,17 +16,22 @@ import {
     InvoiceCreateDTO,
     InvoiceUpdateDTO,
     InvoiceSearchPaginationDTO,
+    PaymentTransactionDTO,
 } from '@tk-postral/payment-common';
 import { MessagePattern } from '@nestjs/microservices';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PaymentService } from '../service/payment.service';
-import { TransactionSearchService } from '../service/transaction-search.service';
+import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 import {
     CurrentUser,
+    EntityOwnershipService,
     JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { exec } from 'child_process';
+import { AuthUtilService } from '../service/auth-util.service';
+import { PostralConstants } from '../util/consts';
+import { lastValueFrom } from 'rxjs';
 
 export interface UploadFileCategoryResponse {
     category?: string;
@@ -48,15 +53,37 @@ export interface UploadFileCategoryRequest {
 export class InvoiceController {
     constructor(
         private readonly invoiceService: InvoiceService,
-        private readonly transactionService: TransactionSearchService,
+        private readonly transactionService: SellerPaymentOrderSearchService,
         private readonly paymentService: PaymentService,
-        private readonly paymentSearchService: TransactionSearchService,
+        private readonly paymentSearchService: SellerPaymentOrderSearchService,
+        private readonly eoService: EntityOwnershipService,
     ) { }
 
+
+
+    private async assertNoFinalizedTransaction(
+        paymentId: string,
+        sellerPaymentOrderId: string,
+    ) {
+        const finalizedInvoices = await this.invoiceService.findAll({
+            paymentId,
+            sellerPaymentOrderId: sellerPaymentOrderId,
+            finalized: 'true',
+        });
+
+        if (finalizedInvoices.length > 0) {
+            throw new Error(
+                'A finalized invoice already exists for this payment',
+            );
+        }
+    }
+    
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.
     @Post()
     @UseInterceptors()
+    @UseGuards(JwtAuthGuard)
     async create(@Body() createDto: InvoiceCreateDTO): Promise<InvoiceDTO> {
+
         return this.invoiceService.create(createDto);
     }
 
@@ -74,8 +101,9 @@ export class InvoiceController {
     }
 
     @Delete(':id')
-    async delete(@Param('id') id: string): Promise<void> {
-        return this.invoiceService.delete(id);
+    @UseGuards(JwtAuthGuard)
+    async delete(@Param('id') id: string, @CurrentUser() user: UserAuthBackendDTO): Promise<void> {
+        return await this.invoiceService.delete(id, user);
     }
 
     @Get('')
@@ -92,56 +120,31 @@ export class InvoiceController {
         return await this.invoiceService.search(q);
     }
 
-    @MessagePattern('file-get-POSTRAL_INVOICE')
-    async fileGetAllowance({
-        userId,
-        objectId,
-        roles,
-    }: UploadFileCategoryRequest): Promise<boolean> {
-        // exec(`kdialog --msgbox "file-get-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
-        try {
-            const [paymentId, transactionId] = objectId.split('_');
-
-            const transaction = await this.transactionService.findAll(
-                {
-                    paymentId,
-                    id: transactionId,
-                    admin: roles.includes('ADMIN') ? 'true' : 'false',
-                },
-                { id: userId, roles } as UserAuthBackendDTO,
-            );
-            if (!transaction) {
-                return false;
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Error in fileGetAllowance:', error);
-            return false;
-        }
-    }
 
     @Put(':id/finalize')
     @UseGuards(JwtAuthGuard)
-    async finalize(@Param('id') id: string): Promise<InvoiceDTO> {
-        return this.invoiceService.finalize(id);
+    async finalize(@Param('id') id: string, @CurrentUser() user: UserAuthBackendDTO): Promise<InvoiceDTO> {
+        return this.invoiceService.finalize(id, user);
     }
 
-    @Post('/from-transaction/:transactionId')
+    @Post('/from-transaction/:sellerPaymentOrderId')
     @UseGuards(JwtAuthGuard)
     async createFromTransaction(
-        @Param('transactionId') transactionId: string,
+        @Param('sellerPaymentOrderId') sellerPaymentOrderId: string,
         // @Body() createDto: InvoiceCreateDTO,
         @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<InvoiceDTO> {
+
         const transaction = await this.transactionService.fetchById(
-            transactionId,
+            sellerPaymentOrderId,
             user,
         );
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-        // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${transactionId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
+
+        await this.invoiceService.assertSellerIsOwner(user, transaction.targetAccountId);
+        // exec(`kdialog --msgbox "Creating invoice from transaction with id: ${sellerPaymentOrderId} for user: ${user.id}, paymentId: ${transaction.paymentId}" 10 50`);
         const payment = await this.paymentService.findPaymentById(
             transaction.paymentId,
             true,
@@ -154,6 +157,9 @@ export class InvoiceController {
             transaction,
         );
     }
+
+
+
 
     @MessagePattern('file-upload-POSTRAL_INVOICE')
     async thumbUploadInfo({
@@ -170,21 +176,23 @@ export class InvoiceController {
 
             await this.assertNoFinalizedTransaction(
                 invoice.paymentId!,
-                invoice.transactionId!,
+                invoice.sellerPaymentOrderId!,
             );
 
-            const transaction = await this.transactionService.findAll(
+            const sellerOrderPayments = await this.transactionService.findAll(
                 {
                     paymentId: invoice.paymentId,
-                    id: invoice.transactionId,
+                    id: invoice.sellerPaymentOrderId,
                     admin: roles.includes('ADMIN') ? 'true' : 'false',
                 },
                 user,
             );
 
-            if (!transaction) {
-                throw new Error('Transaction not found');
+            if (!sellerOrderPayments?.length) {
+                throw new Error('Seller order payments not found');
             }
+
+            await this.invoiceService.assertSellerIsOwner(user, sellerOrderPayments[0].targetAccountId);
 
             const name = objectId,
                 category = 'POSTRAL_INVOICE';
@@ -201,20 +209,32 @@ export class InvoiceController {
         }
     }
 
-    private async assertNoFinalizedTransaction(
-        paymentId: string,
-        transactionId: string,
-    ) {
-        const finalizedInvoices = await this.invoiceService.findAll({
-            paymentId,
-            transactionId,
-            finalized: 'true',
-        });
+    @MessagePattern('file-get-POSTRAL_INVOICE')
+    async fileGetAllowance({
+        userId,
+        objectId,
+        roles,
+    }: UploadFileCategoryRequest): Promise<boolean> {
+        // exec(`kdialog --msgbox "file-get-POSTRAL_INVOICE event received with objectId: ${objectId}" 10 50`);
+        try {
+            const [paymentId, sellerPaymentOrderId] = objectId.split('_');
 
-        if (finalizedInvoices.length > 0) {
-            throw new Error(
-                'A finalized invoice already exists for this payment',
+            const transactions = await this.transactionService.findAll(
+                {
+                    paymentId,
+                    id: sellerPaymentOrderId,
+                    admin: roles.includes('ADMIN') ? 'true' : 'false',
+                },
+                { id: userId, roles } as UserAuthBackendDTO,
             );
+            if (!transactions?.length) {
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error in fileGetAllowance:', error);
+            return false;
         }
     }
 }

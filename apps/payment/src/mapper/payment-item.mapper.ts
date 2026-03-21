@@ -26,6 +26,7 @@ export class PaymentItemMapper {
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,
                 unit: a.unit,
+                refundCount: a.refundCount
             });
         }
         return dtos;

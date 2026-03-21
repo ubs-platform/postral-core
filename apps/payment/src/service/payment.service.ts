@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { In, Repository } from 'typeorm';
@@ -18,17 +18,18 @@ import {
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
-import { PaymentTransactionService } from './transaction.service';
+import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
 import { PaymentChannelOperation } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TypeAssertionUtil } from '../util/type-assertion';
-// import { PaymentStatus } from 'dist/libs/payments/type/status';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
+import { RefundRequestDTO } from '@tk-postral/payment-common';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class PaymentService {
@@ -41,11 +42,18 @@ export class PaymentService {
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
         private eventSenderService: EventSenderService,
-        private transactionService: PaymentTransactionService,
+        private transactionService: SellerPaymentOrderService,
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
-    ) {}
+    ) { }
+
+    async onModuleInit() {
+
+        // this.localEventService.operationsUpdated.subscribe(async (paymentId) => {
+        //     await this.updatePaymentByOperationStatuses(paymentId);
+        // });
+    }
 
     async findAllRaw(): Promise<Payment[]> {
         return this.paymentrepo.find();
@@ -67,6 +75,24 @@ export class PaymentService {
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
 
+    @Cron('*/30 * * * * *') //--- IGNORE ---
+    async checkAndUpdateWaitingPayments() {
+        const waitingPayments = await this.paymentrepo.find({
+            where: { paymentStatus: 'WAITING' },
+        });
+        if (waitingPayments.length === 0) {
+            // exec('kdialog --title "Postral" --passivepopup "No waiting payments to check." 5');
+            return;
+        }
+        for (const payment of waitingPayments) {
+            await this.updatePaymentByOperationStatuses(payment.id, true);
+        }
+        // exec(`kdialog --title "Postral" --passivepopup "Checked waiting payments. ${waitingPayments.length} payments checked." 5`);
+
+    }
+
+    async findPaymentById(id: string, full: true): Promise<PaymentFullDTO>;
+    async findPaymentById(id: string, full?: false): Promise<PaymentDTO>;
     async findPaymentById(
         id: string,
         full = false,
@@ -100,11 +126,7 @@ export class PaymentService {
     }
 
     async generateTransactions(paymentReal: Payment) {
-        if (paymentReal.paymentStatus !== 'COMPLETED') {
-            throw new Error(
-                'Only completed payments can generate transactions.',
-            );
-        }
+
         let items: PaymentItemDto[] = [];
         if (paymentReal.items?.length > 0) {
             items = this.paymentItemMapper.toDto(paymentReal.items);
@@ -122,21 +144,81 @@ export class PaymentService {
             transaction.sourceAccountId = paymentReal.customerAccountId;
             transaction.targetAccountId = paymentItem.sellerAccountId;
             transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = 'CREDIT';
+            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
             transactions.push(transaction);
         }
 
         await this.transactionService.addTransactions(transactions);
     }
 
-    async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
-        const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
-        const customerAccount =
-            await this.accountService.fetchOne(customerAccountId);
+    async createRefundPayment(refundRequest: RefundRequestDTO) {
+        if (refundRequest.status === 'APPROVED') {
+            throw new Error('Refund request is already approved. Cannot create refund payment again.');
+        }
+        const originalPayment = await this.findPaymentByIdRaw(refundRequest.paymentId, true);
+        if (!originalPayment) {
+            throw new NotFoundException('Original payment not found for refund generation');
+        }
 
+        const paymentInit = new PaymentInitDTO({
+            type: 'REFUND',
+            currency: originalPayment.currency,
+            customerAccountId: originalPayment.customerAccountId,
+            refundRequestId: refundRequest.id,
+            items: refundRequest.items.map((item) => {
+                const pi = new PaymentItemDto({
+                    itemId: item.realItemId,
+                    variation: item.variation,
+                    quantity: item.refundCount,
+                    unitAmount: item.unitAmount,
+                    totalAmount: item.refundAmount,
+                    taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
+                    sellerAccountId: refundRequest.requestedToPaymentAccountId,
+
+                });
+
+                return pi;
+            })
+        });
+
+        const entity = await this.generateEntityFromInitDto(paymentInit);
+        entity.paymentStatus = "WAITING";
+        const paymentSaved = await this.paymentrepo.save(entity);
+        // this.paymentOperationManagementService.startPaymentOperation
+        await this.generateTransactions(paymentSaved);
+
+        await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
+            refundRequest,
+            await this.findPaymentById(paymentSaved.id, true) as PaymentFullDTO,
+            await this.findPaymentById(refundRequest.paymentId, true) as PaymentFullDTO
+        );
+
+        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        return paymentDtoFinal;
+        // return await this.init(paymentInit);
+    }
+
+    async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
+        const p = await this.generateEntityFromInitDto(pdto);
+        const paymentSaved = await this.paymentrepo.save(p);
+        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
+        try {
+            await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
+        } catch (error) {
+            console.error(error);
+        }
+        return paymentDtoFinal;
+    }
+
+    private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
+        const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
+        const customerAccount = await this.accountService.fetchOne(customerAccountId);
+        if (pdto.type === "REFUND" && !pdto.refundRequestId) {
+            throw new BadRequestException('Refund request ID is required for REFUND type');
+        }
         if (!customerAccount) {
             throw new NotFoundException(
-                'Customer account not found for payment init',
+                'Customer account not found for payment init'
             );
         }
 
@@ -144,11 +226,9 @@ export class PaymentService {
             pdto.saleMode = 'DEFAULT';
         }
 
-        let taxesFromItems: TaxDTO[] = [],
-            items: PostralPaymentItem[] = [];
+        let taxesFromItems: TaxDTO[] = [], items: PostralPaymentItem[] = [];
         // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
-        let totalAmt = 0,
-            taxTotal = 0;
+        let totalAmt = 0, taxTotal = 0;
 
         const calculationResult = await this.calcService.calculateTotalAmount({
             items: pdto.items,
@@ -189,6 +269,7 @@ export class PaymentService {
         p.items = items;
         p.customerAccountId = customerAccountId;
         p.customerAccountName = customerAccount.name;
+        p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
             (a) => {
@@ -198,16 +279,9 @@ export class PaymentService {
                 ppt.taxAmount = a.taxAmount;
                 ppt.untaxAmount = a.untaxAmount;
                 return ppt;
-            },
+            }
         );
-        const paymentSaved = await this.paymentrepo.save(p);
-        const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
-        try {
-            await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
-        } catch (error) {
-            console.error(error);
-        }
-        return paymentDtoFinal;
+        return p;
     }
 
     async cancelPayment(id: string) {
@@ -266,7 +340,9 @@ export class PaymentService {
     }
 
     // Güncellenmiş ödeme operasyon durumlarına göre ödemeyi günceller
-    async updatePaymentByOperationStatuses(id: string) {
+    // checkOperations=false: operasyon durumları zaten güncel (cron'dan geliyorsa)
+    // checkOperations=true: önce operasyonları güncelle, sonra ödemeyi kontrol et (webhook'tan geliyorsa)
+    async updatePaymentByOperationStatuses(id: string, validatePaymentOperationsInChannelWrapServices = false) {
         let payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
             throw new NotFoundException('Payment not found');
@@ -278,10 +354,12 @@ export class PaymentService {
         ) {
             return this.paymentMapper.toDto(payment);
         }
-        // Ödeme operasyonlarının durumlarını kontrol et ve güncelle
-        await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
-            id,
-        );
+
+        if (validatePaymentOperationsInChannelWrapServices) {
+            await this.paymentOperationManagementService.checkAndUpdateOperationStatuses(
+                id,
+            );
+        }
 
         // Toplam ödenen veya yetkilendirilen miktarı hesapla
         const paidAmount =
@@ -304,13 +382,12 @@ export class PaymentService {
             );
             await this.generateTransactions(payment);
         }
+
         return dto;
     }
 
     async handlePaymentOperationStatusUpdated(operationId: string) {
-        await this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(
-            operationId,
-        );
+        await this.paymentOperationManagementService.checkAndUpdateOperationStatusByOpId(operationId);
         const operation =
             await this.paymentOperationManagementService.findOperationById(
                 operationId,
@@ -319,8 +396,7 @@ export class PaymentService {
             throw new NotFoundException('Payment operation not found');
         }
 
-        await this.updatePaymentByOperationStatuses(operation.paymentId);
-
-        // await this.payment
+        // validatePaymentOperationsInChannelWrapServices=false: operasyon zaten yukarıda güncellendi
+        await this.updatePaymentByOperationStatuses(operation.paymentId, false);
     }
 }

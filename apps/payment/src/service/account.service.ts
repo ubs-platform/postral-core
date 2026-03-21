@@ -21,7 +21,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Account } from '../entity';
-import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
+import { AccountDTO, AccountSearchParamsDTO, RelatedAccountFilterDto } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, In, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
@@ -149,32 +149,48 @@ export class AccountService extends BaseCrudService<
     }
 
     async fetchFromRelatedTransactions(
-        userRelatedAccountIds: string[],
+        filter: RelatedAccountFilterDto
     ): Promise<AccountDTO[]> {
         const accounts = await this.repo
             .createQueryBuilder('account')
             .where((qb) => {
-                const relatedAccountIds = qb
-                    .subQuery()
-                    .select(
-                        `DISTINCT CASE
-                            WHEN payment_transaction.sourceAccountId IN (:...userRelatedAccountIds)
+                let selectQuery = `DISTINCT CASE
+                            WHEN payment_transaction.sourceAccountId IN (:...relatedAccountIds)
                                 THEN payment_transaction.targetAccountId
                             ELSE payment_transaction.sourceAccountId
-                        END`,
-                    )
-                    .from('payment_transaction', 'payment_transaction')
-                    .where(
-                        'payment_transaction.sourceAccountId IN (:...userRelatedAccountIds) OR payment_transaction.targetAccountId IN (:...userRelatedAccountIds)',
-                    )
-                    .getQuery();
+                        END`
 
-                return (
-                    'account.id IN (:...userRelatedAccountIds) OR account.id IN ' +
-                    relatedAccountIds
-                );
+                if (filter.selectFrom === "SOURCE") {
+                    selectQuery = `DISTINCT payment_transaction.sourceAccountId`
+                } else if (filter.selectFrom === "TARGET") {
+                    selectQuery = `DISTINCT payment_transaction.targetAccountId`
+                }
+                // exec(`kdialog --msgbox "Related account ids: ${JSON.stringify(filter.relatedAccountIds)}. Select from: ${filter.selectFrom}. Filter related account ids in: ${filter.filterRelatedAccountIdsIn}"`);
+                let preSubQuery = qb
+                    .subQuery()
+                    .select(
+                        selectQuery
+                    )
+                    .from('seller_payment_order', 'payment_transaction');
+
+                if (filter.filterRelatedAccountIdsIn === "SOURCE") {
+                    preSubQuery = preSubQuery.where(
+                        'payment_transaction.sourceAccountId IN (:...relatedAccountIds)',
+                    );
+                } else if (filter.filterRelatedAccountIdsIn === "TARGET") {
+                    preSubQuery = preSubQuery.where(
+                        'payment_transaction.targetAccountId IN (:...relatedAccountIds)',
+                    );
+                } else {
+                    preSubQuery = preSubQuery.where(
+                        'payment_transaction.sourceAccountId IN (:...relatedAccountIds) OR payment_transaction.targetAccountId IN (:...relatedAccountIds)',
+                    );
+                }
+                const relatedAccountIds = preSubQuery
+                    .getQuery();
+                return `account.id IN ${relatedAccountIds}`;
             })
-            .setParameter('userRelatedAccountIds', userRelatedAccountIds)
+            .setParameter('relatedAccountIds', filter.relatedAccountIds)
             .getMany();
 
         return this.accountMapper.toDtoList(accounts);

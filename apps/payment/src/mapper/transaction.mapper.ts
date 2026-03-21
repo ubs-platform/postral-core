@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Payment } from '../entity/payment.entity';
 import { PaymentDTO } from '@tk-postral/payment-common';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
-import { PaymentTransaction } from '../entity';
+import { SellerPaymentOrder } from '../entity';
 import { exec } from 'child_process';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class TransactionMapper {
      */
     constructor() {}
 
-    toDto(saved: PaymentTransaction): PaymentTransactionDTO {
+    toDto(saved: SellerPaymentOrder): PaymentTransactionDTO {
         // exec('kdialog --msgbox "toDto called with id: ' + saved.id + "  Accountlar: " + saved.sourceAccount?.name + " -> " + saved.targetAccount?.name + '" 10 50');
         return {
             amount: saved.amount,
@@ -22,7 +22,7 @@ export class TransactionMapper {
             id: saved.id,
             paymentId: saved.paymentId,
             paymentStatus: saved.paymentStatus,
-            transactionType: saved.transactionType,
+            transactionType: saved.sellerOrderType,
             updatedAt: saved.updatedAt,
             description: saved.description,
             errorStatus: saved.errorStatus,

@@ -16,6 +16,11 @@ export interface PaymentItemDto {
     originalUnitAmount: number;
     unitAmount: number;
     unit: string;
-    // itemType: 'PRODUCT' | 'DISCOUNT' | 'ADDITION' | 'OTHER';
-    // taxPercent: number;
+    refundCount?: number;
+}
+
+export class PaymentItemDto implements PaymentItemDto {
+    constructor(partial: Partial<PaymentItemDto>) {
+        Object.assign(this, partial);
+    }
 }

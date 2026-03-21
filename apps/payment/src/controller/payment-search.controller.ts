@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { PaymentSearchService } from '../service/payment-search.service';
-import { PaymentSearchPaginationFlatDTO } from '@tk-postral/payment-common';
+import { PaymentSearchPaginationFlatDTO, RelatedAccountFilterDto } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import {
     CurrentUser,
@@ -10,7 +10,7 @@ import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 
 @Controller('payment')
 export class PaymentSearchController {
-    constructor(private pss: PaymentSearchService) {}
+    constructor(private pss: PaymentSearchService) { }
 
     @Get()
     public async fetchAll(
@@ -33,7 +33,8 @@ export class PaymentSearchController {
     @UseGuards(UserIntercept)
     public async fetchRelatedAccounts(
         @CurrentUser() user?: UserAuthBackendDTO,
+        @Query() filter?: RelatedAccountFilterDto
     ) {
-        return await this.pss.accountIdsInPayment(user);
+        return await this.pss.accountIdsInPayment(user, filter);
     }
 }

@@ -23,6 +23,10 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
+import { PostralConstants } from '../util/consts';
+import { lastValueFrom } from 'rxjs';
+import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 
 @Injectable()
 export class InvoiceService {
@@ -31,20 +35,37 @@ export class InvoiceService {
         private readonly invoiceRepo: Repository<Invoice>,
         private readonly invoiceMapper: InvoiceMapper,
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
-    ) {}
+        private readonly eoService: EntityOwnershipService,
+    ) { }
 
-    private async emitInvoiceUpdatedEvent(transactionId: string) {
-        if (!transactionId) return;
+    async assertSellerIsOwner(user: UserAuthBackendDTO, accountId: string) {
+        const sellerIncludes = await lastValueFrom(
+            this.eoService.hasOwnership({
+                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
+                capabilityAtLeastOne: ['OWNER', 'EDITOR'],
+                userId: user.id,
+                entityId: accountId,
+            })
+        );
+
+        if (!sellerIncludes) {
+            throw new Error('User does not have access to the seller account');
+        }
+    }
+
+    private async emitInvoiceUpdatedEvent(sellerPaymentOrderId: string) {
+        if (!sellerPaymentOrderId) return;
 
         const invoices = await this.invoiceRepo.find({
-            where: { transactionId },
+            where: { sellerPaymentOrderId },
         });
 
         const invoiceCount = invoices.length;
         const hasFinalizedInvoice = invoices.some((inv) => inv.finalized);
 
         this.kfk.emit('POSTRAL_INVOICE_UPDATED', {
-            transactionId,
+            sellerPaymentOrderId,
             invoiceCount,
             hasFinalizedInvoice,
         });
@@ -54,18 +75,18 @@ export class InvoiceService {
      * Yeni fatura kaydı oluşturur
      */
     async create(createDto: InvoiceCreateDTO): Promise<InvoiceDTO> {
-        // Eğer paymentId veya transactionId belirtilmişse, en az biri olmalı
-        if (!createDto.paymentId && !createDto.transactionId) {
+        // Eğer paymentId veya sellerPaymentOrderId belirtilmişse, en az biri olmalı
+        if (!createDto.paymentId && !createDto.sellerPaymentOrderId) {
             throw new BadRequestException(
-                'PaymentId veya TransactionId belirtilmelidir',
+                'PaymentId veya sellerPaymentOrderId belirtilmelidir',
             );
         }
 
         const entity = this.invoiceMapper.toEntity(createDto);
         const saved = await this.invoiceRepo.save(entity);
 
-        if (saved.transactionId) {
-            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        if (saved.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
         }
 
         return this.invoiceMapper.toDto(saved);
@@ -97,11 +118,11 @@ export class InvoiceService {
     }
 
     /**
-     * TransactionId'ye göre faturaları listeler
+     * sellerPaymentOrderId'ye göre faturaları listeler
      */
-    async findByTransactionId(transactionId: string): Promise<InvoiceDTO[]> {
+    async findBysellerPaymentOrderId(sellerPaymentOrderId: string): Promise<InvoiceDTO[]> {
         const invoices = await this.invoiceRepo.find({
-            where: { transactionId },
+            where: { sellerPaymentOrderId },
             order: { createdAt: 'DESC' },
         });
 
@@ -138,9 +159,12 @@ export class InvoiceService {
     /**
      * Faturayı siler (hem veritabanından hem de dosya sisteminden)
      */
-    async delete(id: string): Promise<void> {
+    async delete(id: string, user: UserAuthBackendDTO): Promise<void> {
+        if (!id) {
+            throw new BadRequestException('Invoice id must be provided');
+        }
         const invoice = await this.invoiceRepo.findOne({ where: { id } });
-
+        await this.assertSellerIsOwner(user, invoice?.sellerInvoiceAccount?.realAccountId!);
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
@@ -159,8 +183,8 @@ export class InvoiceService {
 
         await this.invoiceRepo.remove(invoice);
 
-        if (invoice.transactionId) {
-            await this.emitInvoiceUpdatedEvent(invoice.transactionId);
+        if (invoice.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(invoice.sellerPaymentOrderId);
         }
     }
 
@@ -209,8 +233,8 @@ export class InvoiceService {
         if (search.paymentId) {
             where.paymentId = search.paymentId;
         }
-        if (search.transactionId) {
-            where.transactionId = search.transactionId;
+        if (search.sellerPaymentOrderId) {
+            where.sellerPaymentOrderId = search.sellerPaymentOrderId;
         }
         if (search.invoiceNumber) {
             where.invoiceNumber = search.invoiceNumber;
@@ -222,7 +246,7 @@ export class InvoiceService {
         return where;
     }
 
-    finalize(id: string): InvoiceDTO | PromiseLike<InvoiceDTO> {
+    finalize(id: string, user: UserAuthBackendDTO): InvoiceDTO | PromiseLike<InvoiceDTO> {
         return this.invoiceRepo.manager.transaction(
             async (transactionalEntityManager) => {
                 const invoice = await transactionalEntityManager.findOne(
@@ -236,21 +260,27 @@ export class InvoiceService {
                     );
                 }
 
+
                 // Fatura zaten finalize edilmişse tekrar finalize etmeye gerek yok
                 if (invoice.finalized) {
                     return this.invoiceMapper.toDto(invoice);
                 }
+
+                await this.assertSellerIsOwner(
+                    user,
+                    invoice.sellerInvoiceAccount?.realAccountId!,
+                );
 
                 // Faturayı finalize et
                 invoice.finalized = true;
                 const updatedInvoice =
                     await transactionalEntityManager.save(invoice);
 
-                if (updatedInvoice.transactionId) {
+                if (updatedInvoice.sellerPaymentOrderId) {
                     // Veritabanı transaction işlemi tamamlandıktan sonra emit etmek daha garantilidir ama
                     // TypeORM transaction callback içinde await olduğu için manager commit olana kadar bekleyecektir.
                     // Microservice emit, manager.save'den sonra yapılabilir.
-                    this.emitInvoiceUpdatedEvent(updatedInvoice.transactionId);
+                    this.emitInvoiceUpdatedEvent(updatedInvoice.sellerPaymentOrderId);
                 }
 
                 return this.invoiceMapper.toDto(updatedInvoice);
@@ -266,8 +296,8 @@ export class InvoiceService {
         );
         const saved = await this.invoiceRepo.save(entity);
 
-        if (saved.transactionId) {
-            await this.emitInvoiceUpdatedEvent(saved.transactionId);
+        if (saved.sellerPaymentOrderId) {
+            await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
         }
 
         return this.invoiceMapper.toDto(saved);

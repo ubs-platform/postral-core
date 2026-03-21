@@ -4,11 +4,11 @@ import { PaymentSearchPaginationFlatDTO, PaymentTransactionSearchPaginationDTO }
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { CurrentUser, UserIntercept } from '@ubs-platform/users-microservice-helper';
 import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
-import { TransactionSearchService } from '../service/transaction-search.service';
+import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 
-@Controller('transaction')
+@Controller('seller-payment-order')
 export class TransactionSearchController {
-    constructor(private tss: TransactionSearchService) { }
+    constructor(private tss: SellerPaymentOrderSearchService) { }
     @Get()
     public async fetchAll(
         @Query() search: PaymentTransactionSearchPaginationDTO,

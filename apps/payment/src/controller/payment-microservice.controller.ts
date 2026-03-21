@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
-import { PaymentTransactionService } from '../service/transaction.service';
-import { TransactionSearchService } from '../service/transaction-search.service';
+import { SellerPaymentOrderService } from '../service/transaction.service';
+import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 import {
     EntityOwnershipService,
     UserService,
@@ -19,8 +19,8 @@ import { exec } from 'child_process';
 export class PaymentMicroserviceController {
     constructor(
         private ps: PaymentService,
-        private transactionService: TransactionSearchService,
-        private paymentTransactionService: PaymentTransactionService,
+        private transactionService: SellerPaymentOrderSearchService,
+        private paymentTransactionService: SellerPaymentOrderService,
         private userService: UserService,
         private entityOwnershipService: EntityOwnershipService,
     ) {}
@@ -32,12 +32,12 @@ export class PaymentMicroserviceController {
 
     @EventPattern('POSTRAL_INVOICE_UPDATED')
     public async handleInvoiceUpdated(data: {
-        transactionId: string;
+        sellerPaymentOrderId: string;
         invoiceCount: number;
         hasFinalizedInvoice: boolean;
     }) {
         await this.paymentTransactionService.updateInvoiceStatus(
-            data.transactionId,
+            data.sellerPaymentOrderId,
             data.invoiceCount,
             data.hasFinalizedInvoice,
         );

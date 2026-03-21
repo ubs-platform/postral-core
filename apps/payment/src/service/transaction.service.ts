@@ -18,17 +18,17 @@ import {
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { ItemPriceService } from './item-price.service';
-import { PaymentTransaction } from '../entity/transaction.entity';
+import { SellerPaymentOrder } from '../entity/transaction.entity';
 import { ArrayToObjectUtil } from '../util/array-to-object';
 import { error } from 'console';
 @Injectable()
-export class PaymentTransactionService {
+export class SellerPaymentOrderService {
     constructor(
-        @InjectRepository(PaymentTransaction)
-        private transactionRepository: Repository<PaymentTransaction>,
+        @InjectRepository(SellerPaymentOrder)
+        private transactionRepository: Repository<SellerPaymentOrder>,
     ) {}
 
-    toDto(entity: PaymentTransaction): PaymentTransactionDTO {
+    toDto(entity: SellerPaymentOrder): PaymentTransactionDTO {
         const dto = new PaymentTransactionDTO();
         dto.id = entity.id;
         dto.amount = entity.amount;
@@ -42,8 +42,8 @@ export class PaymentTransactionService {
         return dto;
     }
 
-    fromDto(dto: PaymentTransactionDTO): PaymentTransaction {
-        const entity = new PaymentTransaction();
+    fromDto(dto: PaymentTransactionDTO): SellerPaymentOrder {
+        const entity = new SellerPaymentOrder();
         if (dto.id) {
             entity.id = dto.id;
         }
@@ -59,7 +59,7 @@ export class PaymentTransactionService {
         entity.sourceAccountId = dto.sourceAccountId;
         entity.paymentStatus = dto.paymentStatus;
         entity.errorStatus = dto.errorStatus;
-        entity.transactionType = dto.transactionType;
+        entity.sellerOrderType = dto.transactionType;
         entity.operationNote = dto.operationNote;
         return entity;
     }
@@ -67,6 +67,26 @@ export class PaymentTransactionService {
     async addTransaction(
         tr: PaymentTransactionDTO,
     ): Promise<PaymentTransactionDTO> {
+        // zaten varsa varolanın durumunu vs. güncelle, yoksa yenisini ekle. Miktar değişmeyecek.
+        const existing = await this.transactionRepository.findOne({
+            where: {
+                sourceAccountId: tr.sourceAccountId,
+                targetAccountId: tr.targetAccountId,
+                sellerOrderType: tr.transactionType,
+                paymentId: tr.paymentId,
+                currency: tr.currency,
+            },
+        });
+        // debugger
+        if (existing) {
+            existing.paymentStatus = tr.paymentStatus;
+            existing.updatedAt = new Date();
+            existing.errorStatus = tr.errorStatus;
+            existing.operationNote = tr.operationNote;
+            await this.transactionRepository.save(existing);
+            return this.toDto(existing);
+        }
+        
         const entity = this.fromDto(tr);
         await this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)

@@ -5,10 +5,12 @@ import {
     OneToMany,
     OneToOne,
     ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
+import { RefundRequest } from './refund-request.entity';
 
 @Entity()
 export class Payment {
@@ -78,4 +80,14 @@ export class Payment {
         onUpdate: 'CURRENT_TIMESTAMP',
     })
     updatedAt: Date;
+
+    @OneToMany(() => PostralPaymentItem, (item) => item.refundPayment, {
+        cascade: true,
+    })
+    refundItems: PostralPaymentItem[];
+
+    @Column({ nullable: true })
+    refundRequestId?: string;
+
+
 }

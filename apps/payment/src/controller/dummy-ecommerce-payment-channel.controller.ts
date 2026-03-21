@@ -17,6 +17,7 @@ import {
     PaymentStatus,
 } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
+import { exec } from 'child_process';
 import { ReturnDocument } from 'typeorm';
 
 @Controller('dummy-ecommerce-payment-channel')
@@ -27,15 +28,16 @@ export class DummyEcommercePaymentChannelController {
      *
      */
     constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) {
-        
+
     }
 
     readonly statusMapByOperationId: Map<string, PaymentOperationStatus> =
         new Map();
 
-        // # MessagePattern handlers for microservice communication
+    // # MessagePattern handlers for microservice communication
     @MessagePattern('postral/payment-channel/dummy-ecommerce/init')
     async handleStartPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
+        // Payment geldiğinde refund olup olmadığını kontrol edebiliriz. Ödeme ile ilgili entegrasyonda bu kontrol ile ayrı istekler atabiliriz. 
         return this.startPaymentOperation(paymentDto);
     }
 
@@ -89,6 +91,14 @@ export class DummyEcommercePaymentChannelController {
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
+        if (paymentDto.type == "REFUND") {
+            // 30 saniye sonra otomatik olarak ödemeyi tamamla.
+            setTimeout(() => {
+                if (this.statusMapByOperationId.get(paymentDto.id) === 'WAITING') {
+                    this.setPaymentStatusAndRedirect(paymentDto.id, 'COMPLETED', '');
+                }
+            }, 30000);
+        }
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
