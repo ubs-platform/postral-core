@@ -32,6 +32,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './account-payment-transaction.service';
+import { ArrayToObjectUtil } from '../util/array-to-object';
 
 @Injectable()
 export class PaymentService {
@@ -129,42 +130,7 @@ export class PaymentService {
     }
 
     async generateAccountPaymentTransactions(payment: Payment) {
-        const customerRotation = payment.type == "PURCHASE" ? "DEBIT" : "CREDIT", sellerRotation = payment.type == "PURCHASE" ? "CREDIT" : "DEBIT";
-        
-        // Müşteri
-        const transactions: AccountPaymentTransactionDTO[] = [];
-        const customerTransaction = new AccountPaymentTransactionDTO();
-        customerTransaction.accountId = payment.customerAccountId;
-        customerTransaction.accountName = payment.customerAccountName;
-        customerTransaction.amount = payment.totalAmount;
-        customerTransaction.taxAmount = payment.taxAmount;
-        customerTransaction.paymentId = payment.id;
-        customerTransaction.type = customerRotation;
-        customerTransaction.status = payment.paymentStatus;
-        transactions.push(customerTransaction);
-
-        let items: PaymentItemDto[] = [];
-        if (payment.items?.length > 0) {
-            items = this.paymentItemMapper.toDto(payment.items);
-        } else {
-            items = await this.findItems(payment.id);
-        }
-        // Customer için debit oluşturulacak.
-        // const transactions: AccountPaymentTransactionDTO[] = [];
-        // for (let index = 0; index < payment.items.length; index++) {
-        //     const paymentItem = payment.items[index];
-        //     const transaction = new AccountPaymentTransactionDTO();
-        //     transaction.accountId = paymentItem.sellerAccountId;
-        //     transaction.accountName = paymentItem.sellerAccountName;
-        //     transaction.amount = paymentItem.totalAmount;
-        //     transaction.taxAmount = paymentItem.taxAmount;
-        //     transaction.paymentId = payment.id;
-        //     transaction.type = "CREDIT";
-        //     transaction.status = payment.paymentStatus;
-        //     transactions.push(transaction);
-        // }
-
-        // await this.accountPaymentTransactionService.createNew(transactions[0]);
+      this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(payment));
     }
 
     async generateSellerPaymentOrders(paymentReal: Payment) {
