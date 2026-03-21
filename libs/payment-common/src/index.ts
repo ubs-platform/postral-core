@@ -25,3 +25,4 @@ export * from "./util/unit-types";
 export * from './dto/refund-request.dto';
 export * from './dto/refund-search.dto';
 export * from './dto/related-account-filter.dto';
+export * from './dto/account-payment-transaction.dto';

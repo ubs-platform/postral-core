@@ -15,6 +15,7 @@ import {
     TaxDTO,
     PaymentTransactionDTO,
     PaymentFullDTO,
+    AccountPaymentTransactionDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
@@ -30,6 +31,7 @@ import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
+import { AccountPaymentTransactionService } from './account-payment-transaction.service';
 
 @Injectable()
 export class PaymentService {
@@ -42,10 +44,11 @@ export class PaymentService {
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
         private eventSenderService: EventSenderService,
-        private transactionService: SellerPaymentOrderService,
+        private sellerPaymentOrderService: SellerPaymentOrderService,
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
+        private accountPaymentTransactionService: AccountPaymentTransactionService,
     ) { }
 
     async onModuleInit() {
@@ -125,7 +128,46 @@ export class PaymentService {
         });
     }
 
-    async generateTransactions(paymentReal: Payment) {
+    async generateAccountPaymentTransactions(payment: Payment) {
+        const customerRotation = payment.type == "PURCHASE" ? "DEBIT" : "CREDIT", sellerRotation = payment.type == "PURCHASE" ? "CREDIT" : "DEBIT";
+        
+        // Müşteri
+        const transactions: AccountPaymentTransactionDTO[] = [];
+        const customerTransaction = new AccountPaymentTransactionDTO();
+        customerTransaction.accountId = payment.customerAccountId;
+        customerTransaction.accountName = payment.customerAccountName;
+        customerTransaction.amount = payment.totalAmount;
+        customerTransaction.taxAmount = payment.taxAmount;
+        customerTransaction.paymentId = payment.id;
+        customerTransaction.type = customerRotation;
+        customerTransaction.status = payment.paymentStatus;
+        transactions.push(customerTransaction);
+
+        let items: PaymentItemDto[] = [];
+        if (payment.items?.length > 0) {
+            items = this.paymentItemMapper.toDto(payment.items);
+        } else {
+            items = await this.findItems(payment.id);
+        }
+        // Customer için debit oluşturulacak.
+        // const transactions: AccountPaymentTransactionDTO[] = [];
+        // for (let index = 0; index < payment.items.length; index++) {
+        //     const paymentItem = payment.items[index];
+        //     const transaction = new AccountPaymentTransactionDTO();
+        //     transaction.accountId = paymentItem.sellerAccountId;
+        //     transaction.accountName = paymentItem.sellerAccountName;
+        //     transaction.amount = paymentItem.totalAmount;
+        //     transaction.taxAmount = paymentItem.taxAmount;
+        //     transaction.paymentId = payment.id;
+        //     transaction.type = "CREDIT";
+        //     transaction.status = payment.paymentStatus;
+        //     transactions.push(transaction);
+        // }
+
+        // await this.accountPaymentTransactionService.createNew(transactions[0]);
+    }
+
+    async generateSellerPaymentOrders(paymentReal: Payment) {
 
         let items: PaymentItemDto[] = [];
         if (paymentReal.items?.length > 0) {
@@ -148,7 +190,7 @@ export class PaymentService {
             transactions.push(transaction);
         }
 
-        await this.transactionService.addTransactions(transactions);
+        await this.sellerPaymentOrderService.addSellerPaymentOrders(transactions);
     }
 
     async createRefundPayment(refundRequest: RefundRequestDTO) {
@@ -185,7 +227,7 @@ export class PaymentService {
         entity.paymentStatus = "WAITING";
         const paymentSaved = await this.paymentrepo.save(entity);
         // this.paymentOperationManagementService.startPaymentOperation
-        await this.generateTransactions(paymentSaved);
+        await this.generateSellerPaymentOrders(paymentSaved);
 
         await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
             refundRequest,
@@ -380,7 +422,7 @@ export class PaymentService {
             await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
                 id,
             );
-            await this.generateTransactions(payment);
+            await this.generateSellerPaymentOrders(payment);
         }
 
         return dto;

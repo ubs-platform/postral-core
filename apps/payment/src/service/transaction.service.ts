@@ -93,7 +93,7 @@ export class SellerPaymentOrderService {
         return await this.toDto(entity);
     }
 
-    async addTransactions(
+    async addSellerPaymentOrders(
         transactions: PaymentTransactionDTO[],
     ): Promise<void> {
         const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(

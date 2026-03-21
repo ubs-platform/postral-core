@@ -59,6 +59,8 @@ import { AuthUtilService } from './service/auth-util.service';
 import { RefundService } from './service/refund.service';
 import { RefundController } from './refund.controller';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AccountPaymentTransactionService } from './service/account-payment-transaction.service';
+import { AccountPaymentTransactionMapper } from './mapper/account-payment-transaction.mapper';
 
 @Module({
     imports: [
@@ -126,6 +128,8 @@ import { ScheduleModule } from '@nestjs/schedule';
         InvoiceMapper,
         InvoiceAddressMapper,
         InvoiceAccountMapper,
+        AccountPaymentTransactionService,
+        AccountPaymentTransactionMapper,
         AuthUtilService,
         RefundService,
     ],
