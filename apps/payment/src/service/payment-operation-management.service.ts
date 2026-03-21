@@ -21,7 +21,6 @@ import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
 import { exec } from 'child_process';
-import { LocalEventService } from './local-event.service';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -34,7 +33,6 @@ export class PaymentOperationManagementService {
         private calcService: CalculationService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
-        private localEventService: LocalEventService,
     ) { }
     // This service will handle payment operation management logic
 
@@ -177,7 +175,6 @@ export class PaymentOperationManagementService {
             return;
         }
 
-        this.localEventService.emitOperationUpdated(completedOrReadyOps[0].paymentId);
 
     }
 

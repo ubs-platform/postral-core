@@ -1,5 +1,4 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Payment } from './payment.entity';
 import {
     PaymentOperationStatus,
     PaymentStatus,
@@ -12,9 +11,6 @@ export class PaymentChannelOperation {
 
     @Column()
     paymentChannelId: string;
-
-    // @Column()
-    // operationType: string;
 
     @Column({ type: 'varchar', nullable: true })
     operationId: string;
@@ -34,8 +30,9 @@ export class PaymentChannelOperation {
     @Column({ type: 'varchar', nullable: true })
     paymentId: string;
 
-    // @ManyToOne(() => Payment, (payment) => payment.channelOperations, {
-    //     onDelete: 'CASCADE',
-    // })
-    // payment: Payment;
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
+
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    updatedAt: Date;
 }

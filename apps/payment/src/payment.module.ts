@@ -59,7 +59,6 @@ import { AuthUtilService } from './service/auth-util.service';
 import { RefundService } from './service/refund.service';
 import { RefundController } from './refund.controller';
 import { ScheduleModule } from '@nestjs/schedule';
-import { LocalEventService } from './service/local-event.service';
 
 @Module({
     imports: [
@@ -129,7 +128,6 @@ import { LocalEventService } from './service/local-event.service';
         InvoiceAccountMapper,
         AuthUtilService,
         RefundService,
-        LocalEventService
     ],
     controllers: [
         PaymentController,

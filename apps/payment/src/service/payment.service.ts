@@ -29,7 +29,6 @@ import { filter, iif, map, Observable, Subject } from 'rxjs';
 import { exec } from 'child_process';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
-import { LocalEventService } from './local-event.service';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
