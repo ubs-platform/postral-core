@@ -32,7 +32,7 @@ export class AccountPaymentTransaction {
     @Column()
     type: "DEBIT" | "CREDIT";
 
-    @Column({type: "varchar", length: 20})
+    @Column({ type: "varchar", length: 20 })
     status: PaymentStatus;
 
     @Column()
@@ -41,9 +41,16 @@ export class AccountPaymentTransaction {
     @Column()
     taxAmount: number;
 
-    @Column({type: "datetime", default: () => "CURRENT_TIMESTAMP"})
+    @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP" })
     creationDate: Date;
 
-    @Column({type: "datetime", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP"})
+    @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
     updateDate: Date;
+
+
+    @Column({ type: 'mediumtext', nullable: true, default: '' })
+    operationNote: string;
+
+    @Column({ type: 'mediumtext', nullable: true, default: '' })
+    description: string;
 }

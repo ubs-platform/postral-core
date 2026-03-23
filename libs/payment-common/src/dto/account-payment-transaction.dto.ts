@@ -27,4 +27,8 @@ export class AccountPaymentTransactionDTO {
     creationDate: Date;
 
     updateDate: Date;
+
+    operationNote : string;
+
+    description: string;
 }

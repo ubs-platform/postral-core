@@ -120,6 +120,10 @@ export class RefundService {
     }
 
     private assertPaymentIsRefundable(payment: Payment): void {
+        if (payment.type !== 'PURCHASE') {
+            // Tekrar satın al o zaman :d
+            throw new BadRequestException('Only PURCHASE payments can be refunded');
+        }
         if (payment.paymentStatus !== 'COMPLETED') {
             throw new BadRequestException('Can only refund completed payments');
         }

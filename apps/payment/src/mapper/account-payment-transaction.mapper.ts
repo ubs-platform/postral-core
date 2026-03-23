@@ -36,6 +36,8 @@ export class AccountPaymentTransactionMapper {
     entity.status = dto.status;
     entity.amount = dto.amount;
     entity.taxAmount = dto.taxAmount;
+    entity.operationNote = dto.operationNote;
+    entity.description = dto.description;
     return entity;
   }
 }

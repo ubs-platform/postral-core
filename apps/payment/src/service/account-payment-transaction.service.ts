@@ -1,12 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AccountPaymentTransactionDTO, PaymentFullDTO, PaymentItemDto, PaymentTransactionDTO } from "@tk-postral/payment-common";
+import { AccountPaymentTransactionDTO, PaymentFullDTO, PaymentItemDto, PaymentTransactionDTO, SellerPaymentOrderDTO } from "@tk-postral/payment-common";
 import { AccountPaymentTransaction } from "../entity";
 import { AccountPaymentTransactionMapper } from "../mapper/account-payment-transaction.mapper";
 import { Repository } from "typeorm/repository/Repository";
 import { InjectRepository } from "@nestjs/typeorm";
+import { UUID } from "typeorm/driver/mongodb/bson.typings";
+import { randomUUID } from "crypto";
+import { ItemCalculationUtil } from "../util/calcs/item-calculations";
+import { TypeAssertionUtil } from "../util/type-assertion";
 
 @Injectable()
 export class AccountPaymentTransactionService {
+
     // This service will handle the business logic related to account payment transactions.
     // It will interact with the repository to perform CRUD operations and use the mapper to convert between entities and DTOs.
 
@@ -18,10 +23,10 @@ export class AccountPaymentTransactionService {
 
     }
 
-    async createNew(dto: AccountPaymentTransactionDTO): Promise<AccountPaymentTransactionDTO> {
-        const entity = this.accountMapper.toEntity(dto);
-        const savedEntity = await this.repo.save(entity);
-        return this.accountMapper.toDto(savedEntity);
+    async createNew(...dtos: AccountPaymentTransactionDTO[]): Promise<AccountPaymentTransactionDTO[]> {
+        const entities = dtos.map(dto => this.accountMapper.toEntity(dto));
+        const savedEntities = await this.repo.save(entities);
+        return savedEntities.map(entity => this.accountMapper.toDto(entity));
     }
 
     async updateByKeyFields(dto: AccountPaymentTransactionDTO): Promise<AccountPaymentTransactionDTO> {
@@ -49,13 +54,73 @@ export class AccountPaymentTransactionService {
         return this.accountMapper.toDto(savedEntity);
     }
 
+    // async fromPaymentSellerOrders(sellerPaymentOrders: SellerPaymentOrderDTO[]) {
+    //     const transactions: AccountPaymentTransactionDTO[] = [];
+    //     for (let index = 0; index < sellerPaymentOrders.length; index++) {
+    //         const sellerPaymentOrder = sellerPaymentOrders[index];
+    //         const customerTransaction = new AccountPaymentTransactionDTO();
+    //         customerTransaction.accountId = sellerPaymentOrder.sourceAccountId;
+    //         customerTransaction.accountName = sellerPaymentOrder.sourceAccountName!;
+    //         customerTransaction.amount = sellerPaymentOrder.amount;
+    //         customerTransaction.taxAmount = sellerPaymentOrder.taxAmount;
+    //         customerTransaction.paymentId = sellerPaymentOrder.paymentId;
+    //         customerTransaction.type = sellerPaymentOrder.transactionType == "CREDIT_TO_SELLER" ? "DEBIT" : "CREDIT";
+    //         customerTransaction.status = sellerPaymentOrder.paymentStatus;
+    //         transactions.push(customerTransaction);
+
+    //         const sellerTransaction = new AccountPaymentTransactionDTO();
+    //         sellerTransaction.accountId = sellerPaymentOrder.targetAccountId;
+    //         sellerTransaction.accountName = sellerPaymentOrder.targetAccountName!;
+    //         sellerTransaction.amount = sellerPaymentOrder.amount;
+    //         sellerTransaction.taxAmount = sellerPaymentOrder.taxAmount;
+    //         sellerTransaction.paymentId = sellerPaymentOrder.paymentId;
+    //         sellerTransaction.type = sellerPaymentOrder.transactionType == "CREDIT_TO_SELLER" ? "CREDIT" : "DEBIT";
+    //         sellerTransaction.status = sellerPaymentOrder.paymentStatus;
+    //         transactions.push(sellerTransaction);
+    //     }
+
+    //     return await this.createNew(...transactions);
+    // }
+
 
     async fromPayment(paymentReal: PaymentFullDTO) {
         const customerRotation = paymentReal.type == "PURCHASE" ? "DEBIT" : "CREDIT", sellerRotation = paymentReal.type == "PURCHASE" ? "CREDIT" : "DEBIT";
 
-        // Müşteri
         const transactions: AccountPaymentTransactionDTO[] = [];
+        // Müşteri
+        const korelasyon = randomUUID();
+
+
+        // Customer için debit oluşturulacak.
+        const transactionSellerNames = new Set();
+        const transactionPerSellerAccountMap: Map<string, AccountPaymentTransactionDTO> = new Map();
+        for (let index = 0; index < paymentReal.items.length; index++) {
+            const paymentItem = paymentReal.items[index];
+            let sellerTransaction = new AccountPaymentTransactionDTO();
+            sellerTransaction.corelationId = korelasyon;
+            if (transactionPerSellerAccountMap.has(paymentItem.sellerAccountId)) {
+                sellerTransaction = transactionPerSellerAccountMap.get(paymentItem.sellerAccountId)!;
+                sellerTransaction.amount = ItemCalculationUtil.addNumberValues(sellerTransaction.amount, paymentItem.totalAmount);
+                sellerTransaction.taxAmount = ItemCalculationUtil.addNumberValues(sellerTransaction.taxAmount, paymentItem.taxAmount);
+            } else {
+                TypeAssertionUtil.assertIsNumber(paymentItem.totalAmount, "paymentItem totalAmount must be a number");
+                TypeAssertionUtil.assertIsNumber(paymentItem.taxAmount, "paymentItem taxAmount must be a number");
+                transactionSellerNames.add(paymentItem.sellerAccountName!);
+                sellerTransaction.accountId = paymentItem.sellerAccountId;
+                sellerTransaction.accountName = paymentItem.sellerAccountName!;
+                sellerTransaction.amount = paymentItem.totalAmount;
+                sellerTransaction.taxAmount = paymentItem.taxAmount;
+                sellerTransaction.paymentId = paymentReal.id;
+                sellerTransaction.type = sellerRotation;
+                sellerTransaction.status = paymentReal.paymentStatus;
+                sellerTransaction.description = `Payment ${paymentReal.type.toLowerCase()} for payment id ${paymentReal.id}. Customer: ${paymentReal.customerAccountName}`;
+            }
+
+            transactionPerSellerAccountMap.set(paymentItem.sellerAccountId, sellerTransaction);
+        }
+        transactions.push(...transactionPerSellerAccountMap.values());
         const customerTransaction = new AccountPaymentTransactionDTO();
+        customerTransaction.corelationId = korelasyon;
         customerTransaction.accountId = paymentReal.customerAccountId;
         customerTransaction.accountName = paymentReal.customerAccountName!;
         customerTransaction.amount = paymentReal.totalAmount;
@@ -63,24 +128,9 @@ export class AccountPaymentTransactionService {
         customerTransaction.paymentId = paymentReal.id;
         customerTransaction.type = customerRotation;
         customerTransaction.status = paymentReal.paymentStatus;
+        customerTransaction.description = `Payment ${paymentReal.type.toLowerCase()} for payment id ${paymentReal.id}. Sellers: ${Array.from(transactionSellerNames).join(", ")}`;
         transactions.push(customerTransaction);
 
-
-        // Customer için debit oluşturulacak.
-        // const transactions: AccountPaymentTransactionDTO[] = [];
-        // for (let index = 0; index < payment.items.length; index++) {
-        //     const paymentItem = payment.items[index];
-        //     const transaction = new AccountPaymentTransactionDTO();
-        //     transaction.accountId = paymentItem.sellerAccountId;
-        //     transaction.accountName = paymentItem.sellerAccountName;
-        //     transaction.amount = paymentItem.totalAmount;
-        //     transaction.taxAmount = paymentItem.taxAmount;
-        //     transaction.paymentId = payment.id;
-        //     transaction.type = "CREDIT";
-        //     transaction.status = payment.paymentStatus;
-        //     transactions.push(transaction);
-        // }
-
-        // await this.accountPaymentTransactionService.createNew(transactions[0]);
+        return await this.createNew(...transactions);
     }
 }

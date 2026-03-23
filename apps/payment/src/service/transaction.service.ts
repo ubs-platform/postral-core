@@ -14,6 +14,7 @@ import {
     PaymentDTO,
     TaxDTO,
     PaymentTransactionDTO,
+    SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
 import { ItemService } from './item.service';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
@@ -28,8 +29,8 @@ export class SellerPaymentOrderService {
         private transactionRepository: Repository<SellerPaymentOrder>,
     ) {}
 
-    toDto(entity: SellerPaymentOrder): PaymentTransactionDTO {
-        const dto = new PaymentTransactionDTO();
+    toDto(entity: SellerPaymentOrder): SellerPaymentOrderDTO {
+        const dto = new SellerPaymentOrderDTO();
         dto.id = entity.id;
         dto.amount = entity.amount;
         dto.currency = entity.currency;
@@ -42,7 +43,7 @@ export class SellerPaymentOrderService {
         return dto;
     }
 
-    fromDto(dto: PaymentTransactionDTO): SellerPaymentOrder {
+    fromDto(dto: SellerPaymentOrderDTO): SellerPaymentOrder {
         const entity = new SellerPaymentOrder();
         if (dto.id) {
             entity.id = dto.id;
@@ -65,8 +66,8 @@ export class SellerPaymentOrderService {
     }
 
     async addTransaction(
-        tr: PaymentTransactionDTO,
-    ): Promise<PaymentTransactionDTO> {
+        tr: SellerPaymentOrderDTO,
+    ): Promise<SellerPaymentOrderDTO> {
         // zaten varsa varolanın durumunu vs. güncelle, yoksa yenisini ekle. Miktar değişmeyecek.
         const existing = await this.transactionRepository.findOne({
             where: {
@@ -94,11 +95,11 @@ export class SellerPaymentOrderService {
     }
 
     async addSellerPaymentOrders(
-        transactions: PaymentTransactionDTO[],
-    ): Promise<void> {
+        transactions: SellerPaymentOrderDTO[],
+    ): Promise<SellerPaymentOrderDTO[]> {
         const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(
             transactions,
-            (a: PaymentTransactionDTO) => {
+            (a: SellerPaymentOrderDTO) => {
                 return (
                     a.sourceAccountId +
                     '|' +
@@ -127,18 +128,21 @@ export class SellerPaymentOrderService {
                         errorStatus: object.errorStatus,
                         operationNote: object.operationNote,
                         transactionType: object.transactionType,
-                    } as PaymentTransactionDTO;
+                    } as SellerPaymentOrderDTO;
                 }
-                const ptdto = mappingObject[key] as PaymentTransactionDTO;
+                const ptdto = mappingObject[key] as SellerPaymentOrderDTO;
                 ptdto.amount += object.amount;
                 ptdto.taxAmount += object.taxAmount;
             },
         );
 
         const values = Object.values(transactionGrouped).flat().flat();
+        const savedTransactions: SellerPaymentOrderDTO[] = [];
         for (const tr of values) {
-            await this.addTransaction(tr as PaymentTransactionDTO);
+            const savedSellerPaymentOrder =  await this.addTransaction(tr as SellerPaymentOrderDTO);
+            savedTransactions.push(savedSellerPaymentOrder);
         }
+        return savedTransactions;
     }
 
     async updateInvoiceStatus(
