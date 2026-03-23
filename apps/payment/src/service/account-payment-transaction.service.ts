@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { AccountPaymentTransactionDTO, PaymentFullDTO, PaymentItemDto, PaymentTransactionDTO, SellerPaymentOrderDTO } from "@tk-postral/payment-common";
-import { AccountPaymentTransaction } from "../entity";
+import { Account, AccountPaymentTransaction } from "../entity";
 import { AccountPaymentTransactionMapper } from "../mapper/account-payment-transaction.mapper";
 import { Repository } from "typeorm/repository/Repository";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -8,6 +8,7 @@ import { UUID } from "typeorm/driver/mongodb/bson.typings";
 import { randomUUID } from "crypto";
 import { ItemCalculationUtil } from "../util/calcs/item-calculations";
 import { TypeAssertionUtil } from "../util/type-assertion";
+import { Or } from "typeorm";
 
 @Injectable()
 export class AccountPaymentTransactionService {
@@ -24,9 +25,34 @@ export class AccountPaymentTransactionService {
     }
 
     async createNew(...dtos: AccountPaymentTransactionDTO[]): Promise<AccountPaymentTransactionDTO[]> {
+        await this.deleteOldTransactions(dtos);
         const entities = dtos.map(dto => this.accountMapper.toEntity(dto));
         const savedEntities = await this.repo.save(entities);
         return savedEntities.map(entity => this.accountMapper.toDto(entity));
+    }
+
+    /**
+     * Eski transactionları siler. Eski transactionlar, aynı accountId, paymentId, type ve WAITING statusüne sahip olanlardır. 
+     * Bu methodun amacı, aynı ödeme için yeni transactionlar oluşturulmadan önce, eski transactionların silinmesini sağlamaktır. 
+     * Böylece, aynı ödeme için birden fazla transaction oluşmasının önüne geçilir.
+     * @param dtos 
+     */
+    async deleteOldTransactions(dtos: AccountPaymentTransactionDTO[]) {
+        const oldTransactions = await this.repo.find(
+            {
+                where: dtos.map(entity => {
+                    return {
+                        accountId: entity.accountId,
+                        paymentId: entity.paymentId,
+                        type: entity.type,
+                        // TODO: Önceden failed olanlar da dahil olmasını istiyorum. Completed olanlar genelde değişmez, tabi kontrol etmekten de zarar gelmez. SOnradan eklenecek
+                        // status: "WAITING"
+                    };
+                }),
+            }
+        )
+
+        await this.repo.remove(oldTransactions);
     }
 
     async updateByKeyFields(dto: AccountPaymentTransactionDTO): Promise<AccountPaymentTransactionDTO> {
@@ -53,35 +79,6 @@ export class AccountPaymentTransactionService {
         const savedEntity = await this.repo.save(updatedEntity);
         return this.accountMapper.toDto(savedEntity);
     }
-
-    // async fromPaymentSellerOrders(sellerPaymentOrders: SellerPaymentOrderDTO[]) {
-    //     const transactions: AccountPaymentTransactionDTO[] = [];
-    //     for (let index = 0; index < sellerPaymentOrders.length; index++) {
-    //         const sellerPaymentOrder = sellerPaymentOrders[index];
-    //         const customerTransaction = new AccountPaymentTransactionDTO();
-    //         customerTransaction.accountId = sellerPaymentOrder.sourceAccountId;
-    //         customerTransaction.accountName = sellerPaymentOrder.sourceAccountName!;
-    //         customerTransaction.amount = sellerPaymentOrder.amount;
-    //         customerTransaction.taxAmount = sellerPaymentOrder.taxAmount;
-    //         customerTransaction.paymentId = sellerPaymentOrder.paymentId;
-    //         customerTransaction.type = sellerPaymentOrder.transactionType == "CREDIT_TO_SELLER" ? "DEBIT" : "CREDIT";
-    //         customerTransaction.status = sellerPaymentOrder.paymentStatus;
-    //         transactions.push(customerTransaction);
-
-    //         const sellerTransaction = new AccountPaymentTransactionDTO();
-    //         sellerTransaction.accountId = sellerPaymentOrder.targetAccountId;
-    //         sellerTransaction.accountName = sellerPaymentOrder.targetAccountName!;
-    //         sellerTransaction.amount = sellerPaymentOrder.amount;
-    //         sellerTransaction.taxAmount = sellerPaymentOrder.taxAmount;
-    //         sellerTransaction.paymentId = sellerPaymentOrder.paymentId;
-    //         sellerTransaction.type = sellerPaymentOrder.transactionType == "CREDIT_TO_SELLER" ? "CREDIT" : "DEBIT";
-    //         sellerTransaction.status = sellerPaymentOrder.paymentStatus;
-    //         transactions.push(sellerTransaction);
-    //     }
-
-    //     return await this.createNew(...transactions);
-    // }
-
 
     async fromPayment(paymentReal: PaymentFullDTO) {
         const customerRotation = paymentReal.type == "PURCHASE" ? "DEBIT" : "CREDIT", sellerRotation = paymentReal.type == "PURCHASE" ? "CREDIT" : "DEBIT";
