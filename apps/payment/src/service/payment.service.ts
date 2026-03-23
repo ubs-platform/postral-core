@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -13,23 +13,20 @@ import {
     PaymentInitDTO,
     PaymentDTO,
     TaxDTO,
-    PaymentTransactionDTO,
     PaymentFullDTO,
+    SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
 import { CalculationService } from './calculation.service';
-import { PaymentChannelOperation } from '../entity';
-import { ItemCalculationUtil } from '../util/calcs/item-calculations';
-import { TypeAssertionUtil } from '../util/type-assertion';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
-import { filter, iif, map, Observable, Subject } from 'rxjs';
-import { exec } from 'child_process';
+import { Subject } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
+import { AccountPaymentTransactionService } from './account-payment-transaction.service';
 
 @Injectable()
 export class PaymentService {
@@ -42,10 +39,11 @@ export class PaymentService {
         private paymentItemMapper: PaymentItemMapper,
         private paymentTaxMapper: PaymentTaxMapper,
         private eventSenderService: EventSenderService,
-        private transactionService: SellerPaymentOrderService,
+        private sellerPaymentOrderService: SellerPaymentOrderService,
         private accountService: AccountService,
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
+        private accountPaymentTransactionService: AccountPaymentTransactionService,
     ) { }
 
     async onModuleInit() {
@@ -125,31 +123,6 @@ export class PaymentService {
         });
     }
 
-    async generateTransactions(paymentReal: Payment) {
-
-        let items: PaymentItemDto[] = [];
-        if (paymentReal.items?.length > 0) {
-            items = this.paymentItemMapper.toDto(paymentReal.items);
-        } else {
-            items = await this.findItems(paymentReal.id);
-        }
-        const transactions: PaymentTransactionDTO[] = [];
-        for (let index = 0; index < items.length; index++) {
-            const paymentItem = items[index];
-            const transaction = new PaymentTransactionDTO();
-            transaction.amount = paymentItem.totalAmount;
-            transaction.taxAmount = paymentItem.taxAmount;
-            transaction.currency = paymentReal.currency;
-            transaction.paymentId = paymentReal.id;
-            transaction.sourceAccountId = paymentReal.customerAccountId;
-            transaction.targetAccountId = paymentItem.sellerAccountId;
-            transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
-            transactions.push(transaction);
-        }
-
-        await this.transactionService.addTransactions(transactions);
-    }
 
     async createRefundPayment(refundRequest: RefundRequestDTO) {
         if (refundRequest.status === 'APPROVED') {
@@ -184,8 +157,7 @@ export class PaymentService {
         const entity = await this.generateEntityFromInitDto(paymentInit);
         entity.paymentStatus = "WAITING";
         const paymentSaved = await this.paymentrepo.save(entity);
-        // this.paymentOperationManagementService.startPaymentOperation
-        await this.generateTransactions(paymentSaved);
+        await this.postPaymentOperation(paymentSaved);
 
         await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
             refundRequest,
@@ -196,6 +168,45 @@ export class PaymentService {
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
         return paymentDtoFinal;
         // return await this.init(paymentInit);
+    }
+
+    private async postPaymentOperation(paymentSaved: Payment) {
+        await this.generateSellerPaymentOrders(paymentSaved);
+        // TODO: Belki itemler içinde boş olabilir diye şimdilik idden full çekip öyle gönderiyorum... İleride optimize edilebilir.
+        await this.generateAccountPaymentTransactions(paymentSaved.id);
+    }
+
+
+    async generateAccountPaymentTransactions(paymentId: string) {
+        const payment = await this.findPaymentById(paymentId, true) as PaymentFullDTO;
+        this.accountPaymentTransactionService.fromPayment(payment);
+    }
+
+
+    async generateSellerPaymentOrders(paymentReal: Payment) {
+
+        let items: PaymentItemDto[] = [];
+        if (paymentReal.items?.length > 0) {
+            items = this.paymentItemMapper.toDto(paymentReal.items);
+        } else {
+            items = await this.findItems(paymentReal.id);
+        }
+        const transactions: SellerPaymentOrderDTO[] = [];
+        for (let index = 0; index < items.length; index++) {
+            const paymentItem = items[index];
+            const transaction = new SellerPaymentOrderDTO();
+            transaction.amount = paymentItem.totalAmount;
+            transaction.taxAmount = paymentItem.taxAmount;
+            transaction.currency = paymentReal.currency;
+            transaction.paymentId = paymentReal.id;
+            transaction.sourceAccountId = paymentReal.customerAccountId;
+            transaction.targetAccountId = paymentItem.sellerAccountId;
+            transaction.paymentStatus = paymentReal.paymentStatus;
+            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
+            transactions.push(transaction);
+        }
+
+        return await this.sellerPaymentOrderService.addSellerPaymentOrders(transactions);
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
@@ -380,7 +391,7 @@ export class PaymentService {
             await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
                 id,
             );
-            await this.generateTransactions(payment);
+            await this.postPaymentOperation(payment);
         }
 
         return dto;
