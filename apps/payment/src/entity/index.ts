@@ -17,6 +17,8 @@ import { PostralPaymentEvent } from './payment-event.entity';
 import { RefundRequest } from './refund-request.entity';
 import { RefundRequestItem } from './refund-request-item.entity';
 import { AccountPaymentTransaction } from './account-payment-transaction.entity';
+import { ReportQuery } from './report-query.entity';
+import { Report } from './report.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -37,6 +39,8 @@ export * from './payment-event.entity';
 export * from './refund-request.entity';
 export * from './refund-request-item.entity';
 export * from './account-payment-transaction.entity';
+export * from './report-query.entity';
+export * from './report.entity';
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -58,5 +62,7 @@ export const PaymentsEntities = [
     PostralPaymentEvent,
     RefundRequest,
     RefundRequestItem,
-    AccountPaymentTransaction
+    AccountPaymentTransaction,
+    ReportQuery,
+    Report,
 ];

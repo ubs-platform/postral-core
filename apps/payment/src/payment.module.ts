@@ -61,6 +61,9 @@ import { RefundController } from './refund.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './service/account-payment-transaction.service';
 import { AccountPaymentTransactionMapper } from './mapper/account-payment-transaction.mapper';
+import { ReportQueryService } from './service/report-query.service';
+import { ReportService } from './service/report.service';
+import { ReportQueryController } from './controller/report-query.controller';
 
 @Module({
     imports: [
@@ -132,6 +135,8 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
         AccountPaymentTransactionMapper,
         AuthUtilService,
         RefundService,
+        ReportQueryService,
+        ReportService,
     ],
     controllers: [
         PaymentController,
@@ -151,6 +156,7 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
         InvoiceController,
         PaymentMicroserviceController,
         RefundController,
+        ReportQueryController,
     ],
 })
 export class PaymentModule {}

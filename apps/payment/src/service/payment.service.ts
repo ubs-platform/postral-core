@@ -27,6 +27,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './account-payment-transaction.service';
+import { ReportService } from './report.service';
 
 @Injectable()
 export class PaymentService {
@@ -44,6 +45,7 @@ export class PaymentService {
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
         private accountPaymentTransactionService: AccountPaymentTransactionService,
+        private reportService: ReportService,
     ) { }
 
     async onModuleInit() {
@@ -392,6 +394,8 @@ export class PaymentService {
                 id,
             );
             await this.postPaymentOperation(payment);
+            const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
+            await this.reportService.digestPaymentToReport(fullDto);
         }
 
         return dto;

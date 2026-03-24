@@ -26,3 +26,5 @@ export * from './dto/refund-request.dto';
 export * from './dto/refund-search.dto';
 export * from './dto/related-account-filter.dto';
 export * from './dto/account-payment-transaction.dto';
+export * from './dto/report-query.dto';
+export * from './dto/report.dto';
