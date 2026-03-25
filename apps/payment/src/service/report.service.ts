@@ -10,6 +10,7 @@ import { ReportTaxGroup } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
+import { PaymentCommonService } from './payment-common.service';
 
 @Injectable()
 export class ReportService {
@@ -24,6 +25,7 @@ export class ReportService {
         private readonly taxGroupRepo: Repository<ReportTaxGroup>,
         @InjectRepository(ReportPaymentRelation)
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
+        private readonly paymentCommonService: PaymentCommonService,
     ) { }
 
 
@@ -82,7 +84,8 @@ export class ReportService {
             const relation = relationsWaiting[index];
             // bir yerden full dto getirmek lazım bunu servislerle yapmaya çalışacağım yoksa direkt repostryi yapıştırırım ama hiç de iyi pratik değil
             // ya da payment common service diye bir şey açarım oradan çağırırım
-            this.digestPayment(relation.report, relation.payment);
+            const payment = await this.paymentCommonService.findPaymentById(relation.payment.id, true) as PaymentFullDTO;
+            this.digestPayment(relation.report, payment);
             relation.digestionStatus = "COMPLETED";
             await this.reportPaymentRelationRepo.save(relation);
         }
@@ -235,9 +238,13 @@ export class ReportService {
         dto.queryId = entity.queryId;
         dto.periodLabel = entity.periodLabel;
         dto.currency = entity.currency;
-        dto.totalRevenue = entity.totalRevenue;
-        dto.totalExpense = entity.totalExpense;
-        dto.netIncome = entity.netIncome;
+        dto.netRevenue = entity.netRevenue;
+        dto.totalSaleAmount = entity.totalSaleAmount;
+        dto.totalRefundAmount = entity.totalRefundAmount;
+        dto.totalSaleTaxAmount = entity.totalSaleTaxAmount;
+        dto.totalRefundTaxAmount = entity.totalRefundTaxAmount;
+        dto.netTaxAmount = entity.netTaxAmount;
+        dto.netSaleAmount = entity.netSaleAmount;
         dto.paymentCount = entity.paymentCount;
         dto.lastDigestedAt = entity.lastDigestedAt;
         dto.createdAt = entity.createdAt;

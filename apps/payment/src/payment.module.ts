@@ -64,6 +64,7 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
 import { ReportQueryService } from './service/report-query.service';
 import { ReportService } from './service/report.service';
 import { ReportQueryController } from './controller/report-query.controller';
+import { PaymentCommonService } from './service/payment-common.service';
 
 @Module({
     imports: [
@@ -137,6 +138,7 @@ import { ReportQueryController } from './controller/report-query.controller';
         RefundService,
         ReportQueryService,
         ReportService,
+        PaymentCommonService
     ],
     controllers: [
         PaymentController,

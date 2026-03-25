@@ -28,6 +28,7 @@ import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './account-payment-transaction.service';
 import { ReportService } from './report.service';
+import { PaymentCommonService } from './payment-common.service';
 
 @Injectable()
 export class PaymentService {
@@ -47,6 +48,7 @@ export class PaymentService {
         private accountPaymentTransactionService: AccountPaymentTransactionService,
         private reportService: ReportService,
         private transactionMapper: TransactionMapper,
+        private paymentCommonService: PaymentCommonService,
     ) { }
 
     async onModuleInit() {
@@ -76,19 +78,17 @@ export class PaymentService {
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
 
-    @Cron('*/30 * * * * *') //--- IGNORE ---
+    @Cron('0 * * * * *')
     async checkAndUpdateWaitingPayments() {
         const waitingPayments = await this.paymentrepo.find({
             where: { paymentStatus: 'WAITING' },
         });
         if (waitingPayments.length === 0) {
-            // exec('kdialog --title "Postral" --passivepopup "No waiting payments to check." 5');
             return;
         }
         for (const payment of waitingPayments) {
             await this.updatePaymentByOperationStatuses(payment.id, true);
         }
-        // exec(`kdialog --title "Postral" --passivepopup "Checked waiting payments. ${waitingPayments.length} payments checked." 5`);
 
     }
 
@@ -96,36 +96,17 @@ export class PaymentService {
     async findPaymentById(id: string, full?: false): Promise<PaymentDTO>;
     async findPaymentById(
         id: string,
-        full = false,
-    ): Promise<PaymentDTO | PaymentFullDTO> {
-        const paymentReal = await this.findPaymentByIdRaw(id, full);
-        if (!paymentReal) {
-            throw new NotFoundException('Payment not found');
-        }
-        const paymentItems = full
-            ? this.paymentItemMapper.toDto(paymentReal!.items)
-            : undefined;
-        const paymentTaxes = full
-            ? this.paymentTaxMapper.toDto(paymentReal!.taxes)
-            : undefined;
-        const p = {
-            ...this.paymentMapper.toDto(paymentReal!),
-            items: paymentItems,
-            taxes: paymentTaxes,
-        };
-        return p;
+        full: boolean = false): Promise<PaymentDTO | PaymentFullDTO> {
+        // Sen zaten booleansın 😭😭😭
+        return await this.paymentCommonService.findPaymentById(id, full as any);
     }
 
     private async findPaymentByIdRaw(
         id: string,
         full = false,
     ): Promise<Optional<Payment>> {
-        return await this.paymentrepo.findOne({
-            where: { id },
-            relations: full ? ['items', 'taxes'] : [],
-        });
+        return await this.paymentCommonService.findPaymentByIdRaw(id, full);
     }
-
 
     async createRefundPayment(refundRequest: RefundRequestDTO) {
         if (refundRequest.status === 'APPROVED') {
@@ -300,14 +281,12 @@ export class PaymentService {
         }
         this.assertPaymentIsNotResolved(payment);
 
-        const paymentItems = this.paymentItemMapper.toDto(payment.items); //await this.findItems(id);
-        const paymentTaxes = this.paymentTaxMapper.toDto(payment.taxes); //await this.findTaxes(id);
+        // const paymentItems = this.paymentItemMapper.toDto(payment.items); //await this.findItems(id);
+        // const paymentTaxes = this.paymentTaxMapper.toDto(payment.taxes); //await this.findTaxes(id);
 
         const result =
             await this.paymentOperationManagementService.startPaymentOperation({
-                ...this.paymentMapper.toDto(payment),
-                items: paymentItems,
-                taxes: paymentTaxes,
+                ...this.paymentMapper.toFullDto(payment),
                 captureInfo: captureInfo,
             });
         payment.paymentStatus = 'WAITING';
