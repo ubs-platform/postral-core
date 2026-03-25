@@ -6,7 +6,6 @@ import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
-import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
@@ -17,6 +16,7 @@ import {
     SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
+import { TransactionMapper } from '../mapper/transaction.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
@@ -46,6 +46,7 @@ export class PaymentService {
         private paymentOperationManagementService: PaymentOperationManagementService,
         private accountPaymentTransactionService: AccountPaymentTransactionService,
         private reportService: ReportService,
+        private transactionMapper: TransactionMapper,
     ) { }
 
     async onModuleInit() {
@@ -196,15 +197,7 @@ export class PaymentService {
         const transactions: SellerPaymentOrderDTO[] = [];
         for (let index = 0; index < items.length; index++) {
             const paymentItem = items[index];
-            const transaction = new SellerPaymentOrderDTO();
-            transaction.amount = paymentItem.totalAmount;
-            transaction.taxAmount = paymentItem.taxAmount;
-            transaction.currency = paymentReal.currency;
-            transaction.paymentId = paymentReal.id;
-            transaction.sourceAccountId = paymentReal.customerAccountId;
-            transaction.targetAccountId = paymentItem.sellerAccountId;
-            transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
+            const transaction = this.transactionMapper.fromPaymentItem(paymentItem, paymentReal);
             transactions.push(transaction);
         }
 
@@ -253,26 +246,7 @@ export class PaymentService {
         taxTotal = calculationResult.totalTaxAmount;
         taxesFromItems = calculationResult.taxes;
 
-        items = calculationResult.items.map((ci) => {
-            const pi = new PostralPaymentItem();
-            pi.itemId = ci.itemId;
-            pi.name = ci.name;
-            pi.quantity = ci.quantity;
-            pi.unitAmount = ci.unitAmount;
-            pi.originalUnitAmount = ci.originalUnitAmount;
-            pi.totalAmount = ci.totalAmount;
-            pi.taxPercent = ci.taxPercent;
-            pi.taxAmount = ci.taxAmount;
-            pi.unTaxAmount = ci.unTaxAmount;
-            pi.variation = ci.variation;
-            pi.entityGroup = ci.entityGroup;
-            pi.entityId = ci.entityId;
-            pi.entityName = ci.entityName;
-            pi.sellerAccountId = ci.sellerAccountId;
-            pi.sellerAccountName = ci.sellerAccountName;
-            pi.unit = ci.unit;
-            return pi;
-        });
+        items = calculationResult.items.map((ci) => this.paymentItemMapper.toEntity(ci));
 
         const p = new Payment();
         p.type = pdto.type;
@@ -284,16 +258,7 @@ export class PaymentService {
         p.customerAccountName = customerAccount.name;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
-        p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
-            (a) => {
-                const ppt = new PostralPaymentTax();
-                ppt.fullAmount = a.fullAmount;
-                ppt.percent = a.percent;
-                ppt.taxAmount = a.taxAmount;
-                ppt.untaxAmount = a.untaxAmount;
-                return ppt;
-            }
-        );
+        p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
         return p;
     }
 

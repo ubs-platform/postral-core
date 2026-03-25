@@ -4,6 +4,27 @@ import { PostralPaymentItem } from '../entity/payment-item.entity';
 
 @Injectable()
 export class PaymentItemMapper {
+    toEntity(dto: PaymentItemDto): PostralPaymentItem {
+        const pi = new PostralPaymentItem();
+        pi.itemId = dto.itemId;
+        pi.name = dto.name;
+        pi.quantity = dto.quantity;
+        pi.unitAmount = dto.unitAmount;
+        pi.originalUnitAmount = dto.originalUnitAmount;
+        pi.totalAmount = dto.totalAmount;
+        pi.taxPercent = dto.taxPercent;
+        pi.taxAmount = dto.taxAmount;
+        pi.unTaxAmount = dto.unTaxAmount;
+        pi.variation = dto.variation;
+        pi.entityGroup = dto.entityGroup;
+        pi.entityId = dto.entityId;
+        pi.entityName = dto.entityName;
+        pi.sellerAccountId = dto.sellerAccountId;
+        pi.sellerAccountName = dto.sellerAccountName;
+        pi.unit = dto.unit;
+        return pi;
+    }
+
     toDto(items: PostralPaymentItem[]): PaymentItemDto[] {
         const dtos: PaymentItemDto[] = [];
         for (let index = 0; index < items.length; index++) {
