@@ -19,6 +19,7 @@ import { RefundRequestItem } from './refund-request-item.entity';
 import { AccountPaymentTransaction } from './account-payment-transaction.entity';
 import { ReportQuery } from './report-query.entity';
 import { Report } from './report.entity';
+import { ReportTaxGroup } from './report-tax-group.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -41,6 +42,7 @@ export * from './refund-request-item.entity';
 export * from './account-payment-transaction.entity';
 export * from './report-query.entity';
 export * from './report.entity';
+export * from "./report-tax-group.entity"
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -65,4 +67,5 @@ export const PaymentsEntities = [
     AccountPaymentTransaction,
     ReportQuery,
     Report,
+    ReportTaxGroup,
 ];

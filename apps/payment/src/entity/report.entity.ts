@@ -40,27 +40,43 @@ export class Report {
     @Column({ length: 10 })
     currency: string;
 
-    /** Toplam satış (ciro) – PURCHASE payments */
-    @Column({ type: 'double', default: 0 })
-    totalRevenue: number;
-
-    /** Toplam iade (gider) – REFUND payments */
-    @Column({ type: 'double', default: 0 })
-    totalExpense: number;
-
-    /** Net gelir = totalRevenue - totalExpense */
-    @Column({ type: 'double', default: 0 })
-    netIncome: number;
-
-    @Column({ type: 'double', default: 0 })
-    totalTaxAmount: number;
-
-    @Column({ type: 'int', default: 0 })
-    paymentCount: number;
 
     @Column({ type: 'datetime', nullable: true })
     lastDigestedAt: Date;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
+
+    // --- Asıl hesap kısımları ---
+    @Column({ type: 'int', default: 0 })
+    paymentCount: number;
+
+    // Toplam satın alma
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    totalSaleAmount: number;
+
+    // Toplam iade
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    totalRefundAmount: number;
+
+    // Toplam satın alma vergisi
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    totalSaleTaxAmount: number;
+
+    // Toplam iade vergisi
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    totalRefundTaxAmount: number;
+
+    // Net vergi (satın alma vergisi - iade vergisi)
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    netTaxAmount: number;
+
+
+    // Net satın alma (satın alma - iade)
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    netSaleAmount: number;
+
+    // Net gelir (net satın alma - net vergi)
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    netRevenue: number;
 }

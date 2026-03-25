@@ -15,7 +15,6 @@ export class ReportQueryService {
         const entity = this.repo.create({
             name: dto.name,
             description: dto.description ?? '',
-            type: dto.type,
             ownerAccountId: dto.ownerAccountId,
             currency: dto.currency,
             dateGrouping: dto.dateGrouping,
@@ -39,7 +38,6 @@ export class ReportQueryService {
     async findAll(search: ReportQuerySearchDTO): Promise<ReportQueryDTO[]> {
         const where: Partial<ReportQuery> = {};
         if (search.ownerAccountId) where.ownerAccountId = search.ownerAccountId;
-        if (search.type) where.type = search.type;
         const entities = await this.repo.find({ where });
         return entities.map((e) => this.toDto(e));
     }
@@ -48,7 +46,6 @@ export class ReportQueryService {
         const entity = await this.findByIdRaw(id);
         entity.name = dto.name;
         entity.description = dto.description ?? entity.description;
-        entity.type = dto.type;
         entity.ownerAccountId = dto.ownerAccountId;
         entity.currency = dto.currency;
         entity.dateGrouping = dto.dateGrouping;
@@ -65,7 +62,6 @@ export class ReportQueryService {
         dto.id = entity.id;
         dto.name = entity.name;
         dto.description = entity.description;
-        dto.type = entity.type;
         dto.ownerAccountId = entity.ownerAccountId;
         dto.currency = entity.currency;
         dto.dateGrouping = entity.dateGrouping;

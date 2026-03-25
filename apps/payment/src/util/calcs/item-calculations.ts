@@ -28,4 +28,17 @@ export class ItemCalculationUtil {
         }
         return total;
     }
+
+    static minusNumberValues(initialValue: number, ...values: number[]): number {
+        let total = initialValue;
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            TypeAssertionUtil.assertIsNumber(
+                value,
+                `Value at index ${i} must be a number`,
+            );
+            total -= value;
+        }
+        return total;
+    }
 }

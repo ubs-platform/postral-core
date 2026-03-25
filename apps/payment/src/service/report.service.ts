@@ -6,6 +6,9 @@ import { ReportQuery } from '../entity/report-query.entity';
 import { ReportDTO } from '@tk-postral/payment-common';
 import { ReportDateGrouping } from '@tk-postral/payment-common';
 import { PaymentFullDTO } from '@tk-postral/payment-common';
+import { ReportTaxGroup } from '../entity';
+import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 
 @Injectable()
 export class ReportService {
@@ -16,7 +19,9 @@ export class ReportService {
         private readonly reportRepo: Repository<Report>,
         @InjectRepository(ReportQuery)
         private readonly queryRepo: Repository<ReportQuery>,
-    ) {}
+        @InjectRepository(ReportTaxGroup)
+        private readonly taxGroupRepo: Repository<ReportTaxGroup>,
+    ) { }
 
     // ─────────────────────────────────────────────────────────────
     // findOrCreateByQuery
@@ -81,37 +86,78 @@ export class ReportService {
                 periodLabel,
                 payment.currency,
             );
+            // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
 
-            // Derive deltas based on query type and payment type
-            const isPurchase = payment.type === 'PURCHASE';
-            const isRefund = payment.type === 'REFUND';
-
-            let revenueDelta = 0;
-            let expenseDelta = 0;
-
-            if (isPurchase) revenueDelta = payment.totalAmount;
-            if (isRefund) expenseDelta = payment.totalAmount;
-
-            if (revenueDelta === 0 && expenseDelta === 0) continue;
-
-            // Atomic increments – no lost-update risk
-            if (revenueDelta !== 0) {
-                await this.reportRepo.increment({ id: report.id }, 'totalRevenue', revenueDelta);
+            report.paymentCount += 1;
+            if (payment.type === 'PURCHASE') {
+                report.totalSaleAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalSaleAmount);
+                report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalSaleTaxAmount);
+            } else if (payment.type === 'REFUND') {
+                report.totalRefundAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalRefundAmount);
+                report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalRefundTaxAmount);
             }
-            if (expenseDelta !== 0) {
-                await this.reportRepo.increment({ id: report.id }, 'totalExpense', expenseDelta);
-            }
-            // netIncome = totalRevenue - totalExpense  →  delta = revenueDelta - expenseDelta
-            const netDelta = revenueDelta - expenseDelta;
-            if (netDelta !== 0) {
-                await this.reportRepo.increment({ id: report.id }, 'netIncome', netDelta);
-            }
-            await this.reportRepo.increment({ id: report.id }, 'paymentCount', 1);
-            await this.reportRepo.update({ id: report.id }, { lastDigestedAt: new Date() });
+
+            report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
+            report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
+            report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
+            report.lastDigestedAt = new Date();
+            await this.reportRepo.save(report);
+            
+            // // Derive deltas based on query type and payment type
+            // const isPurchase = payment.type === 'PURCHASE';
+            // const isRefund = payment.type === 'REFUND';
+
+            // let revenueDelta = 0;
+            // let expenseDelta = 0;
+
+            // if (isPurchase) revenueDelta = payment.totalAmount;
+            // if (isRefund) expenseDelta = payment.totalAmount;
+
+            // if (revenueDelta === 0 && expenseDelta === 0) continue;
+
+            // // Atomic increments – no lost-update risk
+            // if (revenueDelta !== 0) {
+            //     await this.reportRepo.increment({ id: report.id }, 'totalRevenue', revenueDelta);
+            // }
+            // if (expenseDelta !== 0) {
+            //     await this.reportRepo.increment({ id: report.id }, 'totalExpense', expenseDelta);
+            // }
+            // // netIncome = totalRevenue - totalExpense  →  delta = revenueDelta - expenseDelta
+            // const netDelta = revenueDelta - expenseDelta;
+            // if (netDelta !== 0) {
+            //     await this.reportRepo.increment({ id: report.id }, 'netIncome', netDelta);
+            // }
+            // await this.reportRepo.increment({ id: report.id }, 'paymentCount', 1);
+            // await this.reportRepo.update({ id: report.id }, { lastDigestedAt: new Date() });
+            // await this.updateTaxGroupReportByPayment(payment, report);
 
             this.logger.debug(
                 `Digested payment ${payment.id} into report ${report.id} (query: ${query.name}, period: ${periodLabel})`,
             );
+        }
+    }
+
+    private async updateTaxGroupReportByPayment(payment: PaymentFullDTO, report: Report) {
+        for (let index = 0; index < payment.taxes.length; index++) {
+            const taxGroup = payment.taxes[index];
+            const where = { reportId: report.id, taxPercent: taxGroup.percent.toString(), currency: payment.currency };
+            const existingTaxGroupReport = await this.taxGroupRepo.findOne({ where });
+            let deltaIncomeFull = 0, deltaExpenseFull = 0;
+            if (payment.type === 'PURCHASE') {
+                deltaIncomeFull = taxGroup.taxAmount;
+            } else if (payment.type === 'REFUND') {
+                deltaExpenseFull = taxGroup.taxAmount;
+            }
+            if (existingTaxGroupReport) {
+                // TODO: Yeni tax group raporu oluşturulacak ve kaydedilecek
+                continue;
+            }
+            await this.taxGroupRepo.increment(
+                where,
+                'totalTaxAmount',
+                taxGroup.taxAmount
+            );
+
         }
     }
 
