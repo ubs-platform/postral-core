@@ -8,6 +8,7 @@ import {
     Unique,
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
+import { ReportCalculationValueHolder } from './base/report-calculation-value-holder';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -15,7 +16,7 @@ import { ReportQuery } from './report-query.entity';
  */
 @Entity()
 @Unique(['queryId', 'periodLabel', 'currency'])
-export class Report {
+export class Report implements ReportCalculationValueHolder{
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -25,6 +26,9 @@ export class Report {
     @ManyToOne(() => ReportQuery, (q) => q.reports, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'queryId' })
     query: ReportQuery;
+
+    @Column({ nullable: true })
+    accountId: string;
 
     /**
      * Bucket label depending on ReportQuery.dateGrouping:
@@ -40,43 +44,42 @@ export class Report {
     @Column({ length: 10 })
     currency: string;
 
-
     @Column({ type: 'datetime', nullable: true })
     lastDigestedAt: Date;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt = new Date();
 
     // --- Asıl hesap kısımları ---
     @Column({ type: 'int', default: 0 })
-    paymentCount: number;
+    paymentCount = 0;
 
     // Toplam satın alma
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalSaleAmount: number;
+    totalSaleAmount = 0;
 
     // Toplam iade
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalRefundAmount: number;
+    totalRefundAmount = 0;
 
     // Toplam satın alma vergisi
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalSaleTaxAmount: number;
+    totalSaleTaxAmount = 0;
 
     // Toplam iade vergisi
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalRefundTaxAmount: number;
+    totalRefundTaxAmount = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netTaxAmount: number;
+    netTaxAmount = 0;
 
 
     // Net satın alma (satın alma - iade)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netSaleAmount: number;
+    netSaleAmount = 0;
 
     // Net gelir (net satın alma - net vergi)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netRevenue: number;
+    netRevenue = 0;
 }

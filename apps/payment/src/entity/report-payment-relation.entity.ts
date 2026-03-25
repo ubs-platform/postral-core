@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
 import { Report } from './report.entity';
+import { Payment } from './payment.entity';
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
  * Unique on (queryId, periodLabel, currency) so we never double-create.
@@ -25,7 +26,11 @@ export class ReportPaymentRelation {
     @Column()
     reportId: string;
 
-    @ManyToOne(() => Report, (r) => r.id, { onDelete: 'CASCADE', eager: false })
+    @ManyToOne(() => Payment, (p) => p.id, { onDelete: 'CASCADE', eager: true })
+    @JoinColumn({ name: 'paymentId' })
+    payment: Payment;
+
+    @ManyToOne(() => Report, (r) => r.id, { onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'reportId' })
     report: Report;
 

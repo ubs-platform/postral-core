@@ -43,6 +43,7 @@ export * from './account-payment-transaction.entity';
 export * from './report-query.entity';
 export * from './report.entity';
 export * from "./report-tax-group.entity"
+export * from './base/report-calculation-value-holder';
 
 export const PaymentsEntities = [
     PostralPaymentItem,

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
 import { ReportDTO } from '@tk-postral/payment-common';
@@ -9,6 +9,7 @@ import { PaymentFullDTO } from '@tk-postral/payment-common';
 import { ReportTaxGroup } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
+import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
 
 @Injectable()
 export class ReportService {
@@ -21,7 +22,10 @@ export class ReportService {
         private readonly queryRepo: Repository<ReportQuery>,
         @InjectRepository(ReportTaxGroup)
         private readonly taxGroupRepo: Repository<ReportTaxGroup>,
+        @InjectRepository(ReportPaymentRelation)
+        private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
     ) { }
+
 
     // ─────────────────────────────────────────────────────────────
     // findOrCreateByQuery
@@ -36,32 +40,50 @@ export class ReportService {
         periodLabel: string,
         currency: string,
     ): Promise<Report> {
+        const where = { queryId: query.id, periodLabel, currency }
         const existing = await this.reportRepo.findOne({
-            where: { queryId: query.id, periodLabel, currency },
+            where
         });
         if (existing) return existing;
 
         try {
-            const created = this.reportRepo.create({
-                queryId: query.id,
-                periodLabel,
-                currency,
-                totalRevenue: 0,
-                totalExpense: 0,
-                netIncome: 0,
-                paymentCount: 0,
-            });
-            return await this.reportRepo.save(created);
+            const reportNew = new Report();
+            reportNew.queryId = query.id;
+            reportNew.periodLabel = periodLabel;
+            reportNew.currency = currency;
+
+            const created = await this.reportRepo.save(reportNew);
+            return created;
         } catch (err: any) {
-            // ER_DUP_ENTRY from MariaDB – another request already created it
-            if (err?.code === 'ER_DUP_ENTRY' || err?.errno === 1062) {
-                return this.reportRepo.findOne({
-                    where: { queryId: query.id, periodLabel, currency },
-                }) as Promise<Report>;
-            }
             throw err;
         }
     }
+
+    // cron olacak
+    async checkRelations() {
+        const relationsAlreadyWorking = await this.reportPaymentRelationRepo.find({
+            where: { digestionStatus: "DIGESTING" },
+            loadEagerRelations: false
+        });
+        if (relationsAlreadyWorking.length > 0) {
+            this.logger.warn(`There are ${relationsAlreadyWorking.length} report-payment relations still in digestion. Skipping this check.`);
+            return;
+        }
+
+        const relationsWaiting = await this.reportPaymentRelationRepo.find({
+            where: { digestionStatus: "WAITING" },
+            loadEagerRelations: false
+        });
+
+        for (let index = 0; index < relationsWaiting.length; index++) {
+            const relation = relationsWaiting[index];
+            this.digestPayment(relation.report, relation.payment);
+            relation.digestionStatus = "COMPLETED";
+            await this.reportPaymentRelationRepo.save(relation);
+        }
+        // TODO: Implement the logic to check report-payment relations
+    }
+
 
     // ─────────────────────────────────────────────────────────────
     // digestPaymentToReport
@@ -72,7 +94,7 @@ export class ReportService {
     // 3. findOrCreate the Report bucket.
     // 4. Atomically increments the aggregated fields.
     // ─────────────────────────────────────────────────────────────
-    async digestPaymentToReport(payment: PaymentFullDTO): Promise<void> {
+    async insertPaymentToReportDigestionQueue(payment: PaymentFullDTO): Promise<void> {
         const queries = await this.findMatchingQueries(payment);
         if (queries.length === 0) return;
 
@@ -87,54 +109,36 @@ export class ReportService {
                 payment.currency,
             );
             // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
+            await this.reportPaymentRelationRepo.save({
+                reportId: report.id,
+                paymentId: payment.id,
+                digestionStatus: "WAITING",
+            });
 
-            report.paymentCount += 1;
-            if (payment.type === 'PURCHASE') {
-                report.totalSaleAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalSaleAmount);
-                report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalSaleTaxAmount);
-            } else if (payment.type === 'REFUND') {
-                report.totalRefundAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalRefundAmount);
-                report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalRefundTaxAmount);
-            }
-
-            report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
-            report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
-            report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
-            report.lastDigestedAt = new Date();
-            await this.reportRepo.save(report);
-            
-            // // Derive deltas based on query type and payment type
-            // const isPurchase = payment.type === 'PURCHASE';
-            // const isRefund = payment.type === 'REFUND';
-
-            // let revenueDelta = 0;
-            // let expenseDelta = 0;
-
-            // if (isPurchase) revenueDelta = payment.totalAmount;
-            // if (isRefund) expenseDelta = payment.totalAmount;
-
-            // if (revenueDelta === 0 && expenseDelta === 0) continue;
-
-            // // Atomic increments – no lost-update risk
-            // if (revenueDelta !== 0) {
-            //     await this.reportRepo.increment({ id: report.id }, 'totalRevenue', revenueDelta);
-            // }
-            // if (expenseDelta !== 0) {
-            //     await this.reportRepo.increment({ id: report.id }, 'totalExpense', expenseDelta);
-            // }
-            // // netIncome = totalRevenue - totalExpense  →  delta = revenueDelta - expenseDelta
-            // const netDelta = revenueDelta - expenseDelta;
-            // if (netDelta !== 0) {
-            //     await this.reportRepo.increment({ id: report.id }, 'netIncome', netDelta);
-            // }
-            // await this.reportRepo.increment({ id: report.id }, 'paymentCount', 1);
-            // await this.reportRepo.update({ id: report.id }, { lastDigestedAt: new Date() });
+            await this.digestPayment(report, payment);
             // await this.updateTaxGroupReportByPayment(payment, report);
 
             this.logger.debug(
                 `Digested payment ${payment.id} into report ${report.id} (query: ${query.name}, period: ${periodLabel})`,
             );
         }
+    }
+
+    private async digestPayment(report: Report, payment: PaymentFullDTO) {
+        report.paymentCount += 1;
+        if (payment.type === 'PURCHASE') {
+            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalSaleAmount);
+            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalSaleTaxAmount);
+        } else if (payment.type === 'REFUND') {
+            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalRefundAmount);
+            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalRefundTaxAmount);
+        }
+
+        report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
+        report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
+        report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
+        report.lastDigestedAt = new Date();
+        await this.reportRepo.save(report);
     }
 
     private async updateTaxGroupReportByPayment(payment: PaymentFullDTO, report: Report) {
@@ -177,27 +181,17 @@ export class ReportService {
      * Finds all ReportQueries whose filter criteria match this payment.
      */
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
-        const all = await this.queryRepo.find();
-
-        return all.filter((query) => {
-            // Currency filter
-            if (query.currency && query.currency !== payment.currency) return false;
-
-            // Payment type filter by report type
-            // if (query.type === 'REVENUE' && payment.type !== 'PURCHASE') return false;
-            // if (query.type === 'EXPENSE' && payment.type !== 'REFUND') return false;
-
-            // Owner account filter – matches customer OR any seller in items
-            if (query.ownerAccountId) {
-                const isCustomer = payment.customerAccountId === query.ownerAccountId;
-                const isSeller = payment.items?.some(
-                    (item) => item.sellerAccountId === query.ownerAccountId,
-                );
-                if (!isCustomer && !isSeller) return false;
+        const itemSellerAccountIds = payment.items?.map((i) => i.sellerAccountId) ?? [];
+        return await this.queryRepo.find({
+            where: {
+                currency: payment.currency,
+                // Müşteriyi dahil etmeyi bilemedim ama düşünülebilir... payment.customerAccountId, query.ownerAccountId'ne eşitse veya payment.items içindeki herhangi bir sellerAccountId, query.ownerAccountId'ne eşitse bu query'e dahil et. Eğer query.ownerAccountId null ise tüm ödemeler dahil olsun.
+                ownerAccountId: In([...itemSellerAccountIds]),
             }
-
-            return true;
-        });
+        })
+        // claude sen yapma bari bunu 😭😭😭😭
+        // const all = await this.queryRepo.find();
+        // return all.filter((query) => {...
     }
 
     private buildPeriodLabel(grouping: ReportDateGrouping, date: Date): string {

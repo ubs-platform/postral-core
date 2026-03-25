@@ -395,7 +395,7 @@ export class PaymentService {
             );
             await this.postPaymentOperation(payment);
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
-            await this.reportService.digestPaymentToReport(fullDto);
+            await this.reportService.insertPaymentToReportDigestionQueue(fullDto);
         }
 
         return dto;
