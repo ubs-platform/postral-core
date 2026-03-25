@@ -77,6 +77,8 @@ export class ReportService {
 
         for (let index = 0; index < relationsWaiting.length; index++) {
             const relation = relationsWaiting[index];
+            // bir yerden full dto getirmek lazım bunu servislerle yapmaya çalışacağım yoksa direkt repostryi yapıştırırım ama hiç de iyi pratik değil
+            // ya da payment common service diye bir şey açarım oradan çağırırım
             this.digestPayment(relation.report, relation.payment);
             relation.digestionStatus = "COMPLETED";
             await this.reportPaymentRelationRepo.save(relation);
