@@ -65,6 +65,9 @@ export class ReportService {
             where: { digestionStatus: "DIGESTING" },
             loadEagerRelations: false
         });
+        // zaten çalışan varsa bunu atlamamız daha iyi olur, yoksa aynı anda iki digestion işlemi birbirine girebilir ve raporları yanlış hesaplayabiliriz.
+        //  Digestion işlemi uzun sürebileceği için bu kontrolü atlamak istemiyorum ama aynı zamanda bu kontrolün kendisi de çok uzun sürmemeli, 
+        // o yüzden digestionStatus'ü "DIGESTING" olan ilişkileri bulmak için bir index eklemeyi düşünebilirim.
         if (relationsAlreadyWorking.length > 0) {
             this.logger.warn(`There are ${relationsAlreadyWorking.length} report-payment relations still in digestion. Skipping this check.`);
             return;
