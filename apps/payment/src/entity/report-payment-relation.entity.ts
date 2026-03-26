@@ -15,7 +15,7 @@ import { Payment } from './payment.entity';
  * Unique on (queryId, periodLabel, currency) so we never double-create.
  */
 @Entity()
-// @Unique(['queryId', 'periodLabel', 'currency'])
+@Unique(['reportId', 'paymentId'])
 export class ReportPaymentRelation {
     @PrimaryGeneratedColumn('uuid')
     id: string;
