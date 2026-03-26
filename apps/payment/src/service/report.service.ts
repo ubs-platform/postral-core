@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Repository, UpdateResult } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
 import { ReportDTO } from '@tk-postral/payment-common';
@@ -12,6 +12,7 @@ import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
+import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 
 @Injectable()
 export class ReportService {
@@ -66,60 +67,34 @@ export class ReportService {
     // cron olacak
     @Cron('0 * * * *') // her dakika
     async checkRelations() {
-        if (this.alreadyRunning) {
-            this.logger.warn('Previous digestion process is still running. Skipping this run to avoid overlap.');
-            return;
+        const digestionId = Date.now() + "_" + UUID.generate();
+        await this.reportPaymentRelationRepo.update({
+            digestionStatus: "WAITING"
+        }, {
+            digestionStatus: "DIGESTING",
+            digestionId: digestionId,
+            digestionStartedAt: new Date()
+        });
+
+        const relationsWaiting = await this.reportPaymentRelationRepo.find({
+            where: { digestionId: digestionId, digestionStatus: "DIGESTING" },
+            loadEagerRelations: true
+        });
+        for (const relation of relationsWaiting) {
+            // karışıklığa sebep olmaması için digestionStatus'ü hemen "DIGESTING" yapalım, böylece aynı rapor için diğer ilişkilerin digestion işlemi başlamadan önce atlanmasını sağlayabiliriz.
+
+            // FIX: loadEagerRelations: false ile relation.payment yüklenmez; doğrudan paymentId kolonunu kullanıyoruz.
+            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
+            // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
+            // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
+            await this.digestPayment(relation.report, payment);
+
+            // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
+            relation.digestionStatus = "COMPLETED";
+            relation.digestionCompletedAt = new Date();
+            await this.reportPaymentRelationRepo.save(relation);
         }
-        this.alreadyRunning = true;
-        const uniqueReportIdsWaiting = await this.reportPaymentRelationRepo
-            .createQueryBuilder('report_payment_relation')
-            .where('report_payment_relation.digestionStatus = :status', { status: 'WAITING' })
-            .select('DISTINCT report_payment_relation.report_id', 'reportId')
-            .getRawMany();
-
-        this.logger.debug(`There are ${uniqueReportIdsWaiting.length} reports waiting for digestion.`);
-
-        for (const { reportId } of uniqueReportIdsWaiting) {
-            const relationsAlreadyWorking = await this.reportPaymentRelationRepo.find({
-                where: { digestionStatus: "DIGESTING", reportId },
-                loadEagerRelations: false
-            });
-            // zaten çalışan varsa bunu atlamamız daha iyi olur, yoksa aynı anda iki digestion işlemi birbirine girebilir ve raporları yanlış hesaplayabiliriz.
-            // Digestion işlemi uzun sürebileceği için bu kontrolü atlamak istemiyorum ama aynı zamanda bu kontrolün kendisi de çok uzun sürmemeli,
-            // o yüzden digestionStatus'ü "DIGESTING" olan ilişkileri bulmak için bir index eklemeyi düşünebilirim.
-            if (relationsAlreadyWorking.length > 0) {
-                this.logger.warn(`There are ${relationsAlreadyWorking.length} report-payment relations still in digestion for report ${reportId}. Skipping.`);
-                continue; // FIX: `return` tüm fonksiyondan çıkıyordu; sadece bu reportId'yi atlamalıyız.
-            }
-
-            // report'u bir kez yükleyip tüm relation'lar için kullanıyoruz; her relation'da relation.report'a
-            // erişmek yerine (loadEagerRelations: false ile yüklenmemiş olurdu) buradan alıyoruz.
-            const report = await this.reportRepo.findOne({ where: { id: reportId } });
-            if (!report) {
-                this.logger.warn(`Report ${reportId} not found. Skipping.`);
-                continue;
-            }
-
-            const relationsWaiting = await this.reportPaymentRelationRepo.find({
-                where: { digestionStatus: "WAITING", reportId },
-                loadEagerRelations: false
-            });
-
-            for (const relation of relationsWaiting) {
-                // karışıklığa sebep olmaması için digestionStatus'ü hemen "DIGESTING" yapalım, böylece aynı rapor için diğer ilişkilerin digestion işlemi başlamadan önce atlanmasını sağlayabiliriz.
-                relation.digestionStatus = "DIGESTING";
-                await this.reportPaymentRelationRepo.save(relation);
-
-                // FIX: loadEagerRelations: false ile relation.payment yüklenmez; doğrudan paymentId kolonunu kullanıyoruz.
-                const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
-                // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
-                await this.digestPayment(report, payment);
-
-                // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
-                relation.digestionStatus = "COMPLETED";
-                await this.reportPaymentRelationRepo.save(relation);
-            }
-        }
+        // }
         this.alreadyRunning = false;
     }
 
@@ -218,6 +193,13 @@ export class ReportService {
 
     /**
      * Finds all ReportQueries whose filter criteria match this payment.
+     * 
+     * BUG: Burada bir sıkıntı var... PaymentDTO'da birden fazla sellerAccountId'si olabilir (payment.items içindeki her item'ın sellerAccountId'si farklı olabilir) 
+     * ve biz bu sellerAccountId'lerin herhangi biri query.ownerAccountId'ne 
+     * eşitse o query'i dahil etmek istiyoruz. O yüzden Payment yerine SellerPaymentOrder kullansak daha iyi olabilir, 
+     * çünkü SellerPaymentOrder'da her item için ayrı bir satır olurdu ve sellerAccountId'yi direkt kullanabilirdik.
+     *  Şimdilik payment.items içindeki sellerAccountId'leri tek tek çekip In() ile sorguluyoruz ama bu da tam doğru değil 
+     * çünkü payment.items çok fazla olabilir ve sorgu sınırlarını aşabiliriz. 
      */
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
         const itemSellerAccountIds = payment.items?.map((i) => i.sellerAccountId) ?? [];

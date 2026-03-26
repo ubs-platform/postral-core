@@ -8,7 +8,7 @@ import {
     Unique,
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
-import { ReportCalculationValueHolder } from './base/report-calculation-value-holder';
+import { BaseReport } from '@tk-postral/payment-common';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -16,7 +16,7 @@ import { ReportCalculationValueHolder } from './base/report-calculation-value-ho
  */
 @Entity()
 @Unique(['queryId', 'periodLabel', 'currency'])
-export class Report implements ReportCalculationValueHolder{
+export class Report implements BaseReport{
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -82,4 +82,7 @@ export class Report implements ReportCalculationValueHolder{
     // Net gelir (net satın alma - net vergi)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
     netRevenue = 0;
+
+    @Column({ length: 255, nullable: true })
+    lastDigestedPaymentId: string;
 }

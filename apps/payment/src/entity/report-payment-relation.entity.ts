@@ -26,13 +26,19 @@ export class ReportPaymentRelation {
     @Column()
     reportId: string;
 
-    @ManyToOne(() => Payment, (p) => p.id, { onDelete: 'CASCADE', eager: true })
+    @ManyToOne(() => Payment, (p) => p.id, { onDelete: 'CASCADE', eager: false })
     @JoinColumn({ name: 'paymentId' })
     payment: Payment;
 
     @ManyToOne(() => Report, (r) => r.id, { onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'reportId' })
     report: Report;
+
+    @Column({ nullable: true })
+    digestionId: string;
+
+    @Column({ nullable: true })
+    digestionStartedAt: Date;
 
     /**
      * Report'ın hangi aşamada olduğunu gösterir. WAITING → henüz işlenmemiş, DIGESTING → işleniyor, COMPLETED → işlendi, FAILED → işlenirken hata oldu
@@ -50,4 +56,7 @@ export class ReportPaymentRelation {
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
+
+    @Column({ type: 'datetime', nullable: true })
+    digestionCompletedAt: Date;
 }
