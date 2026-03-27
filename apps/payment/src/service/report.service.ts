@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { ReportDTO } from '@tk-postral/payment-common';
+import { ReportDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { ReportDateGrouping } from '@tk-postral/payment-common';
 import { PaymentFullDTO } from '@tk-postral/payment-common';
 import { ReportTaxGroup } from '../entity';
@@ -13,6 +13,8 @@ import { ReportPaymentRelation } from '../entity/report-payment-relation.entity'
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
+import { SellerPaymentOrderService } from './transaction.service';
+import { SellerPaymentOrderSearchService } from './transaction-search.service';
 
 @Injectable()
 export class ReportService {
@@ -29,6 +31,7 @@ export class ReportService {
         @InjectRepository(ReportPaymentRelation)
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         private readonly paymentCommonService: PaymentCommonService,
+        private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
     ) { }
 
 
@@ -64,39 +67,6 @@ export class ReportService {
         }
     }
 
-    // cron olacak
-    @Cron('0 * * * *') // her dakika
-    async checkRelations() {
-        const digestionId = Date.now() + "_" + UUID.generate();
-        await this.reportPaymentRelationRepo.update({
-            digestionStatus: "WAITING"
-        }, {
-            digestionStatus: "DIGESTING",
-            digestionId: digestionId,
-            digestionStartedAt: new Date()
-        });
-
-        const relationsWaiting = await this.reportPaymentRelationRepo.find({
-            where: { digestionId: digestionId, digestionStatus: "DIGESTING" },
-            loadEagerRelations: true
-        });
-        for (const relation of relationsWaiting) {
-            // karışıklığa sebep olmaması için digestionStatus'ü hemen "DIGESTING" yapalım, böylece aynı rapor için diğer ilişkilerin digestion işlemi başlamadan önce atlanmasını sağlayabiliriz.
-
-            // FIX: loadEagerRelations: false ile relation.payment yüklenmez; doğrudan paymentId kolonunu kullanıyoruz.
-            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
-            // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
-            // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
-            await this.digestPayment(relation.report, payment);
-
-            // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
-            relation.digestionStatus = "COMPLETED";
-            relation.digestionCompletedAt = new Date();
-            await this.reportPaymentRelationRepo.save(relation);
-        }
-        // }
-        this.alreadyRunning = false;
-    }
 
 
     // ─────────────────────────────────────────────────────────────
@@ -139,19 +109,33 @@ export class ReportService {
     }
 
     private async digestPayment(report: Report, payment: PaymentFullDTO) {
+        const accountId = report.query.ownerAccountId;
+        // const items = payment.items.filter(i => i.sellerAccountId === accountId);
+        // Satıcı kendi satışlarının sonucunu görmeli, o yüzden paymentOrder ile filtreliyoruz. Itemler için de payment.filter(i => i.sellerAccountId === accountId) yapabiliriz ama o zaman da payment.items çok fazla olabilir ve sorgu sınırlarını aşabiliriz. O yüzden direkt paymentOrder ile filtreleyelim.
+        const paymentOrder = (await this.sellerPaymentOrderService.findAll({
+            paymentId: payment.id,
+            targetAccountIds: accountId,
+            admin: 'true'
+        }))[0];
+
+        if (!paymentOrder) {
+            this.logger.warn(`No payment order found for payment ${payment.id} and account ${accountId}`);
+            return;
+        }
         report.paymentCount += 1;
         if (payment.type === 'PURCHASE') {
-            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalSaleAmount);
-            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalSaleTaxAmount);
+            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalSaleAmount);
+            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalSaleTaxAmount);
         } else if (payment.type === 'REFUND') {
-            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(payment.totalAmount, report.totalRefundAmount);
-            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(payment.taxAmount, report.totalRefundTaxAmount);
+            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalRefundAmount);
+            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalRefundTaxAmount);
         }
 
         report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
         report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
         report.lastDigestedAt = new Date();
+        report.lastDigestedPaymentId = payment.id;
         await this.reportRepo.save(report);
     }
 
@@ -185,6 +169,43 @@ export class ReportService {
             order: { periodLabel: 'DESC' },
         });
         return reports.map((r) => this.toDto(r));
+    }
+
+
+
+    // cron olacak
+    @Cron('0 * * * *') // her dakika
+    async checkRelations() {
+        const digestionId = Date.now() + "_" + UUID.generate();
+        await this.reportPaymentRelationRepo.update({
+            digestionStatus: "WAITING"
+        }, {
+            digestionStatus: "DIGESTING",
+            digestionId: digestionId,
+            digestionStartedAt: new Date()
+        });
+
+        const relationsWaiting = await this.reportPaymentRelationRepo.find({
+            where: { digestionId: digestionId, digestionStatus: "DIGESTING" },
+            loadEagerRelations: true
+        });
+        for (const relation of relationsWaiting) {
+            // karışıklığa sebep olmaması için digestionStatus'ü hemen "DIGESTING" yapalım, böylece aynı rapor için diğer ilişkilerin digestion işlemi başlamadan önce atlanmasını sağlayabiliriz.
+
+            // FIX: loadEagerRelations: false ile relation.payment yüklenmez; doğrudan paymentId kolonunu kullanıyoruz.
+            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
+            // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
+            // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
+            await this.digestPayment(relation.report, payment);
+
+            // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
+            relation.digestionStatus = "COMPLETED";
+            relation.digestionId = "";
+            relation.digestionCompletedAt = new Date();
+            await this.reportPaymentRelationRepo.save(relation);
+        }
+        // }
+        this.alreadyRunning = false;
     }
 
     // ─────────────────────────────────────────────────────────────
