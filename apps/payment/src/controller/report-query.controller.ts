@@ -1,50 +1,32 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common';
-import { ReportQueryService } from '../service/report-query.service';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { ReportQueryCrudService } from '../service/report-query.service';
 import { ReportService } from '../service/report.service';
-import { ReportQueryCreateDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
+import { ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
+import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
+import { ReportQuery } from '../entity/report-query.entity';
+import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 
 @Controller('report-query')
-export class ReportQueryController {
+export class ReportQueryController extends BaseCrudControllerGenerator<
+    ReportQuery,
+    string,
+    ReportQueryDTO,
+    ReportQueryDTO,
+    ReportQuerySearchDTO
+>({
+    authorization: {
+        ALL: { needsAuthenticated: true },
+    },
+}) {
     constructor(
-        private readonly reportQueryService: ReportQueryService,
+        protected readonly service: ReportQueryCrudService,
         private readonly reportService: ReportService,
-    ) {}
-
-    @Post()
-    async create(@Body() dto: ReportQueryCreateDTO) {
-        return this.reportQueryService.create(dto);
+    ) {
+        super(service);
     }
 
-    @Get()
-    async findAll(@Query() search: ReportQuerySearchDTO) {
-        return this.reportQueryService.findAll(search);
-    }
-
-    @Get('/:id')
-    async findById(@Param('id') id: string) {
-        return this.reportQueryService.findById(id);
-    }
-
-    @Put('/:id')
-    async update(@Param('id') id: string, @Body() dto: ReportQueryCreateDTO) {
-        return this.reportQueryService.update(id, dto);
-    }
-
-    @Delete('/:id')
-    async remove(@Param('id') id: string) {
-        await this.reportQueryService.remove(id);
-    }
-
-    @Get('/:id/reports')
+    @Get(':id/reports')
+    @UseGuards(JwtAuthGuard)
     async getReports(@Param('id') id: string) {
         return this.reportService.findByQueryId(id);
     }

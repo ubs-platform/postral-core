@@ -1,72 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReportQuery } from '../entity/report-query.entity';
-import { ReportQueryCreateDTO, ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
+import { ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
+import { BaseCrudService } from '@ubs-platform/crud-base';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
+import { ReportQueryMapper } from '../mapper/report-query.mapper';
 
 @Injectable()
-export class ReportQueryService {
+export class ReportQueryCrudService extends BaseCrudService<
+    ReportQuery,
+    string,
+    ReportQueryDTO,
+    ReportQueryDTO,
+    ReportQuerySearchDTO
+> {
     constructor(
         @InjectRepository(ReportQuery)
-        private readonly repo: Repository<ReportQuery>,
-    ) {}
-
-    async create(dto: ReportQueryCreateDTO): Promise<ReportQueryDTO> {
-        const entity = this.repo.create({
-            name: dto.name,
-            description: dto.description ?? '',
-            ownerAccountId: dto.ownerAccountId,
-            currency: dto.currency,
-            dateGrouping: dto.dateGrouping,
-        });
-        const saved = await this.repo.save(entity);
-        return this.toDto(saved);
+        public repo: Repository<ReportQuery>,
+        private readonly reportQueryMapper: ReportQueryMapper,
+    ) {
+        super(new TypeormRepositoryWrap<ReportQuery, string>(repo));
     }
 
-    async findById(id: string): Promise<ReportQueryDTO> {
-        const entity = await this.repo.findOne({ where: { id } });
-        if (!entity) throw new NotFoundException(`ReportQuery not found: ${id}`);
-        return this.toDto(entity);
+    getIdFieldNameFromInput(i: ReportQueryDTO): string {
+        return i.id!;
     }
 
-    async findByIdRaw(id: string): Promise<ReportQuery> {
-        const entity = await this.repo.findOne({ where: { id } });
-        if (!entity) throw new NotFoundException(`ReportQuery not found: ${id}`);
-        return entity;
+    getIdFieldNameFromModel(i: ReportQuery): string {
+        return i.id;
     }
 
-    async findAll(search: ReportQuerySearchDTO): Promise<ReportQueryDTO[]> {
-        const where: Partial<ReportQuery> = {};
-        if (search.ownerAccountId) where.ownerAccountId = search.ownerAccountId;
-        const entities = await this.repo.find({ where });
-        return entities.map((e) => this.toDto(e));
+    generateNewModel(): ReportQuery {
+        return new ReportQuery();
     }
 
-    async update(id: string, dto: ReportQueryCreateDTO): Promise<ReportQueryDTO> {
-        const entity = await this.findByIdRaw(id);
-        entity.name = dto.name;
-        entity.description = dto.description ?? entity.description;
-        entity.ownerAccountId = dto.ownerAccountId;
-        entity.currency = dto.currency;
-        entity.dateGrouping = dto.dateGrouping;
-        const saved = await this.repo.save(entity);
-        return this.toDto(saved);
+    toOutput(m: ReportQuery): ReportQueryDTO {
+        return this.reportQueryMapper.toDto(m);
     }
 
-    async remove(id: string): Promise<void> {
-        await this.repo.delete(id);
+    moveIntoModel(model: ReportQuery, i: ReportQueryDTO): ReportQuery {
+        return this.reportQueryMapper.updateEntity(model, i);
     }
 
-    toDto(entity: ReportQuery): ReportQueryDTO {
-        const dto = new ReportQueryDTO();
-        dto.id = entity.id;
-        dto.name = entity.name;
-        dto.description = entity.description;
-        dto.ownerAccountId = entity.ownerAccountId;
-        dto.currency = entity.currency;
-        dto.dateGrouping = entity.dateGrouping;
-        dto.createdAt = entity.createdAt;
-        dto.updatedAt = entity.updatedAt;
-        return dto;
+    async searchParams(s?: Partial<ReportQuerySearchDTO>, _u?: UserAuthBackendDTO): Promise<any> {
+        const where: any = {};
+        if (s?.ownerAccountId) {
+            where.ownerAccountId = s.ownerAccountId;
+        }
+        return where;
     }
 }

@@ -20,6 +20,7 @@ import { AccountPaymentTransaction } from './account-payment-transaction.entity'
 import { ReportQuery } from './report-query.entity';
 import { Report } from './report.entity';
 import { ReportTaxGroup } from './report-tax-group.entity';
+import { ReportPaymentRelation } from './report-payment-relation.entity';
 
 export * from './payment-item.entity';
 export * from './payment.entity';
@@ -43,7 +44,6 @@ export * from './account-payment-transaction.entity';
 export * from './report-query.entity';
 export * from './report.entity';
 export * from "./report-tax-group.entity"
-export * from './base/report-calculation-value-holder';
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -69,4 +69,5 @@ export const PaymentsEntities = [
     ReportQuery,
     Report,
     ReportTaxGroup,
+    ReportPaymentRelation
 ];

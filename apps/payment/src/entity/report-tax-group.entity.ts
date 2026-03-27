@@ -1,5 +1,5 @@
+import { BaseReport } from "@tk-postral/payment-common";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
-import { ReportCalculationValueHolder } from "./base/report-calculation-value-holder";
 
 /**
  * Vergi oranlarına göre gruplanmış rapor verisi. Bir Report'un birden fazla ReportTaxGroup'u olabilir.
@@ -10,7 +10,7 @@ import { ReportCalculationValueHolder } from "./base/report-calculation-value-ho
  */
 @Entity()
 @Unique(['reportId', 'taxPercent', 'currency'])
-export class ReportTaxGroup implements ReportCalculationValueHolder {
+export class ReportTaxGroup implements BaseReport {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 

@@ -61,7 +61,8 @@ import { RefundController } from './refund.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './service/account-payment-transaction.service';
 import { AccountPaymentTransactionMapper } from './mapper/account-payment-transaction.mapper';
-import { ReportQueryService } from './service/report-query.service';
+import { ReportQueryCrudService } from './service/report-query.service';
+import { ReportQueryMapper } from './mapper/report-query.mapper';
 import { ReportService } from './service/report.service';
 import { ReportQueryController } from './controller/report-query.controller';
 import { PaymentCommonService } from './service/payment-common.service';
@@ -136,7 +137,8 @@ import { PaymentCommonService } from './service/payment-common.service';
         AccountPaymentTransactionMapper,
         AuthUtilService,
         RefundService,
-        ReportQueryService,
+        ReportQueryCrudService,
+        ReportQueryMapper,
         ReportService,
         PaymentCommonService
     ],
