@@ -42,3 +42,9 @@ export class ReportDTO implements BaseReport {
     netSaleAmount: number;
     netRevenue: number;
 }
+
+
+export class ReportSearchDTO {
+    queryId?: string;
+    ownerAccountId?: string;
+}
