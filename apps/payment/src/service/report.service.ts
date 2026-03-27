@@ -15,6 +15,8 @@ import { Cron } from '@nestjs/schedule';
 import { UUID } from 'typeorm/driver/mongodb/bson.typings';
 import { SellerPaymentOrderService } from './transaction.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
+import { randomUUID } from 'crypto';
+import { exec } from 'child_process';
 
 @Injectable()
 export class ReportService {
@@ -174,9 +176,10 @@ export class ReportService {
 
 
     // cron olacak
-    @Cron('0 * * * *') // her dakika
+    @Cron('*/30 * * * * *') // her dakika (Development için 10 saniyede bir çalışacak şekilde ayarladım, production'da bunu 1 dakikaya veya daha uzun aralıklara çekebiliriz)
     async checkRelations() {
-        const digestionId = Date.now() + "_" + UUID.generate();
+        const digestionId = Date.now() + "_" + randomUUID();
+        // exec("kdialog --msgbox 'Report digestion started " + digestionId + "'");
         await this.reportPaymentRelationRepo.update({
             digestionStatus: "WAITING"
         }, {
