@@ -315,8 +315,12 @@ export class ReportService {
         report.periodLabel = report.periodLabel + "_OLD_" + Date.now();
         await this.reportRepo.save(report);
         await this.findOrCreateByQuery(report.query, report.periodLabel, report.currency); // eski raporun query, periodLabel ve currency'siyle yeni bir rapor oluşturuyoruz. periodLabel'a timestamp ekleyelim ki aynı periodLabel ile yeni rapor oluşmasın.
-
+        // Yoğun bir işlem ama zaten sıklıkla çalıştırılacak bir method değil, gerektiğinde satıcı çalıştırabilir, ya da admin bilmiyorum.... Ayrıca raporlarda çok fazla payment olabilir, bu yüzden hepsini tek seferde güncellemek yerine digestion queue'ya atarak sırayla güncellemeyi planlıyorum.
         const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId }, loadEagerRelations: true });
+        const paymentSellerOrders = await this.sellerPaymentOrderService.findAll({
+            targetAccountIds: report.query.ownerAccountId!,
+            admin: 'true'
+        });
         // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
         // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
         for (const relation of relatedPaymentRelations) {
