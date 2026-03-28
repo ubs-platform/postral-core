@@ -4,6 +4,7 @@ export class TypeAssertionUtil {
         errorMessage: string = 'Value is not a number',
     ): asserts value is number {
         if (typeof value !== 'number' || isNaN(value)) {
+            debugger
             throw new Error(errorMessage);
         }
     }

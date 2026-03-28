@@ -111,6 +111,11 @@ export class ReportService {
     }
 
     private async digestPayment(report: Report, payment: PaymentFullDTO) {
+        if (report.query == null) {
+            this.logger.warn(`Report ${report.id} has no query loaded`);
+            debugger
+            return;
+        }
         const accountId = report.query.ownerAccountId;
         // const items = payment.items.filter(i => i.sellerAccountId === accountId);
         // Satıcı kendi satışlarının sonucunu görmeli, o yüzden paymentOrder ile filtreliyoruz. Itemler için de payment.filter(i => i.sellerAccountId === accountId) yapabiliriz ama o zaman da payment.items çok fazla olabilir ve sorgu sınırlarını aşabiliriz. O yüzden direkt paymentOrder ile filtreleyelim.
@@ -125,6 +130,7 @@ export class ReportService {
             return;
         }
         report.paymentCount += 1;
+
         if (payment.type === 'PURCHASE') {
             report.totalSaleAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalSaleAmount);
             report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalSaleTaxAmount);

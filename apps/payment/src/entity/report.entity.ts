@@ -23,7 +23,7 @@ export class Report implements BaseReport{
     @Column()
     queryId: string;
 
-    @ManyToOne(() => ReportQuery, (q) => q.reports, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ReportQuery, (q) => q.reports, { onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'queryId' })
     query: ReportQuery;
 
@@ -55,32 +55,32 @@ export class Report implements BaseReport{
     paymentCount = 0;
 
     // Toplam satın alma
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     totalSaleAmount = 0;
 
     // Toplam iade
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     totalRefundAmount = 0;
 
     // Toplam satın alma vergisi
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     totalSaleTaxAmount = 0;
 
     // Toplam iade vergisi
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     totalRefundTaxAmount = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     netTaxAmount = 0;
 
 
     // Net satın alma (satın alma - iade)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     netSaleAmount = 0;
 
     // Net gelir (net satın alma - net vergi)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
     netRevenue = 0;
 
     @Column({ length: 255, nullable: true })
