@@ -293,6 +293,39 @@ export class ReportService {
         return Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
     }
 
+    /**
+     * Eski report'u farklı isimle kaydedip yeni report açacak. Sonra da tüm paymentlar tekrar waiting'e çekilecek ve digestion queue'ya girecek. Böylece eski report'taki tüm paymentlar yeni report'ta tekrar işlenecek ve rapor güncellenecek.
+     * Eğer hesaplamalarda hata varsa veya yeni bir alan ekledik de eski raporlarda o alan boş kalıyorsa bu method'u çalıştırarak tüm raporları güncelleyebiliriz.
+     * @param reportId 
+     * @returns 
+     */
+    async reportReconstruct(reportId: string) {
+        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
+        if (!report) {
+            throw new Error(`Report ${reportId} not found`);
+            // this.logger.warn(`Report ${reportId} bulunamadı, reconstruction atlanıyor`);
+            // return;
+        }
+        if (report.query == null) {
+            throw new Error(`Report ${reportId} has no query loaded, reconstruction atlanıyor`);
+            // this.logger.warn(`Report ${reportId} has no query loaded, reconstruction atlanıyor`);
+            // return;
+        }
+
+        report.periodLabel = report.periodLabel + "_OLD_" + Date.now();
+        await this.reportRepo.save(report);
+        await this.findOrCreateByQuery(report.query, report.periodLabel, report.currency); // eski raporun query, periodLabel ve currency'siyle yeni bir rapor oluşturuyoruz. periodLabel'a timestamp ekleyelim ki aynı periodLabel ile yeni rapor oluşmasın.
+
+        const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId }, loadEagerRelations: true });
+        // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
+        // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
+        for (const relation of relatedPaymentRelations) {
+            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
+            await this.digestPayment(report.id, payment);
+            await this.updateTaxGroupReportByPayment(payment, report.id);
+        }
+    }
+
     toDto(entity: Report): ReportDTO {
         const dto = new ReportDTO();
         dto.id = entity.id;
