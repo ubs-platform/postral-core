@@ -111,21 +111,37 @@ export class ReportService {
         }
     }
 
-    private async digestPayment(report: Report, payment: PaymentFullDTO) {
+    private async digestPayment(reportId: string, payment: PaymentFullDTO) {
+        // Taze veri: döngüde paylaşılan stale instance yerine DB'den güncel satırı çekiyoruz.
+        // Aksi hâlde aynı batch'te aynı report'a ait iki relation işlenirken ikinci yazım
+        // birinci yazımı ezer (last-write-wins) ve toplamlar yanlış hesaplanır.
+        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
+        if (!report) {
+            this.logger.warn(`Report ${reportId} bulunamadı, atlanıyor`);
+            return;
+        }
         if (report.query == null) {
-            this.logger.warn(`Report ${report.id} has no query loaded`);
-            debugger
+            this.logger.warn(`Report ${reportId} has no query loaded`);
             return;
         }
         const accountId = report.query.ownerAccountId;
         // const items = payment.items.filter(i => i.sellerAccountId === accountId);
         // Satıcı kendi satışlarının sonucunu görmeli, o yüzden paymentOrder ile filtreliyoruz. Itemler için de payment.filter(i => i.sellerAccountId === accountId) yapabiliriz ama o zaman da payment.items çok fazla olabilir ve sorgu sınırlarını aşabiliriz. O yüzden direkt paymentOrder ile filtreleyelim.
-        const paymentOrder = (await this.sellerPaymentOrderService.findAll({
+        const paymentOrders = (await this.sellerPaymentOrderService.findAll({
             paymentId: payment.id,
             targetAccountIds: accountId,
             admin: 'true'
-        }))[0];
+        }));
+        if (
+            paymentOrders.find(po => po.targetAccountId !== accountId)
 
+        ) {
+            this.logger.warn(`Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin.`);
+            // Keşke herkes KDE kullansa olsa da kdialog ile güzel bir uyarı verebilsem 😭😭😭
+            // exec(`kdialog --msgbox "Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin."`);
+            // debugger;
+        }
+        const paymentOrder = paymentOrders.find(po => po.targetAccountId === accountId);
         if (!paymentOrder) {
             this.logger.warn(`No payment order found for payment ${payment.id} and account ${accountId}`);
             return;
@@ -148,10 +164,10 @@ export class ReportService {
         await this.reportRepo.save(report);
     }
 
-    private async updateTaxGroupReportByPayment(payment: PaymentFullDTO, report: Report) {
+    private async updateTaxGroupReportByPayment(payment: PaymentFullDTO, mainReportId: string) {
         for (let index = 0; index < payment.taxes.length; index++) {
             const taxGroup = payment.taxes[index];
-            const where = { reportId: report.id, taxPercent: taxGroup.percent.toString(), currency: payment.currency };
+            const where = { reportId: mainReportId, taxPercent: taxGroup.percent.toString(), currency: payment.currency };
             const existingTaxGroupReport = await this.taxGroupRepo.findOne({ where });
             let deltaIncomeFull = 0, deltaExpenseFull = 0;
             if (payment.type === 'PURCHASE') {
@@ -160,7 +176,7 @@ export class ReportService {
                 deltaExpenseFull = taxGroup.taxAmount;
             }
             if (existingTaxGroupReport) {
-                // TODO: Yeni tax group raporu oluşturulacak ve kaydedilecek
+                // TODO: Yeni tax group raporu oluşturulacak ve kaydedilecekWW
                 continue;
             }
             await this.taxGroupRepo.increment(
@@ -185,8 +201,9 @@ export class ReportService {
     // cron olacak
     @Cron('*/30 * * * * *') // her dakika (Development için 10 saniyede bir çalışacak şekilde ayarladım, production'da bunu 1 dakikaya veya daha uzun aralıklara çekebiliriz)
     async checkRelations() {
+        if (this.alreadyRunning) return;
+        this.alreadyRunning = true;
         const digestionId = Date.now() + "_" + randomUUID();
-        // exec("kdialog --msgbox 'Report digestion started " + digestionId + "'");
         await this.reportPaymentRelationRepo.update({
             digestionStatus: "WAITING"
         }, {
@@ -206,7 +223,7 @@ export class ReportService {
             const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
             // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
             // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
-            await this.digestPayment(relation.report, payment);
+            await this.digestPayment(relation.reportId, payment);
 
             // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
             relation.digestionStatus = "COMPLETED";
