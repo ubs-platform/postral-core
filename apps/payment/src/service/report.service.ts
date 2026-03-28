@@ -62,6 +62,7 @@ export class ReportService {
             reportNew.periodLabel = periodLabel;
             reportNew.currency = currency;
 
+
             const created = await this.reportRepo.save(reportNew);
             return created;
         } catch (err: any) {
@@ -101,7 +102,7 @@ export class ReportService {
                 digestionStatus: "WAITING",
             });
 
-            await this.digestPayment(report, payment);
+            // await this.digestPayment(report, payment);
             // await this.updateTaxGroupReportByPayment(payment, report);
 
             this.logger.debug(
