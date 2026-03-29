@@ -294,6 +294,14 @@ export class ReportService {
     }
 
     /**
+     * Herhangi bir reporta (report payment relation tablosuna) dahil olmayan paymentları accountId'ye göre relation'a WAITING statüsünde eklenir.
+     * @param accountId 
+     */
+    async includeOlderNotIncludedPayments(accountId: string) {
+        
+    }
+
+    /**
      * Eski report'u farklı isimle kaydedip yeni report açacak. Sonra da tüm paymentlar tekrar waiting'e çekilecek ve digestion queue'ya girecek. Böylece eski report'taki tüm paymentlar yeni report'ta tekrar işlenecek ve rapor güncellenecek.
      * Eğer hesaplamalarda hata varsa veya yeni bir alan ekledik de eski raporlarda o alan boş kalıyorsa bu method'u çalıştırarak tüm raporları güncelleyebiliriz.
      * @param reportId 
