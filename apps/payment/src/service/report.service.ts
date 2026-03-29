@@ -17,6 +17,7 @@ import { SellerPaymentOrderService } from './transaction.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { randomUUID } from 'crypto';
 import { exec } from 'child_process';
+import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
 
 @Injectable()
 export class ReportService {
@@ -297,8 +298,35 @@ export class ReportService {
      * Herhangi bir reporta (report payment relation tablosuna) dahil olmayan paymentları accountId'ye göre relation'a WAITING statüsünde eklenir.
      * @param accountId 
      */
-    async includeOlderNotIncludedPayments(accountId: string) {
-        
+    async includeOlderNotIncludedPayments(accountId: string, reportId: string) {
+        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
+        if (!report) {
+            throw new Error(`Report ${reportId} not found`);
+        }
+        if (report.query == null) {
+            throw new Error(`Report ${reportId} has no query loaded`);
+        }
+        const payments = await this.paymentCommonService.findPaymentDoesntHaveReportRelation(accountId, reportId);
+        const batchInsert: Partial<ReportPaymentRelation>[] = [];
+        for (const payment of payments) {
+            const periodLabel = this.buildPeriodLabel(
+                report.query.dateGrouping,
+                new Date(payment.createdAt),
+            );
+            if (periodLabel !== report.periodLabel) {
+                // Bu payment bu rapora ait değil, atla.
+                continue;
+            }
+            batchInsert.push({
+                reportId: reportId,
+                paymentId: payment.id,
+                digestionStatus: "WAITING",
+            });
+
+        }
+        if (batchInsert.length > 0) {
+            await this.reportPaymentRelationRepo.insert(batchInsert);
+        }
     }
 
     /**
@@ -307,7 +335,8 @@ export class ReportService {
      * @param reportId 
      * @returns 
      */
-    async reportReconstruct(reportId: string) {
+    async reportReconstruct(reconstruction: ReportReconstructionDTO) {
+        const { reportId, findNotExistingPaymentsForAccountId } = reconstruction;
         const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
         if (!report) {
             throw new Error(`Report ${reportId} not found`);
@@ -315,20 +344,28 @@ export class ReportService {
             // return;
         }
         if (report.query == null) {
-            throw new Error(`Report ${reportId} has no query loaded, reconstruction atlanıyor`);
+            throw new Error(`Report ${reportId} has no query loaded.`);
             // this.logger.warn(`Report ${reportId} has no query loaded, reconstruction atlanıyor`);
+            // return;
+        }
+        if (report.query.ownerAccountId == null) {
+            throw new Error(`Report ${reportId} has no query ownerAccountId.`);
+
+            // this.logger.warn(`Report ${reportId} has no query ownerAccountId, reconstruction atlanıyor`);
             // return;
         }
 
         report.periodLabel = report.periodLabel + "_OLD_" + Date.now();
+
         await this.reportRepo.save(report);
         await this.findOrCreateByQuery(report.query, report.periodLabel, report.currency); // eski raporun query, periodLabel ve currency'siyle yeni bir rapor oluşturuyoruz. periodLabel'a timestamp ekleyelim ki aynı periodLabel ile yeni rapor oluşmasın.
+        if (findNotExistingPaymentsForAccountId) {
+            await this.includeOlderNotIncludedPayments(report.query.ownerAccountId, report.id);
+        }
+
         // Yoğun bir işlem ama zaten sıklıkla çalıştırılacak bir method değil, gerektiğinde satıcı çalıştırabilir, ya da admin bilmiyorum.... Ayrıca raporlarda çok fazla payment olabilir, bu yüzden hepsini tek seferde güncellemek yerine digestion queue'ya atarak sırayla güncellemeyi planlıyorum.
         const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId }, loadEagerRelations: true });
-        const paymentSellerOrders = await this.sellerPaymentOrderService.findAll({
-            targetAccountIds: report.query.ownerAccountId!,
-            admin: 'true'
-        });
+
         // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
         // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
         for (const relation of relatedPaymentRelations) {

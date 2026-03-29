@@ -30,4 +30,6 @@ export class ReportQueryController extends BaseCrudControllerGenerator<
     async getReports(@Param('id') id: string) {
         return this.reportService.findByQueryId(id);
     }
+
+    
 }
