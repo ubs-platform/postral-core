@@ -38,7 +38,7 @@ export class Report implements BaseReport{
      *  YEARLY  → "2026"
      *  ALL     → "ALL"
      */
-    @Column({ length: 20 })
+    @Column({ length: 60 })
     periodLabel: string;
 
     @Column({ length: 10 })
@@ -85,4 +85,7 @@ export class Report implements BaseReport{
 
     @Column({ length: 255, nullable: true })
     lastDigestedPaymentId: string;
+
+    @Column({ type: 'boolean', default: false })
+    archived: boolean = false;
 }

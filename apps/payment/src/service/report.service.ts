@@ -51,7 +51,7 @@ export class ReportService {
         periodLabel: string,
         currency: string,
     ): Promise<Report> {
-        const where = { queryId: query.id, periodLabel, currency }
+        const where = { queryId: query.id, periodLabel, currency, archived: false };
         const existing = await this.reportRepo.findOne({
             where
         });
@@ -97,19 +97,20 @@ export class ReportService {
                 payment.currency,
             );
             // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
-            await this.reportPaymentRelationRepo.save({
-                reportId: report.id,
-                paymentId: payment.id,
-                digestionStatus: "WAITING",
-            });
-
-            // await this.digestPayment(report, payment);
-            // await this.updateTaxGroupReportByPayment(payment, report);
-
-            this.logger.debug(
-                `Digested payment ${payment.id} into report ${report.id} (query: ${query.name}, period: ${periodLabel})`,
-            );
+            await this.insertPaymentToReportDigestionSingle(report.id, payment.id);
         }
+    }
+
+    private async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string) {
+        await this.reportPaymentRelationRepo.save({
+            reportId: reportId,
+            paymentId: paymentId,
+            digestionStatus: "WAITING",
+        });
+
+        this.logger.debug(
+            `Digested payment ${paymentId} into report ${reportId}`
+        );
     }
 
     private async digestPayment(reportId: string, payment: PaymentFullDTO) {
@@ -180,11 +181,11 @@ export class ReportService {
                 // TODO: Yeni tax group raporu oluşturulacak ve kaydedilecekWW
                 continue;
             }
-            await this.taxGroupRepo.increment(
-                where,
-                'totalTaxAmount',
-                taxGroup.taxAmount
-            );
+            // await this.taxGroupRepo.increment(
+            //     where,
+            //     'totalTaxAmount',
+            //     taxGroup.taxAmount
+            // );
 
         }
     }
@@ -298,34 +299,41 @@ export class ReportService {
      * Herhangi bir reporta (report payment relation tablosuna) dahil olmayan paymentları accountId'ye göre relation'a WAITING statüsünde eklenir.
      * @param accountId 
      */
-    async includeOlderNotIncludedPayments(accountId: string, reportId: string) {
-        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
-        if (!report) {
-            throw new Error(`Report ${reportId} not found`);
+    async includeOlderNotIncludedPayments(accountId: string,newPeriodLabel: string, oldReportId: string, newReportId: string) {
+        const oldReportArchived = await this.reportRepo.findOne({ where: { id: oldReportId }, relations: ['query'] });
+        if (!oldReportArchived) {
+            throw new Error(`Report ${oldReportId} not found`);
         }
-        if (report.query == null) {
-            throw new Error(`Report ${reportId} has no query loaded`);
+        if (oldReportArchived.query == null) {
+            throw new Error(`Report ${oldReportId} has no query loaded`);
         }
-        const payments = await this.paymentCommonService.findPaymentDoesntHaveReportRelation(accountId, reportId);
+        const payments = await this.paymentCommonService.findPaymentDoesntHaveReportRelation(accountId, oldReportId);
         const batchInsert: Partial<ReportPaymentRelation>[] = [];
         for (const payment of payments) {
             const periodLabel = this.buildPeriodLabel(
-                report.query.dateGrouping,
+                oldReportArchived.query.dateGrouping,
                 new Date(payment.createdAt),
             );
-            if (periodLabel !== report.periodLabel) {
+            if (periodLabel !== newPeriodLabel) {
                 // Bu payment bu rapora ait değil, atla.
                 continue;
             }
             batchInsert.push({
-                reportId: reportId,
+                reportId: newReportId,
                 paymentId: payment.id,
                 digestionStatus: "WAITING",
             });
 
         }
+
         if (batchInsert.length > 0) {
-            await this.reportPaymentRelationRepo.insert(batchInsert);
+            try {
+                await this.reportPaymentRelationRepo.insert(batchInsert);
+
+            } catch (error) {
+                debugger;
+                this.logger.error(`Failed to insert report payment relations for report reconstruction. ReportId: ${newReportId}, Error: ${error.message}`);
+            }
         }
     }
 
@@ -337,41 +345,38 @@ export class ReportService {
      */
     async reportReconstruct(reconstruction: ReportReconstructionDTO) {
         const { reportId, findNotExistingPaymentsForAccountId } = reconstruction;
-        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
-        if (!report) {
+        let oldReport = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
+        if (!oldReport) {
             throw new Error(`Report ${reportId} not found`);
             // this.logger.warn(`Report ${reportId} bulunamadı, reconstruction atlanıyor`);
             // return;
         }
-        if (report.query == null) {
+        if (oldReport.query == null) {
             throw new Error(`Report ${reportId} has no query loaded.`);
             // this.logger.warn(`Report ${reportId} has no query loaded, reconstruction atlanıyor`);
             // return;
         }
-        if (report.query.ownerAccountId == null) {
+        if (oldReport.query.ownerAccountId == null) {
             throw new Error(`Report ${reportId} has no query ownerAccountId.`);
-
-            // this.logger.warn(`Report ${reportId} has no query ownerAccountId, reconstruction atlanıyor`);
-            // return;
         }
-
-        report.periodLabel = report.periodLabel + "_OLD_" + Date.now();
-
-        await this.reportRepo.save(report);
-        await this.findOrCreateByQuery(report.query, report.periodLabel, report.currency); // eski raporun query, periodLabel ve currency'siyle yeni bir rapor oluşturuyoruz. periodLabel'a timestamp ekleyelim ki aynı periodLabel ile yeni rapor oluşmasın.
+        if (oldReport.archived) {
+            throw new Error(`Report ${reportId} is already archived.`);
+        }
+        const currentReportLabel = oldReport.periodLabel;
+        oldReport.periodLabel = oldReport.periodLabel + "_OLD_" + Date.now();
+        oldReport.archived = true;
+        oldReport = await this.reportRepo.save(oldReport);
+        const brandNewReport = await this.findOrCreateByQuery(oldReport.query, currentReportLabel, oldReport.currency); // eski raporun query, periodLabel ve currency'siyle yeni bir rapor oluşturuyoruz. periodLabel'a timestamp ekleyelim ki aynı periodLabel ile yeni rapor oluşmasın.
         if (findNotExistingPaymentsForAccountId) {
-            await this.includeOlderNotIncludedPayments(report.query.ownerAccountId, report.id);
+            await this.includeOlderNotIncludedPayments(oldReport.query.ownerAccountId!, currentReportLabel, oldReport.id, brandNewReport.id);
         }
 
         // Yoğun bir işlem ama zaten sıklıkla çalıştırılacak bir method değil, gerektiğinde satıcı çalıştırabilir, ya da admin bilmiyorum.... Ayrıca raporlarda çok fazla payment olabilir, bu yüzden hepsini tek seferde güncellemek yerine digestion queue'ya atarak sırayla güncellemeyi planlıyorum.
-        const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId }, loadEagerRelations: true });
-
+        const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId: oldReport.id } });
         // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
         // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
         for (const relation of relatedPaymentRelations) {
-            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
-            await this.digestPayment(report.id, payment);
-            await this.updateTaxGroupReportByPayment(payment, report.id);
+            await this.insertPaymentToReportDigestionSingle(brandNewReport.id, relation.paymentId);
         }
     }
 
