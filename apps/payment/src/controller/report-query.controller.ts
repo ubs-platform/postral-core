@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ReportQueryCrudService } from '../service/report-query.service';
 import { ReportService } from '../service/report.service';
 import { ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
@@ -31,5 +31,15 @@ export class ReportQueryController extends BaseCrudControllerGenerator<
         return this.reportService.findByQueryId(id);
     }
 
-    
+    @Get(':id/reports/_search')
+    @UseGuards(JwtAuthGuard)
+    async searchReports(
+        @Param('id') id: string,
+        @Query('page') page?: number,
+        @Query('size') size?: number,
+        @Query('hideArchived') hideArchived?: string,
+    ) {
+        return this.reportService.searchByQueryId(id, page, size, hideArchived === 'true');
+    }
 }
+

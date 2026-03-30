@@ -41,6 +41,7 @@ export class ReportDTO implements BaseReport {
     netTaxAmount: number;
     netSaleAmount: number;
     netRevenue: number;
+    archived?: boolean;
 }
 
 

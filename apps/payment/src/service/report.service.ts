@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, UpdateResult } from 'typeorm';
+import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
 import { ReportDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
@@ -196,6 +197,26 @@ export class ReportService {
             order: { periodLabel: 'DESC' },
         });
         return reports.map((r) => this.toDto(r));
+    }
+
+    async searchByQueryId(
+        queryId: string,
+        page?: number | string,
+        size?: number | string,
+        hideArchived?: boolean,
+    ) {
+        const where: any = { queryId };
+        if (hideArchived) {
+            where.archived = false;
+        }
+        return (await TypeormSearchUtil.modelSearch<Report>(
+            this.reportRepo,
+            size || 10,
+            page || 0,
+            { periodLabel: 'desc' },
+            [],
+            where,
+        )).map((r) => this.toDto(r));
     }
 
 
@@ -396,6 +417,7 @@ export class ReportService {
         dto.paymentCount = entity.paymentCount;
         dto.lastDigestedAt = entity.lastDigestedAt;
         dto.createdAt = entity.createdAt;
+        dto.archived = entity.archived;
         return dto;
     }
 }
