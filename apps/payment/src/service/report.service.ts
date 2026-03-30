@@ -394,6 +394,7 @@ export class ReportService {
         }
 
         // Yoğun bir işlem ama zaten sıklıkla çalıştırılacak bir method değil, gerektiğinde satıcı çalıştırabilir, ya da admin bilmiyorum.... Ayrıca raporlarda çok fazla payment olabilir, bu yüzden hepsini tek seferde güncellemek yerine digestion queue'ya atarak sırayla güncellemeyi planlıyorum.
+        // TODO: Upsert'e bak belki for yapmamıza gerek kalmaz
         const relatedPaymentRelations = await this.reportPaymentRelationRepo.find({ where: { reportId: oldReport.id } });
         // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
         // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
