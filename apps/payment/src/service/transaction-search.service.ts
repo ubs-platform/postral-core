@@ -136,6 +136,12 @@ export class SellerPaymentOrderSearchService {
             });
         }
 
+        if (modelSearch.paymentId) {
+            Object.assign(where, {
+                paymentId: modelSearch.paymentId,
+            });
+        }
+
         if (modelSearch.dateFrom && modelSearch.dateTo) {
             Object.assign(where, {
                 createdAt: Between(modelSearch.dateFrom, modelSearch.dateTo),

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, UpdateResult } from 'typeorm';
+import { In, Not, Repository, UpdateResult } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
@@ -23,7 +23,6 @@ import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
 @Injectable()
 export class ReportService {
     private readonly logger = new Logger(ReportService.name);
-    alreadyRunning: any;
 
     constructor(
         @InjectRepository(Report)
@@ -36,6 +35,8 @@ export class ReportService {
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
+        // @InjectRepository(ReportOperationStatus)
+        // private readonly reportOperationStatusRepo: Repository<ReportOperationStatus>,
     ) { }
 
 
@@ -135,15 +136,15 @@ export class ReportService {
             targetAccountIds: accountId,
             admin: 'true'
         }));
-        if (
-            paymentOrders.find(po => po.targetAccountId !== accountId)
+        // if (paymentOrders.length > 1) {
+        //     debugger
+        // }
+        // if (
+        //     paymentOrders.find(po => po.targetAccountId !== accountId)
 
-        ) {
-            this.logger.warn(`Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin.`);
-            // Keşke herkes KDE kullansa olsa da kdialog ile güzel bir uyarı verebilsem 😭😭😭
-            // exec(`kdialog --msgbox "Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin."`);
-            // debugger;
-        }
+        // ) {
+        //     this.logger.warn(`Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin.`);
+        // }
         const paymentOrder = paymentOrders.find(po => po.targetAccountId === accountId);
         if (!paymentOrder) {
             this.logger.warn(`No payment order found for payment ${payment.id} and account ${accountId}`);
@@ -158,7 +159,6 @@ export class ReportService {
             report.totalRefundAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalRefundAmount);
             report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalRefundTaxAmount);
         }
-
         report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
         report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
@@ -222,13 +222,13 @@ export class ReportService {
 
 
     // cron olacak
-    @Cron('*/30 * * * * *') // her dakika (Development için 10 saniyede bir çalışacak şekilde ayarladım, production'da bunu 1 dakikaya veya daha uzun aralıklara çekebiliriz)
+    @Cron('*/10 * * * * *') // her dakika (Development için 10 saniyede bir çalışacak şekilde ayarladım, production'da bunu 1 dakikaya veya daha uzun aralıklara çekebiliriz)
     async checkRelations() {
-        if (this.alreadyRunning) return;
-        this.alreadyRunning = true;
         const digestionId = Date.now() + "_" + randomUUID();
+        const alreadyWorkingReports = (await this.reportPaymentRelationRepo.createQueryBuilder("relation").select("relation.reportId").distinctOn(["relation.reportId"]).where("relation.digestionStatus = :status", { status: "DIGESTING" }).getMany()).map(r => r.reportId);
         await this.reportPaymentRelationRepo.update({
-            digestionStatus: "WAITING"
+            digestionStatus: "WAITING",
+            reportId: Not(In(alreadyWorkingReports)),
         }, {
             digestionStatus: "DIGESTING",
             digestionId: digestionId,
@@ -239,8 +239,10 @@ export class ReportService {
             where: { digestionId: digestionId, digestionStatus: "DIGESTING" },
             loadEagerRelations: true
         });
+        if (relationsWaiting.length === 0) {
+            return;
+        }
         for (const relation of relationsWaiting) {
-            // karışıklığa sebep olmaması için digestionStatus'ü hemen "DIGESTING" yapalım, böylece aynı rapor için diğer ilişkilerin digestion işlemi başlamadan önce atlanmasını sağlayabiliriz.
 
             // FIX: loadEagerRelations: false ile relation.payment yüklenmez; doğrudan paymentId kolonunu kullanıyoruz.
             const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
@@ -255,7 +257,7 @@ export class ReportService {
             await this.reportPaymentRelationRepo.save(relation);
         }
         // }
-        this.alreadyRunning = false;
+        // this.alreadyRunning = false;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -320,7 +322,7 @@ export class ReportService {
      * Herhangi bir reporta (report payment relation tablosuna) dahil olmayan paymentları accountId'ye göre relation'a WAITING statüsünde eklenir.
      * @param accountId 
      */
-    async includeOlderNotIncludedPayments(accountId: string,newPeriodLabel: string, oldReportId: string, newReportId: string) {
+    async includeOlderNotIncludedPayments(accountId: string, newPeriodLabel: string, oldReportId: string, newReportId: string) {
         const oldReportArchived = await this.reportRepo.findOne({ where: { id: oldReportId }, relations: ['query'] });
         if (!oldReportArchived) {
             throw new Error(`Report ${oldReportId} not found`);
@@ -352,7 +354,6 @@ export class ReportService {
                 await this.reportPaymentRelationRepo.insert(batchInsert);
 
             } catch (error) {
-                debugger;
                 this.logger.error(`Failed to insert report payment relations for report reconstruction. ReportId: ${newReportId}, Error: ${error.message}`);
             }
         }
