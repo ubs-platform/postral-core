@@ -422,4 +422,12 @@ export class ReportService {
         dto.archived = entity.archived;
         return dto;
     }
+
+    async fetchInProgressReportIds(
+        reportIds: string[]
+    ) {
+        const alreadyWorkingReports = (await this.reportPaymentRelationRepo.createQueryBuilder("relation").select("relation.reportId").distinctOn(["relation.reportId"]).where("relation.digestionStatus in ('DIGESTING', 'WAITING') and relation.reportId in (:...reportIds)", { reportIds }).getMany()).map(r => r.reportId);
+        return alreadyWorkingReports;
+
+    }
 }

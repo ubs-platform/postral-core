@@ -12,4 +12,9 @@ export class ReportController {
     async reconstructReport(@Body() body: ReportReconstructionDTO) {
         return await this.reportService.reportReconstruct(body);
     }
+
+    @Post('fetch-in-progress')
+    async fetchInProgress(@Body() body: { reportIds: string[] }) {
+        return await this.reportService.fetchInProgressReportIds(body.reportIds);
+    }
 }
