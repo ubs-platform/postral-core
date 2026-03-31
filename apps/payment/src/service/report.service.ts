@@ -120,10 +120,6 @@ export class ReportService {
         // Taze veri: döngüde paylaşılan stale instance yerine DB'den güncel satırı çekiyoruz.
         // Aksi hâlde aynı batch'te aynı report'a ait iki relation işlenirken ikinci yazım
         // birinci yazımı ezer (last-write-wins) ve toplamlar yanlış hesaplanır.
-        if (!report) {
-            this.logger.warn(`Report ${report.id} bulunamadı, atlanıyor`);
-            return;
-        }
         if (report.query == null) {
             this.logger.warn(`Report ${report.id} has no query loaded`);
             return;
