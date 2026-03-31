@@ -4,7 +4,7 @@ import { In, Not, Repository, UpdateResult } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { ReportDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
+import { BaseReport, PaymentTransactionDTO, ReportDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { ReportDateGrouping } from '@tk-postral/payment-common';
 import { PaymentFullDTO } from '@tk-postral/payment-common';
 import { ReportTaxGroup } from '../entity';
@@ -99,15 +99,16 @@ export class ReportService {
                 payment.currency,
             );
             // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
-            await this.insertPaymentToReportDigestionSingle(report.id, payment.id);
+            await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
         }
     }
 
-    private async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string) {
+    private async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
         await this.reportPaymentRelationRepo.save({
             reportId: reportId,
             paymentId: paymentId,
             digestionStatus: "WAITING",
+            accountId: accountId,
         });
 
         this.logger.debug(
@@ -115,36 +116,32 @@ export class ReportService {
         );
     }
 
-    private async digestPayment(reportId: string, payment: PaymentFullDTO) {
+    private async digestPayment(report: Report, payment: PaymentFullDTO) {
         // Taze veri: döngüde paylaşılan stale instance yerine DB'den güncel satırı çekiyoruz.
         // Aksi hâlde aynı batch'te aynı report'a ait iki relation işlenirken ikinci yazım
         // birinci yazımı ezer (last-write-wins) ve toplamlar yanlış hesaplanır.
-        const report = await this.reportRepo.findOne({ where: { id: reportId }, relations: ['query'] });
         if (!report) {
-            this.logger.warn(`Report ${reportId} bulunamadı, atlanıyor`);
+            this.logger.warn(`Report ${report.id} bulunamadı, atlanıyor`);
             return;
         }
         if (report.query == null) {
-            this.logger.warn(`Report ${reportId} has no query loaded`);
+            this.logger.warn(`Report ${report.id} has no query loaded`);
             return;
         }
         const accountId = report.query.ownerAccountId;
-        // const items = payment.items.filter(i => i.sellerAccountId === accountId);
-        // Satıcı kendi satışlarının sonucunu görmeli, o yüzden paymentOrder ile filtreliyoruz. Itemler için de payment.filter(i => i.sellerAccountId === accountId) yapabiliriz ama o zaman da payment.items çok fazla olabilir ve sorgu sınırlarını aşabiliriz. O yüzden direkt paymentOrder ile filtreleyelim.
+
+        await this.reportCalculation(report, payment, accountId!);
+        report.lastDigestedAt = new Date();
+        report.lastDigestedPaymentId = payment.id;
+        return await this.reportRepo.save(report);
+    }
+
+    private async reportCalculation(report: BaseReport, payment: PaymentFullDTO, accountId: string) {
         const paymentOrders = (await this.sellerPaymentOrderService.findAll({
             paymentId: payment.id,
             targetAccountIds: accountId,
             admin: 'true'
         }));
-        // if (paymentOrders.length > 1) {
-        //     debugger
-        // }
-        // if (
-        //     paymentOrders.find(po => po.targetAccountId !== accountId)
-
-        // ) {
-        //     this.logger.warn(`Payment ${payment.id} için report digestion sırasında beklenmedik bir durum oluştu: paymentOrder'larda report owner accountId'si bulunamadı. Lütfen logları kontrol edin.`);
-        // }
         const paymentOrder = paymentOrders.find(po => po.targetAccountId === accountId);
         if (!paymentOrder) {
             this.logger.warn(`No payment order found for payment ${payment.id} and account ${accountId}`);
@@ -162,9 +159,6 @@ export class ReportService {
         report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
         report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
-        report.lastDigestedAt = new Date();
-        report.lastDigestedPaymentId = payment.id;
-        await this.reportRepo.save(report);
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
@@ -175,8 +169,15 @@ export class ReportService {
                 continue;
             }
             const taxGroup = item.taxPercent, taxGroupLabel = taxGroup ? `Tax ${taxGroup}%` : 'No Tax';
-            let taxGroupReport = await this.taxGroupRepo.findOne({ where: { mainReportId, taxGroupLabel } });
+            let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: mainReportId, taxGroupName: taxGroupLabel } });
+            if (!taxGroupReport) {
+                taxGroupReport = new ReportTaxGroup();
+                taxGroupReport.reportId = mainReportId;
+                taxGroupReport.taxGroupName = taxGroupLabel;
+            }
 
+            await this.reportCalculation(taxGroupReport, payment, accountId);
+            await this.taxGroupRepo.save(taxGroupReport);
         }
     }
 
@@ -237,8 +238,15 @@ export class ReportService {
             const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
             // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
             // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
-            await this.digestPayment(relation.reportId, payment);
-            // await this.updateTaxGroupReportByPayment(relation.reportId, payment);
+
+            // yeni getirilsin sıkıntı olmasın
+            const freshReport = await this.reportRepo.findOne({ where: { id: relation.reportId }, relations: ['query'] });
+            if (!freshReport) {
+                this.logger.warn(`Report ${relation.reportId} bulunamadı, atlanıyor`);
+                continue;
+            }
+            await this.digestPayment(freshReport, payment);
+            await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, freshReport.query.ownerAccountId!);
             // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
             relation.digestionStatus = "COMPLETED";
             relation.digestionId = "";
@@ -388,7 +396,7 @@ export class ReportService {
         // Relation içinde olmayanlar da eklemeyi planlıyorum, ama şimdilik sadece relation içinde olanları güncelleyelim. 
         // Çünkü relation içinde olmayanların hangi raporlarla ilişkili olduğunu bilmiyoruz, o yüzden onları atlamak daha güvenli olabilir.
         for (const relation of relatedPaymentRelations) {
-            await this.insertPaymentToReportDigestionSingle(brandNewReport.id, relation.paymentId);
+            await this.insertPaymentToReportDigestionSingle(brandNewReport.id, relation.paymentId, relation.accountId);
         }
     }
 

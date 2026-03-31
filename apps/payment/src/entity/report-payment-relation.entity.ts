@@ -26,6 +26,9 @@ export class ReportPaymentRelation {
     @Column()
     reportId: string;
 
+    @Column()
+    accountId: string;
+
     @ManyToOne(() => Payment, (p) => p.id, { onDelete: 'CASCADE', eager: false })
     @JoinColumn({ name: 'paymentId' })
     payment: Payment;
