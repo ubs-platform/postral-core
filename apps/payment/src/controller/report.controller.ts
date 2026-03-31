@@ -15,6 +15,6 @@ export class ReportController {
 
     @Post('fetch-in-progress')
     async fetchInProgress(@Body() body: { reportIds: string[] }) {
-        return await this.reportService.fetchInProgressReportIds(body.reportIds);
+        return Object.fromEntries(await this.reportService.fetchInProgressReportIds(body.reportIds));
     }
 }

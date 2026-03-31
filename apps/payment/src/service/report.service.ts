@@ -167,26 +167,15 @@ export class ReportService {
         await this.reportRepo.save(report);
     }
 
-    private async updateTaxGroupReportByPayment(payment: PaymentFullDTO, mainReportId: string) {
-        for (let index = 0; index < payment.taxes.length; index++) {
-            const taxGroup = payment.taxes[index];
-            const where = { reportId: mainReportId, taxPercent: taxGroup.percent.toString(), currency: payment.currency };
-            const existingTaxGroupReport = await this.taxGroupRepo.findOne({ where });
-            let deltaIncomeFull = 0, deltaExpenseFull = 0;
-            if (payment.type === 'PURCHASE') {
-                deltaIncomeFull = taxGroup.taxAmount;
-            } else if (payment.type === 'REFUND') {
-                deltaExpenseFull = taxGroup.taxAmount;
-            }
-            if (existingTaxGroupReport) {
-                // TODO: Yeni tax group raporu oluşturulacak ve kaydedilecekWW
+    private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+        for (let index = 0; index < payment.items.length; index++) {
+            // Payment itemleri dolaşarak tax percentleri almam gerekiyor çünkü paymentta diğer satıcılarla ilgili bilgi olabilir...
+            const item = payment.items[index];
+            if (item.sellerAccountId !== accountId) {
                 continue;
             }
-            // await this.taxGroupRepo.increment(
-            //     where,
-            //     'totalTaxAmount',
-            //     taxGroup.taxAmount
-            // );
+            const taxGroup = item.taxPercent, taxGroupLabel = taxGroup ? `Tax ${taxGroup}%` : 'No Tax';
+            let taxGroupReport = await this.taxGroupRepo.findOne({ where: { mainReportId, taxGroupLabel } });
 
         }
     }
@@ -249,7 +238,7 @@ export class ReportService {
             // FIX: await eksikti; olmadan digestion bitmeden status COMPLETED'a çekiliyordu ve hatalar yutuluyordu.
             // Geleceğinden eminiz, ama nullsa zaten patlayalım 💥💥
             await this.digestPayment(relation.reportId, payment);
-
+            // await this.updateTaxGroupReportByPayment(relation.reportId, payment);
             // tamamlandıktan sonra digestionStatus'ü "COMPLETED" yapalım, böylece bu ilişki bir daha işlenmez.
             relation.digestionStatus = "COMPLETED";
             relation.digestionId = "";
@@ -425,9 +414,21 @@ export class ReportService {
 
     async fetchInProgressReportIds(
         reportIds: string[]
-    ) {
-        const alreadyWorkingReports = (await this.reportPaymentRelationRepo.createQueryBuilder("relation").select("relation.reportId").distinctOn(["relation.reportId"]).where("relation.digestionStatus in ('DIGESTING', 'WAITING') and relation.reportId in (:...reportIds)", { reportIds }).getMany()).map(r => r.reportId);
-        return alreadyWorkingReports;
+    ): Promise<Map<String, String>> {
+        const map = new Map<string, string>();
+        const alreadyWorkingReports = (await this.reportPaymentRelationRepo.createQueryBuilder("relation")
+            .select(["relation.reportId", 'relation.digestionStatus'])
+            .where("relation.reportId in (:...reportIds)", { reportIds })
+            .groupBy('relation.reportId')
+            // Önce DIGESTING, sonra WAITING ve en son COMPLETED gelmesi gerekiyor
+            // .orderBy("relation.reportId", "ASC")
+            .addOrderBy("(case when relation.digestionStatus = 'DIGESTING' then 1 when relation.digestionStatus = 'WAITING' then 2 else 3 end)", "ASC")
+            .getMany());
+        for (const r of alreadyWorkingReports) {
+            this.logger.log(r.reportId, r.digestionStatus)
+            map.set(r.reportId, r.digestionStatus);
+        }
+        return map;
 
     }
 }
