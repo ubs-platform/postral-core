@@ -58,13 +58,15 @@ export class ReportService {
             where
         });
         if (existing) return existing;
-
+        if (query.ownerAccountId == null) {
+            throw new Error(`Query ${query.id} has no ownerAccountId, cannot create report`);
+        }
         try {
             const reportNew = new Report();
             reportNew.queryId = query.id;
             reportNew.periodLabel = periodLabel;
             reportNew.currency = currency;
-
+            reportNew.accountId = query.ownerAccountId!;
 
             const created = await this.reportRepo.save(reportNew);
             return created;
@@ -146,15 +148,15 @@ export class ReportService {
         report.paymentCount += 1;
 
         if (payment.type === 'PURCHASE') {
-            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalSaleAmount);
-            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalSaleTaxAmount);
+            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalSaleAmount || 0);
+            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalSaleTaxAmount || 0);
         } else if (payment.type === 'REFUND') {
-            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalRefundAmount);
-            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalRefundTaxAmount);
+            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalRefundAmount || 0);
+            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalRefundTaxAmount || 0);
         }
-        report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount, report.totalRefundTaxAmount);
-        report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount, report.totalRefundAmount);
-        report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount, report.netTaxAmount);
+        report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
+        report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
+        report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
@@ -170,6 +172,8 @@ export class ReportService {
                 taxGroupReport = new ReportTaxGroup();
                 taxGroupReport.reportId = mainReportId;
                 taxGroupReport.taxGroupName = taxGroupLabel;
+                taxGroupReport.currency = payment.currency;
+                taxGroupReport.taxPercent = taxGroup.toString()
             }
 
             await this.reportCalculation(taxGroupReport, payment, accountId);

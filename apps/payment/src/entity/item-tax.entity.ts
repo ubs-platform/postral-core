@@ -21,8 +21,8 @@ export class ItemTaxEntity {
      *  If it's public, it can be used by any account. If it's private, 
      * it can only be used by the account that created it.
      */
-    @Column()
-    isPublic: boolean;
+    @Column({ default: false })
+    isPublic: boolean = false;
 
     @OneToMany(() => ItemTaxVariation, (variation) => variation.itemTax, {
         cascade: true,

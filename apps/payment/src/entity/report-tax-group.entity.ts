@@ -28,34 +28,34 @@ export class ReportTaxGroup implements BaseReport {
 
     // --- Asıl hesap kısımları ---
     @Column({ type: 'int', default: 0 })
-    paymentCount: number;
+    paymentCount: number = 0;
 
     // Toplam satın alma
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalSaleAmount: number;
+    totalSaleAmount: number = 0;
 
     // Toplam iade
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalRefundAmount: number;
+    totalRefundAmount: number = 0;
 
     // Toplam satın alma vergisi
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalSaleTaxAmount: number;
+    totalSaleTaxAmount: number = 0;
 
     // Toplam iade vergisi
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    totalRefundTaxAmount: number;
+    totalRefundTaxAmount: number = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netTaxAmount: number;
+    netTaxAmount: number = 0;
 
 
     // Net satın alma (satın alma - iade)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netSaleAmount: number;
+    netSaleAmount: number = 0;
 
     // Net gelir (net satın alma - net vergi)
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
-    netRevenue: number;
+    netRevenue: number = 0;
 }
