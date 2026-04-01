@@ -65,6 +65,7 @@ import { ReportService } from './service/report.service';
 import { ReportQueryController } from './controller/report-query.controller';
 import { PaymentCommonService } from './service/payment-common.service';
 import { ReportController } from './controller/report.controller';
+import { ReportMapper } from './mapper/report-mapper';
 
 @Module({
     imports: [
@@ -139,7 +140,8 @@ import { ReportController } from './controller/report.controller';
         ReportQueryCrudService,
         ReportQueryMapper,
         ReportService,
-        PaymentCommonService
+        PaymentCommonService,
+        ReportMapper
     ],
     controllers: [
         PaymentController,

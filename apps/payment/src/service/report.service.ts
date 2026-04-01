@@ -4,7 +4,7 @@ import { In, Not, Repository, UpdateResult } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, PaymentTransactionDTO, ReportDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
+import { BaseReport, PaymentTransactionDTO, ReportDTO, ReportFullDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { ReportDateGrouping } from '@tk-postral/payment-common';
 import { PaymentFullDTO } from '@tk-postral/payment-common';
 import { ReportTaxGroup } from '../entity';
@@ -19,6 +19,7 @@ import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { randomUUID } from 'crypto';
 import { exec } from 'child_process';
 import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
+import { ReportMapper } from '../mapper/report-mapper';
 
 @Injectable()
 export class ReportService {
@@ -35,6 +36,7 @@ export class ReportService {
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
+        private readonly reportMapper : ReportMapper
         // @InjectRepository(ReportOperationStatus)
         // private readonly reportOperationStatusRepo: Repository<ReportOperationStatus>,
     ) { }
@@ -186,7 +188,7 @@ export class ReportService {
             where: { queryId },
             order: { periodLabel: 'DESC' },
         });
-        return reports.map((r) => this.toDto(r));
+        return reports.map((r) => this.reportMapper.toDto(r));
     }
 
     async searchByQueryId(
@@ -206,7 +208,7 @@ export class ReportService {
             { periodLabel: 'desc' },
             [],
             where,
-        )).map((r) => this.toDto(r));
+        )).map((r) => this.reportMapper.toDto(r));
     }
 
 
@@ -400,25 +402,6 @@ export class ReportService {
         }
     }
 
-    toDto(entity: Report): ReportDTO {
-        const dto = new ReportDTO();
-        dto.id = entity.id;
-        dto.queryId = entity.queryId;
-        dto.periodLabel = entity.periodLabel;
-        dto.currency = entity.currency;
-        dto.netRevenue = entity.netRevenue;
-        dto.totalSaleAmount = entity.totalSaleAmount;
-        dto.totalRefundAmount = entity.totalRefundAmount;
-        dto.totalSaleTaxAmount = entity.totalSaleTaxAmount;
-        dto.totalRefundTaxAmount = entity.totalRefundTaxAmount;
-        dto.netTaxAmount = entity.netTaxAmount;
-        dto.netSaleAmount = entity.netSaleAmount;
-        dto.paymentCount = entity.paymentCount;
-        dto.lastDigestedAt = entity.lastDigestedAt;
-        dto.createdAt = entity.createdAt;
-        dto.archived = entity.archived;
-        return dto;
-    }
 
     async fetchInProgressReportIds(
         reportIds: string[]
@@ -439,4 +422,18 @@ export class ReportService {
         return map;
 
     }
+
+    async fetchReportFull(reportId: string): Promise<ReportFullDTO> {
+        const [mainReport, taxGroupReports] = await Promise.all([
+             this.reportRepo.findOne({ where: { id: reportId } }),
+             this.taxGroupRepo.find({ where: { reportId } })
+        ]);
+        if (!mainReport) {
+            throw new Error(`Report ${reportId} not found`);
+        }
+        return this.reportMapper.toFullDto(mainReport, taxGroupReports);
+    }
+
+
+
 }
