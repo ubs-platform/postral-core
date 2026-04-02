@@ -49,14 +49,110 @@ LOCK TABLES `account` WRITE;
 /*!40000 ALTER TABLE `account` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `account` VALUES
-('a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Nebisoft Gıda Savunma  Sanayii A.Ş','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'Akbank',NULL,NULL,NULL,'Bahçelievler'),
-('a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','1111111111','INDIVIDUAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,NULL,NULL,NULL,NULL,NULL),
+('a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Esenler Motionstar Incorporated','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'Akbank',NULL,NULL,NULL,'Bahçelievler'),
+('a607c2d0-4c49-4697-afe6-4c7499aa094b','Kyle Broflovski','1111111111','INDIVIDUAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'',NULL,NULL,NULL,NULL),
 ('5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'Esen Yayınları YGS Matematik soru bankası','TR31313113131','31313131',NULL,NULL),
-('cbf3e25f-5586-4e5c-b0d8-7463a83da274','ğeğ mağazacılık','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'Jerry Acelesi Yok',NULL,NULL,NULL,NULL),
+('cbf3e25f-5586-4e5c-b0d8-7463a83da274','Doofenshmirtz Evil Inc','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'Jerry Acelesi Yok',NULL,NULL,NULL,NULL),
 ('bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','287c8d95-9fe2-4a22-a79b-97500dbbc8f6',0,'TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('913252c1-d094-40de-a13c-8dc1142b9222','English Colonial','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','91587983-a95f-4934-895f-a3f9f5fdaed1',0,'Kısmet XNXX',NULL,NULL,NULL,NULL);
+('913252c1-d094-40de-a13c-8dc1142b9222','Lotus Eğitim','1111111111','COMMERCIAL','21011b61-eb6e-4039-bc9a-baa274f95fc1',0,'TC Ziraat Bankası',NULL,NULL,NULL,NULL),
+('c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','91587983-a95f-4934-895f-a3f9f5fdaed1',0,'Kısmet XNXX',NULL,NULL,NULL,NULL),
+('eb191f6a-60ef-4450-8877-e9c1a31e2197','New Account','','INDIVIDUAL',NULL,1,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `account` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `account_payment_transaction`
+--
+
+DROP TABLE IF EXISTS `account_payment_transaction`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `account_payment_transaction` (
+  `id` uuid NOT NULL,
+  `corelationId` varchar(255) NOT NULL,
+  `accountId` varchar(255) NOT NULL,
+  `accountName` varchar(255) NOT NULL,
+  `paymentId` varchar(255) NOT NULL,
+  `paymentSellerOrderId` varchar(255) DEFAULT NULL,
+  `type` varchar(255) NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `amount` int(11) NOT NULL,
+  `taxAmount` int(11) NOT NULL,
+  `creationDate` datetime NOT NULL DEFAULT current_timestamp(),
+  `updateDate` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `operationNote` mediumtext DEFAULT '',
+  `description` mediumtext DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `account_payment_transaction`
+--
+
+LOCK TABLES `account_payment_transaction` WRITE;
+/*!40000 ALTER TABLE `account_payment_transaction` DISABLE KEYS */;
+set autocommit=0;
+INSERT INTO `account_payment_transaction` VALUES
+('a1d7441b-9143-401c-b960-08e250bda114','d4c6f778-46c9-4daa-bd7a-b5ec09ce7d81','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','69e44495-cab2-4dde-ae7e-70c89451c286',NULL,'DEBIT','COMPLETED',1100,183,'2026-03-29 21:04:58','2026-03-29 21:04:58','','Payment purchase for payment id 69e44495-cab2-4dde-ae7e-70c89451c286. Sellers: Omodog, Tetakent (H.C.G)'),
+('a7edc317-3efc-431c-a7a8-1340752d0f98','d5dfebc0-4c35-429b-8253-de801939673f','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Esenler Motionstar Incorporated','cbb58ca9-25c4-4f15-a903-f67d59d1ede1',NULL,'CREDIT','COMPLETED',400,66,'2026-03-28 14:21:07','2026-03-28 14:21:07','','Payment purchase for payment id cbb58ca9-25c4-4f15-a903-f67d59d1ede1. Customer: Frisk Dreemurr'),
+('43801b98-29f0-40f5-a25c-1879eae775d3','26dc1521-9c78-4732-9f4c-5e403c01d1c1','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a',NULL,'DEBIT','COMPLETED',700,116,'2026-03-31 10:58:52','2026-03-31 10:58:52','','Payment purchase for payment id cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a. Sellers: Omodog'),
+('8bade2c0-e2ba-43bb-86ac-1997ecdf2583','26dc1521-9c78-4732-9f4c-5e403c01d1c1','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a',NULL,'CREDIT','COMPLETED',700,116,'2026-03-31 10:58:52','2026-03-31 10:58:52','','Payment purchase for payment id cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a. Customer: Frisk Dreemurr'),
+('cc875da8-0b37-4685-9807-1de19ca59b4e','ce119dca-4000-4c05-987e-982a90508ec1','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','6ed605eb-41d2-4eba-ba88-e5b5ec76cb67',NULL,'CREDIT','COMPLETED',1100,183,'2026-03-31 11:59:13','2026-03-31 11:59:13','','Payment purchase for payment id 6ed605eb-41d2-4eba-ba88-e5b5ec76cb67. Customer: Frisk Dreemurr'),
+('d4a8e2e5-d464-4230-b8ce-1eaedad9d086','ab5da9f1-a2e6-4c97-b539-987762d65493','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','21a1914c-2f02-468a-9969-c82851f5cde7',NULL,'DEBIT','COMPLETED',800,133,'2026-03-31 11:41:43','2026-03-31 11:41:43','','Payment purchase for payment id 21a1914c-2f02-468a-9969-c82851f5cde7. Sellers: Omodog'),
+('8877a4c6-09e1-41e9-bde3-21425b5e13df','c4296c87-1418-4465-8d3d-efefe07c5eed','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','5564f851-c835-4667-b894-c654b69a93f6',NULL,'CREDIT','COMPLETED',200,33,'2026-03-28 14:23:53','2026-03-28 14:23:53','','Payment purchase for payment id 5564f851-c835-4667-b894-c654b69a93f6. Customer: Frisk Dreemurr'),
+('3eb2464c-be5d-4aa6-8d68-2848d86a3809','d5dfebc0-4c35-429b-8253-de801939673f','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','cbb58ca9-25c4-4f15-a903-f67d59d1ede1',NULL,'DEBIT','COMPLETED',1700,283,'2026-03-28 14:21:07','2026-03-28 14:21:07','','Payment purchase for payment id cbb58ca9-25c4-4f15-a903-f67d59d1ede1. Sellers: Omodog, Tetakent (H.C.G), Esenler Motionstar Incorporated'),
+('fe8792da-96af-4bf9-a113-2d2ced76702c','946e4903-c899-4bb6-a320-26d37f3cdf57','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Esenler Motionstar Incorporated','b4912aeb-5c11-403c-81bb-588da87592ed',NULL,'CREDIT','COMPLETED',700,116,'2026-03-28 14:38:32','2026-03-28 14:38:32','','Payment purchase for payment id b4912aeb-5c11-403c-81bb-588da87592ed. Customer: Frisk Dreemurr'),
+('fb15d636-3f49-44ed-8d21-3089cedc3aeb','36a81cdb-532d-4746-bad3-8fc25b454989','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'DEBIT','COMPLETED',2000,333,'2026-03-28 14:33:27','2026-03-28 14:33:27','','Payment purchase for payment id 5250a81a-6d49-4d3c-ad7e-56013dba864d. Sellers: Omodog, Doofenshmirtz Evil Inc, Esenler Motionstar Incorporated, Tetakent (H.C.G)'),
+('05fe6289-aead-48d5-adc2-310a6479ade4','6f271261-8978-4134-a0c4-64ca63dbbf1f','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','bdc318a1-2832-42fc-8cba-7a75a8d112d8',NULL,'CREDIT','COMPLETED',500,83,'2026-04-01 12:18:00','2026-04-01 12:18:00','','Payment purchase for payment id bdc318a1-2832-42fc-8cba-7a75a8d112d8. Customer: Frisk Dreemurr'),
+('a4611bee-3d73-4bee-b357-345cc146b44b','73ab76ab-e9c2-4a81-9fa8-5b6dd0ecc24f','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','c2a6c7f0-d11d-4aef-ba23-556aad150050',NULL,'DEBIT','COMPLETED',1000,166,'2026-03-31 12:07:20','2026-03-31 12:07:20','','Payment purchase for payment id c2a6c7f0-d11d-4aef-ba23-556aad150050. Sellers: Omodog'),
+('62133446-e84e-492e-bbcf-3669cc4597ff','4d6c363a-51f1-4d62-a62e-3c9e91f996f2','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','c676457a-b61a-4fa2-a67e-f963453ebb03',NULL,'DEBIT','COMPLETED',600,100,'2026-03-28 10:53:06','2026-03-28 10:53:06','','Payment purchase for payment id c676457a-b61a-4fa2-a67e-f963453ebb03. Sellers: Omodog'),
+('a97f1069-c7f3-4562-b3cd-3984ec56dd4f','5367f248-d8b8-483b-9463-5492edcd5923','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','ddca578b-583d-4008-8497-39bd8e360304',NULL,'DEBIT','COMPLETED',760,122,'2026-04-01 12:31:41','2026-04-01 12:31:41','','Payment purchase for payment id ddca578b-583d-4008-8497-39bd8e360304. Sellers: Omodog'),
+('8d90e84c-5427-42ac-ba38-3c5dbb3b7234','fba90408-9952-4ae0-85b2-40851cbc59e3','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','d85e328f-fea2-4558-9cb7-f163a8c2e655',NULL,'DEBIT','COMPLETED',800,133,'2026-03-30 19:49:33','2026-03-30 19:49:33','','Payment purchase for payment id d85e328f-fea2-4558-9cb7-f163a8c2e655. Sellers: Omodog'),
+('4469104a-735f-4c1c-ac60-3e1b8dcfd9c4','73ab76ab-e9c2-4a81-9fa8-5b6dd0ecc24f','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','c2a6c7f0-d11d-4aef-ba23-556aad150050',NULL,'CREDIT','COMPLETED',1000,166,'2026-03-31 12:07:20','2026-03-31 12:07:20','','Payment purchase for payment id c2a6c7f0-d11d-4aef-ba23-556aad150050. Customer: Frisk Dreemurr'),
+('aecce6c0-fa68-41da-b039-3f93c1f07124','8cd99303-310e-46bd-b468-28b701affb8c','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','b63fd97f-f09e-4ef8-875c-fcc40009bf46',NULL,'DEBIT','COMPLETED',500,83,'2026-03-28 10:51:31','2026-03-28 10:51:31','','Payment purchase for payment id b63fd97f-f09e-4ef8-875c-fcc40009bf46. Sellers: Omodog'),
+('c0e8bff5-dc57-42de-9fe4-43412a36a137','ee75733d-2605-4143-8001-7148093bca55','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','c937dfe7-68d2-4884-be98-0b9b77df1196',NULL,'DEBIT','COMPLETED',1000,166,'2026-03-28 10:54:12','2026-03-28 10:54:12','','Payment purchase for payment id c937dfe7-68d2-4884-be98-0b9b77df1196. Sellers: Omodog, Tetakent (H.C.G)'),
+('a238781e-2d0d-4911-b773-44409a8f857e','946e4903-c899-4bb6-a320-26d37f3cdf57','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','b4912aeb-5c11-403c-81bb-588da87592ed',NULL,'CREDIT','COMPLETED',800,133,'2026-03-28 14:38:32','2026-03-28 14:38:32','','Payment purchase for payment id b4912aeb-5c11-403c-81bb-588da87592ed. Customer: Frisk Dreemurr'),
+('84f81d1b-3220-46c9-a703-4b18f6406ba4','9b2a433d-d6dc-497c-9780-59fed73f3091','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','af94372d-4a92-4409-a49b-4d3f079129a8',NULL,'CREDIT','COMPLETED',1200,200,'2026-03-29 21:03:00','2026-03-29 21:03:00','','Payment purchase for payment id af94372d-4a92-4409-a49b-4d3f079129a8. Customer: Frisk Dreemurr'),
+('cb3eb26d-dbfe-42b9-9bec-4e3017d65e62','36a81cdb-532d-4746-bad3-8fc25b454989','cbf3e25f-5586-4e5c-b0d8-7463a83da274','Doofenshmirtz Evil Inc','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'CREDIT','COMPLETED',400,66,'2026-03-28 14:33:27','2026-03-28 14:33:27','','Payment purchase for payment id 5250a81a-6d49-4d3c-ad7e-56013dba864d. Customer: Frisk Dreemurr'),
+('cc381bd4-ac0a-4a13-bb50-4f9fb98203e6','da7d2580-e8c4-45b0-a62f-cd777bc3397b','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','dce665d2-1d97-4cf1-9529-7e4ef5c12b1f',NULL,'DEBIT','COMPLETED',400,66,'2026-03-28 14:23:17','2026-03-28 14:23:17','','Payment purchase for payment id dce665d2-1d97-4cf1-9529-7e4ef5c12b1f. Sellers: Omodog'),
+('c33afa97-d707-4811-95af-56c44c9951e5','ce119dca-4000-4c05-987e-982a90508ec1','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','6ed605eb-41d2-4eba-ba88-e5b5ec76cb67',NULL,'DEBIT','COMPLETED',1100,183,'2026-03-31 11:59:13','2026-03-31 11:59:13','','Payment purchase for payment id 6ed605eb-41d2-4eba-ba88-e5b5ec76cb67. Sellers: Omodog'),
+('e575deb4-3fff-4162-8358-59571cc1fce9','ee75733d-2605-4143-8001-7148093bca55','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','c937dfe7-68d2-4884-be98-0b9b77df1196',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 10:54:12','2026-03-28 10:54:12','','Payment purchase for payment id c937dfe7-68d2-4884-be98-0b9b77df1196. Customer: Frisk Dreemurr'),
+('044135fd-733c-4499-a759-650a2eead104','da7d2580-e8c4-45b0-a62f-cd777bc3397b','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','dce665d2-1d97-4cf1-9529-7e4ef5c12b1f',NULL,'CREDIT','COMPLETED',400,66,'2026-03-28 14:23:17','2026-03-28 14:23:17','','Payment purchase for payment id dce665d2-1d97-4cf1-9529-7e4ef5c12b1f. Customer: Frisk Dreemurr'),
+('584b4727-ad69-4f68-b243-67d06010f5f1','f77a5004-a061-4cef-a84c-ae445713f63d','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','eb6eadf1-a396-4eaf-b537-225ed0997447',NULL,'DEBIT','COMPLETED',800,133,'2026-03-28 10:59:43','2026-03-28 10:59:43','','Payment purchase for payment id eb6eadf1-a396-4eaf-b537-225ed0997447. Sellers: Omodog'),
+('9e780c92-bbfc-4dd1-952b-683606532a6d','6f271261-8978-4134-a0c4-64ca63dbbf1f','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','bdc318a1-2832-42fc-8cba-7a75a8d112d8',NULL,'CREDIT','COMPLETED',1000,166,'2026-04-01 12:18:00','2026-04-01 12:18:00','','Payment purchase for payment id bdc318a1-2832-42fc-8cba-7a75a8d112d8. Customer: Frisk Dreemurr'),
+('4a6d0ab4-6949-4e17-8980-76e222143b70','d5dfebc0-4c35-429b-8253-de801939673f','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','cbb58ca9-25c4-4f15-a903-f67d59d1ede1',NULL,'CREDIT','COMPLETED',400,66,'2026-03-28 14:21:07','2026-03-28 14:21:07','','Payment purchase for payment id cbb58ca9-25c4-4f15-a903-f67d59d1ede1. Customer: Frisk Dreemurr'),
+('d76fb9ef-6862-4d0c-8308-827912a0cfa6','d5dfebc0-4c35-429b-8253-de801939673f','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','cbb58ca9-25c4-4f15-a903-f67d59d1ede1',NULL,'CREDIT','COMPLETED',900,150,'2026-03-28 14:21:07','2026-03-28 14:21:07','','Payment purchase for payment id cbb58ca9-25c4-4f15-a903-f67d59d1ede1. Customer: Frisk Dreemurr'),
+('a7314bcd-e316-4bbd-ad7f-839e19c04504','3fdf6b3a-3e68-4dd2-a63f-3037e69aa8f9','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','f6e28e3d-fd4e-49f6-b740-cfcf04571146',NULL,'DEBIT','COMPLETED',500,83,'2026-04-01 12:02:21','2026-04-01 12:02:21','','Payment purchase for payment id f6e28e3d-fd4e-49f6-b740-cfcf04571146. Sellers: Omodog'),
+('6a6c9bce-3dd2-4a36-b694-84712b639295','a18026e2-b710-4a4b-9c3f-a3ccbbdfc64e','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','5c474860-602f-4e3a-a6f9-a11fc1c7de86',NULL,'CREDIT','COMPLETED',700,116,'2026-03-28 14:06:31','2026-03-28 14:06:31','','Payment purchase for payment id 5c474860-602f-4e3a-a6f9-a11fc1c7de86. Customer: Frisk Dreemurr'),
+('d915ffc6-c2c2-465d-93e7-862333661702','c4296c87-1418-4465-8d3d-efefe07c5eed','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','5564f851-c835-4667-b894-c654b69a93f6',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 14:23:53','2026-03-28 14:23:53','','Payment purchase for payment id 5564f851-c835-4667-b894-c654b69a93f6. Customer: Frisk Dreemurr'),
+('102ce0df-7b01-402e-b205-86b9787221a6','4d6c363a-51f1-4d62-a62e-3c9e91f996f2','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','c676457a-b61a-4fa2-a67e-f963453ebb03',NULL,'CREDIT','COMPLETED',600,100,'2026-03-28 10:53:06','2026-03-28 10:53:06','','Payment purchase for payment id c676457a-b61a-4fa2-a67e-f963453ebb03. Customer: Frisk Dreemurr'),
+('25a1d2f3-f266-4541-953b-89a6053e949a','946e4903-c899-4bb6-a320-26d37f3cdf57','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','b4912aeb-5c11-403c-81bb-588da87592ed',NULL,'CREDIT','COMPLETED',800,133,'2026-03-28 14:38:32','2026-03-28 14:38:32','','Payment purchase for payment id b4912aeb-5c11-403c-81bb-588da87592ed. Customer: Frisk Dreemurr'),
+('59bf14d9-700b-4be5-bd3b-8cf77305e85f','8cd99303-310e-46bd-b468-28b701affb8c','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','b63fd97f-f09e-4ef8-875c-fcc40009bf46',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 10:51:31','2026-03-28 10:51:31','','Payment purchase for payment id b63fd97f-f09e-4ef8-875c-fcc40009bf46. Customer: Frisk Dreemurr'),
+('9f7d8507-48cd-49b9-8040-913341230a27','3fdf6b3a-3e68-4dd2-a63f-3037e69aa8f9','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','f6e28e3d-fd4e-49f6-b740-cfcf04571146',NULL,'CREDIT','COMPLETED',500,83,'2026-04-01 12:02:21','2026-04-01 12:02:21','','Payment purchase for payment id f6e28e3d-fd4e-49f6-b740-cfcf04571146. Customer: Frisk Dreemurr'),
+('6094d828-8ae2-4836-a04c-9596551f6611','36a81cdb-532d-4746-bad3-8fc25b454989','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 14:33:27','2026-03-28 14:33:27','','Payment purchase for payment id 5250a81a-6d49-4d3c-ad7e-56013dba864d. Customer: Frisk Dreemurr'),
+('f9fae7f0-2bec-4d22-9906-96c7b438e499','67f40595-19b0-4b78-adfd-ca82894dded1','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f',NULL,'CREDIT','COMPLETED',700,116,'2026-03-28 14:20:07','2026-03-28 14:20:07','','Payment purchase for payment id 3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f. Customer: Frisk Dreemurr'),
+('33990d6c-a218-4e88-8680-9c52d6bbaeaa','d025e637-0b54-4748-93a3-18b00fc50674','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','d4668779-7454-4f6a-b81c-ba9aa510e070',NULL,'DEBIT','COMPLETED',500,83,'2026-03-31 12:08:07','2026-03-31 12:08:07','','Payment purchase for payment id d4668779-7454-4f6a-b81c-ba9aa510e070. Sellers: Omodog'),
+('370707cb-372b-4ccd-b467-a2213e852096','068edcd6-40a1-4f47-b25c-35b40b3dc1b6','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','9dfd48f2-f25b-4903-bed0-47e340260c33',NULL,'DEBIT','COMPLETED',500,83,'2026-03-31 11:35:26','2026-03-31 11:35:26','','Payment purchase for payment id 9dfd48f2-f25b-4903-bed0-47e340260c33. Sellers: Omodog'),
+('357668e4-bc30-4e07-9e90-a752688a86b3','36a81cdb-532d-4746-bad3-8fc25b454989','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'CREDIT','COMPLETED',600,100,'2026-03-28 14:33:27','2026-03-28 14:33:27','','Payment purchase for payment id 5250a81a-6d49-4d3c-ad7e-56013dba864d. Customer: Frisk Dreemurr'),
+('f9655d14-95af-4ab9-b3bb-a88e57ae912d','67f40595-19b0-4b78-adfd-ca82894dded1','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f',NULL,'DEBIT','COMPLETED',700,116,'2026-03-28 14:20:07','2026-03-28 14:20:07','','Payment purchase for payment id 3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f. Sellers: Omodog'),
+('fd236dd4-c8b1-4639-b634-a8b89c97a99e','d4c6f778-46c9-4daa-bd7a-b5ec09ce7d81','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','69e44495-cab2-4dde-ae7e-70c89451c286',NULL,'CREDIT','COMPLETED',600,100,'2026-03-29 21:04:58','2026-03-29 21:04:58','','Payment purchase for payment id 69e44495-cab2-4dde-ae7e-70c89451c286. Customer: Frisk Dreemurr'),
+('9c23be60-4699-4aa0-861b-aab6955f571a','fba90408-9952-4ae0-85b2-40851cbc59e3','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','d85e328f-fea2-4558-9cb7-f163a8c2e655',NULL,'CREDIT','COMPLETED',800,133,'2026-03-30 19:49:33','2026-03-30 19:49:33','','Payment purchase for payment id d85e328f-fea2-4558-9cb7-f163a8c2e655. Customer: Frisk Dreemurr'),
+('3be535fc-b774-4bf2-b966-ac8b7f014764','ee75733d-2605-4143-8001-7148093bca55','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','c937dfe7-68d2-4884-be98-0b9b77df1196',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 10:54:12','2026-03-28 10:54:12','','Payment purchase for payment id c937dfe7-68d2-4884-be98-0b9b77df1196. Customer: Frisk Dreemurr'),
+('48e061bb-3e38-41b7-948e-b1f09b0f16d4','36a81cdb-532d-4746-bad3-8fc25b454989','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Esenler Motionstar Incorporated','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'CREDIT','COMPLETED',500,83,'2026-03-28 14:33:27','2026-03-28 14:33:27','','Payment purchase for payment id 5250a81a-6d49-4d3c-ad7e-56013dba864d. Customer: Frisk Dreemurr'),
+('31c39a0b-5ec6-4af6-b520-b275d12f6f18','a18026e2-b710-4a4b-9c3f-a3ccbbdfc64e','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','5c474860-602f-4e3a-a6f9-a11fc1c7de86',NULL,'DEBIT','COMPLETED',700,116,'2026-03-28 14:06:31','2026-03-28 14:06:31','','Payment purchase for payment id 5c474860-602f-4e3a-a6f9-a11fc1c7de86. Sellers: Omodog'),
+('e0c93553-326b-49de-b7ec-b7969f508658','6f271261-8978-4134-a0c4-64ca63dbbf1f','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','bdc318a1-2832-42fc-8cba-7a75a8d112d8',NULL,'DEBIT','COMPLETED',1500,250,'2026-04-01 12:18:00','2026-04-01 12:18:00','','Payment purchase for payment id bdc318a1-2832-42fc-8cba-7a75a8d112d8. Sellers: Omodog, Tetakent (H.C.G)'),
+('d8607eaf-af91-4bd1-948d-c87477880a94','068edcd6-40a1-4f47-b25c-35b40b3dc1b6','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','9dfd48f2-f25b-4903-bed0-47e340260c33',NULL,'CREDIT','COMPLETED',500,83,'2026-03-31 11:35:26','2026-03-31 11:35:26','','Payment purchase for payment id 9dfd48f2-f25b-4903-bed0-47e340260c33. Customer: Frisk Dreemurr'),
+('c3550e37-a503-4be0-8f1d-cd26e006781e','946e4903-c899-4bb6-a320-26d37f3cdf57','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','b4912aeb-5c11-403c-81bb-588da87592ed',NULL,'DEBIT','COMPLETED',2300,383,'2026-03-28 14:38:32','2026-03-28 14:38:32','','Payment purchase for payment id b4912aeb-5c11-403c-81bb-588da87592ed. Sellers: Esenler Motionstar Incorporated, Omodog, Tetakent (H.C.G)'),
+('f18a6a58-da66-4942-9017-cefadbc8312d','d4c6f778-46c9-4daa-bd7a-b5ec09ce7d81','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','69e44495-cab2-4dde-ae7e-70c89451c286',NULL,'CREDIT','COMPLETED',500,83,'2026-03-29 21:04:58','2026-03-29 21:04:58','','Payment purchase for payment id 69e44495-cab2-4dde-ae7e-70c89451c286. Customer: Frisk Dreemurr'),
+('ae2328d1-0a28-41d1-b958-d0893e54ab6b','c4296c87-1418-4465-8d3d-efefe07c5eed','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','5564f851-c835-4667-b894-c654b69a93f6',NULL,'DEBIT','COMPLETED',700,116,'2026-03-28 14:23:53','2026-03-28 14:23:53','','Payment purchase for payment id 5564f851-c835-4667-b894-c654b69a93f6. Sellers: Tetakent (H.C.G), Omodog'),
+('8b4ccd60-b5dd-4708-bf6f-d9fcc6ad2bee','f77a5004-a061-4cef-a84c-ae445713f63d','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','eb6eadf1-a396-4eaf-b537-225ed0997447',NULL,'CREDIT','COMPLETED',800,133,'2026-03-28 10:59:43','2026-03-28 10:59:43','','Payment purchase for payment id eb6eadf1-a396-4eaf-b537-225ed0997447. Customer: Frisk Dreemurr'),
+('2c625bb8-941f-4c61-97c3-e57517aad86b','5367f248-d8b8-483b-9463-5492edcd5923','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','ddca578b-583d-4008-8497-39bd8e360304',NULL,'CREDIT','COMPLETED',760,122,'2026-04-01 12:31:41','2026-04-01 12:31:41','','Payment purchase for payment id ddca578b-583d-4008-8497-39bd8e360304. Customer: Frisk Dreemurr'),
+('2f136be2-2805-481b-bd03-f404148c66f9','ab5da9f1-a2e6-4c97-b539-987762d65493','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','21a1914c-2f02-468a-9969-c82851f5cde7',NULL,'CREDIT','COMPLETED',800,133,'2026-03-31 11:41:43','2026-03-31 11:41:43','','Payment purchase for payment id 21a1914c-2f02-468a-9969-c82851f5cde7. Customer: Frisk Dreemurr'),
+('777a98d5-ea9d-4cd0-9ba9-f59c2bc588cc','d025e637-0b54-4748-93a3-18b00fc50674','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','d4668779-7454-4f6a-b81c-ba9aa510e070',NULL,'CREDIT','COMPLETED',500,83,'2026-03-31 12:08:07','2026-03-31 12:08:07','','Payment purchase for payment id d4668779-7454-4f6a-b81c-ba9aa510e070. Customer: Frisk Dreemurr'),
+('84744b98-7624-48cd-86e8-ffc1fd1a2320','9b2a433d-d6dc-497c-9780-59fed73f3091','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','af94372d-4a92-4409-a49b-4d3f079129a8',NULL,'DEBIT','COMPLETED',1200,200,'2026-03-29 21:03:00','2026-03-29 21:03:00','','Payment purchase for payment id af94372d-4a92-4409-a49b-4d3f079129a8. Sellers: Omodog');
+/*!40000 ALTER TABLE `account_payment_transaction` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -110,7 +206,7 @@ INSERT INTO `address` VALUES
 ('76aca33c-20dc-4159-adad-849719fdd056','Yeni adres','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 ('287c8d95-9fe2-4a22-a79b-97500dbbc8f6','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 ('91587983-a95f-4934-895f-a3f9f5fdaed1','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('21011b61-eb6e-4039-bc9a-baa274f95fc1','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+('21011b61-eb6e-4039-bc9a-baa274f95fc1','Bahçelievler / İstanbul','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `address` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -143,71 +239,6 @@ INSERT INTO `app_comission` VALUES
 ('269a6327-b26b-4af2-91f3-aad84772621c','','b6c80c5b-c6ce-42ac-bfd7-6fb7c975f7e9',1,0),
 ('a687c5f1-564e-496b-a28e-ab6f87f5cb78','bb999e95-3de3-401a-a554-da9ae47e843c','b6c80c5b-c6ce-42ac-bfd7-6fb7c975f7e9',0,0);
 /*!40000 ALTER TABLE `app_comission` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `data_properties`
---
-
-DROP TABLE IF EXISTS `data_properties`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `data_properties` (
-  `id` uuid NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `valueString` text DEFAULT NULL,
-  `valueBinary` longblob DEFAULT NULL,
-  `valueType` enum('string','binary') NOT NULL,
-  `rawDataId` uuid NOT NULL,
-  `processableDataId` uuid NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_3fdf7b221f19b8a8d2935f71377` (`rawDataId`),
-  KEY `FK_48ecf9c1f40156043cda4289820` (`processableDataId`),
-  CONSTRAINT `FK_3fdf7b221f19b8a8d2935f71377` FOREIGN KEY (`rawDataId`) REFERENCES `project_raw_data` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `FK_48ecf9c1f40156043cda4289820` FOREIGN KEY (`processableDataId`) REFERENCES `project_processable_data` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `data_properties`
---
-
-LOCK TABLES `data_properties` WRITE;
-/*!40000 ALTER TABLE `data_properties` DISABLE KEYS */;
-set autocommit=0;
-/*!40000 ALTER TABLE `data_properties` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `data_property_value_types`
---
-
-DROP TABLE IF EXISTS `data_property_value_types`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `data_property_value_types` (
-  `id` uuid NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `valueType` enum('string','binary') NOT NULL,
-  `mimeType` varchar(255) DEFAULT NULL,
-  `sizeInBytes` int(11) NOT NULL DEFAULT 0,
-  `stringRegexPattern` text DEFAULT NULL,
-  `listInPublic` tinyint(4) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `data_property_value_types`
---
-
-LOCK TABLES `data_property_value_types` WRITE;
-/*!40000 ALTER TABLE `data_property_value_types` DISABLE KEYS */;
-set autocommit=0;
-/*!40000 ALTER TABLE `data_property_value_types` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -256,16 +287,6 @@ CREATE TABLE `invoice` (
 LOCK TABLES `invoice` WRITE;
 /*!40000 ALTER TABLE `invoice` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `invoice` VALUES
-('b1ddeb46-1dd4-4511-8997-103a84fbae41','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','d804218d-beee-454f-ab00-10f0887c8ad9','','2026-03-12','','',1,'2026-03-12 23:51:44.109518','2026-03-12 23:54:57.000000','a2f10b22-4469-4a11-8a03-26078764959e','358f61ab-f349-49d3-b81e-0cc6258b19fa','211488ce-f972-4460-8ccc-ab7b6d29b3c4','02c2bea2-5e18-4310-8ed0-f89700bd6c1b'),
-('b677cac7-9d94-445e-9869-139e09ac4844','979577e7-ddc5-440e-8005-705916b62113','8170a85a-a954-4969-8016-8923135251b0','','2026-03-12','','',1,'2026-03-12 10:30:46.800155','2026-03-12 10:32:55.000000','0ca24825-4864-471c-bb74-1b84c0d72e42','08cb5820-6fe7-4f8c-b9cb-8e404c25e71d','3065e2b2-cfa9-43d5-8802-73a0bc5eb8e1','8b3eabef-ada1-4c27-b5c2-8cd590eddbc2'),
-('70eac91b-959e-41c2-aa05-1bfaeab09056','979577e7-ddc5-440e-8005-705916b62113','5ad5b124-82e8-45e1-940e-cc565831b44f','','2026-03-12','','',1,'2026-03-12 10:33:05.024905','2026-03-12 10:33:14.000000','7c368604-8956-4eb5-bcfb-7465327963a1','39b8ef37-e25c-4dc1-9c0f-30a426040d7b','30f320ef-bdbc-438b-b08e-559e44e4d597','c374c52b-76fa-48a5-9ec9-22f87dc00131'),
-('6049b6f3-0655-40ac-af5b-2a4e7c3cc404','dfac1870-cbb6-4c04-bd19-44631d6bb48a','e6aa199a-6f1e-409c-92ce-2ad7ec5d639c','','2026-03-13','','',1,'2026-03-13 00:39:32.009725','2026-03-13 09:14:19.000000','59b69fbe-e4a0-4bd7-bef8-3209124553ac','50d816cc-002c-40ed-b65c-c151e3034a82','3967e951-6b95-432a-af18-70370019417b','9391b4c7-1089-48a6-b61c-45b686732f88'),
-('03e31d3d-06c7-490a-80c2-50adb686bf1c','87e1bd15-5905-4270-9200-fc83d4aa4c6f','acd7584c-5c5c-4d10-9032-bc4ab9ab8971','','2026-03-12','','',0,'2026-03-12 10:54:16.552629','2026-03-12 10:54:16.552629','d2d98c6a-5dfc-4b5c-a188-21a944880fff','3060086a-19e4-4bdf-9ded-9f1abe44987f','bfeb817f-2f43-4b63-b0f1-a5a00470015c','9ba9042e-f1fe-4b28-8504-6309c71f8c80'),
-('eee29887-8e40-484f-9ddc-53a672b08f89','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba','7005a4e2-4966-4246-bda8-3d64aca6a0b7','','2026-03-15','','',1,'2026-03-15 14:35:56.507316','2026-03-15 14:36:37.000000','ab11fc19-ecb9-450e-990e-dc6191ccff2b','c878d18a-01ae-4af9-b729-2f07d047db10','b3c61e6a-ff32-4733-8237-665d1caff768','8810ebc4-a6b2-437b-96c9-b22b47be1dc3'),
-('00b02ed8-5dcd-4eec-8a82-91e06fb75d26','ef0500e5-c029-48bf-8f15-7e41ed441c59','d5855cf5-9a76-4097-af02-c9bef777a4ee','','2026-03-12','','',1,'2026-03-12 15:57:09.222798','2026-03-12 15:57:19.000000','a102050b-7473-4b5d-8b9f-54b234141ad6','342646bf-d745-4043-8bbd-d6c63d173020','5755837e-7bf4-416d-82d3-68fd05f4f67f','ca290b27-02ea-48bc-90e3-b3f4f5d8d1cd'),
-('039f22a7-cd12-4402-ba16-92866eb7b834','d92c1a91-529e-4534-bae1-30c8796f9e48','da831d08-1875-40c8-8f47-0f0bf83c3af9','','2026-03-12','','',1,'2026-03-12 22:44:55.962083','2026-03-12 22:45:04.000000','b5baf2fe-46b1-4d39-b31d-6ff6c52fe729','d657c498-9cb3-4f3e-8592-d6185c6fffa0','fdb4e2d4-7e0d-491a-902f-44ccb4b3f38e','cfa3f290-b004-405e-982b-37baeed1927b'),
-('ea6a3032-8e8e-406e-bd11-c3e8768f96f2','b8ca6234-a8c6-4555-b05f-5486816b77d3','9f0c2e85-99b9-453c-8ce9-0f19bfc257be','','2026-03-12','','',1,'2026-03-12 11:00:13.077740','2026-03-12 11:00:22.000000','e85ceebc-2e15-4368-bf72-b45362255764','5cf3c240-700f-42b4-9089-2fbb0f786715','a07ec4fb-5b7a-4fcc-8e5e-f8577324db16','738c4fe9-6a44-4fc8-b624-00915adfb196');
 /*!40000 ALTER TABLE `invoice` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -299,31 +320,6 @@ CREATE TABLE `invoice_account` (
 LOCK TABLES `invoice_account` WRITE;
 /*!40000 ALTER TABLE `invoice_account` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `invoice_account` VALUES
-('358f61ab-f349-49d3-b81e-0cc6258b19fa','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('c878d18a-01ae-4af9-b729-2f07d047db10','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('5cf3c240-700f-42b4-9089-2fbb0f786715','bb251590-67d6-4165-8321-7a04fa357242','New Account','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('39b8ef37-e25c-4dc1-9c0f-30a426040d7b','a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','1111111111','INDIVIDUAL',NULL,NULL,NULL,NULL,NULL),
-('0c040982-87ac-4ccd-9c6c-38a40da3b9bd','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('fdb4e2d4-7e0d-491a-902f-44ccb4b3f38e','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('d40cd8be-3d4c-4d59-9c3d-44cf5e2a6930','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('a4ce62b0-c5b1-447c-92b8-54d4bb7f262e','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('30f320ef-bdbc-438b-b08e-559e44e4d597','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','Nebisoft Gıda Savunma  Sanayii A.Ş','1111111111','COMMERCIAL','Akbank',NULL,NULL,NULL,NULL),
-('b3c61e6a-ff32-4733-8237-665d1caff768','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('5755837e-7bf4-416d-82d3-68fd05f4f67f','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('3967e951-6b95-432a-af18-70370019417b','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('3065e2b2-cfa9-43d5-8802-73a0bc5eb8e1','913252c1-d094-40de-a13c-8dc1142b9222','English Colonial','1111111111','COMMERCIAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('9944a752-00c1-49e5-8767-81b60ae83a96','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('08cb5820-6fe7-4f8c-b9cb-8e404c25e71d','a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','1111111111','INDIVIDUAL',NULL,NULL,NULL,NULL,NULL),
-('3060086a-19e4-4bdf-9ded-9f1abe44987f','a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','1111111111','INDIVIDUAL',NULL,NULL,NULL,NULL,NULL),
-('bfeb817f-2f43-4b63-b0f1-a5a00470015c','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('c08b9b86-ebcc-4fc2-9128-aa03376d4e96','a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','1111111111','INDIVIDUAL',NULL,NULL,NULL,NULL,NULL),
-('211488ce-f972-4460-8ccc-ab7b6d29b3c4','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('50d816cc-002c-40ed-b65c-c151e3034a82','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('d657c498-9cb3-4f3e-8592-d6185c6fffa0','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('342646bf-d745-4043-8bbd-d6c63d173020','bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','11111111111','INDIVIDUAL','TC Ziraat Bankası',NULL,NULL,NULL,NULL),
-('8b0e4fec-9931-46a3-adcb-ee8f1f844f1b','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL),
-('a07ec4fb-5b7a-4fcc-8e5e-f8577324db16','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','1111111111','COMMERCIAL','Kısmet XNXX',NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `invoice_account` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -374,31 +370,6 @@ CREATE TABLE `invoice_address` (
 LOCK TABLES `invoice_address` WRITE;
 /*!40000 ALTER TABLE `invoice_address` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `invoice_address` VALUES
-('738c4fe9-6a44-4fc8-b624-00915adfb196','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('08c9d745-a20a-47cf-986a-09b8e445eebc','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('0ca24825-4864-471c-bb74-1b84c0d72e42','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('d2d98c6a-5dfc-4b5c-a188-21a944880fff','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('c374c52b-76fa-48a5-9ec9-22f87dc00131','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('a2f10b22-4469-4a11-8a03-26078764959e','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('59b69fbe-e4a0-4bd7-bef8-3209124553ac','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('cfa3f290-b004-405e-982b-37baeed1927b','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('9391b4c7-1089-48a6-b61c-45b686732f88','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('a102050b-7473-4b5d-8b9f-54b234141ad6','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('9ba9042e-f1fe-4b28-8504-6309c71f8c80','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('771f99c5-b938-4e92-a6e0-6cf30a1ec768','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('b5baf2fe-46b1-4d39-b31d-6ff6c52fe729','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('7c368604-8956-4eb5-bcfb-7465327963a1','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('f17894fc-ded8-4c98-81ae-787cce5b58e2','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('723b6795-7f8a-444a-b796-8ab4d30b6102','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('8b3eabef-ada1-4c27-b5c2-8cd590eddbc2','Akarsu yokuş sokak 3/4 😽','42',NULL,'5','3',NULL,'Akarsu yokuş sokak 3/4 😽',NULL,NULL,'BEYOĞLU','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('8810ebc4-a6b2-437b-96c9-b22b47be1dc3','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('ca290b27-02ea-48bc-90e3-b3f4f5d8d1cd','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('e85ceebc-2e15-4368-bf72-b45362255764','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('b6408b1f-27a8-422e-9d1a-b4f242f2e6be','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('39121360-80c5-46bb-9d9b-cdca4583d0b1','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('ab11fc19-ecb9-450e-990e-dc6191ccff2b','EBOTT DAĞI','42',NULL,'5','3',NULL,'EBOTT DAĞI',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-('02c2bea2-5e18-4310-8ed0-f89700bd6c1b','Faraway','42',NULL,'5','3',NULL,'Deneme Sokak',NULL,NULL,'BAHÇELİEVLER','İSTANBUL','34180',NULL,NULL,'TURKIYE',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `invoice_address` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -432,13 +403,12 @@ LOCK TABLES `item` WRITE;
 /*!40000 ALTER TABLE `item` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `item` VALUES
-('6ba9bc79-b4b1-4fbe-b462-05eaec9299b6','Tavuk Döner','','','','PIECE','bb999e95-3de3-401a-a554-da9ae47e843c','TRY',''),
 ('9dd18852-2002-46a6-87cb-0de0d0ef4ccf','Something','','','','C62','c783e9dc-07aa-4fe4-95e9-be16246156bb','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
-('a16429c0-3adc-46e4-a2f2-5e3ab785c91e','Kyle Broflovski Peluş oyuncak','','','','PIECE','bb999e95-3de3-401a-a554-da9ae47e843c','TRY',''),
-('739263f4-a5e9-4f70-a368-8ea4891fec10','Kyle Broflovski Peluş','','','','GFI','913252c1-d094-40de-a13c-8dc1142b9222','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
-('3954ca25-330d-4e83-aef9-96f0da591b53','Ruj','','','','C62','cbf3e25f-5586-4e5c-b0d8-7463a83da274','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
-('e2e402c4-ef53-40df-8591-98adfd4a1afc','Nebicloud üyeliği','','','','C62','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
-('d5fbd385-4d0b-4b16-8c91-f79e15ac40e1','Lotus Soru Kitabı','LOTUS','QUESTION_BOOK','c2838483-8df1-43b1-a3c0-9ab8ef1b7a11','PIECE','b6c80c5b-c6ce-42ac-bfd7-6fb7c975f7e9','TRY','');
+('dbf8a42f-69f0-4181-8373-2a0b3ea01061','Tost','','','','KPO','c783e9dc-07aa-4fe4-95e9-be16246156bb','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
+('a7d0eb1b-0c3f-4b45-8b6e-44ed9d7205a9','Hayat Reçeli','','','','TON','c783e9dc-07aa-4fe4-95e9-be16246156bb','TRY','18202eba-0abb-4a63-8112-d3ef034173d2'),
+('739263f4-a5e9-4f70-a368-8ea4891fec10','Tetakent Education Suite 2025','','','','GFI','5e72f829-e4ed-4ccd-8971-509708f42212','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
+('3954ca25-330d-4e83-aef9-96f0da591b53','Drillinator','','','','C62','cbf3e25f-5586-4e5c-b0d8-7463a83da274','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196'),
+('e2e402c4-ef53-40df-8591-98adfd4a1afc','Esenler Note Calculation','','','','C62','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','TRY','927c6994-7d2d-43ab-80cd-17cc74de5196');
 /*!40000 ALTER TABLE `item` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -473,19 +443,26 @@ LOCK TABLES `item_price` WRITE;
 /*!40000 ALTER TABLE `item_price` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `item_price` VALUES
+('571cf63a-6189-41ed-819b-1adacc9b178d','dbf8a42f-69f0-4181-8373-2a0b3ea01061','kel','any','TRY',0,NULL,NULL,NULL,100),
+('3933ee4f-61c6-4636-a41e-22731066c9f7','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','basils','any','TRY',0,NULL,NULL,NULL,100),
 ('71c01ee3-d730-4f41-8db7-25147142adcd','3954ca25-330d-4e83-aef9-96f0da591b53','default','any','TRY',0,NULL,NULL,NULL,100),
-('fc8fe02a-80a1-485f-9c75-2871422a8780','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','Humankite','any','TRY',0,NULL,NULL,NULL,0),
-('fc8fe02a-80a1-485f-9c75-2871422a8781','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','Humankite','any','TRY',1,'2025-07-05 12:18:00','2025-07-05 16:27:00',NULL,0),
-('a8b8e8b2-0b0c-4470-b255-3450aec10a76','e2e402c4-ef53-40df-8591-98adfd4a1afc','1years','any','TRY',0,NULL,NULL,NULL,122),
-('f9628c98-20a1-4b1a-a771-36e77a827630','d5fbd385-4d0b-4b16-8c91-f79e15ac40e1','2 Years','any','TRY',0,NULL,NULL,NULL,0),
-('b0e0d341-d1d2-48d6-9b3b-3f0388d7245b','e2e402c4-ef53-40df-8591-98adfd4a1afc','2years-dagestan','any','TRY',0,NULL,NULL,NULL,120),
-('376c042f-65e0-427f-bac3-89d456a0e1d9','d5fbd385-4d0b-4b16-8c91-f79e15ac40e1','default','any','TRY',0,NULL,NULL,NULL,0),
-('176b2b7c-721d-4ca1-95eb-8df2d880dbe7','739263f4-a5e9-4f70-a368-8ea4891fec10','default','any','TRY',0,NULL,NULL,NULL,200),
-('41d6cd8e-ce6a-4a2b-9093-8f256fa00b09','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','any','TRY',0,NULL,NULL,NULL,90),
-('3131314b-7007-44c2-b25c-92b193b9e27a','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','default','any','TRY',3,NULL,NULL,NULL,0),
-('3c31fc4b-7007-44c2-b25c-92b193b9e27a','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','default','any','TRY',0,NULL,NULL,NULL,0),
-('af17e972-0b8c-4573-88f9-b295919da74a','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','any','TRY',0,NULL,NULL,NULL,31),
-('ffcb6316-ea49-42b1-8276-c5fe0aa6c468','739263f4-a5e9-4f70-a368-8ea4891fec10','jew-elf-king','any','TRY',0,NULL,NULL,NULL,300);
+('fc8fe02a-80a1-485f-9c75-2871422a8780','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','Humankite','any','TRY',0,NULL,NULL,NULL,100),
+('fc8fe02a-80a1-485f-9c75-2871422a8781','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','Humankite','any','TRY',1,'2025-07-05 12:18:00','2025-07-05 16:27:00',NULL,100),
+('d4d41b0c-4262-4031-91e9-342a0dd20cf0','dbf8a42f-69f0-4181-8373-2a0b3ea01061','hero','any','TRY',0,NULL,NULL,NULL,100),
+('a8b8e8b2-0b0c-4470-b255-3450aec10a76','e2e402c4-ef53-40df-8591-98adfd4a1afc','1years','any','TRY',0,NULL,NULL,NULL,100),
+('f9628c98-20a1-4b1a-a771-36e77a827630','d5fbd385-4d0b-4b16-8c91-f79e15ac40e1','2 Years','any','TRY',0,NULL,NULL,NULL,100),
+('b0e0d341-d1d2-48d6-9b3b-3f0388d7245b','e2e402c4-ef53-40df-8591-98adfd4a1afc','2years-dagestan','any','TRY',0,NULL,NULL,NULL,100),
+('376c042f-65e0-427f-bac3-89d456a0e1d9','d5fbd385-4d0b-4b16-8c91-f79e15ac40e1','default','any','TRY',0,NULL,NULL,NULL,100),
+('176b2b7c-721d-4ca1-95eb-8df2d880dbe7','739263f4-a5e9-4f70-a368-8ea4891fec10','default','any','TRY',0,NULL,NULL,NULL,100),
+('41d6cd8e-ce6a-4a2b-9093-8f256fa00b09','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','any','TRY',0,NULL,NULL,NULL,100),
+('3131314b-7007-44c2-b25c-92b193b9e27a','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','default','any','TRY',3,NULL,NULL,NULL,100),
+('3c31fc4b-7007-44c2-b25c-92b193b9e27a','a16429c0-3adc-46e4-a2f2-5e3ab785c91e','default','any','TRY',0,NULL,NULL,NULL,100),
+('c8345fd4-436a-4190-95ba-9c71734767ee','a7d0eb1b-0c3f-4b45-8b6e-44ed9d7205a9','default','any','TRY',0,NULL,NULL,NULL,10),
+('af17e972-0b8c-4573-88f9-b295919da74a','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','any','TRY',0,NULL,NULL,NULL,100),
+('ffcb6316-ea49-42b1-8276-c5fe0aa6c468','739263f4-a5e9-4f70-a368-8ea4891fec10','jew-elf-king','any','TRY',0,NULL,NULL,NULL,100),
+('c7b82dfe-684a-47b9-bef6-cc0cfa302cb0','dbf8a42f-69f0-4181-8373-2a0b3ea01061','mari','any','TRY',0,NULL,NULL,NULL,100),
+('8f9b0333-412c-47d3-80b4-d5c9acc677e7','dbf8a42f-69f0-4181-8373-2a0b3ea01061','aubrey','any','TRY',0,NULL,NULL,NULL,100),
+('180513eb-6fa8-4bb7-94e0-db996e68c465','dbf8a42f-69f0-4181-8373-2a0b3ea01061','basil','any','TRY',0,NULL,NULL,NULL,100);
 /*!40000 ALTER TABLE `item_price` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -500,7 +477,7 @@ DROP TABLE IF EXISTS `item_tax_entity`;
 CREATE TABLE `item_tax_entity` (
   `id` uuid NOT NULL,
   `taxName` varchar(255) NOT NULL,
-  `isPublic` tinyint(4) NOT NULL,
+  `isPublic` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -513,7 +490,8 @@ LOCK TABLES `item_tax_entity` WRITE;
 /*!40000 ALTER TABLE `item_tax_entity` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `item_tax_entity` VALUES
-('927c6994-7d2d-43ab-80cd-17cc74de5196','Yüzde 20',1);
+('927c6994-7d2d-43ab-80cd-17cc74de5196','Yüzde 20',1),
+('18202eba-0abb-4a63-8112-d3ef034173d2','Testo',0);
 /*!40000 ALTER TABLE `item_tax_entity` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -544,10 +522,9 @@ LOCK TABLES `item_tax_variation` WRITE;
 /*!40000 ALTER TABLE `item_tax_variation` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `item_tax_variation` VALUES
+('462cedc2-4a01-4768-9c37-0d8ce11e589c','DEFAULT',18,NULL),
 ('67b13d80-453d-4387-90c0-22e2b8659b55','DEFAULT',20,'927c6994-7d2d-43ab-80cd-17cc74de5196'),
-('bb6aa6d4-eff6-4ed6-9e3f-29871bea0649','DEFAULT',18,NULL),
-('1554ce6b-3ded-4605-a962-5b4c3021aac5','DEFAULT',20,NULL),
-('fa2d423f-ec8b-41ef-8c3a-74f348418579','DEFAULT',18,NULL);
+('695221ba-5366-42e3-85aa-ab04b1698c20','DEFAULT',10,'18202eba-0abb-4a63-8112-d3ef034173d2');
 /*!40000 ALTER TABLE `item_tax_variation` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -574,13 +551,11 @@ CREATE TABLE `payment` (
   `channelUrlExpiryDate` datetime DEFAULT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `refundRequestId` varchar(255) DEFAULT NULL,
   `totalAmount` float NOT NULL,
   `taxAmount` float NOT NULL,
-  `refundRequestId` uuid DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `IDX_f8b7c24ce00e8cf0f643445559` (`billingCode`),
-  UNIQUE KEY `REL_1195ab2ef90e53363c5b545fe2` (`refundRequestId`),
-  CONSTRAINT `FK_1195ab2ef90e53363c5b545fe2e` FOREIGN KEY (`refundRequestId`) REFERENCES `refund_request` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  UNIQUE KEY `IDX_f8b7c24ce00e8cf0f643445559` (`billingCode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -592,24 +567,9 @@ LOCK TABLES `payment` WRITE;
 /*!40000 ALTER TABLE `payment` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `payment` VALUES
-('d92c1a91-529e-4534-bae1-30c8796f9e48','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 22:41:44','2026-03-12 22:41:47',574,95.6667,NULL),
-('5837e458-9f01-421a-95af-332a7c3464b2','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-16 14:17:34','2026-03-16 14:17:59',155,25.8333,NULL),
-('04a29324-a67e-4e58-99b3-3750d2f2991e','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-14 16:08:48','2026-03-14 16:08:50',90,15,NULL),
-('6af8f6a8-0ab5-4ba9-88fc-38043ab82009','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-16 14:05:21','2026-03-16 14:05:24',390,65,NULL),
-('dfac1870-cbb6-4c04-bd19-44631d6bb48a','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-13 00:06:56','2026-03-13 00:06:58',124,20.6667,NULL),
-('b8ca6234-a8c6-4555-b05f-5486816b77d3','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','New Account','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 10:59:37','2026-03-12 10:59:40',93,15.5,NULL),
-('32627274-d2ea-49ef-95eb-56c5dd3a900a','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-16 14:11:48','2026-03-16 14:12:13',217,36.1667,NULL),
-('aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 22:45:27','2026-03-12 22:45:29',664,110.667,NULL),
-('979577e7-ddc5-440e-8005-705916b62113','PURCHASE','TRY',NULL,'a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 10:24:27','2026-03-12 10:24:31',848,141.333,NULL),
-('ef0500e5-c029-48bf-8f15-7e41ed441c59','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 15:55:58','2026-03-12 15:56:00',453,75.5,NULL),
-('af33b3eb-78e4-43dc-bf1c-81ca6d233712','REFUND','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','WAITING',NULL,NULL,NULL,NULL,NULL,'2026-03-16 14:39:29','2026-03-16 14:39:29',93,15.5,'ef0c30a1-748f-41b8-937e-cbf2624d3a13'),
-('b79971ba-ace6-4902-b084-87ff17ca32eb','PURCHASE','TRY',NULL,'a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 10:57:42','2026-03-12 10:57:44',93,15.5,NULL),
-('933294af-e707-44d8-87d7-ae4e69e0414f','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-14 16:08:59','2026-03-14 16:09:01',122,20.3333,NULL),
-('aa9cd89e-f7c5-48b2-9962-b114dd75f228','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-16 13:57:17','2026-03-16 13:57:21',693,115.5,NULL),
-('9f0c6536-b9a1-4323-827e-b21a890625e7','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-15 18:46:26','2026-03-15 18:46:29',31,5.16667,NULL),
-('69ef9031-9ff9-4abf-a5db-b3845486772c','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-15 18:33:20','2026-03-15 18:33:23',93,15.5,NULL),
-('87e1bd15-5905-4270-9200-fc83d4aa4c6f','PURCHASE','TRY',NULL,'a607c2d0-4c49-4697-afe6-4c7499aa094b','Kişisel','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-12 10:52:50','2026-03-12 10:52:53',155,25.8333,NULL),
-('cc04a96b-6165-4fc1-b0bc-fcb4b24775ba','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-03-15 14:34:45','2026-03-15 14:35:12',93,15.5,NULL);
+('ddca578b-583d-4008-8497-39bd8e360304','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-04-01 12:31:36','2026-04-01 12:31:41',NULL,760,122.121),
+('bdc318a1-2832-42fc-8cba-7a75a8d112d8','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-04-01 12:17:56','2026-04-01 12:18:00',NULL,1500,250),
+('f6e28e3d-fd4e-49f6-b740-cfcf04571146','PURCHASE','TRY',NULL,'bb251590-67d6-4165-8321-7a04fa357242','Frisk Dreemurr','COMPLETED',NULL,NULL,NULL,NULL,NULL,'2026-04-01 12:00:01','2026-04-01 12:02:21',NULL,500,83.3333);
 /*!40000 ALTER TABLE `payment` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -626,10 +586,12 @@ CREATE TABLE `payment_channel_operation` (
   `paymentChannelId` varchar(255) NOT NULL,
   `operationId` varchar(255) DEFAULT NULL,
   `redirectUrl` varchar(255) DEFAULT NULL,
-  `amount` float NOT NULL,
   `currency` varchar(255) NOT NULL,
   `status` varchar(255) DEFAULT NULL,
   `paymentId` varchar(255) DEFAULT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `amount` float NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -642,23 +604,24 @@ LOCK TABLES `payment_channel_operation` WRITE;
 /*!40000 ALTER TABLE `payment_channel_operation` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `payment_channel_operation` VALUES
-('d92c1a91-529e-4534-bae1-30c8796f9e48','dummy-ecommerce','d92c1a91-529e-4534-bae1-30c8796f9e48',NULL,574,'TRY','COMPLETED','d92c1a91-529e-4534-bae1-30c8796f9e48'),
-('5837e458-9f01-421a-95af-332a7c3464b2','dummy-ecommerce','5837e458-9f01-421a-95af-332a7c3464b2',NULL,155,'TRY','COMPLETED','5837e458-9f01-421a-95af-332a7c3464b2'),
-('04a29324-a67e-4e58-99b3-3750d2f2991e','dummy-ecommerce','04a29324-a67e-4e58-99b3-3750d2f2991e',NULL,90,'TRY','COMPLETED','04a29324-a67e-4e58-99b3-3750d2f2991e'),
-('6af8f6a8-0ab5-4ba9-88fc-38043ab82009','dummy-ecommerce','6af8f6a8-0ab5-4ba9-88fc-38043ab82009',NULL,390,'TRY','COMPLETED','6af8f6a8-0ab5-4ba9-88fc-38043ab82009'),
-('dfac1870-cbb6-4c04-bd19-44631d6bb48a','dummy-ecommerce','dfac1870-cbb6-4c04-bd19-44631d6bb48a',NULL,124,'TRY','COMPLETED','dfac1870-cbb6-4c04-bd19-44631d6bb48a'),
-('b8ca6234-a8c6-4555-b05f-5486816b77d3','dummy-ecommerce','b8ca6234-a8c6-4555-b05f-5486816b77d3',NULL,93,'TRY','COMPLETED','b8ca6234-a8c6-4555-b05f-5486816b77d3'),
-('32627274-d2ea-49ef-95eb-56c5dd3a900a','dummy-ecommerce','32627274-d2ea-49ef-95eb-56c5dd3a900a',NULL,217,'TRY','COMPLETED','32627274-d2ea-49ef-95eb-56c5dd3a900a'),
-('aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','dummy-ecommerce','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa',NULL,664,'TRY','COMPLETED','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa'),
-('979577e7-ddc5-440e-8005-705916b62113','dummy-ecommerce','979577e7-ddc5-440e-8005-705916b62113',NULL,848,'TRY','COMPLETED','979577e7-ddc5-440e-8005-705916b62113'),
-('ef0500e5-c029-48bf-8f15-7e41ed441c59','dummy-ecommerce','ef0500e5-c029-48bf-8f15-7e41ed441c59',NULL,453,'TRY','COMPLETED','ef0500e5-c029-48bf-8f15-7e41ed441c59'),
-('b79971ba-ace6-4902-b084-87ff17ca32eb','dummy-ecommerce','b79971ba-ace6-4902-b084-87ff17ca32eb',NULL,93,'TRY','COMPLETED','b79971ba-ace6-4902-b084-87ff17ca32eb'),
-('933294af-e707-44d8-87d7-ae4e69e0414f','dummy-ecommerce','933294af-e707-44d8-87d7-ae4e69e0414f',NULL,122,'TRY','COMPLETED','933294af-e707-44d8-87d7-ae4e69e0414f'),
-('aa9cd89e-f7c5-48b2-9962-b114dd75f228','dummy-ecommerce','aa9cd89e-f7c5-48b2-9962-b114dd75f228',NULL,693,'TRY','COMPLETED','aa9cd89e-f7c5-48b2-9962-b114dd75f228'),
-('9f0c6536-b9a1-4323-827e-b21a890625e7','dummy-ecommerce','9f0c6536-b9a1-4323-827e-b21a890625e7',NULL,31,'TRY','COMPLETED','9f0c6536-b9a1-4323-827e-b21a890625e7'),
-('69ef9031-9ff9-4abf-a5db-b3845486772c','dummy-ecommerce','69ef9031-9ff9-4abf-a5db-b3845486772c',NULL,93,'TRY','COMPLETED','69ef9031-9ff9-4abf-a5db-b3845486772c'),
-('87e1bd15-5905-4270-9200-fc83d4aa4c6f','dummy-ecommerce','87e1bd15-5905-4270-9200-fc83d4aa4c6f',NULL,155,'TRY','COMPLETED','87e1bd15-5905-4270-9200-fc83d4aa4c6f'),
-('cc04a96b-6165-4fc1-b0bc-fcb4b24775ba','dummy-ecommerce','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba',NULL,93,'TRY','COMPLETED','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba');
+('1f1da008-5dd1-4477-9ab6-059e9773ff11','dummy-ecommerce','6ed605eb-41d2-4eba-ba88-e5b5ec76cb67',NULL,'TRY','COMPLETED','6ed605eb-41d2-4eba-ba88-e5b5ec76cb67','2026-03-31 11:59:10','2026-03-31 11:59:12',1100),
+('c74fe7e7-822b-45ad-a073-0b7c816f8b92','dummy-ecommerce','9dfd48f2-f25b-4903-bed0-47e340260c33',NULL,'TRY','COMPLETED','9dfd48f2-f25b-4903-bed0-47e340260c33','2026-03-31 11:35:18','2026-03-31 11:35:23',500),
+('41aaacac-5802-4c35-adf4-0bc037b29dd0','dummy-ecommerce','21a1914c-2f02-468a-9969-c82851f5cde7',NULL,'TRY','COMPLETED','21a1914c-2f02-468a-9969-c82851f5cde7','2026-03-31 11:41:40','2026-03-31 11:41:43',800),
+('115793b5-6e15-4125-9b58-0ee34f26ec72','dummy-ecommerce','d4668779-7454-4f6a-b81c-ba9aa510e070',NULL,'TRY','COMPLETED','d4668779-7454-4f6a-b81c-ba9aa510e070','2026-03-31 12:08:03','2026-03-31 12:08:04',500),
+('db9207fd-778a-42ca-8ae6-11c8b9832d6d','dummy-ecommerce','cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a',NULL,'TRY','COMPLETED','cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a','2026-03-31 10:58:49','2026-03-31 10:58:51',700),
+('6ffad36c-7433-43eb-86c0-164259eae375','dummy-ecommerce','af94372d-4a92-4409-a49b-4d3f079129a8',NULL,'TRY','COMPLETED','af94372d-4a92-4409-a49b-4d3f079129a8','2026-03-29 21:02:56','2026-03-29 21:02:57',1200),
+('7bacc0f8-3231-42ec-b58e-2fab3d59d436','dummy-ecommerce','69e44495-cab2-4dde-ae7e-70c89451c286',NULL,'TRY','COMPLETED','69e44495-cab2-4dde-ae7e-70c89451c286','2026-03-29 21:04:54','2026-03-29 21:04:55',1100),
+('d3a4d126-1c32-4ef9-902f-5eba8dc433aa','dummy-ecommerce','bdc318a1-2832-42fc-8cba-7a75a8d112d8',NULL,'TRY','COMPLETED','bdc318a1-2832-42fc-8cba-7a75a8d112d8','2026-04-01 12:17:57','2026-04-01 12:17:59',1500),
+('52d42e28-60a6-42c4-8285-6e7d5e5ea299','dummy-ecommerce','d85e328f-fea2-4558-9cb7-f163a8c2e655',NULL,'TRY','COMPLETED','d85e328f-fea2-4558-9cb7-f163a8c2e655','2026-03-30 19:49:29','2026-03-30 19:49:31',800),
+('5f77de79-dabd-447f-91d1-87d932905dc8','dummy-ecommerce','cbb58ca9-25c4-4f15-a903-f67d59d1ede1',NULL,'TRY','COMPLETED','cbb58ca9-25c4-4f15-a903-f67d59d1ede1','2026-03-28 14:21:04','2026-03-28 14:21:05',1700),
+('c957ad97-6283-45c6-862b-90f851b5ae65','dummy-ecommerce','f6e28e3d-fd4e-49f6-b740-cfcf04571146',NULL,'TRY','COMPLETED','f6e28e3d-fd4e-49f6-b740-cfcf04571146','2026-04-01 12:00:03','2026-04-01 12:02:17',500),
+('51bb0819-27d8-4e1f-98dc-a8cc99ebdfca','dummy-ecommerce','3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f',NULL,'TRY','COMPLETED','3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f','2026-03-28 14:19:48','2026-03-28 14:20:05',700),
+('6b1b30b7-b2af-4438-a0e5-ac62d0b9f762','dummy-ecommerce','dce665d2-1d97-4cf1-9529-7e4ef5c12b1f',NULL,'TRY','COMPLETED','dce665d2-1d97-4cf1-9529-7e4ef5c12b1f','2026-03-28 14:23:13','2026-03-28 14:23:14',400),
+('3f3ca01d-89db-40d0-853f-b79d4d3c5195','dummy-ecommerce','5564f851-c835-4667-b894-c654b69a93f6',NULL,'TRY','COMPLETED','5564f851-c835-4667-b894-c654b69a93f6','2026-03-28 14:23:49','2026-03-28 14:23:50',700),
+('346615ca-809d-49cd-8d4a-d6e2b814e7b9','dummy-ecommerce','5250a81a-6d49-4d3c-ad7e-56013dba864d',NULL,'TRY','COMPLETED','5250a81a-6d49-4d3c-ad7e-56013dba864d','2026-03-28 14:33:23','2026-03-28 14:33:25',2000),
+('f68c740e-ec21-43b6-828c-dc754c66401b','dummy-ecommerce','b4912aeb-5c11-403c-81bb-588da87592ed',NULL,'TRY','COMPLETED','b4912aeb-5c11-403c-81bb-588da87592ed','2026-03-28 14:38:28','2026-03-28 14:38:29',2300),
+('ee20ebed-dd26-4e09-9448-e42bab02e469','dummy-ecommerce','c2a6c7f0-d11d-4aef-ba23-556aad150050',NULL,'TRY','COMPLETED','c2a6c7f0-d11d-4aef-ba23-556aad150050','2026-03-31 12:07:17','2026-03-31 12:07:19',1000),
+('adf42327-849d-4de7-8f17-fa9ed18663fd','dummy-ecommerce','ddca578b-583d-4008-8497-39bd8e360304',NULL,'TRY','COMPLETED','ddca578b-583d-4008-8497-39bd8e360304','2026-04-01 12:31:37','2026-04-01 12:31:38',760);
 /*!40000 ALTER TABLE `payment_channel_operation` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -783,6 +746,11 @@ CREATE TABLE `postral_payment_item` (
   `itemId` varchar(255) NOT NULL,
   `variation` varchar(255) NOT NULL,
   `sellerAccountId` varchar(255) NOT NULL,
+  `sellerAccountName` varchar(255) NOT NULL,
+  `unit` varchar(255) NOT NULL,
+  `refunded` tinyint(4) NOT NULL DEFAULT 0,
+  `refundPaymentId` uuid DEFAULT NULL,
+  `refundDate` timestamp NULL DEFAULT NULL,
   `quantity` float NOT NULL,
   `totalAmount` float NOT NULL,
   `originalUnitAmount` float NOT NULL,
@@ -790,11 +758,6 @@ CREATE TABLE `postral_payment_item` (
   `taxPercent` float NOT NULL,
   `taxAmount` float NOT NULL,
   `unTaxAmount` float NOT NULL,
-  `sellerAccountName` varchar(255) NOT NULL,
-  `unit` varchar(255) NOT NULL,
-  `refunded` tinyint(4) NOT NULL DEFAULT 0,
-  `refundPaymentId` uuid DEFAULT NULL,
-  `refundDate` timestamp NULL DEFAULT NULL,
   `refundCount` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `FK_2fa2000f290cdf7e61389d40a09` (`paymentId`),
@@ -812,30 +775,12 @@ LOCK TABLES `postral_payment_item` WRITE;
 /*!40000 ALTER TABLE `postral_payment_item` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `postral_payment_item` VALUES
-('2a3e8562-44ea-4e63-b9c2-2749a14968b7','','','','Something','aa9cd89e-f7c5-48b2-9962-b114dd75f228','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('c995c3dc-99cb-4a9f-8a64-3a5f2989c397','','','','Nebicloud üyeliği','933294af-e707-44d8-87d7-ae4e69e0414f','e2e402c4-ef53-40df-8591-98adfd4a1afc','1years','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e',1,122,122,122,20,20.3333,101.667,'Nebisoft Gıda Savunma  Sanayii A.Ş','C62',0,NULL,NULL,0),
-('1507488e-9e09-4f06-8eb8-4613fd7959ce','','','','Something','dfac1870-cbb6-4c04-bd19-44631d6bb48a','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',4,124,31,31,20,20.6667,103.333,'Omodog','C62',0,NULL,NULL,0),
-('97c86271-25ba-48cd-ac9d-51b9bd2bf3c7','','','','Something','ef0500e5-c029-48bf-8f15-7e41ed441c59','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('fe81e71f-df6e-4487-8a3f-54bd04028e1b','','','','Kyle Broflovski Peluş','6af8f6a8-0ab5-4ba9-88fc-38043ab82009','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',1,90,90,90,20,15,75,'English Colonial','GFI',0,NULL,NULL,0),
-('7f180a56-3a6c-4a35-9618-596613dc1b07','','','','Kyle Broflovski Peluş','6af8f6a8-0ab5-4ba9-88fc-38043ab82009','739263f4-a5e9-4f70-a368-8ea4891fec10','jew-elf-king','913252c1-d094-40de-a13c-8dc1142b9222',1,300,300,300,20,50,250,'English Colonial','GFI',0,NULL,NULL,0),
-('dd1833f0-abe5-4a86-879a-66814e3bb8ca','','','','Kyle Broflovski Peluş','ef0500e5-c029-48bf-8f15-7e41ed441c59','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',4,360,90,90,20,60,300,'English Colonial','GFI',0,NULL,NULL,0),
-('b15b11b6-a13b-41d9-9c7d-735531072177','','','','Kyle Broflovski Peluş','d92c1a91-529e-4534-bae1-30c8796f9e48','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',5,450,90,90,20,75,375,'English Colonial','GFI',0,NULL,NULL,0),
-('d533ff28-1922-416c-830e-7a698ed38f27','','','','Something','d92c1a91-529e-4534-bae1-30c8796f9e48','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',4,124,31,31,20,20.6667,103.333,'Omodog','C62',0,NULL,NULL,0),
-('0ce116c6-6b2b-4921-baf8-7e3265cb5380','','','','Kyle Broflovski Peluş','aa9cd89e-f7c5-48b2-9962-b114dd75f228','739263f4-a5e9-4f70-a368-8ea4891fec10','jew-elf-king','913252c1-d094-40de-a13c-8dc1142b9222',2,600,300,300,20,100,500,'English Colonial','GFI',0,NULL,NULL,0),
-('9d5cf871-a7f3-4ff4-a2f5-7e555ed73873','','','','Nebicloud üyeliği','979577e7-ddc5-440e-8005-705916b62113','e2e402c4-ef53-40df-8591-98adfd4a1afc','1years','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e',4,488,122,122,20,81.3333,406.667,'Nebisoft Gıda Savunma  Sanayii A.Ş','C62',0,NULL,NULL,0),
-('0bc5a7db-5f08-4348-8aa8-8704f49c6b8e','','','','Something','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',4,124,31,31,20,20.6667,103.333,'Omodog','C62',0,NULL,NULL,0),
-('f3783bc0-35db-410a-ba31-94e2a2c31e9c','','','','Kyle Broflovski Peluş','04a29324-a67e-4e58-99b3-3750d2f2991e','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',1,90,90,90,20,15,75,'English Colonial','GFI',0,NULL,NULL,0),
-('6ebfd6a1-bca9-402a-b46e-a1c87a6ee639','','','','Something','b8ca6234-a8c6-4555-b05f-5486816b77d3','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('8e17f8e9-2b60-4e41-95f6-a54d97fd7e08','','','','Something','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('ec53913f-9268-47ee-88b4-a94f074b6003','','','','Something','af33b3eb-78e4-43dc-bf1c-81ca6d233712','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('4dcf5f34-1746-45d3-8aa0-b4d64c5dbbfd','','','','Something','69ef9031-9ff9-4abf-a5db-b3845486772c','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('950ed5e7-35f4-4a73-96dc-b79afdc178e5','','','','Kyle Broflovski Peluş','979577e7-ddc5-440e-8005-705916b62113','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',4,360,90,90,20,60,300,'English Colonial','GFI',0,NULL,NULL,0),
-('d5843324-8bd9-4914-bf7b-c4a3c6be09b1','','','','Something','b79971ba-ace6-4902-b084-87ff17ca32eb','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',3,93,31,31,20,15.5,77.5,'Omodog','C62',0,NULL,NULL,0),
-('a7dfa766-3d6e-45fd-a0c0-d72b0262d500','','','','Something','5837e458-9f01-421a-95af-332a7c3464b2','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',5,155,31,31,20,25.8333,129.167,'Omodog','C62',0,NULL,NULL,3),
-('c44985b7-81e6-40ae-9e4c-e538a057cdd0','','','','Something','32627274-d2ea-49ef-95eb-56c5dd3a900a','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',7,217,31,31,20,36.1667,180.833,'Omodog','C62',0,NULL,NULL,0),
-('c4c99d3e-b55f-4163-84b4-ecb87b33211c','','','','Kyle Broflovski Peluş','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','739263f4-a5e9-4f70-a368-8ea4891fec10','humankite','913252c1-d094-40de-a13c-8dc1142b9222',6,540,90,90,20,90,450,'English Colonial','GFI',0,NULL,NULL,0),
-('0fe1a9cb-1992-4a18-88ea-f5b96b07e33c','','','','Something','87e1bd15-5905-4270-9200-fc83d4aa4c6f','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',5,155,31,31,20,25.8333,129.167,'Omodog','C62',0,NULL,NULL,0),
-('a96a72d3-8d60-4ac8-8191-fe5a950a74ba','','','','Something','9f0c6536-b9a1-4323-827e-b21a890625e7','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','default','c783e9dc-07aa-4fe4-95e9-be16246156bb',1,31,31,31,20,5.16667,25.8333,'Omodog','C62',0,NULL,NULL,0);
+('87a1cc2f-0bea-4e58-a0d4-02c74f858659','','','','Tost','ddca578b-583d-4008-8497-39bd8e360304','dbf8a42f-69f0-4181-8373-2a0b3ea01061','hero','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','KPO',0,NULL,NULL,7,700,100,100,20,116.667,583.333,0),
+('aa8c8825-4c27-41fe-a334-1a9ce5935847','','','','Tost','bdc318a1-2832-42fc-8cba-7a75a8d112d8','dbf8a42f-69f0-4181-8373-2a0b3ea01061','hero','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','KPO',0,NULL,NULL,5,500,100,100,20,83.3333,416.667,0),
+('b0ed8fcb-2962-4a53-a89f-6e1c336b52a0','','','','Hayat Reçeli','ddca578b-583d-4008-8497-39bd8e360304','a7d0eb1b-0c3f-4b45-8b6e-44ed9d7205a9','default','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','TON',0,NULL,NULL,6,60,10,10,10,5.45455,54.5455,0),
+('944be9e0-7b68-49dc-b21c-89c18d2358bb','','','','Tetakent Education Suite 2025','bdc318a1-2832-42fc-8cba-7a75a8d112d8','739263f4-a5e9-4f70-a368-8ea4891fec10','default','5e72f829-e4ed-4ccd-8971-509708f42212','Tetakent (H.C.G)','GFI',0,NULL,NULL,5,500,100,100,20,83.3333,416.667,0),
+('84b137d6-491d-42f7-86ff-a76779d150f2','','','','Tost','f6e28e3d-fd4e-49f6-b740-cfcf04571146','dbf8a42f-69f0-4181-8373-2a0b3ea01061','kel','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','KPO',0,NULL,NULL,5,500,100,100,20,83.3333,416.667,0),
+('4fdc5955-f80a-450f-b608-fd1dec06533a','','','','Something','bdc318a1-2832-42fc-8cba-7a75a8d112d8','9dd18852-2002-46a6-87cb-0de0d0ef4ccf','basils','c783e9dc-07aa-4fe4-95e9-be16246156bb','Omodog','C62',0,NULL,NULL,5,500,100,100,20,83.3333,416.667,0);
 /*!40000 ALTER TABLE `postral_payment_item` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -868,145 +813,11 @@ LOCK TABLES `postral_payment_tax` WRITE;
 /*!40000 ALTER TABLE `postral_payment_tax` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `postral_payment_tax` VALUES
-('8e3e5950-ac76-4128-a145-073dfb89b96f','933294af-e707-44d8-87d7-ae4e69e0414f',20.3333,101.667,122,20),
-('ceca5df4-bf18-4a2e-9ef4-07bf4f87bb2d','979577e7-ddc5-440e-8005-705916b62113',141.333,706.667,848,20),
-('3ac7ba95-8aad-4fa5-b2fb-14592c566270','ef0500e5-c029-48bf-8f15-7e41ed441c59',75.5,377.5,453,20),
-('d7ab7d2a-90c3-4b27-ae23-27d1b716a90f','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba',15.5,77.5,93,20),
-('ca0caba2-a563-4f3a-94df-2cef59a9fccf','69ef9031-9ff9-4abf-a5db-b3845486772c',15.5,77.5,93,20),
-('cd7c1e6a-3e86-4090-bc3b-4ebd2ea0dae4','aa9cd89e-f7c5-48b2-9962-b114dd75f228',115.5,577.5,693,20),
-('440a21ac-db83-4b6d-901f-59ca96682140','b79971ba-ace6-4902-b084-87ff17ca32eb',15.5,77.5,93,20),
-('979ead51-cede-4763-91bb-60779ce8f8c2','9f0c6536-b9a1-4323-827e-b21a890625e7',5.16667,25.8333,31,20),
-('61384c24-a75a-4854-b48f-657a7f7e3c33','87e1bd15-5905-4270-9200-fc83d4aa4c6f',25.8333,129.167,155,20),
-('f5e603c1-4ceb-450e-bf0a-786482f3de2a','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa',110.667,553.333,664,20),
-('ac7e410b-eb98-4357-8d35-7e8700144cf5','b8ca6234-a8c6-4555-b05f-5486816b77d3',15.5,77.5,93,20),
-('73bcb445-ba62-4225-ac8c-86a85175bfdc','af33b3eb-78e4-43dc-bf1c-81ca6d233712',15.5,77.5,93,20),
-('86c05f8d-55cc-4427-b7dd-8e960e4f4b05','d92c1a91-529e-4534-bae1-30c8796f9e48',95.6667,478.333,574,20),
-('5729c719-fe09-4ac7-8594-a9af74ce2f14','32627274-d2ea-49ef-95eb-56c5dd3a900a',36.1667,180.833,217,20),
-('548ecad2-b763-411f-a1f7-b56fed780e72','5837e458-9f01-421a-95af-332a7c3464b2',25.8333,129.167,155,20),
-('03b5ea67-f08b-4f06-aa94-cf6260858501','dfac1870-cbb6-4c04-bd19-44631d6bb48a',20.6667,103.333,124,20),
-('671daa22-ce6b-4ad9-8971-f56db6e0ef5f','6af8f6a8-0ab5-4ba9-88fc-38043ab82009',65,325,390,20),
-('e25913ac-9203-4d92-8391-ffb5b45025df','04a29324-a67e-4e58-99b3-3750d2f2991e',15,75,90,20);
+('6815520e-c7b0-421a-a4e8-5626f2a9d208','ddca578b-583d-4008-8497-39bd8e360304',116.667,583.333,700,20),
+('221cc415-ae08-4644-a18d-7097f00f2bb6','bdc318a1-2832-42fc-8cba-7a75a8d112d8',250,1250,1500,20),
+('a9d5cb53-fb6f-4925-bc23-7223b885927e','f6e28e3d-fd4e-49f6-b740-cfcf04571146',83.3333,416.667,500,20),
+('3de893c6-5099-4bcc-8e37-9f1d9a5de606','ddca578b-583d-4008-8497-39bd8e360304',5.45455,54.5455,60,10);
 /*!40000 ALTER TABLE `postral_payment_tax` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `project_categories`
---
-
-DROP TABLE IF EXISTS `project_categories`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_categories` (
-  `id` uuid NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `projectId` uuid NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_4b3ae99beef33e732fb63185009` (`projectId`),
-  CONSTRAINT `FK_4b3ae99beef33e732fb63185009` FOREIGN KEY (`projectId`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `project_categories`
---
-
-LOCK TABLES `project_categories` WRITE;
-/*!40000 ALTER TABLE `project_categories` DISABLE KEYS */;
-set autocommit=0;
-/*!40000 ALTER TABLE `project_categories` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `project_processable_data`
---
-
-DROP TABLE IF EXISTS `project_processable_data`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_processable_data` (
-  `id` uuid NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `projectId` uuid NOT NULL,
-  `rawDataId` uuid NOT NULL,
-  `dataCategoryId` uuid NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_7ba03e606c299aae3c0975fca99` (`projectId`),
-  KEY `FK_4915828f2a1cf568680f20ecf76` (`rawDataId`),
-  KEY `FK_64ba0b791abd9825e463743d75e` (`dataCategoryId`),
-  CONSTRAINT `FK_4915828f2a1cf568680f20ecf76` FOREIGN KEY (`rawDataId`) REFERENCES `project_raw_data` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `FK_64ba0b791abd9825e463743d75e` FOREIGN KEY (`dataCategoryId`) REFERENCES `project_categories` (`id`) ON UPDATE NO ACTION,
-  CONSTRAINT `FK_7ba03e606c299aae3c0975fca99` FOREIGN KEY (`projectId`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `project_processable_data`
---
-
-LOCK TABLES `project_processable_data` WRITE;
-/*!40000 ALTER TABLE `project_processable_data` DISABLE KEYS */;
-set autocommit=0;
-/*!40000 ALTER TABLE `project_processable_data` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `project_raw_data`
---
-
-DROP TABLE IF EXISTS `project_raw_data`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_raw_data` (
-  `id` uuid NOT NULL,
-  `dataString` longtext DEFAULT NULL,
-  `dataBinary` binary(1) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `project_raw_data`
---
-
-LOCK TABLES `project_raw_data` WRITE;
-/*!40000 ALTER TABLE `project_raw_data` DISABLE KEYS */;
-set autocommit=0;
-INSERT INTO `project_raw_data` VALUES
-('3c13b05e-6afd-491e-a6d1-3dcf921c4f8d','',NULL),
-('aa0570df-a683-4c46-b4d8-ebc319fd51f2','',NULL);
-/*!40000 ALTER TABLE `project_raw_data` ENABLE KEYS */;
-UNLOCK TABLES;
-commit;
-
---
--- Table structure for table `projects`
---
-
-DROP TABLE IF EXISTS `projects`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `projects` (
-  `id` uuid NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `projects`
---
-
-LOCK TABLES `projects` WRITE;
-/*!40000 ALTER TABLE `projects` DISABLE KEYS */;
-set autocommit=0;
-/*!40000 ALTER TABLE `projects` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -1024,12 +835,10 @@ CREATE TABLE `refund_request` (
   `resolvedByAccountId` varchar(255) DEFAULT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `paymentId` uuid NOT NULL,
   `requestedByPaymentAccountId` varchar(255) NOT NULL,
   `requestedToPaymentAccountId` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `REL_9026faaf537728791a3dd2ed0e` (`paymentId`),
-  CONSTRAINT `FK_9026faaf537728791a3dd2ed0ea` FOREIGN KEY (`paymentId`) REFERENCES `payment` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `paymentId` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1040,8 +849,6 @@ CREATE TABLE `refund_request` (
 LOCK TABLES `refund_request` WRITE;
 /*!40000 ALTER TABLE `refund_request` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `refund_request` VALUES
-('ef0c30a1-748f-41b8-937e-cbf2624d3a13','APPROVED','68fe859434da9a8bb89ce130','69b297584a58c54d129dbe60','2026-03-16 14:35:42','2026-03-16 14:39:42','5837e458-9f01-421a-95af-332a7c3464b2','bb251590-67d6-4165-8321-7a04fa357242','c783e9dc-07aa-4fe4-95e9-be16246156bb');
 /*!40000 ALTER TABLE `refund_request` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1056,16 +863,16 @@ DROP TABLE IF EXISTS `refund_request_item`;
 CREATE TABLE `refund_request_item` (
   `id` uuid NOT NULL,
   `paymentItemId` varchar(255) NOT NULL,
-  `refundCount` float NOT NULL,
   `refundRequestId` uuid DEFAULT NULL,
   `itemName` varchar(255) DEFAULT NULL,
-  `unitAmount` float DEFAULT NULL,
-  `refundAmount` float DEFAULT NULL,
-  `unitAmountWithoutTax` float DEFAULT NULL,
-  `refundAmountWithoutTax` float DEFAULT NULL,
-  `refundTaxAmount` float DEFAULT NULL,
   `variation` varchar(255) NOT NULL,
   `realItemId` varchar(255) NOT NULL,
+  `refundCount` float NOT NULL,
+  `unitAmount` float DEFAULT NULL,
+  `unitAmountWithoutTax` float DEFAULT NULL,
+  `refundAmount` float DEFAULT NULL,
+  `refundAmountWithoutTax` float DEFAULT NULL,
+  `refundTaxAmount` float DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `FK_4336e46fa30f189b6c9dcfcde43` (`refundRequestId`),
   CONSTRAINT `FK_4336e46fa30f189b6c9dcfcde43` FOREIGN KEY (`refundRequestId`) REFERENCES `refund_request` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1079,9 +886,221 @@ CREATE TABLE `refund_request_item` (
 LOCK TABLES `refund_request_item` WRITE;
 /*!40000 ALTER TABLE `refund_request_item` DISABLE KEYS */;
 set autocommit=0;
-INSERT INTO `refund_request_item` VALUES
-('080955a0-3497-44aa-8901-3445d40fa494','a7dfa766-3d6e-45fd-a0c0-d72b0262d500',3,'ef0c30a1-748f-41b8-937e-cbf2624d3a13','Something',31,93,25.8334,77.5002,15.4998,'default','9dd18852-2002-46a6-87cb-0de0d0ef4ccf');
 /*!40000 ALTER TABLE `refund_request_item` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `report`
+--
+
+DROP TABLE IF EXISTS `report`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `report` (
+  `id` uuid NOT NULL,
+  `queryId` uuid NOT NULL,
+  `accountId` varchar(255) DEFAULT NULL,
+  `periodLabel` varchar(60) NOT NULL,
+  `currency` varchar(10) NOT NULL,
+  `lastDigestedAt` datetime DEFAULT NULL,
+  `createdAt` datetime NOT NULL DEFAULT current_timestamp(),
+  `paymentCount` int(11) NOT NULL DEFAULT 0,
+  `totalSaleAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalRefundAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalSaleTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalRefundTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netSaleAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netRevenue` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `lastDigestedPaymentId` varchar(255) DEFAULT NULL,
+  `archived` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `IDX_12ff44ad30c27967e29c0fd42e` (`queryId`,`periodLabel`,`currency`),
+  CONSTRAINT `FK_5c41976ef4369687fa8516891cc` FOREIGN KEY (`queryId`) REFERENCES `report_query` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report`
+--
+
+LOCK TABLES `report` WRITE;
+/*!40000 ALTER TABLE `report` DISABLE KEYS */;
+set autocommit=0;
+INSERT INTO `report` VALUES
+('d84b932d-6c1d-402a-a035-0425efb4281b','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775047060048','TRY','2026-04-01 15:31:50','2026-04-01 15:25:48',2,1760.00,0.00,288.79,0.00,288.79,1760.00,1471.21,'ddca578b-583d-4008-8497-39bd8e360304',1),
+('99ddf8f6-dd1b-4216-ae92-0ff70047239b','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01','TRY','2026-04-02 16:41:00','2026-04-02 16:40:55',2,1760.00,0.00,288.79,0.00,288.79,1760.00,1471.21,'bdc318a1-2832-42fc-8cba-7a75a8d112d8',0),
+('1e915f06-1069-498d-aafc-2d1d77cec555','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775046306355','TRY','2026-04-01 15:23:20','2026-04-01 15:23:15',1,1000.00,0.00,166.67,0.00,166.67,1000.00,833.33,'bdc318a1-2832-42fc-8cba-7a75a8d112d8',1),
+('ed82e664-a902-4f20-8a1b-353da2ca052f','b9243d78-24fd-4f05-964f-dcb12547ba7f','c783e9dc-07aa-4fe4-95e9-be16246156bb','ALL_OLD_1775046798812','TRY',NULL,'2026-04-01 15:18:00',0,0.00,0.00,0.00,0.00,0.00,0.00,0.00,NULL,1),
+('c8ab9cfe-df0d-4f75-b785-4cef573b6055','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775046348020','TRY','2026-04-01 15:25:10','2026-04-01 15:25:06',1,1000.00,0.00,166.67,0.00,166.67,1000.00,833.33,'bdc318a1-2832-42fc-8cba-7a75a8d112d8',1),
+('88a37564-c25b-4504-a359-7f5d650caeb1','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775046195840','TRY','2026-04-01 15:18:10','2026-04-01 15:18:00',1,1000.00,0.00,166.67,0.00,166.67,1000.00,833.33,'bdc318a1-2832-42fc-8cba-7a75a8d112d8',1),
+('1a634925-5526-4be5-8128-8a93518ab20a','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775055383785','TRY','2026-04-01 15:37:50','2026-04-01 15:37:40',2,1760.00,0.00,288.79,0.00,288.79,1760.00,1471.21,'bdc318a1-2832-42fc-8cba-7a75a8d112d8',1),
+('dea0aaa1-dc85-490c-a11e-b6b57c69bd5b','4e64b4f2-aae1-40d1-b6d4-31d1a2791780','c783e9dc-07aa-4fe4-95e9-be16246156bb','2026-04-01_OLD_1775137255790','TRY','2026-04-01 17:56:30','2026-04-01 17:56:23',2,1760.00,0.00,288.79,0.00,288.79,1760.00,1471.21,'ddca578b-583d-4008-8497-39bd8e360304',1),
+('fb1440b3-a4f0-49cd-afd8-c34b1f6dd88c','b9243d78-24fd-4f05-964f-dcb12547ba7f','c783e9dc-07aa-4fe4-95e9-be16246156bb','ALL','TRY','2026-04-01 15:33:20','2026-04-01 15:33:18',2,1760.00,0.00,288.79,0.00,288.79,1760.00,1471.21,'ddca578b-583d-4008-8497-39bd8e360304',0);
+/*!40000 ALTER TABLE `report` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `report_operation_status`
+--
+
+DROP TABLE IF EXISTS `report_operation_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `report_operation_status` (
+  `id` uuid NOT NULL,
+  `reportId` varchar(36) NOT NULL,
+  `status` varchar(36) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `IDX_51f5c9f82800eeae8b775691ff` (`reportId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report_operation_status`
+--
+
+LOCK TABLES `report_operation_status` WRITE;
+/*!40000 ALTER TABLE `report_operation_status` DISABLE KEYS */;
+set autocommit=0;
+/*!40000 ALTER TABLE `report_operation_status` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `report_payment_relation`
+--
+
+DROP TABLE IF EXISTS `report_payment_relation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `report_payment_relation` (
+  `id` uuid NOT NULL,
+  `paymentId` uuid NOT NULL,
+  `reportId` uuid NOT NULL,
+  `digestionId` varchar(255) DEFAULT NULL,
+  `digestionStartedAt` datetime DEFAULT NULL,
+  `digestionStatus` varchar(255) NOT NULL,
+  `updatedAt` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `createdAt` datetime NOT NULL DEFAULT current_timestamp(),
+  `digestionCompletedAt` datetime DEFAULT NULL,
+  `accountId` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `IDX_5f784c4889dbef895836b54f46` (`reportId`,`paymentId`),
+  KEY `FK_902240445d1edcc3b80b239f595` (`paymentId`),
+  CONSTRAINT `FK_0f675a4b3f168c49c8db062b49c` FOREIGN KEY (`reportId`) REFERENCES `report` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `FK_902240445d1edcc3b80b239f595` FOREIGN KEY (`paymentId`) REFERENCES `payment` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report_payment_relation`
+--
+
+LOCK TABLES `report_payment_relation` WRITE;
+/*!40000 ALTER TABLE `report_payment_relation` DISABLE KEYS */;
+set autocommit=0;
+INSERT INTO `report_payment_relation` VALUES
+('800d8029-188d-444a-92af-0c05a8367a84','bdc318a1-2832-42fc-8cba-7a75a8d112d8','dea0aaa1-dc85-490c-a11e-b6b57c69bd5b','','2026-04-01 17:56:30','COMPLETED','2026-04-01 14:56:30','2026-04-01 14:56:23','2026-04-01 17:56:30','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('0c886a6a-2705-42a5-9ebc-0e8c3ea3cec2','ddca578b-583d-4008-8497-39bd8e360304','1a634925-5526-4be5-8128-8a93518ab20a','','2026-04-01 15:37:50','COMPLETED','2026-04-01 12:37:50','2026-04-01 12:37:40','2026-04-01 15:37:50','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('2cae846f-48ec-47b8-9304-143785f16f13','bdc318a1-2832-42fc-8cba-7a75a8d112d8','88a37564-c25b-4504-a359-7f5d650caeb1','1775045890002_7becaaa8-0b8f-4f18-b0f3-b04642327787','2026-04-01 15:18:10','DIGESTING','2026-04-01 12:18:10','2026-04-01 12:18:00',NULL,'c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('a422a4f3-42bd-4e13-9681-179c80a15926','bdc318a1-2832-42fc-8cba-7a75a8d112d8','fb1440b3-a4f0-49cd-afd8-c34b1f6dd88c','','2026-04-01 15:33:20','COMPLETED','2026-04-01 12:33:20','2026-04-01 12:33:18','2026-04-01 15:33:20','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('2fe63cc4-c9aa-45db-8750-286fb8374f27','bdc318a1-2832-42fc-8cba-7a75a8d112d8','c8ab9cfe-df0d-4f75-b785-4cef573b6055','1775046310002_3027af33-1530-430b-8bd6-4641dd96b47b','2026-04-01 15:25:10','DIGESTING','2026-04-01 12:25:10','2026-04-01 12:25:06',NULL,'c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('8c0b777a-f0f6-4e3e-9c4e-4cf9710f0006','ddca578b-583d-4008-8497-39bd8e360304','ed82e664-a902-4f20-8a1b-353da2ca052f',NULL,NULL,'WAITING','2026-04-01 12:31:41','2026-04-01 12:31:41',NULL,'c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('170beed8-f93e-475e-a234-4e30d8a75dce','ddca578b-583d-4008-8497-39bd8e360304','99ddf8f6-dd1b-4216-ae92-0ff70047239b','','2026-04-02 16:41:00','COMPLETED','2026-04-02 13:41:00','2026-04-02 13:40:55','2026-04-02 16:41:00','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('46a41927-89cf-4ca0-baf6-6b8790d2adc6','ddca578b-583d-4008-8497-39bd8e360304','dea0aaa1-dc85-490c-a11e-b6b57c69bd5b','','2026-04-01 17:56:30','COMPLETED','2026-04-01 14:56:30','2026-04-01 14:56:23','2026-04-01 17:56:30','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('703e7a41-0bbf-4923-8db7-6f7b31e53414','bdc318a1-2832-42fc-8cba-7a75a8d112d8','d84b932d-6c1d-402a-a035-0425efb4281b','','2026-04-01 15:25:50','COMPLETED','2026-04-01 12:25:50','2026-04-01 12:25:48','2026-04-01 15:25:50','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('1b9f4dda-69c0-4ee9-9d0a-6fd57916788b','ddca578b-583d-4008-8497-39bd8e360304','d84b932d-6c1d-402a-a035-0425efb4281b','','2026-04-01 15:31:50','COMPLETED','2026-04-01 12:31:50','2026-04-01 12:31:41','2026-04-01 15:31:50','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('976ec796-edad-4f3c-be3b-7a48d89e5852','bdc318a1-2832-42fc-8cba-7a75a8d112d8','99ddf8f6-dd1b-4216-ae92-0ff70047239b','','2026-04-02 16:41:00','COMPLETED','2026-04-02 13:41:00','2026-04-02 13:40:55','2026-04-02 16:41:00','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('cceec7f8-d74d-4085-b147-8af4a7bef51d','ddca578b-583d-4008-8497-39bd8e360304','fb1440b3-a4f0-49cd-afd8-c34b1f6dd88c','','2026-04-01 15:33:20','COMPLETED','2026-04-01 12:33:20','2026-04-01 12:33:18','2026-04-01 15:33:20','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('d8e3db7c-9de5-4380-a597-d9fd8c94c92d','bdc318a1-2832-42fc-8cba-7a75a8d112d8','ed82e664-a902-4f20-8a1b-353da2ca052f','1775045890002_7becaaa8-0b8f-4f18-b0f3-b04642327787','2026-04-01 15:18:10','DIGESTING','2026-04-01 12:18:10','2026-04-01 12:18:00',NULL,'c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('7e5cbe95-f526-4553-a92e-e02027c2eec2','bdc318a1-2832-42fc-8cba-7a75a8d112d8','1a634925-5526-4be5-8128-8a93518ab20a','','2026-04-01 15:37:50','COMPLETED','2026-04-01 12:37:50','2026-04-01 12:37:40','2026-04-01 15:37:50','c783e9dc-07aa-4fe4-95e9-be16246156bb'),
+('e00b91f2-a7ba-45c5-b3b1-fcfed86260b0','bdc318a1-2832-42fc-8cba-7a75a8d112d8','1e915f06-1069-498d-aafc-2d1d77cec555','1775046200004_f3552d47-fd52-4f46-8c80-d44944508d2e','2026-04-01 15:23:20','DIGESTING','2026-04-01 12:23:20','2026-04-01 12:23:15',NULL,'c783e9dc-07aa-4fe4-95e9-be16246156bb');
+/*!40000 ALTER TABLE `report_payment_relation` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `report_query`
+--
+
+DROP TABLE IF EXISTS `report_query`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `report_query` (
+  `id` uuid NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `description` mediumtext DEFAULT '',
+  `ownerAccountId` varchar(255) DEFAULT NULL,
+  `currency` varchar(255) DEFAULT NULL,
+  `dateGrouping` varchar(10) NOT NULL DEFAULT 'MONTHLY',
+  `createdAt` datetime NOT NULL DEFAULT current_timestamp(),
+  `updatedAt` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report_query`
+--
+
+LOCK TABLES `report_query` WRITE;
+/*!40000 ALTER TABLE `report_query` DISABLE KEYS */;
+set autocommit=0;
+INSERT INTO `report_query` VALUES
+('4e64b4f2-aae1-40d1-b6d4-31d1a2791780','Omodog Günlük','','c783e9dc-07aa-4fe4-95e9-be16246156bb','TRY','DAILY','2026-03-28 10:52:22','2026-03-29 13:09:35'),
+('b9243d78-24fd-4f05-964f-dcb12547ba7f','Omodog','','c783e9dc-07aa-4fe4-95e9-be16246156bb','TRY','ALL','2026-03-28 10:50:33','2026-03-29 13:05:15');
+/*!40000 ALTER TABLE `report_query` ENABLE KEYS */;
+UNLOCK TABLES;
+commit;
+
+--
+-- Table structure for table `report_tax_group`
+--
+
+DROP TABLE IF EXISTS `report_tax_group`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `report_tax_group` (
+  `id` uuid NOT NULL,
+  `reportId` varchar(255) NOT NULL,
+  `taxGroupName` varchar(50) NOT NULL,
+  `taxPercent` varchar(50) NOT NULL,
+  `currency` varchar(10) NOT NULL,
+  `paymentCount` int(11) NOT NULL DEFAULT 0,
+  `totalSaleAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalRefundAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalSaleTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `totalRefundTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netTaxAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netSaleAmount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `netRevenue` decimal(15,2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `IDX_3fb0f882e214559b0298a27839` (`reportId`,`taxPercent`,`currency`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `report_tax_group`
+--
+
+LOCK TABLES `report_tax_group` WRITE;
+/*!40000 ALTER TABLE `report_tax_group` DISABLE KEYS */;
+set autocommit=0;
+INSERT INTO `report_tax_group` VALUES
+('ee16c68c-7698-4f03-9d03-03d5261dd058','fb1440b3-a4f0-49cd-afd8-c34b1f6dd88c','Tax 20%','20','TRY',3,2760.00,0.00,455.46,0.00,455.46,2760.00,2304.54),
+('b36fc36c-7ec6-4032-b5d8-08e4823c1f53','fb1440b3-a4f0-49cd-afd8-c34b1f6dd88c','Tax 10%','10','TRY',1,760.00,0.00,122.12,0.00,122.12,760.00,637.88),
+('84fd4579-739b-4ef8-a974-23ca8ed5f7bc','d84b932d-6c1d-402a-a035-0425efb4281b','Tax 20%','20','TRY',3,2760.00,0.00,455.46,0.00,455.46,2760.00,2304.54),
+('e2b56c74-2e62-4d7d-be14-2d04c1995dda','d84b932d-6c1d-402a-a035-0425efb4281b','Tax 10%','10','TRY',1,760.00,0.00,122.12,0.00,122.12,760.00,637.88),
+('df6e7d0d-f094-461b-bc74-3d8a866ea1c6','1a634925-5526-4be5-8128-8a93518ab20a','Tax 20%','20','TRY',3,2760.00,0.00,455.46,0.00,455.46,2760.00,2304.54),
+('73a485c7-b091-4e1d-a398-4cff844b5379','99ddf8f6-dd1b-4216-ae92-0ff70047239b','Tax 10%','10','TRY',1,760.00,0.00,122.12,0.00,122.12,760.00,637.88),
+('81219a29-755f-4403-b089-6a9f8e7e963a','dea0aaa1-dc85-490c-a11e-b6b57c69bd5b','Tax 20%','20','TRY',3,2760.00,0.00,455.46,0.00,455.46,2760.00,2304.54),
+('55c803c4-d90a-4a6f-9dc2-717823e12fea','dea0aaa1-dc85-490c-a11e-b6b57c69bd5b','Tax 10%','10','TRY',1,760.00,0.00,122.12,0.00,122.12,760.00,637.88),
+('a9676429-7fe3-4b9f-8e8c-7ee773f3fc10','1a634925-5526-4be5-8128-8a93518ab20a','Tax 10%','10','TRY',1,760.00,0.00,122.12,0.00,122.12,760.00,637.88),
+('faf6a0bb-f049-4c51-b638-a066fb09b1e8','99ddf8f6-dd1b-4216-ae92-0ff70047239b','Tax 20%','20','TRY',3,2760.00,0.00,455.46,0.00,455.46,2760.00,2304.54);
+/*!40000 ALTER TABLE `report_tax_group` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
 
@@ -1094,9 +1113,6 @@ DROP TABLE IF EXISTS `seller_payment_order`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `seller_payment_order` (
   `id` uuid NOT NULL,
-  `amount` float NOT NULL,
-  `taxAmount` float NOT NULL,
-  `untaxedAmount` float NOT NULL,
   `currency` varchar(255) NOT NULL,
   `paymentId` varchar(255) NOT NULL,
   `targetAccountId` uuid NOT NULL,
@@ -1111,6 +1127,9 @@ CREATE TABLE `seller_payment_order` (
   `operationNote` mediumtext DEFAULT '',
   `description` mediumtext DEFAULT '',
   `sellerOrderType` varchar(255) NOT NULL,
+  `amount` float NOT NULL,
+  `taxAmount` float NOT NULL,
+  `untaxedAmount` float NOT NULL,
   PRIMARY KEY (`id`),
   KEY `FK_778c89bd583eb10be9cd0d28dd9` (`targetAccountId`),
   KEY `FK_6960749b74e51be514542211a35` (`sourceAccountId`),
@@ -1127,29 +1146,24 @@ LOCK TABLES `seller_payment_order` WRITE;
 /*!40000 ALTER TABLE `seller_payment_order` DISABLE KEYS */;
 set autocommit=0;
 INSERT INTO `seller_payment_order` VALUES
-('634b1d61-4980-4f38-89c0-015897633928',93,15.5,77.5,'TRY','69ef9031-9ff9-4abf-a5db-b3845486772c','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-15 18:33:23','2026-03-15 18:33:23','2026-03-15 18:33:23','','','CREDIT_TO_SELLER'),
-('7e9a707e-64fd-4ef1-9009-03fae4cf551f',93,15.5,77.5,'TRY','af33b3eb-78e4-43dc-bf1c-81ca6d233712','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','WAITING',NULL,0,0,'2026-03-16 14:39:42','2026-03-16 14:49:37','2026-03-16 14:49:37','','','DEBIT_FROM_SELLER'),
-('79cd8b1c-252b-4494-91de-0700bb908d5c',90,15,75,'TRY','04a29324-a67e-4e58-99b3-3750d2f2991e','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-14 16:08:50','2026-03-14 16:08:50','2026-03-14 16:08:50','','','CREDIT_TO_SELLER'),
-('db5dca9c-57a4-48a8-a023-07832a9ef635',93,15.5,77.5,'TRY','b79971ba-ace6-4902-b084-87ff17ca32eb','c783e9dc-07aa-4fe4-95e9-be16246156bb','a607c2d0-4c49-4697-afe6-4c7499aa094b','COMPLETED',NULL,0,0,'2026-03-12 10:57:44','2026-03-13 00:39:19','2026-03-13 00:39:19','','','CREDIT'),
-('da831d08-1875-40c8-8f47-0f0bf83c3af9',124,20.6667,103.333,'TRY','d92c1a91-529e-4534-bae1-30c8796f9e48','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-12 22:41:47','2026-03-12 22:45:04','2026-03-12 22:45:04','','','CREDIT_TO_SELLER'),
-('9f0c2e85-99b9-453c-8ce9-0f19bfc257be',93,15.5,77.5,'TRY','b8ca6234-a8c6-4555-b05f-5486816b77d3','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-12 10:59:40','2026-03-12 11:00:22','2026-03-12 11:00:22','','','CREDIT'),
-('d804218d-beee-454f-ab00-10f0887c8ad9',124,20.6667,103.333,'TRY','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-12 22:45:29','2026-03-12 23:54:57','2026-03-12 23:54:57','','','CREDIT_TO_SELLER'),
-('fc27e27e-f5a1-42ba-b054-25c91393b0a4',31,5.16667,25.8333,'TRY','9f0c6536-b9a1-4323-827e-b21a890625e7','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-15 18:46:29','2026-03-15 18:46:29','2026-03-15 18:46:29','','','CREDIT_TO_SELLER'),
-('5be95b08-88bd-4ab9-929d-29f121f4f473',217,36.1667,180.833,'TRY','32627274-d2ea-49ef-95eb-56c5dd3a900a','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-16 14:12:30','2026-03-16 14:12:30','2026-03-16 14:12:30','','','CREDIT_TO_SELLER'),
-('e6aa199a-6f1e-409c-92ce-2ad7ec5d639c',124,20.6667,103.333,'TRY','dfac1870-cbb6-4c04-bd19-44631d6bb48a','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-13 00:06:58','2026-03-13 09:14:19','2026-03-13 09:14:19','','','CREDIT_TO_SELLER'),
-('7005a4e2-4966-4246-bda8-3d64aca6a0b7',93,15.5,77.5,'TRY','cc04a96b-6165-4fc1-b0bc-fcb4b24775ba','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-15 14:35:12','2026-03-15 14:36:37','2026-03-15 14:36:37','','','CREDIT_TO_SELLER'),
-('4437de9d-c6ce-48ea-8057-4df356af22ae',360,60,300,'TRY','ef0500e5-c029-48bf-8f15-7e41ed441c59','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-12 15:56:00','2026-03-12 15:56:00','2026-03-12 15:56:00','','','CREDIT_TO_SELLER'),
-('d2dd0bb7-8ca8-48e2-9947-5a90c01965b9',390,65,325,'TRY','6af8f6a8-0ab5-4ba9-88fc-38043ab82009','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-16 14:05:24','2026-03-16 14:05:24','2026-03-16 14:05:24','','','CREDIT_TO_SELLER'),
-('5d2d6edc-2851-43df-bfad-6334e42fdeac',450,75,375,'TRY','d92c1a91-529e-4534-bae1-30c8796f9e48','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-12 22:41:47','2026-03-12 22:41:47','2026-03-12 22:41:47','','','CREDIT_TO_SELLER'),
-('a14f0b53-3881-497f-b856-7d8e0ad61e3b',122,20.3333,101.667,'TRY','933294af-e707-44d8-87d7-ae4e69e0414f','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-14 16:09:01','2026-03-14 16:09:01','2026-03-14 16:09:01','','','CREDIT_TO_SELLER'),
-('8170a85a-a954-4969-8016-8923135251b0',360,60,300,'TRY','979577e7-ddc5-440e-8005-705916b62113','913252c1-d094-40de-a13c-8dc1142b9222','a607c2d0-4c49-4697-afe6-4c7499aa094b','COMPLETED',NULL,1,1,'2026-03-12 10:24:31','2026-03-12 10:32:55','2026-03-12 10:32:55','','','CREDIT'),
-('99816af4-6157-4cac-935b-8c22ddbb9436',600,100,500,'TRY','aa9cd89e-f7c5-48b2-9962-b114dd75f228','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-16 13:57:21','2026-03-16 13:57:21','2026-03-16 13:57:21','','','CREDIT_TO_SELLER'),
-('a85bbaa3-5a37-44d1-9623-90f2852649d0',540,90,450,'TRY','aa291695-3f1c-4b9a-a8a4-6a385d7c6dfa','913252c1-d094-40de-a13c-8dc1142b9222','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-12 22:45:29','2026-03-12 22:45:29','2026-03-12 22:45:29','','','CREDIT_TO_SELLER'),
-('270ba33b-953f-41cb-8f79-b13ae3fac4a8',93,15.5,77.5,'TRY','aa9cd89e-f7c5-48b2-9962-b114dd75f228','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-16 13:57:21','2026-03-16 13:57:21','2026-03-16 13:57:21','','','CREDIT_TO_SELLER'),
-('acd7584c-5c5c-4d10-9032-bc4ab9ab8971',155,25.8333,129.167,'TRY','87e1bd15-5905-4270-9200-fc83d4aa4c6f','c783e9dc-07aa-4fe4-95e9-be16246156bb','a607c2d0-4c49-4697-afe6-4c7499aa094b','COMPLETED',NULL,1,0,'2026-03-12 10:52:53','2026-03-12 10:54:16','2026-03-12 10:54:16','','','CREDIT'),
-('b7aa1cd3-0ba7-44a9-a94e-c8c30e75b246',155,25.8333,129.167,'TRY','5837e458-9f01-421a-95af-332a7c3464b2','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-16 14:18:16','2026-03-16 14:18:16','2026-03-16 14:18:16','','','CREDIT_TO_SELLER'),
-('d5855cf5-9a76-4097-af02-c9bef777a4ee',93,15.5,77.5,'TRY','ef0500e5-c029-48bf-8f15-7e41ed441c59','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-12 15:56:00','2026-03-12 15:57:19','2026-03-12 15:57:19','','','CREDIT_TO_SELLER'),
-('5ad5b124-82e8-45e1-940e-cc565831b44f',488,81.3333,406.667,'TRY','979577e7-ddc5-440e-8005-705916b62113','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','a607c2d0-4c49-4697-afe6-4c7499aa094b','COMPLETED',NULL,1,1,'2026-03-12 10:24:31','2026-03-12 10:33:14','2026-03-12 10:33:14','','','CREDIT');
+('22cb86b1-0387-4fe2-823f-35d6a1e34c2a','TRY','ddca578b-583d-4008-8497-39bd8e360304','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-04-01 12:31:41','2026-04-01 12:31:41','2026-04-01 12:31:41','','','CREDIT_TO_SELLER',760,122.122,637.878),
+('c35389b5-113e-4a56-9e7a-36cb6ee9fd04','TRY','bdc318a1-2832-42fc-8cba-7a75a8d112d8','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-04-01 12:18:00','2026-04-01 12:18:00','2026-04-01 12:18:00','','','CREDIT_TO_SELLER',1000,166.667,833.333),
+('323dbc65-b4b7-45aa-8549-595c67d67993','TRY','b4912aeb-5c11-403c-81bb-588da87592ed','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-28 14:38:32','2026-03-29 13:05:48','2026-03-29 13:05:48','','','CREDIT_TO_SELLER',800,133.333,666.667),
+('b05fea1c-11dc-4e4c-8cc9-5d6af7d2d954','TRY','cbc2a9fe-cdbf-4e3c-97a8-a9f69c89258a','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-31 10:58:52','2026-03-31 10:58:52','2026-03-31 10:58:52','','','CREDIT_TO_SELLER',700,116.667,583.333),
+('f1dfaf39-5b59-47b6-91f5-6964ac6e4be1','TRY','c2a6c7f0-d11d-4aef-ba23-556aad150050','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-31 12:07:20','2026-03-31 12:07:20','2026-03-31 12:07:20','','','CREDIT_TO_SELLER',1000,166.667,833.333),
+('345d1b0d-be1a-4bf4-b252-71319c56e707','TRY','bdc318a1-2832-42fc-8cba-7a75a8d112d8','5e72f829-e4ed-4ccd-8971-509708f42212','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-04-01 12:18:00','2026-04-01 12:18:00','2026-04-01 12:18:00','','','CREDIT_TO_SELLER',500,83.3333,416.667),
+('09e616d7-2ef8-4326-bc5b-7873cb211c39','TRY','af94372d-4a92-4409-a49b-4d3f079129a8','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-29 21:03:00','2026-03-29 21:03:00','2026-03-29 21:03:00','','','CREDIT_TO_SELLER',1200,200,1000),
+('700b692e-1dc5-436d-b21e-842dda9a4edc','TRY','b4912aeb-5c11-403c-81bb-588da87592ed','a7514c71-9a2f-41d3-979d-1c3d3ad4b21e','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:38:32','2026-03-28 14:38:32','2026-03-28 14:38:32','','','CREDIT_TO_SELLER',700,116.667,583.333),
+('7ba4e0e1-8f5a-43bd-be70-86667fa05b33','TRY','5250a81a-6d49-4d3c-ad7e-56013dba864d','5e72f829-e4ed-4ccd-8971-509708f42212','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:33:27','2026-03-28 14:33:27','2026-03-28 14:33:27','','','CREDIT_TO_SELLER',500,83.3333,416.667),
+('cfd42d82-05c6-4b34-ba76-87d0b29e610a','TRY','5250a81a-6d49-4d3c-ad7e-56013dba864d','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,1,1,'2026-03-28 14:33:27','2026-03-29 22:03:34','2026-03-29 22:03:34','','','CREDIT_TO_SELLER',600,100,500),
+('4075653d-133e-4f4c-83a4-a6be7013cff5','TRY','3377a6d8-0ae0-4e1e-a2d7-c8885587eb0f','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:20:07','2026-03-28 14:20:07','2026-03-28 14:20:07','','','CREDIT_TO_SELLER',700,116.667,583.333),
+('c3e9150b-7ab1-45f0-94b2-c6d4130477d6','TRY','dce665d2-1d97-4cf1-9529-7e4ef5c12b1f','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:23:17','2026-03-28 14:23:17','2026-03-28 14:23:17','','','CREDIT_TO_SELLER',400,66.6667,333.333),
+('64c2b726-3771-45d0-897f-c8c2dee97e99','TRY','b4912aeb-5c11-403c-81bb-588da87592ed','5e72f829-e4ed-4ccd-8971-509708f42212','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:38:32','2026-03-28 14:38:32','2026-03-28 14:38:32','','','CREDIT_TO_SELLER',800,133.333,666.667),
+('2229f700-3c4c-4ae8-8225-d0f8afb52c18','TRY','f6e28e3d-fd4e-49f6-b740-cfcf04571146','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-04-01 12:02:21','2026-04-01 12:02:21','2026-04-01 12:02:21','','','CREDIT_TO_SELLER',500,83.3333,416.667),
+('910bdee6-1548-418c-8e34-d38664734d8f','TRY','69e44495-cab2-4dde-ae7e-70c89451c286','5e72f829-e4ed-4ccd-8971-509708f42212','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-29 21:04:58','2026-03-29 21:04:58','2026-03-29 21:04:58','','','CREDIT_TO_SELLER',500,83.3333,416.667),
+('55d54801-06d8-43f6-ad38-f1a1e32f5848','TRY','cbb58ca9-25c4-4f15-a903-f67d59d1ede1','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:21:07','2026-03-28 14:21:07','2026-03-28 14:21:07','','','CREDIT_TO_SELLER',900,150,750),
+('8253d141-418d-44cb-80f6-f3fb0cc7617d','TRY','d4668779-7454-4f6a-b81c-ba9aa510e070','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-31 12:08:07','2026-03-31 12:08:07','2026-03-31 12:08:07','','','CREDIT_TO_SELLER',500,83.3333,416.667),
+('7a9dfcc1-a257-4d22-a311-ffb31cf884f6','TRY','5564f851-c835-4667-b894-c654b69a93f6','c783e9dc-07aa-4fe4-95e9-be16246156bb','bb251590-67d6-4165-8321-7a04fa357242','COMPLETED',NULL,0,0,'2026-03-28 14:23:53','2026-03-28 14:23:53','2026-03-28 14:23:53','','','CREDIT_TO_SELLER',200,33.3333,166.667);
 /*!40000 ALTER TABLE `seller_payment_order` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1163,4 +1177,4 @@ commit;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-03-17 16:01:20
+-- Dump completed on 2026-04-02 16:24:07
