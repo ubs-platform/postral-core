@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
 import { In, Not, Repository, UpdateResult } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, PaymentTransactionDTO, ReportDTO, ReportFullDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
+import { BaseReport, PaymentTransactionDTO, ReportDTO, ReportFullDTO, ReportSearchDTO, ReportSearchPaginationDTO, SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { ReportDateGrouping } from '@tk-postral/payment-common';
 import { PaymentFullDTO } from '@tk-postral/payment-common';
 import { ReportTaxGroup } from '../entity';
@@ -20,9 +20,13 @@ import { randomUUID } from 'crypto';
 import { exec } from 'child_process';
 import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
 import { ReportMapper } from '../mapper/report-mapper';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { AuthUtilService } from './auth-util.service';
+import { RawSearchResult, SearchResult } from '@ubs-platform/crud-base-common';
 
 @Injectable()
 export class ReportService {
+
     private readonly logger = new Logger(ReportService.name);
 
     constructor(
@@ -36,7 +40,8 @@ export class ReportService {
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
-        private readonly reportMapper : ReportMapper
+        private readonly reportMapper: ReportMapper,
+        private readonly authUtil: AuthUtilService
         // @InjectRepository(ReportOperationStatus)
         // private readonly reportOperationStatusRepo: Repository<ReportOperationStatus>,
     ) { }
@@ -408,7 +413,8 @@ export class ReportService {
     ): Promise<Map<String, String>> {
         const map = new Map<string, string>();
         const alreadyWorkingReports = (await this.reportPaymentRelationRepo.createQueryBuilder("relation")
-            .select(["relation.reportId", 'relation.digestionStatus'])
+            .select(["relation.reportId", 'relation.digestionStatus', "report.archived"])
+            .leftJoin("relation.report", "report", "report.id = relation.reportId")
             .where("relation.reportId in (:...reportIds)", { reportIds })
             .groupBy('relation.reportId')
             // Önce DIGESTING, sonra WAITING ve en son COMPLETED gelmesi gerekiyor
@@ -416,8 +422,9 @@ export class ReportService {
             .addOrderBy("(case when relation.digestionStatus = 'DIGESTING' then 1 when relation.digestionStatus = 'WAITING' then 2 else 3 end)", "ASC")
             .getMany());
         for (const r of alreadyWorkingReports) {
-            this.logger.log(r.reportId, r.digestionStatus)
-            map.set(r.reportId, r.digestionStatus);
+            const archived = r.report.archived;
+            this.logger.log(r.reportId, r.digestionStatus, archived);
+            map.set(r.reportId, r.digestionStatus + (archived ? "_ARCHIVED" : ""));
         }
         return map;
 
@@ -425,8 +432,8 @@ export class ReportService {
 
     async fetchReportFull(reportId: string): Promise<ReportFullDTO> {
         const [mainReport, taxGroupReports] = await Promise.all([
-             this.reportRepo.findOne({ where: { id: reportId } }),
-             this.taxGroupRepo.find({ where: { reportId } })
+            this.reportRepo.findOne({ where: { id: reportId } }),
+            this.taxGroupRepo.find({ where: { reportId } })
         ]);
         if (!mainReport) {
             throw new Error(`Report ${reportId} not found`);
@@ -434,6 +441,26 @@ export class ReportService {
         return this.reportMapper.toFullDto(mainReport, taxGroupReports);
     }
 
+    async searchPagination(q: ReportSearchPaginationDTO, user: UserAuthBackendDTO): Promise<SearchResult<ReportDTO>> {
+        let userRelatedAccountIds: string[] = [];
+        if (q.admin !== 'true' && user) {
+            userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
+        }
+        // exec(`kdialog --msgbox "Arşivleri dahil et : ${q.includeArchived} - Admin : ${q.admin} - UserRelatedAccountIds: ${userRelatedAccountIds.join(',')}"`);
+        // debugger;
 
+        return await TypeormSearchUtil.modelSearch<Report>(
+            this.reportRepo,
+            q.size || 10,
+            q.page || 0,
+            { periodLabel: 'desc' },
+            [],
+            {
+                queryId: q.queryId,
+                ...((q.includeArchived === 'true') || q.includeArchived === true ? {} : { archived: false }),
+                ...((userRelatedAccountIds.length > 0) ? { accountId: In(userRelatedAccountIds) } : {})
+            },
+        ).then(result => result.map(r => this.reportMapper.toDto(r)));
+    }
 
 }
