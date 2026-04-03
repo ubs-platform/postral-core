@@ -5,6 +5,8 @@ export class ItemCalculationUtil {
         unitPrice: number,
         quantity: number,
     ): number {
+        unitPrice = Number(unitPrice);
+        quantity = Number(quantity);
         TypeAssertionUtil.assertIsNumber(
             unitPrice,
             'Unit price must be a number',
@@ -19,12 +21,27 @@ export class ItemCalculationUtil {
     static addNumberValues(...values: number[]): number {
         let total = 0;
         for (let i = 0; i < values.length; i++) {
-            const value = values[i];
+            let value = values[i];
+            value = Number(value);
             TypeAssertionUtil.assertIsNumber(
                 value,
                 `Value at index ${i} must be a number`,
             );
             total += value;
+        }
+        return total;
+    }
+
+    static minusNumberValues(initialValue: number, ...values: number[]): number {
+        let total = initialValue;
+        for (let i = 0; i < values.length; i++) {
+            let value = values[i];
+            value = Number(value);
+            TypeAssertionUtil.assertIsNumber(
+                value,
+                `Value at index ${i} must be a number`,
+            );
+            total -= value;
         }
         return total;
     }

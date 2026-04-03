@@ -6,7 +6,6 @@ import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
-import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
@@ -17,6 +16,7 @@ import {
     SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
+import { TransactionMapper } from '../mapper/transaction.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
@@ -27,6 +27,8 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { RefundRequestDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './account-payment-transaction.service';
+import { ReportService } from './report.service';
+import { PaymentCommonService } from './payment-common.service';
 
 @Injectable()
 export class PaymentService {
@@ -44,6 +46,9 @@ export class PaymentService {
         private calcService: CalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
         private accountPaymentTransactionService: AccountPaymentTransactionService,
+        private reportService: ReportService,
+        private transactionMapper: TransactionMapper,
+        private paymentCommonService: PaymentCommonService,
     ) { }
 
     async onModuleInit() {
@@ -73,19 +78,17 @@ export class PaymentService {
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
 
-    @Cron('*/30 * * * * *') //--- IGNORE ---
+    @Cron('0 * * * * *')
     async checkAndUpdateWaitingPayments() {
         const waitingPayments = await this.paymentrepo.find({
             where: { paymentStatus: 'WAITING' },
         });
         if (waitingPayments.length === 0) {
-            // exec('kdialog --title "Postral" --passivepopup "No waiting payments to check." 5');
             return;
         }
         for (const payment of waitingPayments) {
             await this.updatePaymentByOperationStatuses(payment.id, true);
         }
-        // exec(`kdialog --title "Postral" --passivepopup "Checked waiting payments. ${waitingPayments.length} payments checked." 5`);
 
     }
 
@@ -93,36 +96,17 @@ export class PaymentService {
     async findPaymentById(id: string, full?: false): Promise<PaymentDTO>;
     async findPaymentById(
         id: string,
-        full = false,
-    ): Promise<PaymentDTO | PaymentFullDTO> {
-        const paymentReal = await this.findPaymentByIdRaw(id, full);
-        if (!paymentReal) {
-            throw new NotFoundException('Payment not found');
-        }
-        const paymentItems = full
-            ? this.paymentItemMapper.toDto(paymentReal!.items)
-            : undefined;
-        const paymentTaxes = full
-            ? this.paymentTaxMapper.toDto(paymentReal!.taxes)
-            : undefined;
-        const p = {
-            ...this.paymentMapper.toDto(paymentReal!),
-            items: paymentItems,
-            taxes: paymentTaxes,
-        };
-        return p;
+        full: boolean = false): Promise<PaymentDTO | PaymentFullDTO> {
+        // Sen zaten booleansın 😭😭😭
+        return await this.paymentCommonService.findPaymentById(id, full as any);
     }
 
     private async findPaymentByIdRaw(
         id: string,
         full = false,
     ): Promise<Optional<Payment>> {
-        return await this.paymentrepo.findOne({
-            where: { id },
-            relations: full ? ['items', 'taxes'] : [],
-        });
+        return await this.paymentCommonService.findPaymentByIdRaw(id, full);
     }
-
 
     async createRefundPayment(refundRequest: RefundRequestDTO) {
         if (refundRequest.status === 'APPROVED') {
@@ -194,15 +178,7 @@ export class PaymentService {
         const transactions: SellerPaymentOrderDTO[] = [];
         for (let index = 0; index < items.length; index++) {
             const paymentItem = items[index];
-            const transaction = new SellerPaymentOrderDTO();
-            transaction.amount = paymentItem.totalAmount;
-            transaction.taxAmount = paymentItem.taxAmount;
-            transaction.currency = paymentReal.currency;
-            transaction.paymentId = paymentReal.id;
-            transaction.sourceAccountId = paymentReal.customerAccountId;
-            transaction.targetAccountId = paymentItem.sellerAccountId;
-            transaction.paymentStatus = paymentReal.paymentStatus;
-            transaction.transactionType = paymentReal.type == "PURCHASE" ? "CREDIT_TO_SELLER" : "DEBIT_FROM_SELLER";
+            const transaction = this.transactionMapper.fromPaymentItem(paymentItem, paymentReal);
             transactions.push(transaction);
         }
 
@@ -251,26 +227,7 @@ export class PaymentService {
         taxTotal = calculationResult.totalTaxAmount;
         taxesFromItems = calculationResult.taxes;
 
-        items = calculationResult.items.map((ci) => {
-            const pi = new PostralPaymentItem();
-            pi.itemId = ci.itemId;
-            pi.name = ci.name;
-            pi.quantity = ci.quantity;
-            pi.unitAmount = ci.unitAmount;
-            pi.originalUnitAmount = ci.originalUnitAmount;
-            pi.totalAmount = ci.totalAmount;
-            pi.taxPercent = ci.taxPercent;
-            pi.taxAmount = ci.taxAmount;
-            pi.unTaxAmount = ci.unTaxAmount;
-            pi.variation = ci.variation;
-            pi.entityGroup = ci.entityGroup;
-            pi.entityId = ci.entityId;
-            pi.entityName = ci.entityName;
-            pi.sellerAccountId = ci.sellerAccountId;
-            pi.sellerAccountName = ci.sellerAccountName;
-            pi.unit = ci.unit;
-            return pi;
-        });
+        items = calculationResult.items.map((ci) => this.paymentItemMapper.toEntity(ci));
 
         const p = new Payment();
         p.type = pdto.type;
@@ -282,16 +239,7 @@ export class PaymentService {
         p.customerAccountName = customerAccount.name;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
-        p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map(
-            (a) => {
-                const ppt = new PostralPaymentTax();
-                ppt.fullAmount = a.fullAmount;
-                ppt.percent = a.percent;
-                ppt.taxAmount = a.taxAmount;
-                ppt.untaxAmount = a.untaxAmount;
-                return ppt;
-            }
-        );
+        p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
         return p;
     }
 
@@ -333,14 +281,12 @@ export class PaymentService {
         }
         this.assertPaymentIsNotResolved(payment);
 
-        const paymentItems = this.paymentItemMapper.toDto(payment.items); //await this.findItems(id);
-        const paymentTaxes = this.paymentTaxMapper.toDto(payment.taxes); //await this.findTaxes(id);
+        // const paymentItems = this.paymentItemMapper.toDto(payment.items); //await this.findItems(id);
+        // const paymentTaxes = this.paymentTaxMapper.toDto(payment.taxes); //await this.findTaxes(id);
 
         const result =
             await this.paymentOperationManagementService.startPaymentOperation({
-                ...this.paymentMapper.toDto(payment),
-                items: paymentItems,
-                taxes: paymentTaxes,
+                ...this.paymentMapper.toFullDto(payment),
                 captureInfo: captureInfo,
             });
         payment.paymentStatus = 'WAITING';
@@ -392,6 +338,8 @@ export class PaymentService {
                 id,
             );
             await this.postPaymentOperation(payment);
+            const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
+            await this.reportService.insertPaymentToReportDigestionQueue(fullDto);
         }
 
         return dto;

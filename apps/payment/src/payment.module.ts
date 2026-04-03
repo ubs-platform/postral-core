@@ -19,13 +19,11 @@ import { AppComissionMapper } from './mapper/app-comission.mapper';
 import { AppComissionController } from './controller/app-comission.controller';
 import { ItemMapper } from './mapper/item.mapper';
 import { ItemService } from './service/item.service';
-import { ItemAdminController } from './controller/item-admin.controller';
 import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
-import { ItemSellerController } from './controller/item-seller.controller';
 import { SellerPaymentOrderService } from './service/transaction.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
 import { AccountNewController } from './controller/account-controller';
@@ -61,6 +59,13 @@ import { RefundController } from './refund.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './service/account-payment-transaction.service';
 import { AccountPaymentTransactionMapper } from './mapper/account-payment-transaction.mapper';
+import { ReportQueryCrudService } from './service/report-query.service';
+import { ReportQueryMapper } from './mapper/report-query.mapper';
+import { ReportService } from './service/report.service';
+import { ReportQueryController } from './controller/report-query.controller';
+import { PaymentCommonService } from './service/payment-common.service';
+import { ReportController } from './controller/report.controller';
+import { ReportMapper } from './mapper/report-mapper';
 
 @Module({
     imports: [
@@ -132,6 +137,11 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
         AccountPaymentTransactionMapper,
         AuthUtilService,
         RefundService,
+        ReportQueryCrudService,
+        ReportQueryMapper,
+        ReportService,
+        PaymentCommonService,
+        ReportMapper
     ],
     controllers: [
         PaymentController,
@@ -139,8 +149,7 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
         AddressController,
         AppComissionController,
         MicroserviceController,
-        // ItemSellerController,
-        // ItemAdminController,
+        ReportController,
         ItemController,
         AccountNewController,
         DummyEcommercePaymentChannelController,
@@ -151,6 +160,7 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
         InvoiceController,
         PaymentMicroserviceController,
         RefundController,
+        ReportQueryController,
     ],
 })
 export class PaymentModule {}

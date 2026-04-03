@@ -117,11 +117,28 @@ export class SellerPaymentOrderSearchService {
 
         }
 
+        if (modelSearch.sourceAccountIds) {
+            Object.assign(where, {
+                sourceAccountId: In(modelSearch.sourceAccountIds.split(',')),
+            });
+        }
+
+        if (modelSearch.targetAccountIds) {
+            Object.assign(where, {
+                targetAccountId: In(modelSearch.targetAccountIds.split(',')),
+            });
+        }
 
 
         if (modelSearch.paymentStatus) {
             Object.assign(where, {
                 paymentStatus: In(modelSearch.paymentStatus.split(',')),
+            });
+        }
+
+        if (modelSearch.paymentId) {
+            Object.assign(where, {
+                paymentId: modelSearch.paymentId,
             });
         }
 

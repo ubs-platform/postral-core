@@ -5,6 +5,15 @@ import { PostralPaymentTax } from '../entity';
 
 @Injectable()
 export class PaymentTaxMapper {
+    toEntity(dto: TaxDTO): PostralPaymentTax {
+        const ppt = new PostralPaymentTax();
+        ppt.fullAmount = dto.fullAmount;
+        ppt.percent = dto.percent;
+        ppt.taxAmount = dto.taxAmount;
+        ppt.untaxAmount = dto.untaxAmount;
+        return ppt;
+    }
+
     toDto(items: PostralPaymentTax[]): TaxDTO[] {
         const dtos: TaxDTO[] = [];
         for (let index = 0; index < items.length; index++) {

@@ -11,6 +11,7 @@ import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
 import { RefundRequest } from './refund-request.entity';
+import { ReportPaymentRelation } from './report-payment-relation.entity';
 
 @Entity()
 export class Payment {
@@ -89,5 +90,7 @@ export class Payment {
     @Column({ nullable: true })
     refundRequestId?: string;
 
+    @OneToMany(() => ReportPaymentRelation, (rpr) => rpr.payment, { eager: false })
+    reportPaymentRelations: ReportPaymentRelation[];
 
 }
