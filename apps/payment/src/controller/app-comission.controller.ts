@@ -8,37 +8,31 @@ import {
     Body,
     Query,
     BadRequestException,
+    UseGuards,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO } from '@tk-postral/payment-common';
 import { AppComissionService } from '../service/app-commission.service';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
+import { JwtAuthGuard, } from '@ubs-platform/users-microservice-helper';
+import { Roles, RolesGuard } from '@ubs-platform/users-roles';
+import { SearchRequest, SearchResult } from '@ubs-platform/crud-base-common';
 
 @Controller('app-comission')
 export class AppComissionController {
-    constructor(private readonly accountService: AppComissionService) {}
+    constructor(private readonly accountService: AppComissionService) { }
 
-    @Get(':applicationAccountId')
-    async fetchOne(
-        @Param("applicationAccountId") applicationAccountId: string,
-        @Query("seller-account-id") sellerAccountId?: string,
-    ): Promise<AppComissionDTO> {
-        return await this.accountService.fetchOne(
-            applicationAccountId,
-            sellerAccountId,
-        );
-    }
 
-    @Get()
-    async findAll(): Promise<AppComissionDTO[]> {
-        return await this.accountService.fetchAll();
+    @Get("_search")
+    async findAllSearch(@Query() searchReq: SearchRequest): Promise<SearchResult<AppComissionDTO>> {
+        return await this.accountService.fetchAll(searchReq);
     }
 
     @Put()
-    async update(@Body() account: AppComissionDTO): Promise<AppComissionDTO> {
-        if (account.applicationAccountId == null) {
-            throw new BadRequestException("ApplicationAccountId is required")
-        }
-        return await this.accountService.edit(account);
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(['admin', 'postral-admin'])
+    async update(@Body() comissionWork: AppComissionDTO): Promise<AppComissionDTO> {
+
+        return await this.accountService.editOrCreate(comissionWork);
     }
 }

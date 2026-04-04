@@ -15,26 +15,28 @@ export class AppComissionMapper {
         return items;
     }
 
-    async toDto(ac: AppComission): Promise<AppComissionDTO> {
+    toDto(ac: AppComission): AppComissionDTO {
         return {
-            applicationAccountId: ac.applicationAccountId,
-            default: ac.default,
+            id: ac.id,
+            itemClass: ac.itemClass,
             sellerAccountId: ac.sellerAccountId,
+            sellerAccountName: ac.sellerAccount?.name,
+            bias: ac.bias,
             percent: ac.percent,
+
         };
     }
 
-    async updateEntity(
+    updateEntity(
         entity: AppComission,
         dto: AppComissionDTO,
-    ): Promise<AppComission> {
-        // existing.id = dto.id,
+    ): AppComission {
+        const bias = (dto.sellerAccountId ? 1 : 0) + (dto.itemClass ? 1 : 0);
 
-        entity.applicationAccountId = dto.applicationAccountId;
-        entity.default = dto.default;
-        entity.sellerAccountId = dto.sellerAccountId || "";
+        entity.sellerAccountId = dto.sellerAccountId;
+        entity.itemClass = dto.itemClass || "";
         entity.percent = dto.percent || 0;
-
+        entity.bias = bias;
         return entity;
     }
 }

@@ -21,6 +21,8 @@ import { NotFoundError } from 'rxjs';
 import { AppComission } from '../entity/app-commission.entity';
 import { AppComissionMapper } from '../mapper/app-comission.mapper';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
+import { SearchRequest, SearchResult } from '@ubs-platform/crud-base-common';
+import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 @Injectable()
 export class AppComissionService {
@@ -28,67 +30,68 @@ export class AppComissionService {
         @InjectRepository(AppComission)
         private readonly appComissionRepo: Repository<AppComission>,
         private readonly appComissionMapper: AppComissionMapper,
-    ) {}
+    ) { }
 
-    async fetchAll() {
-        return this.appComissionMapper.toDtoList(
-            await this.appComissionRepo.find(),
-        );
-    }
 
-    async fetchOne(appAccountId: string, sellerAccountId?: string) {
-        const where: any = {
-            applicationAccountId: appAccountId,
-            ...(sellerAccountId
-                ? { default: false, sellerAccountId: sellerAccountId }
-                : { default: true }),
-        };
-
-        let exist = await this.appComissionRepo.findOne({
-            where,
+    async fetchOneForCalculation(sellerAccountId: string, itemClass: string) {
+        let entity = await this.appComissionRepo.findOne({
+            where: [
+                { itemClass, sellerAccountId },
+                { itemClass, sellerAccountId: "" },
+                { itemClass: "", sellerAccountId },
+                { itemClass: "", sellerAccountId: "" },
+            ],
+            order: {
+                bias: 'DESC', // Öncelik sırasına göre sonuçları sıralayoruz, böylece en spesifik tanım ilk sırada olur
+            },
+            relations: ['sellerAccount'],
         });
-        if (exist) {
-            return await this.appComissionMapper.toDto(exist);
-        } else {
-            if (sellerAccountId) {
-                return this.fetchOne(appAccountId);
-            } else {
-                return await this.edit({
-                    applicationAccountId: appAccountId,
-                    default: true,
-                    percent: 0,
-                });
-            }
+        if (!entity) {
+            console.warn(`No commission definition found for sellerAccountId: ${sellerAccountId}, itemClass: ${itemClass}. Returning with default 0`);
+            return { ...new AppComissionDTO(), "_warning": "No commission definition found. Returning with default 0" }; // Default olarak sıfır komisyon dönebiliriz
         }
+        return this.appComissionMapper.toDto(entity);
     }
+
+
+    // Admin tarafından, uygulama genelinde geçerli olacak komisyon oranlarını ve satıcıya özel komisyon oranlarını yönetmek için kullanılır. Satıcıya özel komisyon tanımlanmazsa, uygulama genelinde tanımlanan komisyon oranı geçerli olur. Ayrıca ürün sınıfına göre de farklı komisyon oranları tanımlanabilir. Ürün sınıfına özel tanımlama yoksa, satıcıya özel veya uygulama genelindeki tanımlamalar geçerli olur.
+    async fetchAll(searchReq?: SearchRequest): Promise<SearchResult<AppComissionDTO>> {
+        const search = (await TypeormSearchUtil.modelSearch(
+            this.appComissionRepo,
+            searchReq?.size || 10,
+            searchReq?.page || 0,
+            { bias: "asc" }, // Sıralama, önce itemClass'e göre, sonra sellerAccountId'ye göre olsun
+            ["sellerAccount"], // İlişkiler (relations) eklenebilir, eğer ihtiyaç varsa
+            {}
+        ));
+
+        return search.map(e => this.appComissionMapper.toDto(e));
+    }
+
+    async editOrCreate(dto: AppComissionDTO) {
+        let entity: AppComission | null = null;
+        if (dto.id) {
+            entity = await this.appComissionRepo.findOneBy({ id: dto.id });
+        }
+        if (!entity) {
+            entity = new AppComission();
+        }
+        entity = await this.appComissionMapper.updateEntity(entity, dto);
+        await this.appComissionRepo.save(entity);
+        return await this.appComissionMapper.toDto(entity);
+    }
+
 
     async edit(dto: AppComissionDTO) {
-        if (dto.sellerAccountId == null) {
-            dto.default = true;
-        } else {
-            dto.default = false;
+        if (!dto.id) {
+            throw new NotFoundException("ID is required");
         }
-        if (dto.percent == null) {
-            const defaultComission = await this.fetchOne(
-                dto.applicationAccountId,
-            );
-            dto.percent = defaultComission.percent;
+        let entity = await this.appComissionRepo.findOneBy({ id: dto.id });
+        if (!entity) {
+            throw new NotFoundException(`AppComission with ID ${dto.id} not found`);
         }
-
-        let exist = await this.appComissionRepo.findOne({
-            where: {
-                default: dto.default,
-                applicationAccountId: dto.applicationAccountId,
-                ...(!dto.default
-                    ? { sellerAccountId: dto.sellerAccountId }
-                    : {}),
-            },
-        });
-        if (!exist) {
-            exist = new AppComission();
-        }
-        exist = await this.appComissionMapper.updateEntity(exist, dto);
-        exist = await this.appComissionRepo.save(exist);
-        return await this.appComissionMapper.toDto(exist);
+        entity = await this.appComissionMapper.updateEntity(entity, dto);
+        await this.appComissionRepo.save(entity);
+        return await this.appComissionMapper.toDto(entity);
     }
 }
