@@ -1,6 +1,7 @@
 import { TypeAssertionUtil } from "../type-assertion";
 
 export class RatioCalculationUtil {
+
     static calculateRefundRatio(
         refundAmount: number,
         totalPaymentAmount: number,
@@ -19,7 +20,7 @@ export class RatioCalculationUtil {
         return refundAmount / totalPaymentAmount;
     }
 
-    static multiplyWithRatio(
+    static multiplyTwoValues(
         refundAmount: number,
         ratio: number,
     ): number {

@@ -1,6 +1,22 @@
 import { TypeAssertionUtil } from "../type-assertion";
 
 export class ItemCalculationUtil {
+    static divisionNumberValues(arg0: any, arg1: number) {
+        arg0 = Number(arg0);
+        arg1 = Number(arg1);
+        TypeAssertionUtil.assertIsNumber(
+            arg0,
+            'First argument must be a number',
+        );
+        TypeAssertionUtil.assertIsNumber(
+            arg1,
+            'Second argument must be a number',
+        );
+        if (arg1 === 0) {
+            throw new Error('Division by zero is not allowed');
+        }
+        return arg0 / arg1;
+    }
     static calculateTotalItemPrice(
         unitPrice: number,
         quantity: number,

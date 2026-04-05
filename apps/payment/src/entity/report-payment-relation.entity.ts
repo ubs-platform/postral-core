@@ -18,30 +18,30 @@ import { Payment } from './payment.entity';
 @Unique(['reportId', 'paymentId'])
 export class ReportPaymentRelation {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    paymentId: string;
+    paymentId!: string;
 
     @Column()
-    reportId: string;
+    reportId!: string;
 
     @Column()
-    accountId: string;
+    accountId!: string;
 
     @ManyToOne(() => Payment, (p) => p.id, { onDelete: 'CASCADE', eager: false })
     @JoinColumn({ name: 'paymentId' })
-    payment: Payment;
+    payment!: Payment;
 
     @ManyToOne(() => Report, (r) => r.id, { onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'reportId' })
-    report: Report;
+    report!: Report;
 
     @Column({ nullable: true })
-    digestionId: string;
+    digestionId!: string;
 
     @Column({ nullable: true })
-    digestionStartedAt: Date;
+    digestionStartedAt!: Date;
 
     /**
      * Report'ın hangi aşamada olduğunu gösterir. WAITING → henüz işlenmemiş, DIGESTING → işleniyor, COMPLETED → işlendi, FAILED → işlenirken hata oldu
@@ -52,14 +52,14 @@ export class ReportPaymentRelation {
      * diğer "WAITING" durumundaki reportlara müdahale etmesini engellemek ve digestion işlemi tamamlandıktan sonra durumunu COMPLETED yaparak diğer işlemlerin bu reporta müdahale etmesine izin vermek istiyoruz.
      */
     @Column()
-    digestionStatus: "WAITING" | "DIGESTING" | "COMPLETED" | "FAILED";
+    digestionStatus!: "WAITING" | "DIGESTING" | "COMPLETED" | "FAILED";
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({ type: 'datetime', nullable: true })
-    digestionCompletedAt: Date;
+    digestionCompletedAt!: Date;
 }

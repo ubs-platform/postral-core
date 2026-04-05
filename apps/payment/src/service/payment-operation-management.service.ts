@@ -75,7 +75,7 @@ export class PaymentOperationManagementService {
         });
         for (let index = 0; index < alreadyCompletedOps.length; index++) {
             const element = alreadyCompletedOps[index];
-            const refundAmountForThisOp = RatioCalculationUtil.multiplyWithRatio(element.amount, refundRatio);
+            const refundAmountForThisOp = RatioCalculationUtil.multiplyTwoValues(element.amount, refundRatio);
             if (refundAmountForThisOp <= 0) {
                 continue;
             }

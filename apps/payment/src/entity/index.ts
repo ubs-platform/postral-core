@@ -21,30 +21,7 @@ import { ReportQuery } from './report-query.entity';
 import { Report } from './report.entity';
 import { ReportTaxGroup } from './report-tax-group.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
-
-export * from './payment-item.entity';
-export * from './payment.entity';
-export * from './account.entity';
-export * from './app-commission.entity';
-export * from './payment-tax.entity';
-export * from './payment.entity';
-export * from "./address.entity"
-export * from "./item.entity"
-export * from "./item-price.entity"
-export * from "./transaction.entity"
-export * from "./item-tax.entity"
-export * from "./payment-channel-operation.entity"
-export * from "./invoice.entity"
-export * from "./invoice-account.entity"
-export * from "./invoice-address.entity"
-export * from './payment-event.entity';
-export * from './refund-request.entity';
-export * from './refund-request-item.entity';
-export * from './account-payment-transaction.entity';
-export * from './report-query.entity';
-export * from './report.entity';
-export * from "./report-tax-group.entity"
-
+import { ReportExpense } from './report-expense.entity';
 export const PaymentsEntities = [
     PostralPaymentItem,
     Payment,
@@ -54,6 +31,32 @@ export const PaymentsEntities = [
     Item,
     ItemPrice,
     ItemTaxEntity,
+    SellerPaymentOrder,
+    Address,
+    ItemTaxVariation,
+    PaymentChannelOperation,
+    Invoice,
+    InvoiceAddress,
+    InvoiceAccount,
+    PostralPaymentEvent,
+    RefundRequest,
+    RefundRequestItem,
+    AccountPaymentTransaction,
+    ReportQuery,
+    Report,
+    ReportTaxGroup,
+    ReportPaymentRelation,
+    ReportExpense
+];
+
+export {
+    PostralPaymentItem,
+    Payment,
+    PostralPaymentTax,
+    AppComission,
+    Account,
+    Item,
+    ItemPrice,
     SellerPaymentOrder,
     Address,
     ItemTaxEntity,
@@ -69,5 +72,32 @@ export const PaymentsEntities = [
     ReportQuery,
     Report,
     ReportTaxGroup,
-    ReportPaymentRelation
-];
+    ReportPaymentRelation,
+    ReportExpense as ReportComission
+}
+
+// export * from './payment-item.entity';
+// export * from './payment.entity';
+// export * from './account.entity';
+// export * from './app-commission.entity';
+// export * from './payment-tax.entity';
+// export * from './payment.entity';
+// export * from "./address.entity"
+// export * from "./item.entity"
+// export * from "./item-price.entity"
+// export * from "./transaction.entity"
+// export * from "./item-tax.entity"
+// export * from "./payment-channel-operation.entity"
+// export * from "./invoice.entity"
+// export * from "./invoice-account.entity"
+// export * from "./invoice-address.entity"
+// export * from './payment-event.entity';
+// export * from './refund-request.entity';
+// export * from './refund-request-item.entity';
+// export * from './account-payment-transaction.entity';
+// export * from './report-query.entity';
+// export * from './report.entity';
+// export * from "./report-tax-group.entity"
+// export * from "./report-comission.entity"
+
+

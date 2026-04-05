@@ -9,9 +9,9 @@ export interface PaymentItemDto {
     variation: string;
     sellerAccountId: string;
     sellerAccountName: string;
-    entityGroup: string;
-    entityId: string;
-    entityName: string;
+    entityGroup?: string;
+    entityId?: string;
+    entityName?: string;
     unTaxAmount: number;
     originalUnitAmount: number;
     unitAmount: number;

@@ -62,6 +62,7 @@ import { AccountPaymentTransactionMapper } from './mapper/account-payment-transa
 import { ReportQueryCrudService } from './service/report-query.service';
 import { ReportQueryMapper } from './mapper/report-query.mapper';
 import { ReportService } from './service/report.service';
+import { ReportDigestionService } from './service/report-digestion.service';
 import { ReportQueryController } from './controller/report-query.controller';
 import { PaymentCommonService } from './service/payment-common.service';
 import { ReportController } from './controller/report.controller';
@@ -140,6 +141,7 @@ import { ReportMapper } from './mapper/report-mapper';
         ReportQueryCrudService,
         ReportQueryMapper,
         ReportService,
+        ReportDigestionService,
         PaymentCommonService,
         ReportMapper
     ],
