@@ -4,38 +4,41 @@ import { Payment } from './payment.entity';
 @Entity()
 export class Item {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
     @Column()
-    entityGroup: string;
+    entityGroup!: string;
 
     @Column()
-    entityName: string;
+    entityName!: string;
 
     @Column()
-    entityId: string;
+    entityId!: string;
 
     @Column()
-    unit: string;
+    unit!: string;
 
     @Column()
-    baseCurrency: string;
+    baseCurrency!: string;
 
     @Column()
-    itemTaxId: string;
+    itemTaxId!: string;
 
     // @Column({type: 'float'})
-    // taxPercent: number;
+    // taxPercent!: number;
 
     // @Column({type: 'float'})
-    // unitAmount: number;
+    // unitAmount!: number;
 
     // @Column({type: 'float'})
-    // originalUnitAmount: number;
+    // originalUnitAmount!: number;
 
     @Column()
-    sellerAccountId: string;
+    sellerAccountId!: string;
+
+    @Column()
+    itemClass: string = "";
 }

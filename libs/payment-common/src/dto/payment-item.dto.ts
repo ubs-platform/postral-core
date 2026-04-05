@@ -17,6 +17,7 @@ export interface PaymentItemDto {
     unitAmount: number;
     unit: string;
     refundCount?: number;
+    itemClass?: string;
 }
 
 export class PaymentItemDto implements PaymentItemDto {

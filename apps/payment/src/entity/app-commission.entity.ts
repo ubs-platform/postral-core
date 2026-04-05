@@ -6,7 +6,7 @@ import { Account } from './account.entity';
 @Unique(['sellerAccountId', 'itemClass'])
 export class AppComission {
     @PrimaryGeneratedColumn('uuid')
-    id: string = "";
+    id!: string;
 
     /*
     Satıcı için ayrı bir tanımlama... boş ise defaulttur. Satıcıya özel tanımlama yapılırsa, o satıcı için geçerli olur. Satıcıya özel tanımlama yoksa, default tanımlama geçerli olur.

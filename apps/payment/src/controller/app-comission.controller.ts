@@ -32,7 +32,13 @@ export class AppComissionController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(['admin', 'postral-admin'])
     async update(@Body() comissionWork: AppComissionDTO): Promise<AppComissionDTO> {
-
         return await this.accountService.editOrCreate(comissionWork);
+    }
+
+    @Delete(":id")
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(['admin', 'postral-admin'])
+    async delete(@Param("id") id: string) {
+        await this.accountService.removeById(id);
     }
 }

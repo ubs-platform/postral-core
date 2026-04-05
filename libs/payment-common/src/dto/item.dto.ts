@@ -1,19 +1,19 @@
 import { InternalSearchDTO } from "./internal-search.dto";
 
 export class ItemAddDTO {
-    id: string;
+    id!: string;
 
-    name: string;
+    name!: string;
 
-    entityGroup: string;
+    entityGroup!: string;
 
-    entityName: string;
+    entityName!: string;
 
-    entityId: string;
+    entityId!: string;
 
-    unit: string;
+    unit!: string;
 
-    itemTaxId: string;
+    itemTaxId!: string;
 
     // taxPercent: number;
 
@@ -21,29 +21,31 @@ export class ItemAddDTO {
 
     // originalUnitAmount: number;
 
-    sellerAccountId: string;
+    sellerAccountId!: string;
 
-    baseCurrency: string;
+    baseCurrency!: string;
 
     entityOwnershipGroupId?: string;
+
+    itemClass?: string;
 
 
 }
 
 export class ItemDTO {
-    id: string;
+    id!: string;
 
-    name: string;
+    name!: string;
 
-    entityGroup: string;
+    entityGroup!: string;
 
-    entityName: string;
+    entityName!: string;
 
-    entityId: string;
+    entityId!: string;
 
-    unit: string;
+    unit!: string;
 
-    itemTaxId: string;
+    itemTaxId!: string;
 
 
     // taxPercent: number;
@@ -52,20 +54,24 @@ export class ItemDTO {
 
     // originalUnitAmount: number;
 
-    sellerAccountId: string;
+    sellerAccountId!: string;
 
-    baseCurrency: string;
+    baseCurrency!: string;
+
+    itemClass?: string;
+
 }
 
 export class ItemEditDTO {
-    id: string;
+    id!: string;
 
-    name: string;
+    name!: string;
 
-    unit: string;
+    unit!: string;
 
-    itemTaxId: string;
+    itemTaxId!: string;
 
+    itemClass?: string;
 
     // taxPercent: number;
 
@@ -97,5 +103,7 @@ export class ItemSearchDTO implements InternalSearchDTO {
     entityId?: string;
 
     entityOwnershipGroupId?: string;
+
+    itemClass?: string;
 
 }

@@ -17,4 +17,10 @@ export class AppComissionDTO {
     percent: number = 0;
 
     bias: number = 0; // Sıralamada defaultun son gelmesi için eklenen durumdur. 0: default, 1: sellerAccountId, 2: itemClass, 3: sellerAccountId + itemClass
+
+    createdAt?: Date;
+
+    updatedAt?: Date;
+
+    _warning?: string; // Eğer komisyon tanımı bulunamazsa, default 0 dönerken bir uyarı mesajı da ekleyebiliriz.
 }

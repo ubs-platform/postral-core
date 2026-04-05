@@ -34,7 +34,7 @@ export class ItemMapper {
 
             sellerAccountId: ac.sellerAccountId,
             baseCurrency: ac.baseCurrency,
-            
+            itemClass: ac.itemClass
         };
     }
 
@@ -55,6 +55,7 @@ export class ItemMapper {
         entity.sellerAccountId = dto.sellerAccountId;
         entity.baseCurrency = dto.baseCurrency;
         entity.itemTaxId = dto.itemTaxId;
+        entity.itemClass = dto.itemClass || "";
         return entity;
     }
 
@@ -66,6 +67,7 @@ export class ItemMapper {
 
         entity.unit = dto.unit;
         entity.itemTaxId = dto.itemTaxId;
+        entity.itemClass = dto.itemClass || "";
         return entity;
     }
 }

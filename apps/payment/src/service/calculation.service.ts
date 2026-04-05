@@ -120,6 +120,7 @@ export class CalculationService {
             paymentItem.entityGroup = realItemFind.entityGroup;
             paymentItem.entityId = realItemFind.entityId;
             paymentItem.entityName = realItemFind.entityName;
+            paymentItem.itemClass = realItemFind.itemClass || "";
             paymentItem.totalAmount =
                 ItemCalculationUtil.calculateTotalItemPrice(
                     itemPriceActive[0].itemPrice,

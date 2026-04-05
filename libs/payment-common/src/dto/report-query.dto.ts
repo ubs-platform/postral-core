@@ -22,4 +22,5 @@ export class ReportQueryCreateDTO {
 
 export class ReportQuerySearchDTO {
     ownerAccountId?: string;
+    admin: "true" | "false" = "false";
 }

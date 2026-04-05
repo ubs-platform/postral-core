@@ -94,4 +94,12 @@ export class AppComissionService {
         await this.appComissionRepo.save(entity);
         return await this.appComissionMapper.toDto(entity);
     }
+
+    async removeById(id: string) {
+        const entity = await this.appComissionRepo.findOneBy({ id });
+        if (!entity) {
+            throw new NotFoundException(`AppComission with ID ${id} not found`);
+        }
+        await this.appComissionRepo.remove(entity);
+    }
 }

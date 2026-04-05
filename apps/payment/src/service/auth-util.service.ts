@@ -110,7 +110,7 @@ export class AuthUtilService {
         return manipulatedQueries;
     }
 
-    async fetchUserAccountIds(userId: string, capabilityAtLeastOne: string[]) {
+    async fetchUserAccountIds(userId: string, capabilityAtLeastOne: string[] = ['OWNER', 'EDITOR', 'VIEWER']): Promise<string[]> {
         return await lastValueFrom(
             this.eo.searchOwnershipEntityIdsByUser({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
@@ -123,7 +123,7 @@ export class AuthUtilService {
 
     async searchOwnedIds(
         entityName: string,
-        capabilityAtLeastOne: string[],
+        capabilityAtLeastOne: string[] = ['OWNER', 'EDITOR', 'VIEWER'],
         {
             userId,
             ownershipGroupId,

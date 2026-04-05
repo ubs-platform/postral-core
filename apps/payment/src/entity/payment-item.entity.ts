@@ -4,66 +4,66 @@ import { Payment } from './payment.entity';
 @Entity()
 export class PostralPaymentItem {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    itemId: string;
+    itemId: string = "";
 
     @Column()
-    entityGroup: string;
+    entityGroup?: string;
 
     @Column()
-    entityName: string;
+    entityName?: string;
 
     @Column()
-    entityId: string;
+    entityId?: string;
 
     @Column()
-    variation: string;
+    variation!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
-    @Column({type: 'float'})
-    quantity: number;
+    @Column({ type: 'float' })
+    quantity: number = 0;
 
-    @Column({type: 'float'})
-    totalAmount: number;
+    @Column({ type: 'float' })
+    totalAmount: number = 0;
 
-    @Column({type: 'float'})
-    originalUnitAmount: number;
+    @Column({ type: 'float' })
+    originalUnitAmount: number = 0;
 
-    @Column({type: 'float'})
-    unitAmount: number;
+    @Column({ type: 'float' })
+    unitAmount: number = 0;
 
-    @Column({type: 'float'})
-    taxPercent: number;
+    @Column({ type: 'float' })
+    taxPercent: number = 0;
 
-    @Column({type: 'float'})
-    taxAmount: number;
+    @Column({ type: 'float' })
+    taxAmount: number = 0;
 
-    @Column({type: 'float'})
-    unTaxAmount: number;
+    @Column({ type: 'float' })
+    unTaxAmount: number = 0;
 
     @ManyToOne(() => Payment, (a) => a.items, {
         onDelete: 'CASCADE',
     })
-    payment: Payment;
-    
-    @Column()
-    sellerAccountId: string;
+    payment!: Payment;
 
     @Column()
-    sellerAccountName: string;
+    sellerAccountId: string = "";
 
     @Column()
-    unit: string;
+    sellerAccountName: string = "";
+
+    @Column()
+    unit: string = "";
 
     @Column({ default: false })
-    refunded: boolean;
+    refunded: boolean = false;
 
     @Column({ type: 'float', default: 0 })
-    refundCount: number;
+    refundCount: number = 0;
 
     @Column({ nullable: true })
     refundPaymentId?: string;
@@ -74,5 +74,8 @@ export class PostralPaymentItem {
     @ManyToOne(() => Payment, (a) => a.refundItems, {
         onDelete: 'CASCADE',
     })
-    refundPayment: Payment;
+    refundPayment?: Payment;
+
+    @Column()
+    itemClass: string = "";
 }

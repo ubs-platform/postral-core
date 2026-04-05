@@ -21,6 +21,7 @@ export class PaymentItemMapper {
         pi.entityName = dto.entityName;
         pi.sellerAccountId = dto.sellerAccountId;
         pi.sellerAccountName = dto.sellerAccountName;
+        pi.itemClass = dto.itemClass || "";
         pi.unit = dto.unit;
         return pi;
     }
@@ -40,9 +41,10 @@ export class PaymentItemMapper {
                 variation: a.variation,
                 sellerAccountId: a.sellerAccountId,
                 sellerAccountName: a.sellerAccountName,
-                entityGroup: a.entityGroup,
-                entityId: a.entityId,
-                entityName: a.entityName,
+                entityGroup: a.entityGroup!,
+                entityId: a.entityId!,
+                entityName: a.entityName!,
+                itemClass: a.itemClass || "",
                 unTaxAmount: a.unTaxAmount,
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,

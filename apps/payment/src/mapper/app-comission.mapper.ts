@@ -23,7 +23,8 @@ export class AppComissionMapper {
             sellerAccountName: ac.sellerAccount?.name,
             bias: ac.bias,
             percent: ac.percent,
-
+            createdAt: ac.createdAt,
+            updatedAt: ac.updatedAt,
         };
     }
 
