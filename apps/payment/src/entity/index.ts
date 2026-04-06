@@ -73,7 +73,8 @@ export {
     Report,
     ReportTaxGroup,
     ReportPaymentRelation,
-    ReportExpense as ReportComission
+    ReportExpense as ReportComission,
+    ReportExpense
 }
 
 // export * from './payment-item.entity';

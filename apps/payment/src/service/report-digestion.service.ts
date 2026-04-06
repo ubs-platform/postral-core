@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, PaymentFullDTO, ReportDateGrouping } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
 import { ReportComission, ReportTaxGroup } from '../entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
@@ -13,6 +13,7 @@ import { Cron } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
+import { ReportExpense } from '../entity/report-expense.entity';
 
 @Injectable()
 export class ReportDigestionService {
@@ -28,8 +29,8 @@ export class ReportDigestionService {
         private readonly taxGroupRepo: Repository<ReportTaxGroup>,
         @InjectRepository(ReportPaymentRelation)
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
-        @InjectRepository(ReportComission)
-        private readonly reportComissionRepo: Repository<ReportComission>,
+        @InjectRepository(ReportExpense)
+        private readonly reportExpenseRepo: Repository<ReportExpense>,
         private readonly comissionService: AppComissionService,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
@@ -110,7 +111,7 @@ export class ReportDigestionService {
             return;
         }
         const accountId = report.query.ownerAccountId;
-
+        // todo: totalExpense içindeki değeri toplam Satıştan bağımsız bir alan yaratıp güncellemek daha sağlıklı olabilir, çünkü komisyon ve diğer masraflar satıştan bağımsız olarak artabilir. Şu anki yapıda totalExpense raporun net satışından bağımsız olarak artıyor, bu da raporun okunmasını zorlaştırıyor. TotalExpense'ı sadece komisyon ve diğer masrafları içerecek şekilde güncellersek, raporun net satışını ve toplam masraflarını ayrı ayrı görebiliriz, bu da analiz yaparken daha fazla esneklik sağlar.
         await this.reportCalculation(report, payment, accountId!);
         report.lastDigestedAt = new Date();
         report.lastDigestedPaymentId = payment.id;
@@ -118,6 +119,10 @@ export class ReportDigestionService {
     }
 
     private async reportCalculation(report: BaseReport, payment: PaymentFullDTO, accountId: string) {
+        // TODO: Payment için masrafı burada hesapla ve base report içinde sakla. 
+        // Diğer masraflar için hala Report Expense kullanabiliriz. 
+        // Masraf kalemlerini de ReportExpense içinde expenseKey ile ayırabiliriz,
+        //  böylece yeni masraf kalemleri eklemek istediğimizde esneklik sağlamış oluruz.
         const paymentOrders = await this.sellerPaymentOrderService.findAll({
             paymentId: payment.id,
             targetAccountIds: accountId,
@@ -142,46 +147,46 @@ export class ReportDigestionService {
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
     }
 
-    private async updateComissionReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
-        let comissionReportTotal = await this.reportComissionRepo.findOne({ where: { reportId: mainReportId, accountId, totalComission: true } });
-        if (!comissionReportTotal) {
-            comissionReportTotal = new ReportComission();
-            comissionReportTotal.reportId = mainReportId;
-            comissionReportTotal.accountId = accountId;
-            comissionReportTotal.totalComission = true;
-            comissionReportTotal.currency = payment.currency;
-            comissionReportTotal.comissionAmount = 0;
+    private async fetchOrCreateReportExpense(reportId: string, accountId: string, expenseKey: string, currency: string): Promise<ReportExpense> {
+        let expense = await this.reportExpenseRepo.findOne({ where: { reportId, accountId, expenseKey } });
+        if (!expense) {
+            expense = new ReportExpense();
+            expense.reportId = reportId;
+            expense.accountId = accountId;
+            expense.expenseKey = expenseKey;
+            expense.expenseAmount = 0;
+            await this.reportExpenseRepo.save(expense);
         }
-        const comissionByItemClass: Map<string, ReportComission> = new Map();
+        return expense;
+    }
 
+    private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+        
         for (let index = 0; index < payment.items.length; index++) {
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
 
             const comission = await this.comissionService.fetchOneForCalculation(accountId, item.itemClass || '');
             const comissionRatio = comission.percent / 100;
-            const itemComission = RatioCalculationUtil.multiplyNumberValues(item.totalAmount, comissionRatio);
-            comissionReportTotal.comissionAmount = ItemCalculationUtil.addNumberValues(comissionReportTotal.comissionAmount, itemComission);
 
             if (item.itemClass) {
-                let itemClassComissionReport = comissionByItemClass.get(item.itemClass);
-                if (!itemClassComissionReport) {
-                    itemClassComissionReport = await this.reportComissionRepo.findOne({ where: { reportId: mainReportId, accountId, totalComission: false, itemClass: item.itemClass } }) ?? undefined;
-                }
-                if (!itemClassComissionReport) {
-                    itemClassComissionReport = new ReportComission();
-                    itemClassComissionReport.reportId = mainReportId;
-                    itemClassComissionReport.accountId = accountId;
-                    itemClassComissionReport.totalComission = false;
-                    itemClassComissionReport.itemClass = item.itemClass;
-                    itemClassComissionReport.currency = payment.currency;
-                    itemClassComissionReport.comissionAmount = 0;
-                    comissionByItemClass.set(item.itemClass, itemClassComissionReport);
-                }
-                itemClassComissionReport.comissionAmount = ItemCalculationUtil.addNumberValues(itemClassComissionReport.comissionAmount, itemComission);
-                await this.reportComissionRepo.save(itemClassComissionReport);
+                const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
+                const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, payment.currency);
+                const itemExpenseAmount = RatioCalculationUtil.multiplyTwoValues(item.totalAmount, comissionRatio);
+                itemClassExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, itemExpenseAmount);
+                await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
-            await this.reportComissionRepo.save(comissionReportTotal);
+
+            const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
+            const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, payment.currency);
+            const totalComissionAmount = RatioCalculationUtil.multiplyTwoValues(item.totalAmount, comissionRatio);
+            totalComissionExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComissionAmount);
+            await this.reportExpenseRepo.save(totalComissionExpenseReport);
+
+            const reportTotalExpenseKey = REPORT_TOTAL;
+            const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, payment.currency);
+            reportTotalExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComissionAmount);
+            await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
     }
 
@@ -247,8 +252,15 @@ export class ReportDigestionService {
                 this.logger.warn(`Report ${relation.reportId} bulunamadı, atlanıyor`);
                 continue;
             }
+            const accountId = freshReport.query?.ownerAccountId;
+            if (!accountId) {
+                this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
+                continue;
+            }
+            // await this.updateExpensesForReport(freshReport.id, payment, accountId);
+            // const totalExpense = await this.fetchOrCreateReportExpense(freshReport.id, accountId, REPORT_TOTAL, payment.currency);
             await this.digestPayment(freshReport, payment);
-            await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, freshReport.query.ownerAccountId!);
+            await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
             relation.digestionStatus = 'COMPLETED';
             relation.digestionId = '';
             relation.digestionCompletedAt = new Date();
