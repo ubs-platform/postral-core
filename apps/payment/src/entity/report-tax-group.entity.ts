@@ -12,23 +12,30 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 @Unique(['reportId', 'taxPercent', 'currency'])
 export class ReportTaxGroup implements BaseReport {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    reportId: string;
+    reportId!: string;
 
     @Column({ length: 50 })
-    taxGroupName: string;
+    taxGroupName: string = "";
 
     @Column({ length: 50 })
-    taxPercent: string;
+    taxPercent: string = "";
 
     @Column({ length: 10 })
-    currency: string;
+    currency: string = "TRY";
 
     // --- Asıl hesap kısımları ---
     @Column({ type: 'int', default: 0 })
     paymentCount: number = 0;
+
+
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    totalSaleAmountWithoutExpense: number = 0;
+
+    @Column({type: "decimal", precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    totalExpenseAmount: number = 0;
 
     // Toplam satın alma
     @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })

@@ -8,6 +8,7 @@ export interface BaseReport {
     // Toplam masraf. Vergi dışında komisyon ve ödeme hizmetleri vs. içerebilir.
     totalExpenseAmount: number;
 
+    // Toplam satış fiyatı ancak masraf dahil değil
     totalSaleAmountWithoutExpense: number;
 
     // Toplam iade

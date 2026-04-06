@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { ReportExpense } from '../entity/report-expense.entity';
+import { PaymentItemDto } from 'dist/libs/payments/dto/payment-item.dto';
 
 @Injectable()
 export class ReportDigestionService {
@@ -158,6 +159,30 @@ export class ReportDigestionService {
             await this.reportExpenseRepo.save(expense);
         }
         return expense;
+    }
+
+    private async updateExpensesForReportFromPaymentItem(mainReportId: string, currency: string, paymentItem: PaymentItemDto, accountId: string) {
+        const comission = await this.comissionService.fetchOneForCalculation(accountId, paymentItem.itemClass || '');
+        const comissionRatio = comission.percent / 100;
+
+        if (paymentItem.itemClass) {
+            const expenseKey = ITEM_CLASS_COMISSION_PREFIX + paymentItem.itemClass;
+            const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, currency);
+            const itemExpenseAmount = RatioCalculationUtil.multiplyTwoValues(paymentItem.totalAmount, comissionRatio);
+            itemClassExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, itemExpenseAmount);
+            await this.reportExpenseRepo.save(itemClassExpenseReport);
+        }
+
+        const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
+        const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, currency);
+        const totalComissionAmount = RatioCalculationUtil.multiplyTwoValues(paymentItem.totalAmount, comissionRatio);
+        totalComissionExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComissionAmount);
+        await this.reportExpenseRepo.save(totalComissionExpenseReport);
+
+        const reportTotalExpenseKey = REPORT_TOTAL;
+        const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, currency);
+        reportTotalExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComissionAmount);
+        await this.reportExpenseRepo.save(reportTotalExpenseReport);
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {

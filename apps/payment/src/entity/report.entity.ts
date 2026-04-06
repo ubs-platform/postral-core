@@ -18,17 +18,24 @@ import { BaseReport } from '@tk-postral/payment-common';
 @Unique(['queryId', 'periodLabel', 'currency'])
 export class Report implements BaseReport{
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    queryId: string;
+    queryId!: string;
 
     @ManyToOne(() => ReportQuery, (q) => q.reports, { onDelete: 'CASCADE', eager: true })
     @JoinColumn({ name: 'queryId' })
-    query: ReportQuery;
+    query!: ReportQuery;
 
     @Column({ nullable: true })
-    accountId: string;
+    accountId?: string;
+
+    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    totalSaleAmountWithoutExpense: number = 0;
+
+    @Column({type: "decimal", precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    totalExpenseAmount: number = 0;
+    
 
     /**
      * Bucket label depending on ReportQuery.dateGrouping:
@@ -39,13 +46,13 @@ export class Report implements BaseReport{
      *  ALL     → "ALL"
      */
     @Column({ length: 60 })
-    periodLabel: string;
+    periodLabel: string = "";
 
     @Column({ length: 10 })
-    currency: string;
+    currency: string = "TRY";
 
     @Column({ type: 'datetime', nullable: true })
-    lastDigestedAt: Date;
+    lastDigestedAt?: Date ;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt = new Date();
@@ -84,7 +91,7 @@ export class Report implements BaseReport{
     netRevenue = 0;
 
     @Column({ length: 255, nullable: true })
-    lastDigestedPaymentId: string;
+    lastDigestedPaymentId?: string;
 
     @Column({ type: 'boolean', default: false })
     archived: boolean = false;
