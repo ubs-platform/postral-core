@@ -67,6 +67,8 @@ import { ReportQueryController } from './controller/report-query.controller';
 import { PaymentCommonService } from './service/payment-common.service';
 import { ReportController } from './controller/report.controller';
 import { ReportMapper } from './mapper/report-mapper';
+import { AdminSettingsController } from './controller/admin-settings.controller';
+import { AdminSettingsService } from './service/admin-settings.service';
 
 @Module({
     imports: [
@@ -143,7 +145,8 @@ import { ReportMapper } from './mapper/report-mapper';
         ReportService,
         ReportDigestionService,
         PaymentCommonService,
-        ReportMapper
+        ReportMapper,
+        AdminSettingsService,
     ],
     controllers: [
         PaymentController,
@@ -163,6 +166,7 @@ import { ReportMapper } from './mapper/report-mapper';
         PaymentMicroserviceController,
         RefundController,
         ReportQueryController,
+        AdminSettingsController
     ],
 })
 export class PaymentModule {}

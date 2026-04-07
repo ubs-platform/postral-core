@@ -22,6 +22,8 @@ import { Report } from './report.entity';
 import { ReportTaxGroup } from './report-tax-group.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { ReportExpense } from './report-expense.entity';
+import { AdminSettings } from './admin-settings.entity';
+
 export const PaymentsEntities = [
     PostralPaymentItem,
     Payment,
@@ -46,7 +48,8 @@ export const PaymentsEntities = [
     Report,
     ReportTaxGroup,
     ReportPaymentRelation,
-    ReportExpense
+    ReportExpense,
+    AdminSettings
 ];
 
 export {
@@ -74,7 +77,8 @@ export {
     ReportTaxGroup,
     ReportPaymentRelation,
     ReportExpense as ReportComission,
-    ReportExpense
+    ReportExpense,
+    AdminSettings
 }
 
 // export * from './payment-item.entity';

@@ -32,3 +32,4 @@ export * from './dto/report-tax-group.dto';
 export * from './dto/report-full.dto';
 export * from "./dto/base-report.dto"
 export * from './dto/report-expense.dto';
+export * from './dto/admin-settings.dto';
