@@ -14,7 +14,7 @@ import { randomUUID } from 'crypto';
 import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { ReportExpense } from '../entity/report-expense.entity';
-import { PaymentItemDto } from 'dist/libs/payments/dto/payment-item.dto';
+import { PaymentItemDto } from '@tk-postral/payment-common';
 
 @Injectable()
 export class ReportDigestionService {
