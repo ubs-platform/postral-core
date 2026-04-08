@@ -1,6 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 
-@Entity("report_comission")
+@Entity("report_expense")
+@Unique(["reportId", "accountId","expenseKey"])
 export class ReportExpense {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -32,8 +33,9 @@ export class ReportExpense {
     @Column({ type: "boolean", default: true })
     totalExpense: boolean = true;
 
-    @Column({ type: "varchar", nullable: true })
-    currency?: string;
+    // Zaten reportId'de var eğer çok lazım olursa ekleyebiliriz
+    // @Column({ type: "varchar", nullable: true })
+    // currency?: string;
 
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })

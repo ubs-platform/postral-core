@@ -33,4 +33,6 @@ export class AppComission {
 
     @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
     updatedAt: Date = new Date();
+
+    // TODO: Ayrıca netten mi yoksa brütten mi hesapla seçeneği de ekleyebiliriz. Şimdilik brütten hesaplayacak şekilde yapalım.
 }

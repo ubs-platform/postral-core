@@ -16,20 +16,20 @@ export type RefundRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 @Entity()
 export class RefundRequest extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     /**
      * Purchase tipi payment'e referans. Bu, refund request'in hangi purchase payment'e ait olduğunu belirtir. Ancak, bu sadece bir referans ve gerçek payment bilgisi için Payment servisine sorgu atılması gerekebilir.
      */
     @Column()
-    paymentId: string;
+    paymentId!: string;
 
 
     @Column({
         type: 'varchar',
         default: 'PENDING',
     })
-    status: RefundRequestStatus;
+    status!: RefundRequestStatus;
 
     @OneToMany(
         () => RefundRequestItem,
@@ -38,42 +38,42 @@ export class RefundRequest extends BaseEntity {
             cascade: true,
         },
     )
-    items: RefundRequestItem[];
+    items!: RefundRequestItem[];
 
     /**
      * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin oluşturduğunu ve kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.
      */
     @Column()
-    requestedByAccountId: string;
+    requestedByAccountId!: string;
 
     /**
      * Payment Account Id. Bu, refund request'i kimin oluşturduğunu takip etmek için kullanılabilir. 
      * Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
      */
     @Column()
-    requestedByPaymentAccountId: string;
+    requestedByPaymentAccountId!: string;
 
     /**
- * Payment Account Id. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
+ * Payment Account Id. This, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
  */
     @Column()
-    requestedToPaymentAccountId: string;
+    requestedToPaymentAccountId!: string;
 
-    
+
 
     /**
      * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.
      */
     @Column({ nullable: true })
-    resolvedByAccountId: string;
+    resolvedByAccountId!: string;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt: Date = new Date();
 
     @Column({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
-    updatedAt: Date;
+    updatedAt: Date = new Date();
 }

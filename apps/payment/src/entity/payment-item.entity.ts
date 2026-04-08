@@ -78,4 +78,22 @@ export class PostralPaymentItem {
 
     @Column()
     itemClass: string = "";
+
+    @Column({ type: 'float' })
+    appComissionAmount: number = 0;
+
+    @Column({ type: 'float' })
+    appComissionPercent: number = 0;
+
+    @Column({ type: 'float' })
+    paymentServiceFeeAmount: number = 0;
+
+    @Column({ type: 'float' })
+    paymentServiceFeePercent: number = 0;
+
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    updatedAt!: Date;
+
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt!: Date;
 }
