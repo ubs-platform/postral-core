@@ -2,12 +2,8 @@
 # FROM ubs_temp_workspace AS build
 FROM node:20-alpine
 WORKDIR /app
-COPY . ./
-RUN npm install
-ARG APP_NAME
-RUN npm run build ${APP_NAME}
-
-FROM ubs_temp_prod
+COPY package.json package.json
+RUN npm install --production
 ARG APP_NAME
 WORKDIR /app
 COPY --from=build /app/dist/apps/${APP_NAME} /app
