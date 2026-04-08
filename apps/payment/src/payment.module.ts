@@ -74,12 +74,12 @@ import { ReportMapper } from './mapper/report-mapper';
 
         TypeOrmModule.forFeature(PaymentsEntities),
         TypeOrmModule.forRoot({
-            type: 'mariadb',
-            host: 'localhost',
-            port: 3306,
-            username: 'root',
-            password: '',
-            database: 'postral_core',
+            type: process.env.POSTRAL_DB_DRIVER as any || 'mariadb',
+            host: process.env.POSTRAL_DB_HOST || 'localhost',
+            port: process.env.POSTRAL_DB_PORT as any || 3306,
+            username: process.env.POSTRAL_DB_USER || 'root',
+            password: process.env.POSTRAL_DB_PASSWORD || '',
+            database: process.env.POSTRAL_DB_NAME || 'postral_core',
             entities: PaymentsEntities,
             synchronize: true,
             metadataTableName: '',
@@ -165,4 +165,4 @@ import { ReportMapper } from './mapper/report-mapper';
         ReportQueryController,
     ],
 })
-export class PaymentModule {}
+export class PaymentModule { }
