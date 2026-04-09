@@ -6,10 +6,10 @@ import { exec } from 'child_process';
 @Injectable()
 export class PaymentItemMapper {
     toEntity(dto: PaymentItemDto): PostralPaymentItem {
-        if (dto.appComissionAmount == 0) {
-            exec(`kdialog --msgbox "PaymentItemMapper toEntity appComissionAmount is 0 for itemId: ${dto.itemId}, name: ${dto.name}"`);
-            debugger
-        }
+        // if (dto.appComissionAmount == 0) {
+        //     exec(`kdialog --msgbox "PaymentItemMapper toEntity appComissionAmount is 0 for itemId: ${dto.itemId}, name: ${dto.name}"`);
+        //     debugger
+        // }
         const pi = new PostralPaymentItem();
         pi.itemId = dto.itemId;
         pi.name = dto.name;
