@@ -34,6 +34,8 @@ export class ReportMapper {
                 taxGroupName: tg.taxGroupName,
                 taxPercent: parseFloat(tg.taxPercent),
                 paymentCount: tg.paymentCount,
+                totalSaleAmountWithoutExpense: tg.totalSaleAmountWithoutExpense,
+                totalExpenseAmount: tg.totalExpenseAmount,
                 totalSaleAmount: tg.totalSaleAmount,
                 totalRefundAmount: tg.totalRefundAmount,
                 totalSaleTaxAmount: tg.totalSaleTaxAmount,

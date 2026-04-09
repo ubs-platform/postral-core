@@ -1,6 +1,16 @@
 infrastructure
 node_modules
 tools
-package-lock.json
 yarn.lock
 dist
+.git
+.vscode
+docs
+notes
+uploads
+README.md
+OLD_README.md
+LICENSE
+resultante.txt
+hayalet-sevgilim.txt
+dev.env
