@@ -12,11 +12,12 @@ export class AdminSettingsService {
     /**
      *
      */
-    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>) {}
-        
+    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>) { }
+
     // İlk kaydı düzenler ya da yoksa yeni oluşturur
     async upsertAdminSettings(settings: Partial<AdminSettingsDto>): Promise<AdminSettingsDto> {
-        let existingSettings = await this.adminSettingsRepository.findOne({});
+        let existingSettingsLs = await this.adminSettingsRepository.find();
+        const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
         if (existingSettings) {
             // Güncelleme işlemi
             this.updateFromDto(existingSettings, settings as AdminSettingsDto);
@@ -32,15 +33,16 @@ export class AdminSettingsService {
     }
 
     async getAdminSettings(): Promise<AdminSettingsDto> {
-        let settings = await this.adminSettingsRepository.findOne({});
-        if (!settings) {
+        let existingSettingsLs = await this.adminSettingsRepository.find();
+        const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
+        if (!existingSettings) {
             // Eğer ayarlar yoksa, varsayılan bir kayıt oluşturabiliriz
             return await this.upsertAdminSettings({
                 sellerPaysPaymentServiceFee: false,
                 comissionsCalculatedFromNet: false
             });
         }
-        return this.toDto(settings);
+        return this.toDto(existingSettings);
     }
 
     toDto(settings: AdminSettings) {
@@ -58,5 +60,5 @@ export class AdminSettingsService {
         settings.comissionsCalculatedFromNet = dto.comissionsCalculatedFromNet;
     }
 
-    
+
 }

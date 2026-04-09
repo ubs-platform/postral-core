@@ -23,6 +23,7 @@ import { AppComissionMapper } from '../mapper/app-comission.mapper';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
 import { SearchRequest, SearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
+import { exec } from 'child_process';
 
 @Injectable()
 export class AppComissionService {
@@ -37,9 +38,9 @@ export class AppComissionService {
         let entity = await this.appComissionRepo.findOne({
             where: [
                 { itemClass, sellerAccountId },
-                { itemClass, sellerAccountId: "" },
-                { itemClass: "", sellerAccountId },
-                { itemClass: "", sellerAccountId: "" },
+                { itemClass, sellerAccountId: null! },
+                { itemClass: null!, sellerAccountId },
+                { itemClass: null!, sellerAccountId: null! },
             ],
             order: {
                 bias: 'DESC', // Öncelik sırasına göre sonuçları sıralayoruz, böylece en spesifik tanım ilk sırada olur

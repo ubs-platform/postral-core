@@ -79,10 +79,10 @@ export class PostralPaymentItem {
     @Column()
     itemClass: string = "";
 
-    @Column({ type: 'float' })
+    @Column({ type: 'float', default: 0 })
     appComissionAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column({ type: 'float', default: 0 })
     appComissionPercent: number = 0;
 
     @Column({ type: 'float' })
@@ -96,4 +96,5 @@ export class PostralPaymentItem {
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
+
 }

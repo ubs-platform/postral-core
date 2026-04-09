@@ -32,8 +32,17 @@ export class AppComissionMapper {
         entity: AppComission,
         dto: AppComissionDTO,
     ): AppComission {
-        const bias = (dto.sellerAccountId ? 1 : 0) + (dto.itemClass ? 1 : 0);
-
+        let bias = 0; 
+        if (dto.sellerAccountId && dto.itemClass) {
+            bias = 4; // En spesifik tanım
+        } else if (dto.sellerAccountId && !dto.itemClass) {
+            bias = 3; // Satıcıya özel, ürün sınıfı genel
+        } else if (!dto.sellerAccountId && dto.itemClass) {
+            bias = 2; // Satıcı genel, ürün sınıfına özel
+        } else {
+            bias = 1; // En genel tanım
+        }
+            
         entity.sellerAccountId = dto.sellerAccountId;
         entity.itemClass = dto.itemClass || "";
         entity.percent = dto.percent || 0;

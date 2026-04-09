@@ -1,6 +1,7 @@
 import { TypeAssertionUtil } from "../type-assertion";
 
 export class ItemCalculationUtil {
+
     static divisionNumberValues(arg0: any, arg1: number) {
         arg0 = Number(arg0);
         arg1 = Number(arg1);
@@ -17,6 +18,22 @@ export class ItemCalculationUtil {
         }
         return arg0 / arg1;
     }
+
+    static calculateComissionAmountByPercent(amount: number, percent: number): number {
+        amount = Number(amount);
+        percent = Number(percent);
+        TypeAssertionUtil.assertIsNumber(
+            amount,
+            'Amount must be a number',
+        );
+        TypeAssertionUtil.assertIsNumber(
+            percent,
+            'Percent must be a number',
+        );
+        return (amount * percent) / 100;
+    }
+
+
     static calculateTotalItemPrice(
         unitPrice: number,
         quantity: number,

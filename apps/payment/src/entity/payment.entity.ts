@@ -16,81 +16,81 @@ import { ReportPaymentRelation } from './report-payment-relation.entity';
 @Entity()
 export class Payment {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ length: 200, type: 'varchar', nullable: true, unique: true })
-    billingCode: string;
+    billingCode!: string;
 
     @Column()
-    type: 'PURCHASE' | 'REFUND';
+    type!: 'PURCHASE' | 'REFUND';
 
     @Column({ type: 'float' })
-    totalAmount: number;
+    totalAmount!: number;
 
     @Column({ type: 'float' })
-    taxAmount: number;
+    taxAmount!: number;
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */
     @Column()
-    currency: string;
+    currency!: string;
 
     @OneToMany(() => PostralPaymentItem, (item) => item.payment, {
         cascade: true,
     })
-    items: PostralPaymentItem[];
+    items!: PostralPaymentItem[];
 
     @OneToMany(() => PostralPaymentTax, (item) => item.payment, {
         cascade: true,
     })
-    taxes: PostralPaymentTax[];
+    taxes!: PostralPaymentTax[];
 
     @Column()
-    customerAccountId: string;
+    customerAccountId!: string;
 
     @Column({ nullable: true })
-    customerAccountName: string;
+    customerAccountName!: string;
 
     @Column({ type: 'varchar' })
-    paymentStatus: PaymentStatus;
+    paymentStatus!: PaymentStatus;
 
     @Column({ type: 'varchar', nullable: true })
-    errorStatus: PaymentErrorStatus;
+    errorStatus!: PaymentErrorStatus;
 
     /**
      * Nakit, Kredi Kartı, Havale/EFT, vs...
      */
     @Column({ nullable: true })
-    paymentChannelId: string;
+    paymentChannelId!: string;
 
     @Column({ nullable: true })
-    paymentChannelOperationId: string;
+    paymentChannelOperationId!: string;
 
     @Column({ nullable: true })
-    paymentChannelOperationUrl: string;
+    paymentChannelOperationUrl!: string;
 
     @Column({ nullable: true })
-    channelUrlExpiryDate: Date;
+    channelUrlExpiryDate!: Date;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @OneToMany(() => PostralPaymentItem, (item) => item.refundPayment, {
         cascade: true,
     })
-    refundItems: PostralPaymentItem[];
+    refundItems!: PostralPaymentItem[];
 
     @Column({ nullable: true })
     refundRequestId?: string;
 
     @OneToMany(() => ReportPaymentRelation, (rpr) => rpr.payment, { eager: false })
-    reportPaymentRelations: ReportPaymentRelation[];
+    reportPaymentRelations!: ReportPaymentRelation[];
 
 }

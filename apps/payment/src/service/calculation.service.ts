@@ -15,6 +15,9 @@ import { ItemTaxService } from './item-tax.service';
 import { AccountService } from './account.service';
 import { ItemPriceService } from './item-price.service';
 import { TaxDTO } from '@tk-postral/payment-common';
+import { AppComissionService } from './app-commission.service';
+import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
+import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
 export class CalculationService {
@@ -24,7 +27,9 @@ export class CalculationService {
         private accountService: AccountService,
         private itemTaxService: ItemTaxService,
         private itemPriceService: ItemPriceService,
-    ) {}
+        private comissionService: AppComissionService,
+        private adminSettingsService: AdminSettingsService
+    ) { }
 
 
     async calculateTotalAmount(
@@ -55,16 +60,19 @@ export class CalculationService {
                     paymentItemDto.itemId
                         ? { id: paymentItemDto.itemId }
                         : {
-                              entityGroup: paymentItemDto.entityGroup,
-                              entityId: paymentItemDto.entityId,
-                              entityName: paymentItemDto.entityName,
-                          },
+                            entityGroup: paymentItemDto.entityGroup,
+                            entityId: paymentItemDto.entityId,
+                            entityName: paymentItemDto.entityName,
+                        },
                 )
             )[0];
+
 
             if (!realItemFind) {
                 throw new NotFoundException('Item not found for payment init');
             }
+
+            const comission = await this.comissionService.fetchOneForCalculation(realItemFind.sellerAccountId, realItemFind.itemClass || "");
 
             const itemAccount = await this.accountService.fetchOne(
                 realItemFind.sellerAccountId,
@@ -126,6 +134,10 @@ export class CalculationService {
                     itemPriceActive[0].itemPrice,
                     paymentItemDto.quantity,
                 );
+
+            const admSettings = await this.adminSettingsService.getAdminSettings();
+
+
             paymentItem.taxPercent = taxPercentBySaleMode;
             paymentItem.itemId = realItemFind.id;
             paymentItem.sellerAccountId = realItemFind.sellerAccountId;
@@ -149,18 +161,22 @@ export class CalculationService {
             );
 
             taxesFromItems.push(taxDto);
-
             paymentItem.name = realItemFind.name;
             paymentItem.taxAmount = taxDto.taxAmount!;
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
             paymentItem.quantity = paymentItemDto.quantity;
+            paymentItem.appComissionPercent = comission.percent;
+            paymentItem.appComissionAmount = ItemCalculationUtil.calculateComissionAmountByPercent(
+                admSettings.comissionsCalculatedFromNet ? paymentItem.unTaxAmount : paymentItem.totalAmount,
+                comission.percent,
+            );
             items.push(paymentItem);
         }
         return new ItemListCalculationDto(
             items,
             totalAmt,
             taxTotal,
-            taxesFromItems,
+            taxesFromItems
         );
     }
 }

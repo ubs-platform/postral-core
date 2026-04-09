@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
+import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentItemMapper {
     toEntity(dto: PaymentItemDto): PostralPaymentItem {
+        if (dto.appComissionAmount == 0) {
+            exec(`kdialog --msgbox "PaymentItemMapper toEntity appComissionAmount is 0 for itemId: ${dto.itemId}, name: ${dto.name}"`);
+            debugger
+        }
         const pi = new PostralPaymentItem();
         pi.itemId = dto.itemId;
         pi.name = dto.name;
@@ -23,6 +28,8 @@ export class PaymentItemMapper {
         pi.sellerAccountName = dto.sellerAccountName;
         pi.itemClass = dto.itemClass || "";
         pi.unit = dto.unit;
+        pi.appComissionAmount = dto.appComissionAmount || 0;
+        pi.appComissionPercent = dto.appComissionPercent || 0;
         return pi;
     }
 
@@ -49,7 +56,9 @@ export class PaymentItemMapper {
                 originalUnitAmount: a.originalUnitAmount,
                 unitAmount: a.unitAmount,
                 unit: a.unit,
-                refundCount: a.refundCount
+                refundCount: a.refundCount,
+                appComissionAmount: a.appComissionAmount,
+                appComissionPercent: a.appComissionPercent,
             });
         }
         return dtos;

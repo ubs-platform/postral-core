@@ -167,26 +167,22 @@ export class ReportDigestionService {
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
 
-            const comission = await this.comissionService.fetchOneForCalculation(accountId, item.itemClass || '');
-            const comissionRatio = comission.percent / 100;
 
             if (item.itemClass) {
                 const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
                 const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, payment.currency);
-                const itemExpenseAmount = RatioCalculationUtil.multiplyTwoValues(item.totalAmount, comissionRatio);
-                itemClassExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, itemExpenseAmount);
+                itemClassExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
                 await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
 
             const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
             const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, payment.currency);
-            const totalComissionAmount = RatioCalculationUtil.multiplyTwoValues(item.totalAmount, comissionRatio);
-            totalComissionExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComissionAmount);
+            totalComissionExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
             await this.reportExpenseRepo.save(totalComissionExpenseReport);
 
             const reportTotalExpenseKey = REPORT_TOTAL;
             const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, payment.currency);
-            reportTotalExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComissionAmount);
+            reportTotalExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
             await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
     }
