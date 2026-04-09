@@ -32,9 +32,9 @@ export class RatioCalculationUtil {
             ratio,
             'Ratio must be a number',
         );
-        if (ratio === 0) {
-            throw new Error('Ratio cannot be zero');
-        }
+        // if (ratio === 0) {
+        //     throw new Error('Ratio cannot be zero');
+        // }
         return refundAmount * ratio;
     }
 }
