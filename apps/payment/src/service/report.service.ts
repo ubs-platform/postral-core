@@ -4,7 +4,7 @@ import { In, Repository } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { Report } from '../entity/report.entity';
 import { ReportDTO, ReportFullDTO, ReportSearchPaginationDTO } from '@tk-postral/payment-common';
-import { ReportTaxGroup } from '../entity';
+import { ReportExpense, ReportTaxGroup } from '../entity';
 import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
 import { PaymentCommonService } from './payment-common.service';
 import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
@@ -24,6 +24,8 @@ export class ReportService {
         private readonly reportRepo: Repository<Report>,
         @InjectRepository(ReportTaxGroup)
         private readonly taxGroupRepo: Repository<ReportTaxGroup>,
+        @InjectRepository(ReportExpense)
+        private readonly expenseRepo: Repository<ReportExpense>,
         @InjectRepository(ReportPaymentRelation)
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         private readonly paymentCommonService: PaymentCommonService,
@@ -153,14 +155,15 @@ export class ReportService {
     }
 
     async fetchReportFull(reportId: string): Promise<ReportFullDTO> {
-        const [mainReport, taxGroupReports] = await Promise.all([
+        const [mainReport, taxGroupReports, reportExpenses] = await Promise.all([
             this.reportRepo.findOne({ where: { id: reportId } }),
             this.taxGroupRepo.find({ where: { reportId } }),
+            this.expenseRepo.find({ where: { reportId }, order: { totalExpense: "ASC" } }),
         ]);
         if (!mainReport) {
             throw new Error(`Report ${reportId} not found`);
         }
-        return this.reportMapper.toFullDto(mainReport, taxGroupReports);
+        return this.reportMapper.toFullDto(mainReport, taxGroupReports, reportExpenses);
     }
 
     async searchPagination(q: ReportSearchPaginationDTO, user: UserAuthBackendDTO): Promise<SearchResult<ReportDTO>> {

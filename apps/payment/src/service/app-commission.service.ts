@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -38,9 +38,9 @@ export class AppComissionService {
         let entity = await this.appComissionRepo.findOne({
             where: [
                 { itemClass, sellerAccountId },
-                { itemClass, sellerAccountId: null! },
-                { itemClass: null!, sellerAccountId },
-                { itemClass: null!, sellerAccountId: null! },
+                { itemClass, sellerAccountId: IsNull() },
+                { itemClass: "", sellerAccountId },
+                { itemClass: "", sellerAccountId: IsNull() },
             ],
             order: {
                 bias: 'DESC', // Öncelik sırasına göre sonuçları sıralayoruz, böylece en spesifik tanım ilk sırada olur

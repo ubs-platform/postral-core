@@ -22,7 +22,7 @@ export class ReportExpense {
      * Ayrıca, yeni masraf tipleri eklemek istediğimizde de esneklik sağlamış oluruz.
      */
     @Column({ type: "varchar", length: 600, nullable: true })
-    expenseKey?: string;
+    expenseKey!: string;
 
     @Column({ default: 0, type: 'float' })
     expenseAmount: number = 0;

@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ReportDTO, ReportFullDTO } from "@tk-postral/payment-common";
 import { Report } from "../entity/report.entity";
-import { ReportTaxGroup } from "../entity";
+import { ReportExpense, ReportTaxGroup } from "../entity";
 @Injectable()
 export class ReportMapper {
 
@@ -25,7 +25,7 @@ export class ReportMapper {
         return dto;
     }
 
-    toFullDto(entity: Report, taxReports: ReportTaxGroup[]): ReportFullDTO {
+    toFullDto(entity: Report, taxReports: ReportTaxGroup[], expenses: ReportExpense[]): ReportFullDTO {
         const fullDto = new ReportFullDTO();
         const plainDto = this.toDto(entity);
         Object.assign(fullDto, plainDto);
@@ -45,6 +45,8 @@ export class ReportMapper {
                 netRevenue: tg.netRevenue,
             }
         }) || [];
+
+        fullDto.expenses = expenses || [];
 
         return fullDto;
     }
