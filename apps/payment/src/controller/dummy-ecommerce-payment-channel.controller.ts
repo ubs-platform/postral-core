@@ -6,6 +6,7 @@ import {
     Post,
     Query,
     Redirect,
+    Res,
     Response,
 } from '@nestjs/common';
 import { ClientKafka, MessagePattern } from '@nestjs/microservices';
@@ -19,7 +20,7 @@ import {
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { exec } from 'child_process';
 import { ReturnDocument } from 'typeorm';
-
+import { FastifyReply } from 'fastify';
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
     // This is a dummy controller for ecommerce payment channel simulation
@@ -111,9 +112,9 @@ export class DummyEcommercePaymentChannelController {
     async getPaymentOperationDummyPage(
         @Param('operationId') operationId: string,
         @Query('redirectUrl') redirectUrlBackToApp: string,
-        @Response() res,
+        @Res() fastifyReply: FastifyReply,
     ) {
-        res.type('html').send(
+        fastifyReply.type('html').send(
             `<html>
             <body>
                 <h1>Dummy Ecommerce Payment Page</h1>
@@ -140,6 +141,7 @@ export class DummyEcommercePaymentChannelController {
         @Param('operationId') operationId: string,
         @Param('set') set: 'COMPLETED' | 'FAILED',
         @Query('redirectUrl') redirectUrlBackToApp: string,
+        @Res() fastifyReply?: FastifyReply,
     ) {
         this.statusMapByOperationId.set(operationId, set);
         this.kfk.emit(
@@ -147,15 +149,23 @@ export class DummyEcommercePaymentChannelController {
             operationId,
         );
         // Redirect back to the application with status
-        return Redirect(
-            `${redirectUrlBackToApp}?operationId=${operationId}&status=${set}`,
-        );
+        if (fastifyReply) {
+            return fastifyReply.status(302).redirect(
+                `${redirectUrlBackToApp}?operationId=${operationId}&status=${set}`,
+            );
+        } else {
+            return {
+                operationId,
+                status: set,
+            };
+        }
     }
 
     @Get('/operation/:operationId/status')
     async checkPaymentStatusAndRedirect(
         @Param('operationId') operationId: string,
         @Query('redirectUrl') redirectUrlBackToApp: string,
+        @Res() fastifyReply: FastifyReply,
     ) {
         let currentStatus = this.statusMapByOperationId.get(operationId);
         if (!currentStatus) {
@@ -168,7 +178,7 @@ export class DummyEcommercePaymentChannelController {
             this.statusMapByOperationId.set(operationId, currentStatus);
         }
         // Redirect back to the application with status
-        return Redirect(
+        return fastifyReply.status(302).redirect(
             `${redirectUrlBackToApp}?operationId=${operationId}&status=${currentStatus}`,
         );
     }
