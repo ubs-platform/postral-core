@@ -148,6 +148,9 @@ export class DummyEcommercePaymentChannelController {
             'postral/payment-operation-status-updated',
             operationId,
         );
+
+        // TODO: belki redirect'i farklı yolla çözebiliriz... Sayfa olarak renderlatıp timeout ile yapacağım.
+
         // Redirect back to the application with status
         if (fastifyReply && redirectUrlBackToApp) {
             return fastifyReply.status(302).redirect(
