@@ -149,7 +149,7 @@ export class DummyEcommercePaymentChannelController {
             operationId,
         );
         // Redirect back to the application with status
-        if (fastifyReply) {
+        if (fastifyReply && redirectUrlBackToApp) {
             return fastifyReply.status(302).redirect(
                 `${redirectUrlBackToApp}?operationId=${operationId}&status=${set}`,
             );
