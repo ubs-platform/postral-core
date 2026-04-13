@@ -5,6 +5,9 @@ import { ReportQueryDTO } from '@tk-postral/payment-common';
 @Injectable()
 export class ReportQueryMapper {
     toDto(entity: ReportQuery): ReportQueryDTO {
+        // if (entity.id == null) {
+        //     debugger;
+        // }
         const dto = new ReportQueryDTO();
         dto.id = entity.id;
         dto.name = entity.name;

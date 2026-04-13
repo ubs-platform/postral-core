@@ -120,29 +120,23 @@ export class ReportDigestionService {
     }
 
     private async reportCalculation(report: BaseReport, payment: PaymentFullDTO, accountId: string) {
-        // TODO: Payment için masrafı burada hesapla ve base report içinde sakla. 
-        // Diğer masraflar için hala Report Expense kullanabiliriz. 
-        // Masraf kalemlerini de ReportExpense içinde expenseKey ile ayırabiliriz,
-        //  böylece yeni masraf kalemleri eklemek istediğimizde esneklik sağlamış oluruz.
-        const paymentOrders = await this.sellerPaymentOrderService.findAll({
-            paymentId: payment.id,
-            targetAccountIds: accountId,
-            admin: 'true',
-        });
-        const paymentOrder = paymentOrders.find(po => po.targetAccountId === accountId);
-        if (!paymentOrder) {
-            this.logger.warn(`No payment order found for payment ${payment.id} and account ${accountId}`);
-            return;
-        }
-        report.paymentCount += 1;
+        const paymentItems = payment.items.filter(i => i.sellerAccountId === accountId);
+        return await this.reportCalculationByPaymentItems(report, payment.type, paymentItems, accountId);
+    }
 
-        if (payment.type === 'PURCHASE') {
-            report.totalSaleAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalSaleAmount || 0);
-            report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalSaleTaxAmount || 0);
-        } else if (payment.type === 'REFUND') {
-            report.totalRefundAmount = ItemCalculationUtil.addNumberValues(paymentOrder.amount, report.totalRefundAmount || 0);
-            report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(paymentOrder.taxAmount, report.totalRefundTaxAmount || 0);
+    private async reportCalculationByPaymentItems(report: BaseReport, paymentType: string, paymentItems: PaymentItemDto[], accountId: string) {
+
+        for (const item of paymentItems) {
+            if (item.sellerAccountId !== accountId) continue;
+            if (paymentType === 'PURCHASE') {
+                report.totalSaleAmount = ItemCalculationUtil.addNumberValues(item.totalAmount, report.totalSaleAmount || 0);
+                report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(item.taxAmount, report.totalSaleTaxAmount || 0);
+            } else if (paymentType === 'REFUND') {
+                report.totalRefundAmount = ItemCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
+                report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
+            }
         }
+        report.paymentCount = ItemCalculationUtil.addNumberValues(report.paymentCount, 1);
         report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
         report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
@@ -162,7 +156,7 @@ export class ReportDigestionService {
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
-        
+
         for (let index = 0; index < payment.items.length; index++) {
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
@@ -188,22 +182,33 @@ export class ReportDigestionService {
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+        debugger
+        const paymentItemsPerTaxGroup: { [taxGroup: string]: PaymentItemDto[] } = {};
         for (let index = 0; index < payment.items.length; index++) {
             // Payment itemleri dolaşarak tax percentleri almam gerekiyor çünkü paymentta diğer satıcılarla ilgili bilgi olabilir...
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
 
-            const taxGroup = item.taxPercent;
-            const taxGroupLabel = taxGroup ? `Tax ${taxGroup}%` : 'No Tax';
-            let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: mainReportId, taxGroupName: taxGroupLabel } });
+            const percentGroup = item.taxPercent ?? 0;
+
+
+            if (!paymentItemsPerTaxGroup[percentGroup]) {
+                paymentItemsPerTaxGroup[percentGroup] = [];
+            }
+            paymentItemsPerTaxGroup[percentGroup].push(item);
+        }
+        for (const percentGroup in paymentItemsPerTaxGroup) {
+            let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: mainReportId, taxPercent: percentGroup, currency: payment.currency } });
+            const realtaxGroupLabel = percentGroup ? `Tax ${percentGroup}%` : 'No Tax';
             if (!taxGroupReport) {
                 taxGroupReport = new ReportTaxGroup();
+                taxGroupReport.taxPercent = percentGroup;
                 taxGroupReport.reportId = mainReportId;
-                taxGroupReport.taxGroupName = taxGroupLabel;
+                taxGroupReport.taxGroupName = realtaxGroupLabel;
                 taxGroupReport.currency = payment.currency;
-                taxGroupReport.taxPercent = taxGroup.toString();
             }
-            await this.reportCalculation(taxGroupReport, payment, accountId);
+            const itemsInGroup = paymentItemsPerTaxGroup[percentGroup];
+            await this.reportCalculationByPaymentItems(taxGroupReport, payment.type, itemsInGroup, accountId);
             await this.taxGroupRepo.save(taxGroupReport);
         }
     }
