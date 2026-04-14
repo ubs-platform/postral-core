@@ -91,6 +91,7 @@ export class DummyEcommercePaymentChannelController {
 
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
+        const fee = paymentDto.totalAmount * 0.1 + 0.1; // Örnek olarak %10 ve 10 kuruş daha komisyon alalım. Ödeme sağlayıcılarının salak salak hesapları var :d bir tane örnek deneyelim. 100 TL'lik ödeme için 10 TL + 0.1 TL = 10.1 TL komisyon alırız. 1000 TL'lik ödeme için 100 TL + 0.1 TL = 100.1 TL komisyon alırız. 10 TL'lik ödeme için 1 TL + 0.1 TL = 1.1 TL komisyon alırız.
         this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
         if (paymentDto.type == "REFUND") {
             // 30 saniye sonra otomatik olarak ödemeyi tamamla.
@@ -100,11 +101,14 @@ export class DummyEcommercePaymentChannelController {
                 }
             }, 30000);
         }
+        // exec(`kdialog --msgbox "Ödeme provider ücreti: ${fee.toFixed(2)} ${paymentDto.currency}"`);
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
             redirectUrl: `dummy-ecommerce-payment-channel/operation/${paymentDto.id}`,
             paymentStatus: 'WAITING',
+            feeCutInstantly: true,
+            providerFee: fee,
         } as PaymentChannelStatusDTO;
     }
 

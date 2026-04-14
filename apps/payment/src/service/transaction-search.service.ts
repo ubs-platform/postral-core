@@ -15,6 +15,7 @@ import {
     PaymentSearchPaginationFlatDTO,
     PaymentTransactionSearchDTO,
     PaymentTransactionSearchPaginationDTO,
+    SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
@@ -53,6 +54,19 @@ export class SellerPaymentOrderSearchService {
         }
         return this.transactionMapper.toDto(transaction);
     }
+
+    async findByPaymentIdAndAccountId(paymentId: string, accountId: string): Promise<SellerPaymentOrderDTO> {
+        const transaction = await this.transactionRepo.findOne({
+            where: {
+                paymentId,
+                targetAccountId: accountId,
+            },
+        });
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+        return await this.transactionMapper.toDto(transaction);
+     }
 
     async findAll(
         modelSearch: PaymentTransactionSearchDTO,

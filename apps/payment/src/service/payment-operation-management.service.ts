@@ -21,6 +21,7 @@ import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { Cron } from '@nestjs/schedule';
 import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
 import { exec } from 'child_process';
+import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -31,6 +32,7 @@ export class PaymentOperationManagementService {
     constructor(
         private eventSenderService: EventSenderService,
         private calcService: CalculationService,
+        private adminSettingsService: AdminSettingsService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
     ) { }
@@ -41,10 +43,21 @@ export class PaymentOperationManagementService {
         result: PaymentChannelStatusDTO,
         paymentId: string,
     ) {
+        const stgs = await this.adminSettingsService.getAdminSettings();
+
         paymentOperationRecord.operationId = result.paymentChannelOperationId!;
         paymentOperationRecord.paymentId = paymentId;
         paymentOperationRecord.paymentChannelId = result.paymentChannelId!;
         paymentOperationRecord.status = result.paymentStatus;
+        // exec(`kdialog --msgbox "MQ servisinden gelen ödeme provider ücreti: ${result.providerFee}"`);
+        if (result.providerFee != null) {
+            paymentOperationRecord.providerFee = result.providerFee;
+        }
+        if (result.feeCutInstantly != null) {
+            paymentOperationRecord.feeCutInstantly = result.feeCutInstantly;
+        }
+        // paymentOperationRecord.feeCutInstantly = result.feeCutInstantly ?? true;
+        paymentOperationRecord.providerFeeDebitFrom = stgs.sellerPaysPaymentServiceFee ? 'SELLER' : 'PLATFORM';
         await this.paymentChannelOperationRepo.save(paymentOperationRecord);
         return result;
     }

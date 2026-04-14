@@ -33,6 +33,14 @@ export class ReportExpense {
     @Column({ type: "boolean", default: true })
     totalExpense: boolean = true;
 
+    /**
+     * Sıralama ağırlığı. 1 = toplam masraf (REPORT_TOTAL), 2 = komisyon/ödeme hizmeti
+     * (PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE), 3 = ürün grubu komisyonları (ITEM_CLASS_COMISSION_*).
+     * Frontend bu sıraya göre gösterir.
+     */
+    @Column({ type: 'int', default: 2 })
+    displayWeight: number = 2;
+
     // Zaten reportId'de var eğer çok lazım olursa ekleyebiliriz
     // @Column({ type: "varchar", nullable: true })
     // currency?: string;

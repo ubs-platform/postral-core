@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
 import { ReportComission, ReportTaxGroup } from '../entity';
+import { PaymentChannelOperation } from '../entity/payment-channel-operation.entity';
 import { ItemCalculationUtil } from '../util/calcs/item-calculations';
 import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
 import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
@@ -32,6 +33,8 @@ export class ReportDigestionService {
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
         @InjectRepository(ReportExpense)
         private readonly reportExpenseRepo: Repository<ReportExpense>,
+        @InjectRepository(PaymentChannelOperation)
+        private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
         private readonly comissionService: AppComissionService,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
@@ -142,6 +145,12 @@ export class ReportDigestionService {
         report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
     }
 
+    private static expenseDisplayWeight(expenseKey: string): number {
+        if (expenseKey === REPORT_TOTAL) return 1;
+        if (expenseKey === PLATFORM_COMISSION_TOTAL || expenseKey === PAYMENT_SERVICE_FEE) return 2;
+        return 3; // ITEM_CLASS_COMISSION_* ve diğerleri
+    }
+
     private async fetchOrCreateReportExpense(reportId: string, accountId: string, expenseKey: string, currency: string): Promise<ReportExpense> {
         let expense = await this.reportExpenseRepo.findOne({ where: { reportId, accountId, expenseKey } });
         if (!expense) {
@@ -150,9 +159,41 @@ export class ReportDigestionService {
             expense.accountId = accountId;
             expense.expenseKey = expenseKey;
             expense.expenseAmount = 0;
+            expense.displayWeight = ReportDigestionService.expenseDisplayWeight(expenseKey);
             await this.reportExpenseRepo.save(expense);
         }
         return expense;
+    }
+
+    private async updateProviderFeeExpenseForReport(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
+        const [operations, paymentSellerOrder] = await Promise.all([
+            this.paymentChannelOperationRepo.find({
+                where: { paymentId: payment.id, providerFeeDebitFrom: Not('PLATFORM'), providerFee: Not(0) },
+            }),
+            this.sellerPaymentOrderService.findByPaymentIdAndAccountId(payment.id, accountId),
+        ]);
+
+
+
+        for (const operation of operations) {
+
+            const sellerItemsTotal = paymentSellerOrder.amount;
+
+            if (sellerItemsTotal <= 0 || payment.totalAmount <= 0) continue;
+
+            const ratio = ItemCalculationUtil.divisionNumberValues(sellerItemsTotal, payment.totalAmount);
+            const sellerFee = RatioCalculationUtil.multiplyTwoValues(operation.providerFee, ratio);
+
+            if (sellerFee <= 0) continue;
+
+            const feeExpense = await this.fetchOrCreateReportExpense(reportId, accountId, PAYMENT_SERVICE_FEE, payment.currency);
+            feeExpense.expenseAmount = ItemCalculationUtil.addNumberValues(feeExpense.expenseAmount, sellerFee);
+            await this.reportExpenseRepo.save(feeExpense);
+
+            const totalExpense = await this.fetchOrCreateReportExpense(reportId, accountId, REPORT_TOTAL, payment.currency);
+            totalExpense.expenseAmount = ItemCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
+            await this.reportExpenseRepo.save(totalExpense);
+        }
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
@@ -261,6 +302,7 @@ export class ReportDigestionService {
             // await this.updateExpensesForReport(freshReport.id, payment, accountId);
             // const totalExpense = await this.fetchOrCreateReportExpense(freshReport.id, accountId, REPORT_TOTAL, payment.currency);
             await this.updateExpensesForReport(freshReport.id, payment, accountId);
+            await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
             await this.digestPayment(freshReport, payment);
             await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
             relation.digestionStatus = 'COMPLETED';

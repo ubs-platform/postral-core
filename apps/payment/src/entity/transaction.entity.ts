@@ -8,6 +8,7 @@ import {
     ManyToOne,
     JoinColumn,
     BaseEntity,
+    Unique,
 } from 'typeorm';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
@@ -19,54 +20,55 @@ import {
 import { Account } from './account.entity';
 
 @Entity()
+@Unique(['paymentId', "targetAccountId"])
 export class SellerPaymentOrder extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
-    @Column({ type: 'float' })
-    amount: number;
+    @Column({ type: 'float', default: 0 })
+    amount: number = 0;
 
-    @Column({ type: 'float' })
-    taxAmount: number;
+    @Column({ type: 'float', default: 0 })
+    taxAmount: number = 0;
 
-    @Column({ type: 'float' })
-    untaxedAmount: number;
-
-    @Column()
-    currency: string;
+    @Column({ type: 'float', default: 0 })
+    untaxedAmount: number = 0;
 
     @Column()
-    paymentId: string;
+    currency!: string;
+
+    @Column()
+    paymentId!: string;
 
     // @ManyToOne(() => Payment)
     // @JoinColumn({ name: 'paymentId' })
     // payment: Payment;
 
     @Column()
-    targetAccountId: string;
+    targetAccountId!: string;
 
     @ManyToOne(() => Account, { eager: true })
     @JoinColumn({ name: 'targetAccountId' })
-    targetAccount: Account;
+    targetAccount?: Account;
 
     @Column()
-    sourceAccountId: string;
+    sourceAccountId!: string;
 
     @ManyToOne(() => Account, { eager: true })
     @JoinColumn({ name: 'sourceAccountId' })
-    sourceAccount: Account;
+    sourceAccount?: Account;
 
     @Column({ type: 'varchar' })
-    paymentStatus: PaymentStatus;
+    paymentStatus!: PaymentStatus;
 
     @Column({ type: 'varchar', nullable: true })
-    errorStatus: PaymentErrorStatus;
+    errorStatus?: PaymentErrorStatus;
 
     @Column({ type: 'int', default: 0 })
-    invoiceCount: number;
+    invoiceCount: number = 0;
 
     @Column({ type: 'boolean', default: false })
-    hasFinalizedInvoice: boolean;
+    hasFinalizedInvoice: boolean = false;
 
     // faturalar için burası kullanılabilir
     // invoiceId: string;
@@ -86,30 +88,30 @@ export class SellerPaymentOrder extends BaseEntity {
     * - amount: 100
      */
     @Column({ type: 'varchar' })
-    sellerOrderType: SellerPaymentOrderType;
+    sellerOrderType!: SellerPaymentOrderType;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt: Date = new Date();
 
     @Column({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
-    updatedAt: Date;
+    updatedAt: Date = new Date();
 
     @Column({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
-    lastOperationDate: Date;
+    lastOperationDate: Date = new Date();
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
-    operationNote: string;
+    operationNote: string = '';
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
-    description: string;
+    description: string = '';
 
     // Additional fields can be added as needed
 }

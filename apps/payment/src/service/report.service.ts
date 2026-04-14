@@ -158,7 +158,7 @@ export class ReportService {
         const [mainReport, taxGroupReports, reportExpenses] = await Promise.all([
             this.reportRepo.findOne({ where: { id: reportId } }),
             this.taxGroupRepo.find({ where: { reportId } }),
-            this.expenseRepo.find({ where: { reportId }, order: { totalExpense: "ASC" } }),
+            this.expenseRepo.find({ where: { reportId }, order: { displayWeight: 'ASC' } }),
         ]);
         if (!mainReport) {
             throw new Error(`Report ${reportId} not found`);
