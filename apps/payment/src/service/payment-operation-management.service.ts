@@ -49,8 +49,14 @@ export class PaymentOperationManagementService {
         paymentOperationRecord.paymentId = paymentId;
         paymentOperationRecord.paymentChannelId = result.paymentChannelId!;
         paymentOperationRecord.status = result.paymentStatus;
-        paymentOperationRecord.providerFee = result.providerFee || 0;
-        paymentOperationRecord.feeCutInstantly = result.feeCutInstantly ?? true;
+        // exec(`kdialog --msgbox "MQ servisinden gelen ödeme provider ücreti: ${result.providerFee}"`);
+        if (result.providerFee != null) {
+            paymentOperationRecord.providerFee = result.providerFee;
+        }
+        if (result.feeCutInstantly != null) {
+            paymentOperationRecord.feeCutInstantly = result.feeCutInstantly;
+        }
+        // paymentOperationRecord.feeCutInstantly = result.feeCutInstantly ?? true;
         paymentOperationRecord.providerFeeDebitFrom = stgs.sellerPaysPaymentServiceFee ? 'SELLER' : 'PLATFORM';
         await this.paymentChannelOperationRepo.save(paymentOperationRecord);
         return result;

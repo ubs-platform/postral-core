@@ -101,6 +101,7 @@ export class DummyEcommercePaymentChannelController {
                 }
             }, 30000);
         }
+        // exec(`kdialog --msgbox "Ödeme provider ücreti: ${fee.toFixed(2)} ${paymentDto.currency}"`);
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
