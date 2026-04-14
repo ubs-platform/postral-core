@@ -182,7 +182,6 @@ export class ReportDigestionService {
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
-        debugger
         const paymentItemsPerTaxGroup: { [taxGroup: string]: PaymentItemDto[] } = {};
         for (let index = 0; index < payment.items.length; index++) {
             // Payment itemleri dolaşarak tax percentleri almam gerekiyor çünkü paymentta diğer satıcılarla ilgili bilgi olabilir...
