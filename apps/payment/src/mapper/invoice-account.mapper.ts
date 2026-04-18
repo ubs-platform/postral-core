@@ -15,7 +15,8 @@ export class InvoiceAccountMapper {
     toEntityFromNormalAccount(account: Account): InvoiceAccount {
         const entity = new InvoiceAccount();
         entity.name = account.name;
-        entity.legalIdentity = this.cryptionUtil.encryptWithConfig(account.legalIdentity, "USE_DEFAULT");
+        // zaten şifreli geliyor...
+        entity.legalIdentity = account.legalIdentity;
         entity.type = account.type;
         entity.realAccountId = account.id;
         entity.bankName = account.bankName;

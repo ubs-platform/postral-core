@@ -86,7 +86,7 @@ export class InvoiceMapper {
         entity.notes = '';
         // İade durumlarında transaction.transactionType source ve target hesapların yer değiştirebilir ama satıcının müşteri olarak gözükmesi istenmez, bu yüzden transactionType kontrolü yapılmaz
         const customer = transaction.sourceAccount, seller = transaction.targetAccount;
-
+        
         entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
         entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(customer!);
         entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
