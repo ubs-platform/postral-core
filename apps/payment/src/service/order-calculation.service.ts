@@ -9,18 +9,17 @@ import {
     ItemListCalculationDto,
 } from '@tk-postral/payment-common/dto/calculation.dto';
 import { PostralPaymentItem } from '../entity';
-import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { ItemTaxService } from './item-tax.service';
 import { AccountService } from './account.service';
 import { ItemPriceService } from './item-price.service';
 import { TaxDTO } from '@tk-postral/payment-common';
 import { AppComissionService } from './app-commission.service';
-import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
 import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
-export class CalculationService {
+export class OrderCalculationService {
 
     constructor(
         private itemService: ItemService,
@@ -130,7 +129,7 @@ export class CalculationService {
             paymentItem.entityName = realItemFind.entityName;
             paymentItem.itemClass = realItemFind.itemClass || "";
             paymentItem.totalAmount =
-                ItemCalculationUtil.calculateTotalItemPrice(
+                AmountCalculationUtil.multiplyNumberValues(
                     itemPriceActive[0].itemPrice,
                     paymentItemDto.quantity,
                 );
@@ -145,7 +144,7 @@ export class CalculationService {
             paymentItem.originalUnitAmount = itemPriceDefault[0].itemPrice || 0;
             paymentItem.unitAmount = itemPriceActive[0].itemPrice;
             paymentItem.unit = realItemFind.unit;
-            totalAmt = ItemCalculationUtil.addNumberValues(
+            totalAmt = AmountCalculationUtil.addNumberValues(
                 totalAmt,
                 paymentItem.totalAmount,
             );
@@ -155,7 +154,7 @@ export class CalculationService {
                 paymentItem.totalAmount,
                 taxPercentBySaleMode,
             );
-            taxTotal = ItemCalculationUtil.addNumberValues(
+            taxTotal = AmountCalculationUtil.addNumberValues(
                 taxTotal,
                 taxDto.taxAmount,
             );
@@ -166,7 +165,7 @@ export class CalculationService {
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
             paymentItem.quantity = paymentItemDto.quantity;
             paymentItem.appComissionPercent = comission.percent;
-            paymentItem.appComissionAmount = ItemCalculationUtil.calculateComissionAmountByPercent(
+            paymentItem.appComissionAmount = AmountCalculationUtil.calculateComissionAmountByPercent(
                 admSettings.comissionsCalculatedFromNet ? paymentItem.unTaxAmount : paymentItem.totalAmount,
                 comission.percent,
             );

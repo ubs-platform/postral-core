@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
-import { CalculationService } from "../service/calculation.service";
+import { OrderCalculationService } from "../service/order-calculation.service";
 import { ItemListCalculationDto, ItemListCalculationInputDto } from "@tk-postral/payment-common/dto/calculation.dto";
 
 @Controller('calculation')
@@ -8,7 +8,7 @@ export class CalculationController {
     /**
      *
      */
-    constructor(private readonly calculationService: CalculationService
+    constructor(private readonly calculationService: OrderCalculationService
     ) {
 
     }

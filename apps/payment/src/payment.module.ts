@@ -37,7 +37,7 @@ import { ItemTaxService } from './service/item-tax.service';
 import { ItemTaxMapper } from './mapper/item-tax.mapper';
 import { MicroserviceController } from './controller/microservice-controller';
 import { CalculationController } from './controller/calculation.controller';
-import { CalculationService } from './service/calculation.service';
+import { OrderCalculationService } from './service/order-calculation.service';
 import { PaymentOperationManagementService } from './service/payment-operation-management.service';
 import { TransactionSearchController } from './controller/transaction-search.controller';
 import { SellerPaymentOrderSearchService } from './service/transaction-search.service';
@@ -126,7 +126,7 @@ import { AdminSettingsService } from './service/admin-settings.service';
         AddressMapper,
         ItemTaxMapper,
         ItemTaxService,
-        CalculationService,
+        OrderCalculationService,
         PaymentOperationManagementService,
         SellerPaymentOrderSearchService,
         TransactionMapper,

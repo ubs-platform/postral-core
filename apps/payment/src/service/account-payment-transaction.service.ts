@@ -6,7 +6,7 @@ import { Repository } from "typeorm/repository/Repository";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UUID } from "typeorm/driver/mongodb/bson.typings";
 import { randomUUID } from "crypto";
-import { ItemCalculationUtil } from "../util/calcs/item-calculations";
+import { AmountCalculationUtil } from "../util/calcs/amount-calculations";
 import { TypeAssertionUtil } from "../util/type-assertion";
 import { Or } from "typeorm";
 
@@ -97,8 +97,8 @@ export class AccountPaymentTransactionService {
             sellerTransaction.corelationId = korelasyon;
             if (transactionPerSellerAccountMap.has(paymentItem.sellerAccountId)) {
                 sellerTransaction = transactionPerSellerAccountMap.get(paymentItem.sellerAccountId)!;
-                sellerTransaction.amount = ItemCalculationUtil.addNumberValues(sellerTransaction.amount, paymentItem.totalAmount);
-                sellerTransaction.taxAmount = ItemCalculationUtil.addNumberValues(sellerTransaction.taxAmount, paymentItem.taxAmount);
+                sellerTransaction.amount = AmountCalculationUtil.addNumberValues(sellerTransaction.amount, paymentItem.totalAmount);
+                sellerTransaction.taxAmount = AmountCalculationUtil.addNumberValues(sellerTransaction.taxAmount, paymentItem.taxAmount);
             } else {
                 TypeAssertionUtil.assertIsNumber(paymentItem.totalAmount, "paymentItem totalAmount must be a number");
                 TypeAssertionUtil.assertIsNumber(paymentItem.taxAmount, "paymentItem taxAmount must be a number");

@@ -6,7 +6,7 @@ import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { AccountService } from './account.service';
-import { CalculationService } from './calculation.service';
+import { OrderCalculationService } from './order-calculation.service';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentChannelStatusDTO,
@@ -16,11 +16,8 @@ import {
     RefundRequestDTO,
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil } from '../util/type-assertion';
-import { ItemCalculationUtil } from '../util/calcs/item-calculations';
+import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
-import { Cron } from '@nestjs/schedule';
-import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
-import { exec } from 'child_process';
 import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
@@ -31,7 +28,7 @@ export class PaymentOperationManagementService {
      */
     constructor(
         private eventSenderService: EventSenderService,
-        private calcService: CalculationService,
+        private calcService: OrderCalculationService,
         private adminSettingsService: AdminSettingsService,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
@@ -70,7 +67,7 @@ export class PaymentOperationManagementService {
             ],
         });
 
-        return ItemCalculationUtil.addNumberValues(
+        return AmountCalculationUtil.addNumberValues(
             ...paymentOperations.map((op) => op.amount),
         );
     }
@@ -79,7 +76,7 @@ export class PaymentOperationManagementService {
         const totalRefundAmount = refundPayment.totalAmount;
         const totalPaidAmount = purchasePayment.totalAmount;
 
-        const refundRatio = RatioCalculationUtil.calculateRefundRatio(totalRefundAmount, totalPaidAmount);
+        const refundRatio = AmountCalculationUtil.divideNumberValues(totalRefundAmount, totalPaidAmount);
 
         const alreadyCompletedOps = await this.paymentChannelOperationRepo.find({
             where: [
@@ -88,7 +85,7 @@ export class PaymentOperationManagementService {
         });
         for (let index = 0; index < alreadyCompletedOps.length; index++) {
             const element = alreadyCompletedOps[index];
-            const refundAmountForThisOp = RatioCalculationUtil.multiplyTwoValues(element.amount, refundRatio);
+            const refundAmountForThisOp = AmountCalculationUtil.multiplyNumberValues(element.amount, refundRatio);
             if (refundAmountForThisOp <= 0) {
                 continue;
             }

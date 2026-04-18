@@ -6,8 +6,7 @@ import { ReportQuery } from '../entity/report-query.entity';
 import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
 import { ReportComission, ReportTaxGroup } from '../entity';
 import { PaymentChannelOperation } from '../entity/payment-channel-operation.entity';
-import { ItemCalculationUtil } from '../util/calcs/item-calculations';
-import { RatioCalculationUtil } from '../util/calcs/ratio-calculations';
+import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
@@ -132,17 +131,17 @@ export class ReportDigestionService {
         for (const item of paymentItems) {
             if (item.sellerAccountId !== accountId) continue;
             if (paymentType === 'PURCHASE') {
-                report.totalSaleAmount = ItemCalculationUtil.addNumberValues(item.totalAmount, report.totalSaleAmount || 0);
-                report.totalSaleTaxAmount = ItemCalculationUtil.addNumberValues(item.taxAmount, report.totalSaleTaxAmount || 0);
+                report.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalSaleAmount || 0);
+                report.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalSaleTaxAmount || 0);
             } else if (paymentType === 'REFUND') {
-                report.totalRefundAmount = ItemCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
-                report.totalRefundTaxAmount = ItemCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
+                report.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
+                report.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
             }
         }
-        report.paymentCount = ItemCalculationUtil.addNumberValues(report.paymentCount, 1);
-        report.netTaxAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
-        report.netSaleAmount = ItemCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
-        report.netRevenue = ItemCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
+        report.paymentCount = AmountCalculationUtil.addNumberValues(report.paymentCount, 1);
+        report.netTaxAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
+        report.netSaleAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
+        report.netRevenue = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
     }
 
     private static expenseDisplayWeight(expenseKey: string): number {
@@ -181,17 +180,17 @@ export class ReportDigestionService {
 
             if (sellerItemsTotal <= 0 || payment.totalAmount <= 0) continue;
 
-            const ratio = ItemCalculationUtil.divisionNumberValues(sellerItemsTotal, payment.totalAmount);
-            const sellerFee = RatioCalculationUtil.multiplyTwoValues(operation.providerFee, ratio);
+            const ratio = AmountCalculationUtil.divideNumberValues(sellerItemsTotal, payment.totalAmount);
+            const sellerFee = AmountCalculationUtil.multiplyNumberValues(operation.providerFee, ratio);
 
             if (sellerFee <= 0) continue;
 
             const feeExpense = await this.fetchOrCreateReportExpense(reportId, accountId, PAYMENT_SERVICE_FEE, payment.currency);
-            feeExpense.expenseAmount = ItemCalculationUtil.addNumberValues(feeExpense.expenseAmount, sellerFee);
+            feeExpense.expenseAmount = AmountCalculationUtil.addNumberValues(feeExpense.expenseAmount, sellerFee);
             await this.reportExpenseRepo.save(feeExpense);
 
             const totalExpense = await this.fetchOrCreateReportExpense(reportId, accountId, REPORT_TOTAL, payment.currency);
-            totalExpense.expenseAmount = ItemCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
+            totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
             await this.reportExpenseRepo.save(totalExpense);
         }
     }
@@ -206,18 +205,18 @@ export class ReportDigestionService {
             if (item.itemClass) {
                 const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
                 const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, payment.currency);
-                itemClassExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
+                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
                 await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
 
             const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
             const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, payment.currency);
-            totalComissionExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
+            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
             await this.reportExpenseRepo.save(totalComissionExpenseReport);
 
             const reportTotalExpenseKey = REPORT_TOTAL;
             const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, payment.currency);
-            reportTotalExpenseReport.expenseAmount = ItemCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
+            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
             await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
     }
