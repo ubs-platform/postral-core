@@ -52,9 +52,9 @@ export class AccountService extends BaseCrudService<
         private authUtilService: AuthUtilService,
     ) {
         super(new TypeormRepositoryWrap<Account, string>(repo));
-        this.encryptSensitiveData().catch((e) => {
-            console.error('Error encrypting sensitive data on service initialization:', e);
-        });
+        // this.encryptSensitiveData().catch((e) => {
+        //     console.error('Error encrypting sensitive data on service initialization:', e);
+        // });
     }
 
     override async afterCreate(m: AccountDTO, input: AccountDTO, user?: UserAuthBackendDTO): Promise<void> {
@@ -200,18 +200,18 @@ export class AccountService extends BaseCrudService<
     }
 
     // Yüklendiği zaman şifrelenmeyen veriler şifrelensin. Bütün accountlar gelsin şifrelenmeyenleri çözmeye çalışsın eğer çözemezse hata verirse şifreleyip kaydetsin. Böylece zamanla bütün veriler şifrelenmiş olur.
-    async encryptSensitiveData() {
-        const accounts = await this.repo.find();
-        for (const account of accounts) {
-            try {
-                await this.accountMapper.toDto(account, false);
-            } catch (e) {
-                // exec(`kdialog --msgbox "Encrypting sensitive data for account ${account.id} due to error: ${e.message}"`);
-                const resolvedWithRedacted = await this.accountMapper.toDto(account, true);
-                resolvedWithRedacted.legalIdentity = account.legalIdentity;
-                this.accountMapper.updateEntity(account, resolvedWithRedacted);
-                await this.repo.save(account);
-            }
-        }
-    }
+    // async encryptSensitiveData() {
+    //     const accounts = await this.repo.find();
+    //     for (const account of accounts) {
+    //         try {
+    //             await this.accountMapper.toDto(account);
+    //         } catch (e) {
+    //             // exec(`kdialog --msgbox "Encrypting sensitive data for account ${account.id} due to error: ${e.message}"`);
+    //             const resolvedWithRedacted = await this.accountMapper.toDto(account);
+    //             resolvedWithRedacted.legalIdentity = account.legalIdentity;
+    //             this.accountMapper.updateEntity(account, resolvedWithRedacted);
+    //             await this.repo.save(account);
+    //         }
+    //     }
+    // }
 }
