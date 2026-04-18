@@ -3,7 +3,10 @@ import { Injectable } from "@nestjs/common";
 @Injectable()
 export class CryptionUtil {
 
-    encryptWithConfig(text: string, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+    encryptWithConfig(text: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+        if (!text) {
+            return text || ""; // Return empty string if input is null or undefined
+        }
         try {
             const key = Buffer.from(process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_KEY!, 'utf-8');
             const iv = Buffer.from(process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_IV!, 'utf-8');
@@ -21,8 +24,13 @@ export class CryptionUtil {
 
     }
 
-    decryptWithConfig(encryptedText: string, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+    decryptWithConfig(encryptedText: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+        if (!encryptedText) {
+            return encryptedText || ""; // Return empty string if input is null or undefined
+        }
+        
         try {
+            
             const key = Buffer.from(process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_KEY!, 'utf-8');
             const iv = Buffer.from(process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_IV!, 'utf-8');
             const algorithm = process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ALGORITHM!;
