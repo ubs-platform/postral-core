@@ -7,24 +7,21 @@ import {
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
-import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
+import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
 import { ItemTaxEntity } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { ItemTaxService } from '../service/item-tax.service';
 import { AuthUtilService } from '../service/auth-util.service';
 
 @Controller('item-tax')
-export class ItemTaxController extends BaseCrudControllerGenerator<
+@CrudControllerConfig({ authorization: { ALL: { needsAuthenticated: true } } })
+export class ItemTaxController extends BaseCrudController<
     ItemTaxEntity,
     String,
     ItemTaxDTO,
     ItemTaxDTO,
     ItemTaxSearchDTO
->({
-    authorization: {
-        ALL: { needsAuthenticated: true },
-    },
-}) {
+> {
     constructor(
         protected readonly service: ItemTaxService,
         protected readonly authUtilService: AuthUtilService,

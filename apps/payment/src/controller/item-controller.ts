@@ -30,7 +30,7 @@ import {
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { identity, lastValueFrom } from 'rxjs';
-import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
+import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
 import { Account } from '../entity';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { Item } from '../entity/item.entity';
@@ -38,17 +38,14 @@ import { ItemCrudService } from '../service/item-crud.service';
 import { ItemPriceService } from '../service/item-price.service';
 
 @Controller('item')
-export class ItemController extends BaseCrudControllerGenerator<
+@CrudControllerConfig({ authorization: { ALL: { needsAuthenticated: true } } })
+export class ItemController extends BaseCrudController<
     Item,
     String,
     ItemAddDTO,
     ItemDTO,
     ItemSearchDTO
->({
-    authorization: {
-        ALL: { needsAuthenticated: true },
-    },
-}) {
+> {
     constructor(
         protected readonly service: ItemCrudService,
         protected readonly eoClient: EntityOwnershipService,

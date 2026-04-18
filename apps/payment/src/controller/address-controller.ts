@@ -7,24 +7,21 @@ import {
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
-import { BaseCrudControllerGenerator } from '@ubs-platform/crud-base';
+import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { AddressService } from '../service/address.service';
 import { Address } from '../entity/address.entity';
 import { AuthUtilService } from '../service/auth-util.service';
 
 @Controller('address')
-export class AddressController extends BaseCrudControllerGenerator<
+@CrudControllerConfig({ authorization: { ALL: { needsAuthenticated: true } } })
+export class AddressController extends BaseCrudController<
     Address,
     string,
     AccountAddressDto,
     AccountAddressDto,
     AddressSearchParamsDTO
->({
-    authorization: {
-        ALL: { needsAuthenticated: true },
-    },
-}) {
+> {
     constructor(
         protected readonly service: AddressService,
         protected readonly authUtilService: AuthUtilService,
