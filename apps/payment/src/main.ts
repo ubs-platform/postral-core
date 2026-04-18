@@ -11,10 +11,10 @@ import { PaymentModule } from './payment.module';
 async function bootstrap() {
     const app = await NestFactory.create<NestFastifyApplication>(
         PaymentModule,
-        new FastifyAdapter(),
+        new FastifyAdapter() as any,
     );
     const globalPrefix = 'api';
-    app.register(fastifyMultipart);
+    app.register(fastifyMultipart as any);
     app.connectMicroservice(
         MicroserviceSetupUtil.setupServer(''),
     );

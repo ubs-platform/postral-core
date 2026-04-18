@@ -1,9 +1,16 @@
 import { AccountDTO } from '@tk-postral/payment-common';
 import { Account } from '../entity/account.entity';
 import { Inject, Injectable } from '@nestjs/common';
+import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()
 export class AccountMapper {
+    /**
+     *
+     */
+    constructor(private cryptionUtil: CryptionUtil) {
+
+    }
     async toDtoList(exist: Account[]): Promise<AccountDTO[]> {
         const items: AccountDTO[] = [];
         for (let index = 0; index < exist.length; index++) {
@@ -13,10 +20,15 @@ export class AccountMapper {
         return items;
     }
 
-    async toDto(ac: Account): Promise<AccountDTO> {
+    async toDto(ac: Account, redactSensitive = false): Promise<AccountDTO> {
+
+        const legalIdentity = !redactSensitive ?
+            ac.legalIdentity ? this.cryptionUtil.decryptWithConfig(ac.legalIdentity, "USE_DEFAULT") : ""
+            : "REDACTED"
+
         return {
             id: ac.id,
-            legalIdentity: ac.legalIdentity,
+            legalIdentity: legalIdentity,
             name: ac.name,
             type: ac.type,
             defaultAddressId: ac.defaultAddressId,
@@ -28,8 +40,11 @@ export class AccountMapper {
     }
 
     async updateEntity(entity: Account, dto: AccountDTO): Promise<Account> {
-        // existing.id = dto.id,
-        entity.legalIdentity = dto.legalIdentity;
+        // Sadece legalIdentity güncellenirken şifreleme yapılır. Diğer alanlar doğrudan atanır.
+        if (dto.legalIdentity && dto.legalIdentity !== "REDACTED") {
+            entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT");
+        }
+        // entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity);
         entity.name = dto.name;
         entity.type = dto.type;
         entity.defaultAddressId = dto.defaultAddressId;
