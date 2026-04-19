@@ -3,6 +3,7 @@ import {
     PaymentOperationStatus,
     PaymentStatus,
 } from '@tk-postral/payment-common';
+import { MoneyDbField } from './base';
 
 @Entity()
 export class PaymentChannelOperation {
@@ -18,7 +19,7 @@ export class PaymentChannelOperation {
     @Column({ type: 'varchar', nullable: true })
     redirectUrl: string = '';
 
-    @Column({ type: 'float', default: 0 })
+    @Column({type: "decimal", precision: 19, scale: 4, default: 0})
     amount: number = 0;
 
     // hata verirse manuel kontrollere geçebiliriz...
@@ -37,7 +38,7 @@ export class PaymentChannelOperation {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date = new Date();
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     providerFee: number = 0;
 
     /**

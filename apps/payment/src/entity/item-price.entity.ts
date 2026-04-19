@@ -4,32 +4,33 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ItemPriceDefaults } from '@tk-postral/payment-common';
+import { MoneyDbField } from './base';
 @Entity()
 export class ItemPrice {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    itemId: string;
+    itemId!: string;
 
     @Column({ default: ItemPriceDefaults.VARIATION_DEFAULT })
-    variation: string;
+    variation!: string;
 
-    @Column({ default: 0, type: 'float' })
-    itemPrice: number;
+    @Column(MoneyDbField)
+    itemPrice: number = 0;
 
     // @Column({ default: 0, type: 'float' })
     // taxPercent: number;
 
     @Column({ default: ItemPriceDefaults.REGION_ANY })
-    region: string;
+    region!: string;
 
     @Column()
-    currency: string;
+    currency!: string;
 
     /* 0 default fiyatıdır, activityOrder en yüksek olan tercih edilir. Kampanya gibi durumlarda bu artırılarak önceliği yükselir ve bu fiyattan verilir */
     @Column({ default: 0, type: 'bigint' })
-    activityOrder: number;
+    activityOrder: number = 0;
 
     @Column({ nullable: true, type: 'datetime' })
     activeStartAt?: Date;

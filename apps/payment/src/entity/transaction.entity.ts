@@ -18,6 +18,7 @@ import {
     SellerPaymentOrderType,
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
+import { MoneyDbField } from './base';
 
 @Entity()
 @Unique(['paymentId', "targetAccountId"])
@@ -25,13 +26,13 @@ export class SellerPaymentOrder extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     amount: number = 0;
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     taxAmount: number = 0;
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     untaxedAmount: number = 0;
 
     @Column()

@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Payment } from './payment.entity';
+import { MoneyDbField } from './base';
 
 @Entity()
 export class PostralPaymentItem {
@@ -24,25 +25,25 @@ export class PostralPaymentItem {
     @Column()
     name!: string;
 
-    @Column({ type: 'float' })
+     @Column(MoneyDbField)
     quantity: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     totalAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     originalUnitAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     unitAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     taxPercent: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     taxAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     unTaxAmount: number = 0;
 
     @ManyToOne(() => Payment, (a) => a.items, {
@@ -62,7 +63,7 @@ export class PostralPaymentItem {
     @Column({ default: false })
     refunded: boolean = false;
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     refundCount: number = 0;
 
     @Column({ nullable: true })
@@ -79,16 +80,16 @@ export class PostralPaymentItem {
     @Column()
     itemClass: string = "";
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     appComissionAmount: number = 0;
 
-    @Column({ type: 'float', default: 0 })
+    @Column(MoneyDbField)
     appComissionPercent: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     paymentServiceFeeAmount: number = 0;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     paymentServiceFeePercent: number = 0;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })

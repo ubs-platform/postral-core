@@ -22,6 +22,7 @@ export class AppComission {
     @Column({nullable: true})
     itemClass?: string;
 
+    // 100 üzerinden yüzde olarak komisyon oranı
     @Column({type: 'float'})
     percent: number = 0;
 

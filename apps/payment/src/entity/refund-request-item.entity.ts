@@ -6,44 +6,45 @@ import {
     BaseEntity,
 } from 'typeorm';
 import { RefundRequest } from './refund-request.entity';
+import { MoneyDbField } from './base';
 
 @Entity()
 export class RefundRequestItem extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @ManyToOne(() => RefundRequest, (request) => request.items, {
         onDelete: 'CASCADE',
     })
-    refundRequest: RefundRequest;
+    refundRequest!: RefundRequest;
 
     @Column()
-    variation: string;
+    variation!: string;
 
     @Column()
-    paymentItemId: string;
+    paymentItemId!: string;
 
     @Column()
-    realItemId: string;
+    realItemId!: string;
 
-    @Column({ type: 'float' })
-    refundCount: number;
+    @Column(MoneyDbField)
+    refundCount: number = 0;
 
     @Column({ nullable: true })
     itemName?: string;
 
-    @Column({ type: 'float', nullable: true })
-    unitAmount?: number;
+    @Column(MoneyDbField)
+    unitAmount?: number = 0;
 
-    @Column({ type: 'float', nullable: true })
-    unitAmountWithoutTax?: number;
+    @Column(MoneyDbField)
+    unitAmountWithoutTax?: number = 0;
 
-    @Column({ type: 'float', nullable: true })
-    refundAmount?: number;
+    @Column(MoneyDbField)
+    refundAmount?: number = 0;
 
-    @Column({ type: 'float', nullable: true })
-    refundAmountWithoutTax?: number;
+    @Column(MoneyDbField)
+    refundAmountWithoutTax?: number = 0;
 
-    @Column({ type: 'float', nullable: true })
-    refundTaxAmount?: number;
+    @Column(MoneyDbField)
+    refundTaxAmount?: number = 0;
 }
