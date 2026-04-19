@@ -7,50 +7,51 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
 } from 'typeorm';
+import { MoneyDbField } from './base';
 
 @Entity()
 export class AccountPaymentTransaction {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    corelationId: string;
+    corelationId!: string;
 
     // uuid
     @Column()
-    accountId: string;
+    accountId!: string;
 
     @Column()
-    accountName: string;
+    accountName!: string;
 
     @Column()
-    paymentId: string;
+    paymentId!: string;
 
     @Column({ nullable: true })
     paymentSellerOrderId?: string;
 
     @Column()
-    type: "DEBIT" | "CREDIT";
+    type!: "DEBIT" | "CREDIT";
 
     @Column({ type: "varchar", length: 20 })
-    status: PaymentStatus;
+    status!: PaymentStatus;
 
-    @Column()
-    amount: number;
+    @Column(MoneyDbField)
+    amount: number = 0;
 
-    @Column()
-    taxAmount: number;
+    @Column(MoneyDbField)
+    taxAmount: number = 0;
 
     @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP" })
-    creationDate: Date;
+    creationDate: Date = new Date();
 
     @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updateDate: Date;
+    updateDate: Date = new Date();
 
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
-    operationNote: string;
+    operationNote: string = "";
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
-    description: string;
+    description: string = "";
 }

@@ -5,13 +5,13 @@ import { ReportDateGrouping, ReportQueryType } from '@tk-postral/payment-common'
 @Entity()
 export class ReportQuery {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ length: 200 })
-    name: string;
+    name!: string;
 
     @Column({ type: 'mediumtext', nullable: true, default: '' })
-    description: string;
+    description!: string;
 
     // Query tipini filtrelemeye gerek yok tüm gelir değerleri (ciro, net, gider) tek bir query'de toplanacak. 
 
@@ -32,18 +32,18 @@ export class ReportQuery {
      * ALL → single report for all time
      */
     @Column({ type: 'varchar', length: 10, default: 'MONTHLY' })
-    dateGrouping: ReportDateGrouping;
+    dateGrouping!: ReportDateGrouping;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({
         type: 'datetime',
         default: () => 'CURRENT_TIMESTAMP',
         onUpdate: 'CURRENT_TIMESTAMP',
     })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @OneToMany(() => Report, (r) => r.query, { cascade: true })
-    reports: Report[];
+    reports!: Report[];
 }
