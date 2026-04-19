@@ -12,6 +12,7 @@ import { PostralPaymentTax } from './payment-tax.entity';
 import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
 import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
+import { MoneyDbField } from './base';
 
 @Entity()
 export class Payment {
@@ -24,10 +25,10 @@ export class Payment {
     @Column()
     type!: 'PURCHASE' | 'REFUND';
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     totalAmount!: number;
 
-    @Column({ type: 'float' })
+    @Column(MoneyDbField)
     taxAmount!: number;
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...

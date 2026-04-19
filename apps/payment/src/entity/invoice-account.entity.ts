@@ -4,19 +4,19 @@ import { Payment } from './payment.entity';
 @Entity()
 export class InvoiceAccount {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    realAccountId: string;
+    realAccountId!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
     @Column()
-    legalIdentity: string;
+    legalIdentity!: string;
 
     @Column()
-    type: 'INDIVIDUAL' | 'COMMERCIAL';
+    type!: 'INDIVIDUAL' | 'COMMERCIAL';
 
     @Column({ nullable: true })
     bankName?: string;

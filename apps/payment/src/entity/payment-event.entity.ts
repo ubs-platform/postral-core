@@ -3,26 +3,26 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class PostralPaymentEvent {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ length: 100 })
-    eventType: string;
+    eventType!: string;
 
     @Column({ length: 100 })
-    aggregateType: string;
+    aggregateType!: string;
 
     @Column()
-    aggregateId: string;
+    aggregateId!: string;
 
     @Column({ nullable: true })
-    sellerAccountId: string;
+    sellerAccountId?: string;
 
     @Column({ nullable: true })
-    accountId: string;
+    accountId?: string;
 
     @Column({ type: 'longtext' })
-    payload: string;
+    payload!: string;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    occurredAt: Date;
+    occurredAt!: Date;
 }

@@ -11,10 +11,10 @@ import {
 @Entity()
 export class ItemTaxEntity {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    taxName: string;
+    taxName!: string;
 
     /**
      * This field is used to determine if the tax is public or private.
@@ -30,19 +30,19 @@ export class ItemTaxEntity {
         orphanedRowAction: 'delete',
     })
     @JoinColumn()
-    variations: ItemTaxVariation[];
+    variations!: ItemTaxVariation[];
 }
 @Entity()
 export class ItemTaxVariation {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    taxMode: string;
+    taxMode!: string;
 
     @Column()
-    taxRate: number;
+    taxRate!: number;
 
     @ManyToOne(() => ItemTaxEntity, (itemTax) => itemTax.variations)
-    itemTax: ItemTaxEntity;
+    itemTax!: ItemTaxEntity;
 }

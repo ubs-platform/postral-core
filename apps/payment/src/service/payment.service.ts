@@ -20,7 +20,7 @@ import { TransactionMapper } from '../mapper/transaction.mapper';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { SellerPaymentOrderService } from './transaction.service';
 import { AccountService } from './account.service';
-import { CalculationService } from './calculation.service';
+import { OrderCalculationService } from './order-calculation.service';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { Subject } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
@@ -43,7 +43,7 @@ export class PaymentService {
         private eventSenderService: EventSenderService,
         private sellerPaymentOrderService: SellerPaymentOrderService,
         private accountService: AccountService,
-        private calcService: CalculationService,
+        private calcService: OrderCalculationService,
         private paymentOperationManagementService: PaymentOperationManagementService,
         private accountPaymentTransactionService: AccountPaymentTransactionService,
         private reportDigestionService: ReportDigestionService,

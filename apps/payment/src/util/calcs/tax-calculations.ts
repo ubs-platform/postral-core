@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from '../array-to-object';
 import { TypeAssertionUtil } from '../type-assertion';
-import { ItemCalculationUtil } from './item-calculations';
+import { AmountCalculationUtil } from './amount-calculations';
 
 export class TaxCalculationUtil {
     static calculateUntaxedPrice(fullAmount: number, taxAmount: number) {
@@ -14,7 +14,7 @@ export class TaxCalculationUtil {
             taxAmount,
             'Tax amount must be a number',
         );
-        return fullAmount - taxAmount;
+        return AmountCalculationUtil.minusNumberValues(fullAmount, taxAmount);
     }
 
     static calculatePercent(fullAmount: number, taxAmount: number) {
@@ -28,7 +28,10 @@ export class TaxCalculationUtil {
         );
 
         const untaxAmount = this.calculateUntaxedPrice(fullAmount, taxAmount);
-        return (100 * taxAmount) / untaxAmount;
+        return AmountCalculationUtil.multiplyNumberValues(
+            AmountCalculationUtil.divideNumberValues(taxAmount, untaxAmount),
+            100,
+        );
     }
 
     static calculateTaxAmount(fullAmount: number, percent: number) {
@@ -37,8 +40,11 @@ export class TaxCalculationUtil {
             'Full amount must be a number',
         );
         TypeAssertionUtil.assertIsNumber(percent, 'Percent must be a number');
-        const fullPercent = percent + 100;
-        return (percent * fullAmount) / fullPercent;
+        const fullPercent = AmountCalculationUtil.addNumberValues(percent, 100);
+        return AmountCalculationUtil.divideNumberValues(
+            AmountCalculationUtil.multiplyNumberValues(percent, fullAmount),
+            fullPercent,
+        );
     }
 
     static generateTaxDto(
@@ -87,12 +93,12 @@ export class TaxCalculationUtil {
             taxTotal = 0;
         for (let index = 0; index < taxes.length; index++) {
             const tax = taxes[index];
-            fullTotal = ItemCalculationUtil.addNumberValues(
+            fullTotal = AmountCalculationUtil.addNumberValues(
                 fullTotal,
                 tax.fullAmount,
             );
 
-            taxTotal = ItemCalculationUtil.addNumberValues(
+            taxTotal = AmountCalculationUtil.addNumberValues(
                 taxTotal,
                 tax.taxAmount,
             );

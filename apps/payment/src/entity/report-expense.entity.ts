@@ -1,4 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { MoneyDbField } from "./base";
 
 @Entity("report_expense")
 @Unique(["reportId", "accountId","expenseKey"])
@@ -24,7 +25,7 @@ export class ReportExpense {
     @Column({ type: "varchar", length: 600, nullable: true })
     expenseKey!: string;
 
-    @Column({ default: 0, type: 'float' })
+    @Column(MoneyDbField)
     expenseAmount: number = 0;
 
     @Column({ type: "varchar", nullable: true })
