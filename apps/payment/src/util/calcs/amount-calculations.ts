@@ -36,17 +36,17 @@ export class AmountCalculationUtil {
     }
 
     static multiplyNumberValues(...values: number[]): number {
-        let biggo = new BigJs(1);
+        let startValue = new BigJs(1);
         for (let i = 0; i < values.length; i++) {
-            let value = values[i];
-            value = Number(value);
+            let multiplierItem = values[i];
+            multiplierItem = Number(multiplierItem);
             TypeAssertionUtil.assertIsNumber(
-                value,
+                multiplierItem,
                 `Value at index ${i} must be a number`,
             );
-            biggo = biggo.times(value);
+            startValue = startValue.times(multiplierItem);
         }
-        return Number(biggo);
+        return Number(startValue);
     }
 
 
@@ -60,11 +60,11 @@ export class AmountCalculationUtil {
             'Initial value must be a number',
         );
 
-        const bolen = this.multiplyNumberValues(...values);
-        if (bolen === 0) {
+        const divisor = this.multiplyNumberValues(...values);
+        if (divisor === 0) {
             throw new Error('Division by zero is not allowed');
         }
-        return new BigJs(initialValue).div(bolen).toNumber();
+        return new BigJs(initialValue).div(divisor).toNumber();
 
     }
 

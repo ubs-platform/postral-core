@@ -1,6 +1,6 @@
 import { BaseReport } from "@tk-postral/payment-common";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
-import { MoneyDbField } from "./base";
+import { BigintDbField, MoneyDbField } from "./base";
 
 /**
  * Vergi oranlarına göre gruplanmış rapor verisi. Bir Report'un birden fazla ReportTaxGroup'u olabilir.
@@ -28,7 +28,7 @@ export class ReportTaxGroup implements BaseReport {
     currency: string = "TRY";
 
     // --- Asıl hesap kısımları ---
-    @Column({ type: "bigint", default: 0 })
+    @Column(BigintDbField)
     paymentCount: number = 0;
 
 

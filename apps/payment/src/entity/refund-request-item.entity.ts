@@ -40,10 +40,10 @@ export class RefundRequestItem extends BaseEntity {
     unitAmountWithoutTax?: number = 0;
 
     @Column(MoneyDbField)
-    refundAmount?: number = 0;
+    refundAmount: number = 0;
 
     @Column(MoneyDbField)
-    refundAmountWithoutTax?: number = 0;
+    refundAmountWithoutTax: number = 0;
 
     @Column(MoneyDbField)
     refundTaxAmount?: number = 0;

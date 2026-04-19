@@ -19,7 +19,7 @@ export class PaymentChannelOperation {
     @Column({ type: 'varchar', nullable: true })
     redirectUrl: string = '';
 
-    @Column({type: "decimal", precision: 19, scale: 4, default: 0})
+    @Column(MoneyDbField)
     amount: number = 0;
 
     // hata verirse manuel kontrollere geçebiliriz...

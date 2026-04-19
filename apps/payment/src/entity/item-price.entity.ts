@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ItemPriceDefaults } from '@tk-postral/payment-common';
-import { MoneyDbField } from './base';
+import { BigintDbField, MoneyDbField } from './base';
 @Entity()
 export class ItemPrice {
     @PrimaryGeneratedColumn('uuid')
@@ -29,7 +29,8 @@ export class ItemPrice {
     currency!: string;
 
     /* 0 default fiyatıdır, activityOrder en yüksek olan tercih edilir. Kampanya gibi durumlarda bu artırılarak önceliği yükselir ve bu fiyattan verilir */
-    @Column({ default: 0, type: 'bigint' })
+    // Matematiksel işlemler yok ama konması bir zarar vermeyeceği için bigint olarak bıraktım.
+    @Column(BigintDbField)
     activityOrder: number = 0;
 
     @Column({ nullable: true, type: 'datetime' })
