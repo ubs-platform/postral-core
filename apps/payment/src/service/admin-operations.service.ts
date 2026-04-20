@@ -4,7 +4,7 @@ import { AddressService } from "./address.service";
 import { AdminSettingsService } from "./admin-settings.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Account, Address, InvoiceAccount, InvoiceAddress } from "../entity";
-import { Repository } from "typeorm/repository/Repository.js";
+import { Repository } from "typeorm";
 import { CryptionUtil } from "../util/cryption-util";
 import { ReportDigestionService } from "./report-digestion.service";
 
