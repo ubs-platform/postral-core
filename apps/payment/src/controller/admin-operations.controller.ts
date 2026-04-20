@@ -11,11 +11,11 @@ export class AdminOperationsController {
 
     @Post("encrypt-sensitive-data")
     async encryptSensitiveData() {
-        await this.admOps.changeAllSensitiveDataToEncrypted("ENCRYPTED");
+        await this.admOps.changeAllSensitiveData("ENCRYPTED");
     }
 
     @Post("decrypt-sensitive-data")
     async decryptSensitiveData() {
-        await this.admOps.changeAllSensitiveDataToEncrypted("DECRYPTED");
+        await this.admOps.changeAllSensitiveData("DECRYPTED");
     }
 }

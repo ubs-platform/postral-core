@@ -6,6 +6,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Account, Address, InvoiceAccount, InvoiceAddress } from "../entity";
 import { Repository } from "typeorm/repository/Repository.js";
 import { CryptionUtil } from "../util/cryption-util";
+import { ReportDigestionService } from "./report-digestion.service";
 
 const ACCOUNT_SENSITIVE_FIELDS: (keyof (Account & InvoiceAccount))[] = [
     'legalIdentity', 'bankIban', 'bankBic', 'taxOffice',
@@ -28,9 +29,7 @@ export class AdminOperationsService {
         @InjectRepository(InvoiceAddress) private invoiceAddressRepository: Repository<InvoiceAddress>,
         @InjectRepository(InvoiceAccount) private invoiceAccountRepository: Repository<InvoiceAccount>,
         private cryptUtil: CryptionUtil,
-        private accountService: AccountService,
-        private addressService: AddressService,
-        private adminSettingsService: AdminSettingsService,
+        private reportDigestionService: ReportDigestionService
     ) { }
 
     private transform(value: string | undefined, encrypt: boolean): string | undefined {
@@ -54,7 +53,11 @@ export class AdminOperationsService {
         return address;
     }
 
-    async changeAllSensitiveDataToEncrypted(to: "ENCRYPTED" | "DECRYPTED") {
+    async changeAllSensitiveData(to: "ENCRYPTED" | "DECRYPTED") {
+        const continuingOps = await this.reportDigestionService.isBusy();
+        if (continuingOps) {
+            throw new Error(`Cannot change sensitive data while report digestion operations are in progress.`);
+        }
         const encrypt = to === "ENCRYPTED";
         const [accounts, addresses, invoiceAccounts, invoiceAddresses] = await Promise.all([
             this.accountRepository.find(),

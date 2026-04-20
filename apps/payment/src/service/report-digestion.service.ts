@@ -253,6 +253,12 @@ export class ReportDigestionService {
     }
 
 
+    async isBusy(): Promise<boolean> {
+        const count = await this.reportPaymentRelationRepo.count({ where: { digestionStatus: Not("COMPLETED") } });
+        return count > 0;
+    }
+
+
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
     // ─────────────────────────────────────────────────────────────
