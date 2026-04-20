@@ -1,7 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { AccountService } from "./account.service";
-import { AddressService } from "./address.service";
-import { AdminSettingsService } from "./admin-settings.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Account, Address, InvoiceAccount, InvoiceAddress } from "../entity";
 import { Repository } from "typeorm";
