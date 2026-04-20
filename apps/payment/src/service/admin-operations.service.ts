@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Account, Address, InvoiceAccount, InvoiceAddress } from "../entity";
 import { Repository } from "typeorm";
@@ -38,14 +38,14 @@ export class AdminOperationsService {
 
     private transformAccountFields<T extends Record<string, any>>(account: T, encrypt: boolean): T {
         for (const field of ACCOUNT_SENSITIVE_FIELDS) {
-            account[field as string] = this.transform(account[field as string], encrypt);
-        }
+            (account as any)[field as string] = this.transform(account[field as string], encrypt);
+        } 
         return account;
     }
 
     private transformAddressFields<T extends Record<string, any>>(address: T, encrypt: boolean): T {
         for (const field of ADDRESS_SENSITIVE_FIELDS) {
-            address[field as string] = this.transform(address[field as string], encrypt);
+            (address as any)[field as string] = this.transform(address[field as string], encrypt);
         }
         return address;
     }
@@ -74,9 +74,13 @@ export class AdminOperationsService {
     }
 
     async changeAllSensitiveData(to: "ENCRYPTED" | "DECRYPTED") {
+        if (to === "ENCRYPTED" && process.env["POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED"] !== "true") {
+            throw new BadRequestException(`Encryption is not enabled in configuration.`);
+        }
+
         const continuingOps = await this.reportDigestionService.isBusy();
         if (continuingOps) {
-            throw new Error(`Cannot change sensitive data while report digestion operations are in progress.`);
+            throw new BadRequestException(`Cannot change sensitive data while report digestion operations are in progress.`);
         }
         const encrypt = to === "ENCRYPTED";
 
