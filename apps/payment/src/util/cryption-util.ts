@@ -3,13 +3,13 @@ import { Injectable } from "@nestjs/common";
 @Injectable()
 export class CryptionUtil {
 
-    encryptWithConfig(text: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+    encryptWithConfig(text: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string | null | undefined {
         if (process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "true") {
             console.warn('Encryption is disabled. Returning original text.');
-            return text || ""; // Return original text if encryption is disabled, or empty string if input is null or undefined
+            return text; // Preserve null/undefined when encryption is disabled
         }
-        if (!text) {
-            return text || ""; // Return empty string if input is null or undefined
+        if (text == null) {
+            return text; // Preserve null/undefined so optional fields round-trip correctly
         }
         try {
             const key = Buffer.from(process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_KEY!, 'utf-8');
@@ -28,13 +28,13 @@ export class CryptionUtil {
 
     }
 
-    decryptWithConfig(encryptedText: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string {
+    decryptWithConfig(encryptedText: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string | null | undefined {
         if (process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "true" && process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "false-decrypt") {
             console.warn('Decryption is disabled. Returning original encrypted text.');
-            return encryptedText || ""; // Return original encrypted text if decryption is disabled, or empty string if input is null or undefined
+            return encryptedText; // Preserve null/undefined when decryption is disabled
         }
-        if (!encryptedText) {
-            return encryptedText || ""; // Return empty string if input is null or undefined
+        if (encryptedText == null) {
+            return encryptedText; // Preserve null/undefined so optional fields round-trip correctly
         }
         // false-decrypt durumunda, şifrelenmiş veriyi çözümleyebiliriz ancak şifreleme işlemi devre dışı bırakılmıştır. Bu durumda, şifrelenmiş veriyi çözümleyebiliriz ancak yeni veriler şifrelenmeyecektir.
         // Bu durumda development ortamlarının uyumluluğu için her veri bir kere kaydedilmesi gerekiyor...
