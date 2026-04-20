@@ -38,10 +38,8 @@ export class AccountMapper {
 
 
     async updateEntity(entity: Account, dto: AccountDTO): Promise<Account> {
-        // Sadece legalIdentity güncellenirken şifreleme yapılır. Diğer alanlar doğrudan atanır.
+        // Hassas alanlar şifrelenerek güncellenir; diğer alanlar doğrudan atanır.
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT");
-
-        // entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity);
         entity.name = dto.name;
         entity.type = dto.type;
         entity.defaultAddressId = dto.defaultAddressId;
