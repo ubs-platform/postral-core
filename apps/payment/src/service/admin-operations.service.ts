@@ -50,24 +50,39 @@ export class AdminOperationsService {
         return address;
     }
 
+    private async processInBatches<T extends Record<string, any>>(
+        repository: Repository<T>,
+        transformFields: (entity: T, encrypt: boolean) => T,
+        encrypt: boolean,
+        batchSize = 500,
+    ): Promise<void> {
+        let skip = 0;
+
+        while (true) {
+            const batch = await repository.find({
+                take: batchSize,
+                skip,
+            });
+
+            if (batch.length === 0) {
+                break;
+            }
+
+            await repository.save(batch.map(entity => transformFields(entity, encrypt)));
+            skip += batch.length;
+        }
+    }
+
     async changeAllSensitiveData(to: "ENCRYPTED" | "DECRYPTED") {
         const continuingOps = await this.reportDigestionService.isBusy();
         if (continuingOps) {
             throw new Error(`Cannot change sensitive data while report digestion operations are in progress.`);
         }
         const encrypt = to === "ENCRYPTED";
-        const [accounts, addresses, invoiceAccounts, invoiceAddresses] = await Promise.all([
-            this.accountRepository.find(),
-            this.addressRepository.find(),
-            this.invoiceAccountRepository.find(),
-            this.invoiceAddressRepository.find(),
-        ]);
 
-        await Promise.all([
-            this.accountRepository.save(accounts.map(a => this.transformAccountFields(a, encrypt))),
-            this.addressRepository.save(addresses.map(a => this.transformAddressFields(a, encrypt))),
-            this.invoiceAccountRepository.save(invoiceAccounts.map(a => this.transformAccountFields(a, encrypt))),
-            this.invoiceAddressRepository.save(invoiceAddresses.map(a => this.transformAddressFields(a, encrypt))),
-        ]);
+        await this.processInBatches(this.accountRepository, (a, shouldEncrypt) => this.transformAccountFields(a, shouldEncrypt), encrypt);
+        await this.processInBatches(this.addressRepository, (a, shouldEncrypt) => this.transformAddressFields(a, shouldEncrypt), encrypt);
+        await this.processInBatches(this.invoiceAccountRepository, (a, shouldEncrypt) => this.transformAccountFields(a, shouldEncrypt), encrypt);
+        await this.processInBatches(this.invoiceAddressRepository, (a, shouldEncrypt) => this.transformAddressFields(a, shouldEncrypt), encrypt);
     }
 }
