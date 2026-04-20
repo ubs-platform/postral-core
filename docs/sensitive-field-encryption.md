@@ -27,18 +27,23 @@
 
 ### 2. `Address` ve `InvoiceAddress` — Öncelik: 🟡 Orta
 
-Tek başına `cityName` veya `postalZone` gibi genel alanlar şifrelenmeye değmez; ancak **tam adres bir bütün olarak** KVKK kapsamında kişisel veri sayılır.
+**Tam adres bir bütün olarak** KVKK kapsamında kişisel veri sayılır ve mevcut uygulamada `AddressMapper` / `InvoiceAddressMapper` adres alt alanlarını encrypt/decrypt etmektedir.
 
-**Önerilen yaklaşım:** Lokasyonu hassaslaştıran alt alanları şifrele, genel alanları bırak.
+**Mevcut davranışla uyumlu yaklaşım:** Adres bileşenlerini parçalı istisnalar tanımlamadan, mapper katmanında şifrelenen alanlar olarak ele al.
 
-| Şifrelenmeli | Bırakılabilir |
-|---|---|
-| `buildingNumber` | `cityName` |
-| `buildingName` | `citySubdivisionName` |
-| `room` | `postalZone` |
-| `floor` | `country` |
-| `blockName` | `region` |
-| `streetName` | |
+| Şifrelenen alanlar |
+|---|
+| `buildingNumber` |
+| `buildingName` |
+| `room` |
+| `floor` |
+| `blockName` |
+| `streetName` |
+| `cityName` |
+| `citySubdivisionName` |
+| `postalZone` |
+| `country` |
+| `region` |
 
 ---
 
