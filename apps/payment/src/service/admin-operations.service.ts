@@ -32,7 +32,7 @@ export class AdminOperationsService {
         private reportDigestionService: ReportDigestionService
     ) { }
 
-    private transform(value: string | undefined, encrypt: boolean): string | undefined {
+    private transform(value: string | null | undefined, encrypt: boolean): string | null | undefined {
         if (value == null) return value;
         return encrypt
             ? this.cryptUtil.encryptWithConfig(value, "USE_DEFAULT")
