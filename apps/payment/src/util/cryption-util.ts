@@ -30,7 +30,7 @@ export class CryptionUtil {
 
     decryptWithConfig(encryptedText: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string | null | undefined {
         if (process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "true" && process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "false-decrypt") {
-            console.warn('Decryption is disabled. Returning original encrypted text.');
+            // console.debug('Decryption is disabled. Returning original encrypted text.');
             return encryptedText; // Preserve null/undefined when decryption is disabled
         }
         if (encryptedText == null) {
