@@ -9,12 +9,13 @@ import fastifyMultipart from '@fastify/multipart';
 import { PaymentModule } from './payment.module';
 
 async function bootstrap() {
+    const adapter = new FastifyAdapter();
+    adapter.register(fastifyMultipart);
     const app = await NestFactory.create<NestFastifyApplication>(
         PaymentModule,
-        new FastifyAdapter(),
+        adapter,
     );
     const globalPrefix = 'api';
-    app.register(fastifyMultipart);
     app.connectMicroservice(
         MicroserviceSetupUtil.setupServer(''),
     );

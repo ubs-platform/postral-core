@@ -2,12 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InvoiceAccountDTO } from '@tk-postral/payment-common';
 import { InvoiceAccount } from '../entity/invoice-account.entity';
 import { Account } from '../entity';
+import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()
 export class InvoiceAccountMapper {
+    /**
+     *
+     */
+    constructor(private cryptionUtil: CryptionUtil) {
+        
+    }
     toEntityFromNormalAccount(account: Account): InvoiceAccount {
         const entity = new InvoiceAccount();
         entity.name = account.name;
+        // zaten şifreli geliyor...
         entity.legalIdentity = account.legalIdentity;
         entity.type = account.type;
         entity.realAccountId = account.id;
@@ -22,7 +30,7 @@ export class InvoiceAccountMapper {
         return {
             id: entity.id,
             name: entity.name,
-            legalIdentity: entity.legalIdentity,
+            legalIdentity: this.cryptionUtil.decryptWithConfig(entity.legalIdentity, "USE_DEFAULT"),
             type: entity.type,
             realAccountId: entity.realAccountId,
             bankName: entity.bankName,
@@ -39,7 +47,7 @@ export class InvoiceAccountMapper {
             entity.id = dto.id;
         }
         entity.name = dto.name;
-        entity.legalIdentity = dto.legalIdentity;
+        entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT");
         entity.type = dto.type;
         entity.realAccountId = dto.realAccountId!;
         entity.bankName = dto.bankName;

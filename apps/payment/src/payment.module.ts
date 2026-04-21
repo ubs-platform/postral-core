@@ -69,6 +69,9 @@ import { ReportController } from './controller/report.controller';
 import { ReportMapper } from './mapper/report-mapper';
 import { AdminSettingsController } from './controller/admin-settings.controller';
 import { AdminSettingsService } from './service/admin-settings.service';
+import { CryptionUtil } from './util/cryption-util';
+import { AdminOperationsService } from './service/admin-operations.service';
+import { AdminOperationsController } from './controller/admin-operations.controller';
 
 @Module({
     imports: [
@@ -147,6 +150,8 @@ import { AdminSettingsService } from './service/admin-settings.service';
         PaymentCommonService,
         ReportMapper,
         AdminSettingsService,
+        CryptionUtil,
+        AdminOperationsService,
     ],
     controllers: [
         PaymentController,
@@ -166,7 +171,8 @@ import { AdminSettingsService } from './service/admin-settings.service';
         PaymentMicroserviceController,
         RefundController,
         ReportQueryController,
-        AdminSettingsController
+        AdminSettingsController,
+        AdminOperationsController
     ],
 })
 export class PaymentModule { }
