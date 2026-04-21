@@ -74,8 +74,13 @@ export class AdminOperationsService {
     }
 
     async changeAllSensitiveData(to: "ENCRYPTED" | "DECRYPTED") {
-        if (to === "ENCRYPTED" && process.env["POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED"] !== "true") {
+        const enabledBoolStr = process.env["POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED"];
+        if (to === "ENCRYPTED" && enabledBoolStr !== "true") {
             throw new BadRequestException(`Encryption is not enabled in configuration.`);
+        }
+        // eğer false-decrypt ise, şifreli verileri çözmeye yönelik çalışma var demektir. o yüzden false-decrypt durumunda da decryption işlemi yapılabilir. ancak encrypt işlemi yapılamaz.
+        if (to === "DECRYPTED" && enabledBoolStr !== "true" && enabledBoolStr !== "false-decrypt") {
+            throw new BadRequestException(`Data is not encrypted according to configuration.`);
         }
 
         const continuingOps = await this.reportDigestionService.isBusy();
