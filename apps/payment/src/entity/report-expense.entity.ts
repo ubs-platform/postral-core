@@ -52,4 +52,16 @@ export class ReportExpense {
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
+
+    static create(reportId: string, accountId: string, expenseKey: string, expenseAmount: number, itemClass?: string, totalExpense: boolean = true, displayWeight: number = 2): ReportExpense {
+        const expense = new ReportExpense();
+        expense.reportId = reportId;
+        expense.accountId = accountId;
+        expense.expenseKey = expenseKey;
+        expense.expenseAmount = expenseAmount;
+        expense.itemClass = itemClass;
+        expense.totalExpense = totalExpense;
+        expense.displayWeight = displayWeight;
+        return expense;
+    }
 }

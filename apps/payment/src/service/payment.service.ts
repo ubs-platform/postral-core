@@ -78,7 +78,7 @@ export class PaymentService {
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
 
-    @Cron('0 * * * * *')
+    @Cron('0 */2 * * * *') // Her 2 dakikada bir çalışır
     async checkAndUpdateWaitingPayments() {
         const waitingPayments = await this.paymentrepo.find({
             where: { paymentStatus: 'WAITING' },

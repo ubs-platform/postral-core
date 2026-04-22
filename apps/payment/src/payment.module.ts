@@ -72,6 +72,7 @@ import { AdminSettingsService } from './service/admin-settings.service';
 import { CryptionUtil } from './util/cryption-util';
 import { AdminOperationsService } from './service/admin-operations.service';
 import { AdminOperationsController } from './controller/admin-operations.controller';
+import { connection } from 'mongoose';
 
 @Module({
     imports: [
@@ -89,6 +90,9 @@ import { AdminOperationsController } from './controller/admin-operations.control
             synchronize: true,
             metadataTableName: '',
             logging: ['query', 'error'],
+            extra: {
+                connectionLimit: 5
+            }
         }),
         ClientsModule.register([
             {

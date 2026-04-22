@@ -196,7 +196,53 @@ export class ReportDigestionService {
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+        // Eğer birden fazla instance bir rapora işleseydi, bu yapı daha doğru olurdu. Ancak tek bir rapor tek bir instance işleyeceği için burada expense'leri bir 
+        // anda çekip güncelleyebilirim, böylece performans artışı sağlanır. 
+        // Eğer birden fazla instance aynı raporu işleyebilseydi, her expense güncellemesi için fetchOrCreate yapmak zorunda kalırdım, bu da performansı ciddi şekilde düşürürdü.
 
+        const allExpenses = await this.reportExpenseRepo.find({
+            where: { reportId: mainReportId, accountId },
+        });
+        const expenseMap = new Map(allExpenses.map(e => [e.expenseKey, e]));
+        for (let index = 0; index < payment.items.length; index++) {
+            const item = payment.items[index];
+            if (item.sellerAccountId !== accountId) continue;
+
+            if (item.itemClass) {
+                const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
+                let itemClassExpenseReport = expenseMap.get(expenseKey);
+                if (!itemClassExpenseReport) {
+                    itemClassExpenseReport = ReportExpense.create(mainReportId, accountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
+                    expenseMap.set(expenseKey, itemClassExpenseReport);
+                }
+                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
+                
+                // await this.reportExpenseRepo.save(itemClassExpenseReport);
+            }
+
+            const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
+            let totalComissionExpenseReport = expenseMap.get(totalComissionExpenseKey);
+            if (!totalComissionExpenseReport) {
+                totalComissionExpenseReport = ReportExpense.create(mainReportId, accountId, totalComissionExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(totalComissionExpenseKey));
+                expenseMap.set(totalComissionExpenseKey, totalComissionExpenseReport);
+            }
+            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
+
+            const reportTotalExpenseKey = REPORT_TOTAL;
+            let reportTotalExpenseReport = expenseMap.get(reportTotalExpenseKey);
+            if (!reportTotalExpenseReport) {
+                reportTotalExpenseReport = ReportExpense.create(mainReportId, accountId, reportTotalExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(reportTotalExpenseKey));
+                expenseMap.set(reportTotalExpenseKey, reportTotalExpenseReport);
+            }
+
+            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
+            // await this.reportExpenseRepo.save(reportTotalExpenseReport);
+        }
+
+        await this.reportExpenseRepo.save(Array.from(expenseMap.values()));
+
+        return;
+        // Eğer hesaplamalarda hata olursa bunu tekrar açabilirim, ama şimdilik return altında kalsın
         for (let index = 0; index < payment.items.length; index++) {
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
@@ -262,9 +308,15 @@ export class ReportDigestionService {
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
     // ─────────────────────────────────────────────────────────────
-    @Cron('*/10 * * * * *') // Development için 10 saniyede bir, production'da 1 dakikaya çekilebilir
+    @Cron('0 */1 * * * *') // Development için 10 saniyede bir, production'da 1 dakikaya çekilebilir
     async checkRelations() {
+        // DigestionID ile birden fazla instance varsa aynı raporu işlemesinler diye kontrol yapıyorum. 
+        // DigestionId'ye sahip olan raporları işleyecek instance'ı seçiyorum, diğerlerini bekletiyorum. 
+        // DigestionId'li raporları işleyecek instance'ı seçerken de zaten digestionId'si olan raporları dikkate almıyorum, 
+        // böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
         const digestionId = Date.now() + '_' + randomUUID();
+
+        // DIGESTING (zaten işlenenleri) alıyorum ve bir sonraki query'de onlara dokunmuyorum. Çünkü birden fazla instance aynı raporu işleyebilir, bu da hesaplama hatalarına neden olacak.
         const alreadyWorkingReports = (
             await this.reportPaymentRelationRepo
                 .createQueryBuilder('relation')
@@ -273,6 +325,9 @@ export class ReportDigestionService {
                 .where('relation.digestionStatus = :status', { status: 'DIGESTING' })
                 .getMany()
         ).map(r => r.reportId);
+
+        // WAITING durumundaki raporları DIGESTING yapıyorum. 
+        // Böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
 
         await this.reportPaymentRelationRepo.update(
             {
