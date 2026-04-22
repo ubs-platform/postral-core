@@ -88,8 +88,7 @@ import { connection } from 'mongoose';
             database: process.env.POSTRAL_DB_NAME || 'postral_core',
             entities: PaymentsEntities,
             synchronize: true,
-            metadataTableName: '',
-            logging: ['query', 'error'],
+            logging: (process.env.POSTRAL_DB_LOGGING_FLAGS || "error").split(',') as any,
             extra: {
                 connectionLimit: 5
             }

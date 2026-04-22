@@ -308,7 +308,7 @@ export class ReportDigestionService {
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
     // ─────────────────────────────────────────────────────────────
-    @Cron('0 */1 * * * *') // Development için 10 saniyede bir, production'da 1 dakikaya çekilebilir
+    @Cron('0 */1 * * * *') // Her 1 dakikada bir çalışır
     async checkRelations() {
         // DigestionID ile birden fazla instance varsa aynı raporu işlemesinler diye kontrol yapıyorum. 
         // DigestionId'ye sahip olan raporları işleyecek instance'ı seçiyorum, diğerlerini bekletiyorum. 

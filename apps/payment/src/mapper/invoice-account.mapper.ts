@@ -30,7 +30,7 @@ export class InvoiceAccountMapper {
         return {
             id: entity.id,
             name: entity.name,
-            legalIdentity: this.cryptionUtil.decryptWithConfig(entity.legalIdentity, "USE_DEFAULT"),
+            legalIdentity: this.cryptionUtil.decryptWithConfig(entity.legalIdentity, "USE_DEFAULT") || '',
             type: entity.type,
             realAccountId: entity.realAccountId,
             bankName: entity.bankName,
@@ -47,7 +47,7 @@ export class InvoiceAccountMapper {
             entity.id = dto.id;
         }
         entity.name = dto.name;
-        entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT");
+        entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || '';
         entity.type = dto.type;
         entity.realAccountId = dto.realAccountId!;
         entity.bankName = dto.bankName;
