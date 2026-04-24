@@ -52,12 +52,16 @@ export class AdminSettingsService {
         dto.comissionsCalculatedFromNet = settings.comissionsCalculatedFromNet;
         dto.createdAt = settings.createdAt;
         dto.updatedAt = settings.updatedAt;
+        dto.reportQueryId = settings.reportQueryId;
+        dto.comissionItemTaxId = settings.comissionItemTaxId;
         return dto;
     }
 
     updateFromDto(settings: AdminSettings, dto: AdminSettingsDto) {
         settings.sellerPaysPaymentServiceFee = dto.sellerPaysPaymentServiceFee;
         settings.comissionsCalculatedFromNet = dto.comissionsCalculatedFromNet;
+        settings.reportQueryId = dto.reportQueryId;
+        settings.comissionItemTaxId = dto.comissionItemTaxId;
     }
 
 

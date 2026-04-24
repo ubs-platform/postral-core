@@ -8,7 +8,7 @@ import {
     Unique,
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
-import { BaseReport } from '@tk-postral/payment-common';
+import { BaseReport, ReportType } from '@tk-postral/payment-common';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -19,6 +19,9 @@ import { BaseReport } from '@tk-postral/payment-common';
 export class Report implements BaseReport{
     @PrimaryGeneratedColumn('uuid')
     id!: string;
+
+    @Column({ type: "varchar", length: 20, default: "SELLER" })
+    reportType: ReportType = "SELLER";
 
     @Column()
     queryId!: string;

@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Report } from './report.entity';
-import { ReportDateGrouping, ReportQueryType } from '@tk-postral/payment-common';
+import { ReportDateGrouping, ReportQueryType, ReportType } from '@tk-postral/payment-common';
 
 @Entity()
 export class ReportQuery {
@@ -46,4 +46,15 @@ export class ReportQuery {
 
     @OneToMany(() => Report, (r) => r.query, { cascade: true })
     reports!: Report[];
+
+    /**
+     * SELLER → raporlar sadece satıcı bazında oluşturulur, sadece seller raporlarında digestion işlemi yapılır.
+     * PLATFORM_FLOW → Tüm para akışları raporlanır, digestion işlemi yapılır.
+     * PLATFORM -> Satışlardan platformun komisyonlardan geliri, vergisi ve giderleri raporlanır, digestion işlemi yapılır.
+     * 
+     * TODO: PlatformFlow ve Platform setlenmesi sadece admin izin verilir.
+     * Platformun komisyonu faturalandırabilmesi için Günlük Platform olarak ayarlanması gerekir
+     */
+    @Column({ type: 'varchar', length: 20, default: 'SELLER' })
+    reportType: ReportType = 'SELLER';
 }

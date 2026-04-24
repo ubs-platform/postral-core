@@ -94,4 +94,7 @@ export class Payment {
     @OneToMany(() => ReportPaymentRelation, (rpr) => rpr.payment, { eager: false })
     reportPaymentRelations!: ReportPaymentRelation[];
 
+    // Raporlara dahil edilsin mi diye kontrol için eklendi, digestion sırasında includeInReportDigestion = false olan raporlar atlanacak.
+    @Column({ default: true })
+    includeInReportDigestion: boolean = true;
 }

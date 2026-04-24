@@ -240,6 +240,7 @@ export class PaymentService {
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
+        p.includeInReportDigestion = true;
         return p;
     }
 

@@ -14,6 +14,14 @@ export class AdminSettingsDto {
      */
     comissionsCalculatedFromNet: boolean = false;
 
+    reportQueryId?: string;
+
+    // Komisyonların hangi raporlama sorgusuna göre hesaplanacağını belirler.
+    //  Admin tarafından seçilecek. 
+    // Seçilen raporlama sorgusu, rapor digestion tarafından kullanılacak ve rapor digestion,
+    comissionItemTaxId?: string;
+
+    // Komisyonlarda kullanılacak vergi oranı. Admin tarafından seçilecek. Seçilen vergi oranı, ürünlerde kullanılan tax entitysi içerisinden seçilecek.
 
     createdAt: Date = new Date();
 

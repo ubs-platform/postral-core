@@ -216,7 +216,7 @@ export class ReportDigestionService {
                     expenseMap.set(expenseKey, itemClassExpenseReport);
                 }
                 itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
-                
+
                 // await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
 
@@ -359,12 +359,26 @@ export class ReportDigestionService {
                 this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
                 continue;
             }
-            // await this.updateExpensesForReport(freshReport.id, payment, accountId);
-            // const totalExpense = await this.fetchOrCreateReportExpense(freshReport.id, accountId, REPORT_TOTAL, payment.currency);
-            await this.updateExpensesForReport(freshReport.id, payment, accountId);
-            await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
-            await this.digestPayment(freshReport, payment);
-            await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+            let flag = payment.includeInReportDigestion
+            if (flag && freshReport.reportType === "SELLER") {
+                await this.updateExpensesForReport(freshReport.id, payment, accountId);
+                await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
+                await this.digestPayment(freshReport, payment);
+                await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+            }
+
+            if (flag && freshReport.reportType === "PLATFORM") {
+                // TODO: Platform raporları için digestion işlemi yapılacak, şu an sadece seller raporları var.
+                // Yapılacaklar: 
+                // 1 - Paymentlardan gelen komisyonlar vergisiyle beraber işlenecek.
+                // 2 - Eğer ödeme hizmeti sağlayıcısı ücretini satıcı ödemeyecekse platform ödeyecek. Bunun expenselerini eklemek gerekecek
+            }
+
+            if (flag && freshReport.reportType === "PLATFORM_FLOW") {
+                // TODO: Platform flow raporları için digestion işlemi yapılacak, şu an sadece seller raporları var.
+                // Tüm satıcılardan gelen para akışlarını burada görüntülenecek
+            }
+
             relation.digestionStatus = 'COMPLETED';
             relation.digestionId = '';
             relation.digestionCompletedAt = new Date();
