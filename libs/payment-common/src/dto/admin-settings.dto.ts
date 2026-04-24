@@ -1,3 +1,5 @@
+import { ItemTaxDTO } from "./item-tax.dto";
+
 export class AdminSettingsDto {
     id!: string;
 
@@ -14,8 +16,6 @@ export class AdminSettingsDto {
      */
     comissionsCalculatedFromNet: boolean = false;
 
-    reportQueryId?: string;
-
     // Komisyonların hangi raporlama sorgusuna göre hesaplanacağını belirler.
     //  Admin tarafından seçilecek. 
     // Seçilen raporlama sorgusu, rapor digestion tarafından kullanılacak ve rapor digestion,
@@ -26,5 +26,6 @@ export class AdminSettingsDto {
     createdAt: Date = new Date();
 
     updatedAt: Date = new Date();
+    comissionItemTax?: ItemTaxDTO;
 
 }

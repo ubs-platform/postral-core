@@ -15,6 +15,7 @@ import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { ReportExpense } from '../entity/report-expense.entity';
 import { PaymentItemDto } from '@tk-postral/payment-common';
+import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
 export class ReportDigestionService {
@@ -37,6 +38,7 @@ export class ReportDigestionService {
         private readonly comissionService: AppComissionService,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
+        private readonly admSettings: AdminSettingsService,
     ) { }
 
 
@@ -65,6 +67,7 @@ export class ReportDigestionService {
             reportNew.periodLabel = periodLabel;
             reportNew.currency = currency;
             reportNew.accountId = query.ownerAccountId!;
+            reportNew.reportType = query.reportType;
             return await this.reportRepo.save(reportNew);
         } catch (err: any) {
             throw err;
@@ -304,6 +307,43 @@ export class ReportDigestionService {
         return count > 0;
     }
 
+    async digestComissionIncomeForReport(platformReport: Report, payment: PaymentFullDTO) {
+        const adminSettings = await this.admSettings.getAdminSettings();
+
+        if (platformReport.query == null) {
+            this.logger.warn(`Report ${platformReport.id} has no query loaded, cannot digest commission`);
+            return;
+        }
+        let totalComission = 0;
+
+        for (const item of payment.items) {
+            if (payment.type === 'PURCHASE') {
+                platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
+                const percent = adminSettings.comissionItemTax?.variations[0].taxRate || 0;
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
+                platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
+            } else if (payment.type === 'REFUND') {
+                // Refundlar rapora negatif olarak işleniyor, bu yüzden komisyon iadesi de negatif olacak ve toplam komisyonu azaltacak. Eğer komisyon iadesini pozitif yaparsak, rapora eklenmiş gibi görünecek ve toplam komisyonu artıracak, bu da yanlış bir durum yaratacak.
+                // TODO: Sonra iade işlemlerinde komisyon iadesinin nasıl gösterileceğine karar verip ona göre bu yapıyı güncellemek gerekebilir, şu an için negatif olarak işlenmesi mantıklı görünüyor çünkü rapora eklenmiş gibi görünmüyor ve toplam komisyonu doğru şekilde azaltıyor.
+                // report.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
+                // report.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
+            }
+        }
+        platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
+        platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
+        platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
+        platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
+
+        let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
+        totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
+        await this.reportExpenseRepo.save(totalComissionExpenseReport);
+
+        let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
+        reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
+        await this.reportExpenseRepo.save(reportTotalExpenseReport);
+
+    }
+
 
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
@@ -397,10 +437,25 @@ export class ReportDigestionService {
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
         const itemSellerAccountIds = payment.items?.map(i => i.sellerAccountId) ?? [];
         return await this.queryRepo.find({
-            where: {
-                currency: payment.currency,
-                ownerAccountId: In([...itemSellerAccountIds]),
-            },
+            where: [
+                // Satıcının kendisi ile ilgili raporları çekmek istediğim için ownerAccountId'ye göre de filtreleme yapıyorum. Çünkü bir payment içinde farklı satıcıların ürünleri olabilir, bu yüzden payment ile ilişkili tüm raporları çekmek istiyorum, ancak seller raporlarında sadece ilgili satıcının raporlarıyla eşleşsin istiyorum, diğer raporlarda ise tüm payment ile eşleşsin istiyorum.
+                {
+                    currency: payment.currency,
+                    ownerAccountId: In([...itemSellerAccountIds]),
+                    reportType: 'SELLER',
+                },
+                // Platformun komisyondan geliri ve ödeme hizmeti sağlayıcı ücretinden gelen giderleri raporlamak istediğim için PLATFORM ve PLATFORM_FLOW raporları da payment ile eşleşiyor olacak. PLATFORM raporunda sadece toplam komisyon gelirini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum, PLATFORM_FLOW raporunda ise her bir ödeme için ayrı ayrı komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum.
+                {
+                    currency: payment.currency,
+                    reportType: 'PLATFORM',
+                },
+                // Platform içinde toplam para akışını göstermek istediğim için PLATFORM_FLOW raporunda da payment ile eşleşiyor olacak. PLATFORM_FLOW raporunda her bir ödeme için ayrı ayrı para akışlarını göstermek istiyorum, bu yüzden reportType'ı PLATFORM_FLOW olan raporları da dahil ediyorum.
+                {
+                    currency: payment.currency,
+                    reportType: 'PLATFORM_FLOW',
+                }
+
+            ],
         });
     }
 

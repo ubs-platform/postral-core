@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { AdminSettings } from "../entity";
 import { Repository } from "typeorm";
 import { AdminSettingsDto } from "@tk-postral/payment-common";
+import { ItemTaxMapper } from "../mapper/item-tax.mapper";
 
 @Injectable()
 export class AdminSettingsService {
@@ -12,7 +13,7 @@ export class AdminSettingsService {
     /**
      *
      */
-    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>) { }
+    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>, private taxMapper: ItemTaxMapper) { }
 
     // İlk kaydı düzenler ya da yoksa yeni oluşturur
     async upsertAdminSettings(settings: Partial<AdminSettingsDto>): Promise<AdminSettingsDto> {
@@ -52,15 +53,14 @@ export class AdminSettingsService {
         dto.comissionsCalculatedFromNet = settings.comissionsCalculatedFromNet;
         dto.createdAt = settings.createdAt;
         dto.updatedAt = settings.updatedAt;
-        dto.reportQueryId = settings.reportQueryId;
         dto.comissionItemTaxId = settings.comissionItemTaxId;
+        dto.comissionItemTax = settings.comissionItemTax ? this.taxMapper.toDTO(settings.comissionItemTax) : undefined;
         return dto;
     }
 
     updateFromDto(settings: AdminSettings, dto: AdminSettingsDto) {
         settings.sellerPaysPaymentServiceFee = dto.sellerPaysPaymentServiceFee;
         settings.comissionsCalculatedFromNet = dto.comissionsCalculatedFromNet;
-        settings.reportQueryId = dto.reportQueryId;
         settings.comissionItemTaxId = dto.comissionItemTaxId;
     }
 
