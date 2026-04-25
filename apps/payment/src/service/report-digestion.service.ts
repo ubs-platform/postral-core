@@ -467,13 +467,8 @@ export class ReportDigestionService {
                 // Platformun komisyondan geliri ve ödeme hizmeti sağlayıcı ücretinden gelen giderleri raporlamak istediğim için PLATFORM ve PLATFORM_FLOW raporları da payment ile eşleşiyor olacak. PLATFORM raporunda sadece toplam komisyon gelirini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum, PLATFORM_FLOW raporunda ise her bir ödeme için ayrı ayrı komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum.
                 {
                     currency: payment.currency,
-                    reportType: 'PLATFORM',
+                    reportType: In(['PLATFORM', "PLATFORM_SELLER", "PLATFORM_FLOW"]),
                 },
-                // Platform içinde toplam para akışını göstermek istediğim için PLATFORM_FLOW raporunda da payment ile eşleşiyor olacak. PLATFORM_FLOW raporunda her bir ödeme için ayrı ayrı para akışlarını göstermek istiyorum, bu yüzden reportType'ı PLATFORM_FLOW olan raporları da dahil ediyorum.
-                {
-                    currency: payment.currency,
-                    reportType: 'PLATFORM_FLOW',
-                }
 
             ],
         });
