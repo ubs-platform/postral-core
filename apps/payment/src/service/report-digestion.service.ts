@@ -324,6 +324,10 @@ export class ReportDigestionService {
         let totalComission = 0;
 
         for (const item of payment.items) {
+            // Eğer accountId varsa, sadece o satıcının ürünleri üzerinden komisyon hesaplanır, 
+            // yoksa tüm ürünler üzerinden hesaplanır. Çünkü platform raporlarında tüm ürünlerin komisyonunu göstermek 
+            // isteyebilirim, seller raporlarında ise sadece ilgili satıcının komisyonunu göstermek isteyebilirim.
+            if (accountId && item.sellerAccountId !== accountId) continue;
             if (payment.type === 'PURCHASE') {
                 platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
                 const percent = adminSettings.comissionItemTax?.variations[0].taxRate || 0;
@@ -332,6 +336,13 @@ export class ReportDigestionService {
             } else if (payment.type === 'REFUND') {
                 // Trendyol aldığı komisyonu iade ediyor, bu yüzden refundlarda komisyon iadesi de oluyor. 
                 // Hepsiburada da aynı şekilde yapıyor, iade edilen ürünün komisyonunu iade ediyor.
+                // TODO: Bunu düşünelim... İade durumunda komisyon iadesi olmasın diye bir ayar ekleyebiliriz, böylece isteyen platformlar iade durumunda komisyon iadesi olmasın diye ayar yapabilirler. 
+                // Şu an her iki platform da iade durumunda komisyon iadesi yapıyor, bu yüzden ben de şu an öyle yapıyorum, 
+                // ama ileride bunu değiştirebiliriz.
+                platformReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalRefundAmount || 0);
+                const percent = adminSettings.comissionItemTax?.variations[0].taxRate || 0;
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
+                platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
             }
         }
         platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
@@ -412,7 +423,11 @@ export class ReportDigestionService {
                 await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
             }
 
-            if (flag && freshReport.reportType === "PLATFORM") {
+            if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
+                this.digestComissionIncomeForReport(freshReport,
+                    payment,
+                    freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
+
                 // TODO: Platform raporları için digestion işlemi yapılacak, şu an sadece seller raporları var.
                 // Yapılacaklar: 
                 // 1 - Paymentlardan gelen komisyonlar vergisiyle beraber işlenecek.
