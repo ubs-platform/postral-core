@@ -172,6 +172,19 @@ export class ReportService {
             userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
         }
 
+        // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim
+        if (userRelatedAccountIds.length === 0 && q.admin !== 'true') {
+            return {
+                content: [],
+                maxItemLength: 0,
+                maxPagesIndex: 0,
+                page: 0,
+                size: 0,
+                firstPage: true,
+                lastPage: true,
+            };
+        }
+
         return await TypeormSearchUtil.modelSearch<Report>(
             this.reportRepo,
             q.size || 10,
@@ -181,7 +194,7 @@ export class ReportService {
             {
                 queryId: q.queryId,
                 ...((q.includeArchived === 'true') || q.includeArchived === true ? {} : { archived: false }),
-                ...((userRelatedAccountIds.length > 0) ? { accountId: In(userRelatedAccountIds) } : {}),
+                ...((userRelatedAccountIds.length > 0) ? { reportType: "SELLER", accountId: In(userRelatedAccountIds) } : {}),
             },
         ).then(result => result.map(r => this.reportMapper.toDto(r)));
     }
