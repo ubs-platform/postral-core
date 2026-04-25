@@ -307,7 +307,14 @@ export class ReportDigestionService {
         return count > 0;
     }
 
-    async digestComissionIncomeForReport(platformReport: Report, payment: PaymentFullDTO) {
+    /**
+     * 
+     * @param platformReport 
+     * @param payment 
+     * @param accountId Eğer account id varsa filtrelenir, yoksa filtrelenmez. Bu da 
+     * @returns 
+     */
+    async digestComissionIncomeForReport(platformReport: Report, payment: PaymentFullDTO, accountId?: string) {
         const adminSettings = await this.admSettings.getAdminSettings();
 
         if (platformReport.query == null) {
@@ -323,10 +330,8 @@ export class ReportDigestionService {
                 const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
                 platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
             } else if (payment.type === 'REFUND') {
-                // Refundlar rapora negatif olarak işleniyor, bu yüzden komisyon iadesi de negatif olacak ve toplam komisyonu azaltacak. Eğer komisyon iadesini pozitif yaparsak, rapora eklenmiş gibi görünecek ve toplam komisyonu artıracak, bu da yanlış bir durum yaratacak.
-                // TODO: Sonra iade işlemlerinde komisyon iadesinin nasıl gösterileceğine karar verip ona göre bu yapıyı güncellemek gerekebilir, şu an için negatif olarak işlenmesi mantıklı görünüyor çünkü rapora eklenmiş gibi görünmüyor ve toplam komisyonu doğru şekilde azaltıyor.
-                // report.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
-                // report.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
+                // Trendyol aldığı komisyonu iade ediyor, bu yüzden refundlarda komisyon iadesi de oluyor. 
+                // Hepsiburada da aynı şekilde yapıyor, iade edilen ürünün komisyonunu iade ediyor.
             }
         }
         platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
