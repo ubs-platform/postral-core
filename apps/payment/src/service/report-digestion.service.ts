@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType } from '@tk-postral/payment-common';
 import { ReportComission, ReportTaxGroup } from '../entity';
 import { PaymentChannelOperation } from '../entity/payment-channel-operation.entity';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
