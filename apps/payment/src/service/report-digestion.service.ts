@@ -176,7 +176,6 @@ export class ReportDigestionService {
         ]);
 
 
-
         for (const operation of operations) {
 
             const sellerItemsTotal = paymentSellerOrder.amount;
@@ -244,30 +243,6 @@ export class ReportDigestionService {
 
         await this.reportExpenseRepo.save(Array.from(expenseMap.values()));
 
-        return;
-        // Eğer hesaplamalarda hata olursa bunu tekrar açabilirim, ama şimdilik return altında kalsın
-        for (let index = 0; index < payment.items.length; index++) {
-            const item = payment.items[index];
-            if (item.sellerAccountId !== accountId) continue;
-
-
-            if (item.itemClass) {
-                const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
-                const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, payment.currency);
-                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
-                await this.reportExpenseRepo.save(itemClassExpenseReport);
-            }
-
-            const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
-            const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, payment.currency);
-            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
-            await this.reportExpenseRepo.save(totalComissionExpenseReport);
-
-            const reportTotalExpenseKey = REPORT_TOTAL;
-            const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, payment.currency);
-            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
-            await this.reportExpenseRepo.save(reportTotalExpenseReport);
-        }
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
