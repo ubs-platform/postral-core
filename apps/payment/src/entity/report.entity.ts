@@ -12,10 +12,10 @@ import { BaseReport, ReportType } from '@tk-postral/payment-common';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
- * Unique on (queryId, periodLabel, currency) so we never double-create.
+ * Unique on (queryId, reportType, periodLabel, currency) so we never double-create.
  */
 @Entity()
-@Unique(['queryId', 'periodLabel', 'currency'])
+@Unique(['queryId', "reportType", 'periodLabel', 'currency'])
 export class Report implements BaseReport{
     @PrimaryGeneratedColumn('uuid')
     id!: string;

@@ -48,6 +48,10 @@ export class ReportQueryController extends BaseCrudController<
             body?.reportType !== "SELLER") {
             throw new BadRequestException('Only admin can create or edit non-seller report queries');
         }
+
+        if ((operation === "EDIT" || operation === "ADD") && body?.reportType === "PLATFORM_SELLER" && body.dateGrouping !== "DAILY") {
+            throw new BadRequestException('Platform-Seller report queries must have DAILY date grouping, because it will used for generating invoices to sellers.');
+        }
         return Promise.resolve();
     }
 }
