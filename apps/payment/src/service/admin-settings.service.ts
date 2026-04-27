@@ -17,7 +17,7 @@ export class AdminSettingsService {
 
     // İlk kaydı düzenler ya da yoksa yeni oluşturur
     async upsertAdminSettings(settings: Partial<AdminSettingsDto>): Promise<AdminSettingsDto> {
-        let existingSettingsLs = await this.adminSettingsRepository.find();
+        let existingSettingsLs = await this.findRaw();
         const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
         if (existingSettings) {
             // Güncelleme işlemi
@@ -34,7 +34,7 @@ export class AdminSettingsService {
     }
 
     async getAdminSettings(): Promise<AdminSettingsDto> {
-        let existingSettingsLs = await this.adminSettingsRepository.find();
+        let existingSettingsLs = await this.findRaw();
         const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
         if (!existingSettings) {
             // Eğer ayarlar yoksa, varsayılan bir kayıt oluşturabiliriz
@@ -44,6 +44,10 @@ export class AdminSettingsService {
             });
         }
         return this.toDto(existingSettings);
+    }
+
+    private async findRaw() {
+        return await this.adminSettingsRepository.find({ relations: ['comissionItemTax', "comissionItemTax.variations"] });
     }
 
     toDto(settings: AdminSettings) {

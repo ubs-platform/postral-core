@@ -122,8 +122,15 @@ export class ReportDigestionService {
         const accountId = report.query.ownerAccountId;
         // todo: totalExpense içindeki değeri toplam Satıştan bağımsız bir alan yaratıp güncellemek daha sağlıklı olabilir, çünkü komisyon ve diğer masraflar satıştan bağımsız olarak artabilir. Şu anki yapıda totalExpense raporun net satışından bağımsız olarak artıyor, bu da raporun okunmasını zorlaştırıyor. TotalExpense'ı sadece komisyon ve diğer masrafları içerecek şekilde güncellersek, raporun net satışını ve toplam masraflarını ayrı ayrı görebiliriz, bu da analiz yaparken daha fazla esneklik sağlar.
         await this.reportCalculation(report, payment, accountId!);
+        return await this.stampTimeAndSaveReport(report, payment);
+    }
+
+
+    private async stampTimeAndSaveReport(report: Report, payment?: PaymentFullDTO): Promise<Report> {
         report.lastDigestedAt = new Date();
-        report.lastDigestedPaymentId = payment.id;
+        if (payment) {
+            report.lastDigestedPaymentId = payment.id;
+        }
         return await this.reportRepo.save(report);
     }
 
@@ -310,10 +317,10 @@ export class ReportDigestionService {
             if (percent === 0) {
                 this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
             }
-
+            const taxMax = AmountCalculationUtil.divideNumberValues(percent, AmountCalculationUtil.addNumberValues(percent, 100));
             if (payment.type === 'PURCHASE') {
                 platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
-                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
                 platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
             } else if (payment.type === 'REFUND') {
 
@@ -323,7 +330,7 @@ export class ReportDigestionService {
                 // Şu an her iki platform da iade durumunda komisyon iadesi yapıyor, bu yüzden ben de şu an öyle yapıyorum, 
                 // ama ileride bunu değiştirebiliriz.
                 platformReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalRefundAmount || 0);
-                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
                 platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
             }
         }
@@ -331,7 +338,6 @@ export class ReportDigestionService {
         platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
         platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
         platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
-
         let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
         totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(totalComissionExpenseReport);
@@ -339,8 +345,7 @@ export class ReportDigestionService {
         let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
         reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(reportTotalExpenseReport);
-        debugger
-        await this.reportRepo.save(platformReport);
+        await this.stampTimeAndSaveReport(platformReport, payment);
 
     }
 
