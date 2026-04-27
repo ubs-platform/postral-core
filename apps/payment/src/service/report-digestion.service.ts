@@ -97,6 +97,9 @@ export class ReportDigestionService {
             // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
             await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
         }
+
+
+        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
     }
 
     async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
@@ -303,19 +306,23 @@ export class ReportDigestionService {
             // yoksa tüm ürünler üzerinden hesaplanır. Çünkü platform raporlarında tüm ürünlerin komisyonunu göstermek 
             // isteyebilirim, seller raporlarında ise sadece ilgili satıcının komisyonunu göstermek isteyebilirim.
             if (accountId && item.sellerAccountId !== accountId) continue;
+            const percent = adminSettings.comissionItemTax?.variations?.[0]?.taxRate || 0;
+            if (percent === 0) {
+                this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
+            }
+
             if (payment.type === 'PURCHASE') {
                 platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
-                const percent = adminSettings.comissionItemTax?.variations[0].taxRate || 0;
                 const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
                 platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
             } else if (payment.type === 'REFUND') {
+
                 // Trendyol aldığı komisyonu iade ediyor, bu yüzden refundlarda komisyon iadesi de oluyor. 
                 // Hepsiburada da aynı şekilde yapıyor, iade edilen ürünün komisyonunu iade ediyor.
                 // TODO: Bunu düşünelim... İade durumunda komisyon iadesi olmasın diye bir ayar ekleyebiliriz, böylece isteyen platformlar iade durumunda komisyon iadesi olmasın diye ayar yapabilirler. 
                 // Şu an her iki platform da iade durumunda komisyon iadesi yapıyor, bu yüzden ben de şu an öyle yapıyorum, 
                 // ama ileride bunu değiştirebiliriz.
                 platformReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalRefundAmount || 0);
-                const percent = adminSettings.comissionItemTax?.variations[0].taxRate || 0;
                 const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, AmountCalculationUtil.divideNumberValues(percent, 100));
                 platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
             }
@@ -332,6 +339,8 @@ export class ReportDigestionService {
         let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
         reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(reportTotalExpenseReport);
+        debugger
+        await this.reportRepo.save(platformReport);
 
     }
 
@@ -359,11 +368,11 @@ export class ReportDigestionService {
 
         // WAITING durumundaki raporları DIGESTING yapıyorum. 
         // Böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
-
         await this.reportPaymentRelationRepo.update(
             {
                 digestionStatus: 'WAITING',
-                reportId: Not(In(alreadyWorkingReports)),
+                // Boş array olunca hata veriyor... Eğer arkada zaten çalışan yoksa hepsini dahil edebiliriz...
+                ...(alreadyWorkingReports.length > 0 ? { reportId: Not(In(alreadyWorkingReports)) } : {}),
             },
             {
                 digestionStatus: 'DIGESTING',
@@ -399,7 +408,7 @@ export class ReportDigestionService {
             }
 
             if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
-                this.digestComissionIncomeForReport(freshReport,
+                await this.digestComissionIncomeForReport(freshReport,
                     payment,
                     freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
 
@@ -431,7 +440,10 @@ export class ReportDigestionService {
      */
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
         const itemSellerAccountIds = payment.items?.map(i => i.sellerAccountId) ?? [];
-        return await this.queryRepo.find({
+        // Eğer PLATFORM_SELLER - Günlük yoksa yeni query oluşturulacak...
+
+
+        const existingQueries = await this.queryRepo.find({
             where: [
                 // Satıcının kendisi ile ilgili raporları çekmek istediğim için ownerAccountId'ye göre de filtreleme yapıyorum. Çünkü bir payment içinde farklı satıcıların ürünleri olabilir, bu yüzden payment ile ilişkili tüm raporları çekmek istiyorum, ancak seller raporlarında sadece ilgili satıcının raporlarıyla eşleşsin istiyorum, diğer raporlarda ise tüm payment ile eşleşsin istiyorum.
                 {
@@ -447,6 +459,32 @@ export class ReportDigestionService {
 
             ],
         });
+
+        const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));
+        const batchInsert: Partial<ReportQuery>[] = [];
+        for (let i = 0; i < paymentSellerAccounts.size; i++) {
+            const accountId = Array.from(paymentSellerAccounts)[i];
+            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId.id);
+
+            if (!existDailyPlatformSellerQuery) {
+                const newQuery = new ReportQuery();
+                const accountName = accountId.name
+                newQuery.ownerAccountId = accountId.id;
+                newQuery.dateGrouping = 'DAILY';
+                newQuery.reportType = 'PLATFORM_SELLER';
+                newQuery.currency = payment.currency;
+                newQuery.name = `Platform Seller Report / ${accountName} / ${payment.currency} / DAILY`;
+                newQuery.description = "Bu rapor, satıcıların platformdan elde ettiği komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir.";
+                batchInsert.push(newQuery);
+            }
+        }
+
+        if (batchInsert.length > 0) {
+            const newlySaved = await this.queryRepo.save(batchInsert);
+            existingQueries.push(...newlySaved);
+        }
+
+        return existingQueries;
     }
 
     buildPeriodLabel(grouping: ReportDateGrouping, date: Date): string {

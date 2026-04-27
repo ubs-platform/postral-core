@@ -74,6 +74,7 @@ export class ReportService {
         if (oldReportArchived.query == null) {
             throw new Error(`Report ${oldReportId} has no query loaded`);
         }
+
         const payments = await this.paymentCommonService.findPaymentDoesntHaveReportRelation(accountId, oldReportId);
         const batchInsert: Partial<ReportPaymentRelation>[] = [];
         for (const payment of payments) {
@@ -137,6 +138,9 @@ export class ReportService {
     async fetchInProgressReportIds(
         reportIds: string[]
     ): Promise<Map<String, String>> {
+        if (reportIds.length === 0) {
+            return new Map<string, string>();
+        }
         const map = new Map<string, string>();
         const alreadyWorkingReports = await this.reportPaymentRelationRepo
             .createQueryBuilder('relation')
@@ -194,7 +198,7 @@ export class ReportService {
             {
                 queryId: q.queryId,
                 ...((q.includeArchived === 'true') || q.includeArchived === true ? {} : { archived: false }),
-                ...((userRelatedAccountIds.length > 0) ? { reportType: "SELLER", accountId: In(userRelatedAccountIds) } : {}),
+                ...((userRelatedAccountIds.length > 0) ? { accountId: In(userRelatedAccountIds) } : {}),
             },
         ).then(result => result.map(r => this.reportMapper.toDto(r)));
     }
