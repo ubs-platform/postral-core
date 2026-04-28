@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
 import { BaseReport, ReportType } from '@tk-postral/payment-common';
+import { MoneyDbField } from './base';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -33,10 +34,10 @@ export class Report implements BaseReport{
     @Column({ nullable: true })
     accountId?: string;
 
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalSaleAmountWithoutExpense: number = 0;
 
-    @Column({type: "decimal", precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalExpenseAmount: number = 0;
     
 
@@ -65,32 +66,32 @@ export class Report implements BaseReport{
     paymentCount = 0;
 
     // Toplam satın alma
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalSaleAmount = 0;
 
     // Toplam iade
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalRefundAmount = 0;
 
     // Toplam satın alma vergisi
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalSaleTaxAmount = 0;
 
     // Toplam iade vergisi
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     totalRefundTaxAmount = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     netTaxAmount = 0;
 
 
     // Net satın alma (satın alma - iade)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     netSaleAmount = 0;
 
     // Net gelir (net satın alma - net vergi)
-    @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, transformer: { from: (v) => Number(v), to: (v) => v } })
+    @Column(MoneyDbField)
     netRevenue = 0;
 
     @Column({ length: 255, nullable: true })
@@ -98,4 +99,9 @@ export class Report implements BaseReport{
 
     @Column({ type: 'boolean', default: false })
     archived: boolean = false;
+    @Column(MoneyDbField)
+    totalExpense = 0;
+
+    @Column(MoneyDbField)
+    netRevenueWithoutExpense = 0;
 }

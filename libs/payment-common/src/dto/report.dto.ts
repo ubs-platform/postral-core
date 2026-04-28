@@ -29,6 +29,8 @@ export class ReportDTO implements BaseReport {
     totalExpenseAmount!: number;
     totalSaleAmountWithoutExpense!: number;
     reportType!: ReportType;
+    totalExpense!: number;
+    netRevenueWithoutExpense!: number;
 }
 
 

@@ -122,6 +122,9 @@ export class ReportDigestionService {
         const accountId = report.query.ownerAccountId;
         // todo: totalExpense içindeki değeri toplam Satıştan bağımsız bir alan yaratıp güncellemek daha sağlıklı olabilir, çünkü komisyon ve diğer masraflar satıştan bağımsız olarak artabilir. Şu anki yapıda totalExpense raporun net satışından bağımsız olarak artıyor, bu da raporun okunmasını zorlaştırıyor. TotalExpense'ı sadece komisyon ve diğer masrafları içerecek şekilde güncellersek, raporun net satışını ve toplam masraflarını ayrı ayrı görebiliriz, bu da analiz yaparken daha fazla esneklik sağlar.
         await this.reportCalculation(report, payment, accountId!);
+        const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId, expenseKey: REPORT_TOTAL } });
+        report.totalExpense = totalExpense?.expenseAmount || 0;
+        report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);
         return await this.stampTimeAndSaveReport(report, payment);
     }
 
@@ -336,8 +339,8 @@ export class ReportDigestionService {
         }
         platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
         platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
-        platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
         platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
+        platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
         let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
         totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(totalComissionExpenseReport);
@@ -416,11 +419,7 @@ export class ReportDigestionService {
                 await this.digestComissionIncomeForReport(freshReport,
                     payment,
                     freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
-
-                // TODO: Platform raporları için digestion işlemi yapılacak, şu an sadece seller raporları var.
-                // Yapılacaklar: 
-                // 1 - Paymentlardan gelen komisyonlar vergisiyle beraber işlenecek.
-                // 2 - Eğer ödeme hizmeti sağlayıcısı ücretini satıcı ödemeyecekse platform ödeyecek. Bunun expenselerini eklemek gerekecek
+                    
             }
 
             if (flag && freshReport.reportType === "PLATFORM_FLOW") {
@@ -469,7 +468,8 @@ export class ReportDigestionService {
         const batchInsert: Partial<ReportQuery>[] = [];
         for (let i = 0; i < paymentSellerAccounts.size; i++) {
             const accountId = Array.from(paymentSellerAccounts)[i];
-            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId.id);
+            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId.id),
+                existDailySellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'SELLER' && q.ownerAccountId === accountId.id);
 
             if (!existDailyPlatformSellerQuery) {
                 const newQuery = new ReportQuery();
@@ -480,6 +480,18 @@ export class ReportDigestionService {
                 newQuery.currency = payment.currency;
                 newQuery.name = `Platform Seller Report / ${accountName} / ${payment.currency} / DAILY`;
                 newQuery.description = "Bu rapor, satıcıların platformdan elde ettiği komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir.";
+                batchInsert.push(newQuery);
+            }
+
+            if (!existDailySellerQuery) {
+                const newQuery = new ReportQuery();
+                const accountName = accountId.name
+                newQuery.ownerAccountId = accountId.id;
+                newQuery.dateGrouping = 'DAILY';
+                newQuery.reportType = 'SELLER';
+                newQuery.currency = payment.currency;
+                newQuery.name = `Seller Report / ${accountName} / ${payment.currency} / DAILY`;
+                newQuery.description = "Bu rapor, satıcıların satış performansını günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir. Satıcının Platforma hakedişi için yapılacak faturalandırma için kullanılacaktır.";
                 batchInsert.push(newQuery);
             }
         }
