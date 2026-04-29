@@ -220,6 +220,11 @@ export class ReportDigestionService {
             where: { reportId: mainReportId, accountId },
         });
         const expenseMap = new Map(allExpenses.map(e => [e.expenseKey, e]));
+
+        // Eğer payment type PURCHASE ise, masraflar artacak, REFUND ise masraflar azalacak, çünkü iade durumunda komisyon iadesi de oluyor.
+        const action = payment.type === "PURCHASE" ? AmountCalculationUtil.addNumberValues : AmountCalculationUtil.minusNumberValues;
+
+
         for (let index = 0; index < payment.items.length; index++) {
             const item = payment.items[index];
             if (item.sellerAccountId !== accountId) continue;
@@ -231,7 +236,8 @@ export class ReportDigestionService {
                     itemClassExpenseReport = ReportExpense.create(mainReportId, accountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
                     expenseMap.set(expenseKey, itemClassExpenseReport);
                 }
-                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
+
+                itemClassExpenseReport.expenseAmount = action(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
 
                 // await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
@@ -242,7 +248,7 @@ export class ReportDigestionService {
                 totalComissionExpenseReport = ReportExpense.create(mainReportId, accountId, totalComissionExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(totalComissionExpenseKey));
                 expenseMap.set(totalComissionExpenseKey, totalComissionExpenseReport);
             }
-            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
+            totalComissionExpenseReport.expenseAmount = action(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
 
             const reportTotalExpenseKey = REPORT_TOTAL;
             let reportTotalExpenseReport = expenseMap.get(reportTotalExpenseKey);
@@ -251,7 +257,7 @@ export class ReportDigestionService {
                 expenseMap.set(reportTotalExpenseKey, reportTotalExpenseReport);
             }
 
-            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
+            reportTotalExpenseReport.expenseAmount = action(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
             // await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
 
