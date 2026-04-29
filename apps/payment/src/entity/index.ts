@@ -23,6 +23,7 @@ import { ReportTaxGroup } from './report-tax-group.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { ReportExpense } from './report-expense.entity';
 import { AdminSettings } from './admin-settings.entity';
+import { DummyEcommerceOperation } from './dummy-ecommerce-operation.entity';
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -49,7 +50,8 @@ export const PaymentsEntities = [
     ReportTaxGroup,
     ReportPaymentRelation,
     ReportExpense,
-    AdminSettings
+    AdminSettings,
+    DummyEcommerceOperation,
 ];
 
 export {
@@ -78,7 +80,8 @@ export {
     ReportPaymentRelation,
     ReportExpense as ReportComission,
     ReportExpense,
-    AdminSettings
+    AdminSettings,
+    DummyEcommerceOperation,
 }
 
 // export * from './payment-item.entity';

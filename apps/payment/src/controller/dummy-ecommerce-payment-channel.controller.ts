@@ -5,52 +5,55 @@ import {
     Param,
     Post,
     Query,
-    Redirect,
     Res,
-    Response,
 } from '@nestjs/common';
 import { ClientKafka, MessagePattern } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
-    PaymentDTO,
-    PaymentFullDTO,
     PaymentFullWithCaptureInfoDTO,
     PaymentOperationStatus,
-    PaymentStatus,
 } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
-import { exec } from 'child_process';
-import { ReturnDocument } from 'typeorm';
 import { FastifyReply } from 'fastify';
+import { Repository } from 'typeorm';
+import { DummyEcommerceOperation } from '../entity/dummy-ecommerce-operation.entity';
+
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
     // This is a dummy controller for ecommerce payment channel simulation
 
-    /**
-     *
-     */
-    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) {
+    constructor(
+        @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
+        @InjectRepository(DummyEcommerceOperation)
+        private readonly operationRepo: Repository<DummyEcommerceOperation>,
+    ) {}
 
+    private async getStatus(operationId: string): Promise<PaymentOperationStatus | null> {
+        const record = await this.operationRepo.findOne({ where: { operationId } });
+        return record?.status ?? null;
     }
 
-    readonly statusMapByOperationId: Map<string, PaymentOperationStatus> =
-        new Map();
+    private async setStatus(operationId: string, status: PaymentOperationStatus): Promise<void> {
+        await this.operationRepo.upsert({ operationId, status }, ['operationId']);
+    }
 
     // # MessagePattern handlers for microservice communication
     @MessagePattern('postral/payment-channel/dummy-ecommerce/init')
     async handleStartPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
-        // Payment geldiğinde refund olup olmadığını kontrol edebiliriz. Ödeme ile ilgili entegrasyonda bu kontrol ile ayrı istekler atabiliriz. 
+        // Payment geldiğinde refund olup olmadığını kontrol edebiliriz. Ödeme ile ilgili entegrasyonda bu kontrol ile ayrı istekler atabiliriz.
         return this.startPaymentOperation(paymentDto);
     }
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/fire')
     async fireTheAuthorizedPayment(operationId: string) {
-        if (!this.statusMapByOperationId.has(operationId)) {
+        const currentStatus = await this.getStatus(operationId);
+        if (currentStatus === null) {
             throw new Error('Operation not found');
         }
-        if (this.statusMapByOperationId.get(operationId) === 'FAILED') {
+        if (currentStatus === 'FAILED') {
             throw new Error('Payment operation is not success, cannot fire.');
         }
-        this.statusMapByOperationId.set(operationId, 'COMPLETED');
+        await this.setStatus(operationId, 'COMPLETED');
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: operationId,
@@ -61,10 +64,11 @@ export class DummyEcommercePaymentChannelController {
 
     @MessagePattern('postral/payment-channel/dummy-ecommerce/cancel')
     async cancelPayment(operationId: string) {
-        if (!this.statusMapByOperationId.has(operationId)) {
+        const currentStatus = await this.getStatus(operationId);
+        if (currentStatus === null) {
             throw new Error('Operation not found');
         }
-        this.statusMapByOperationId.set(operationId, 'FAILED');
+        await this.setStatus(operationId, 'FAILED');
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: operationId,
@@ -77,12 +81,12 @@ export class DummyEcommercePaymentChannelController {
     async checkPayment(
         paymentOperationId: string,
     ): Promise<PaymentChannelStatusDTO> {
+        const status = await this.getStatus(paymentOperationId);
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentOperationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
-            paymentStatus:
-                this.statusMapByOperationId.get(paymentOperationId) || 'FAILED',
+            paymentStatus: status ?? 'FAILED',
         } as PaymentChannelStatusDTO;
     }
 
@@ -92,16 +96,19 @@ export class DummyEcommercePaymentChannelController {
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         const fee = paymentDto.totalAmount * 0.1 + 0.1; // Örnek olarak %10 ve 10 kuruş daha komisyon alalım. Ödeme sağlayıcılarının salak salak hesapları var :d bir tane örnek deneyelim. 100 TL'lik ödeme için 10 TL + 0.1 TL = 10.1 TL komisyon alırız. 1000 TL'lik ödeme için 100 TL + 0.1 TL = 100.1 TL komisyon alırız. 10 TL'lik ödeme için 1 TL + 0.1 TL = 1.1 TL komisyon alırız.
-        this.statusMapByOperationId.set(paymentDto.id, 'WAITING');
-        if (paymentDto.type == "REFUND") {
+
+        // savePaymentChannelRecord bu operasyonu DB'ye kaydedecek; ancak REFUND için timeout'tan önce
+        // kaydın oluşması garanti edildiğinden (30s bekleme var) güvenle güncelleyebiliriz.
+        if (paymentDto.type == 'REFUND') {
             // 30 saniye sonra otomatik olarak ödemeyi tamamla.
-            setTimeout(() => {
-                if (this.statusMapByOperationId.get(paymentDto.id) === 'WAITING') {
-                    this.setPaymentStatusAndRedirect(paymentDto.id, 'COMPLETED', '');
+            setTimeout(async () => {
+                const currentStatus = await this.getStatus(paymentDto.id);
+                if (currentStatus === 'WAITING') {
+                    await this.setStatus(paymentDto.id, 'COMPLETED');
                 }
             }, 30000);
         }
-        // exec(`kdialog --msgbox "Ödeme provider ücreti: ${fee.toFixed(2)} ${paymentDto.currency}"`);
+
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentDto.id,
@@ -147,7 +154,7 @@ export class DummyEcommercePaymentChannelController {
         @Query('redirectUrl') redirectUrlBackToApp: string,
         @Res() fastifyReply?: FastifyReply,
     ) {
-        this.statusMapByOperationId.set(operationId, set);
+        await this.setStatus(operationId, set);
         this.kfk.emit(
             'postral/payment-operation-status-updated',
             operationId,
@@ -174,7 +181,7 @@ export class DummyEcommercePaymentChannelController {
         @Query('redirectUrl') redirectUrlBackToApp: string,
         @Res() fastifyReply: FastifyReply,
     ) {
-        let currentStatus = this.statusMapByOperationId.get(operationId);
+        let currentStatus = await this.getStatus(operationId);
         if (!currentStatus) {
             throw new Error('Operation not found');
         }
@@ -182,7 +189,7 @@ export class DummyEcommercePaymentChannelController {
         // Simulate status change
         if (currentStatus === 'WAITING') {
             currentStatus = 'COMPLETED';
-            this.statusMapByOperationId.set(operationId, currentStatus);
+            await this.setStatus(operationId, currentStatus);
         }
         // Redirect back to the application with status
         return fastifyReply.status(302).redirect(
