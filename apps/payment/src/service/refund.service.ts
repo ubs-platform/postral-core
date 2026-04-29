@@ -241,6 +241,10 @@ export class RefundService {
                 originalItem.quantity > 0
                     ? originalItem.unTaxAmount / originalItem.quantity
                     : 0;
+
+            refundItem.itemClass = originalItem.itemClass;
+            refundItem.appComissionAmount = originalItem.appComissionAmount;
+            refundItem.appComissionPercent = originalItem.appComissionPercent;
             refundItem.variation = originalItem.variation;
             refundItem.paymentItemId = requestItem.paymentItemId;
             refundItem.realItemId = originalItem.itemId;
@@ -364,6 +368,9 @@ export class RefundService {
                     refundAmountWithoutTax: i.refundAmountWithoutTax,
                     refundTaxAmount: i.refundTaxAmount,
                     variation: i.variation,
+                    itemClass: i.itemClass,
+                    appComissionAmount: i.appComissionAmount,
+                    appComissionPercent: i.appComissionPercent,
                 })) || [],
         };
     }

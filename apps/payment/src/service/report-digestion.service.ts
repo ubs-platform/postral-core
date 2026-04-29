@@ -208,6 +208,7 @@ export class ReportDigestionService {
             totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
             await this.reportExpenseRepo.save(totalExpense);
         }
+
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
@@ -310,20 +311,23 @@ export class ReportDigestionService {
             return;
         }
         let totalComission = 0;
-
+        const percent = adminSettings.comissionItemTax?.variations?.[0]?.taxRate || 0;
+        if (percent === 0) {
+            this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
+        }
+        const taxMax = AmountCalculationUtil.divideNumberValues(percent, AmountCalculationUtil.addNumberValues(percent, 100));
+        let currentComissionTotal = 0, currentComissionTaxTotal = 0, refundComissionTotal = 0, refundComissionTaxTotal = 0;
         for (const item of payment.items) {
             // Eğer accountId varsa, sadece o satıcının ürünleri üzerinden komisyon hesaplanır, 
             // yoksa tüm ürünler üzerinden hesaplanır. Çünkü platform raporlarında tüm ürünlerin komisyonunu göstermek 
             // isteyebilirim, seller raporlarında ise sadece ilgili satıcının komisyonunu göstermek isteyebilirim.
             if (accountId && item.sellerAccountId !== accountId) continue;
-            const percent = adminSettings.comissionItemTax?.variations?.[0]?.taxRate || 0;
-            if (percent === 0) {
-                this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
-            }
-            const taxMax = AmountCalculationUtil.divideNumberValues(percent, AmountCalculationUtil.addNumberValues(percent, 100));
+
             if (payment.type === 'PURCHASE') {
+                currentComissionTotal = AmountCalculationUtil.addNumberValues(item.appComissionAmount, currentComissionTotal);
                 platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
                 const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
+                currentComissionTaxTotal = AmountCalculationUtil.addNumberValues(taxAmount, currentComissionTaxTotal);
                 platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
             } else if (payment.type === 'REFUND') {
 
@@ -332,8 +336,10 @@ export class ReportDigestionService {
                 // TODO: Bunu düşünelim... İade durumunda komisyon iadesi olmasın diye bir ayar ekleyebiliriz, böylece isteyen platformlar iade durumunda komisyon iadesi olmasın diye ayar yapabilirler. 
                 // Şu an her iki platform da iade durumunda komisyon iadesi yapıyor, bu yüzden ben de şu an öyle yapıyorum, 
                 // ama ileride bunu değiştirebiliriz.
+                refundComissionTotal = AmountCalculationUtil.addNumberValues(item.appComissionAmount, refundComissionTotal);
                 platformReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalRefundAmount || 0);
                 const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
+                refundComissionTaxTotal = AmountCalculationUtil.addNumberValues(taxAmount, refundComissionTaxTotal);
                 platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
             }
         }
@@ -350,6 +356,25 @@ export class ReportDigestionService {
         await this.reportExpenseRepo.save(reportTotalExpenseReport);
         await this.stampTimeAndSaveReport(platformReport, payment);
 
+        let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: platformReport.id, taxPercent: percent.toString(), currency: payment.currency } });
+        if (!taxGroupReport) {
+            taxGroupReport = new ReportTaxGroup();
+            taxGroupReport.taxGroupName = "%" + percent + " (Commission Tax)";
+            taxGroupReport.taxPercent = percent.toString();
+            taxGroupReport.reportId = platformReport.id;
+            taxGroupReport.currency = payment.currency;
+        }
+        taxGroupReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalSaleAmount, currentComissionTotal);
+        taxGroupReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalRefundAmount, refundComissionTotal);
+        taxGroupReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalSaleTaxAmount, currentComissionTaxTotal);
+        taxGroupReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalRefundTaxAmount, refundComissionTaxTotal);
+
+        taxGroupReport.paymentCount = AmountCalculationUtil.addNumberValues(taxGroupReport.paymentCount, 1);
+        taxGroupReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(taxGroupReport.totalSaleTaxAmount || 0, taxGroupReport.totalRefundTaxAmount || 0);
+        taxGroupReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(taxGroupReport.totalSaleAmount || 0, taxGroupReport.totalRefundAmount || 0);
+        taxGroupReport.netRevenue = AmountCalculationUtil.minusNumberValues(taxGroupReport.netSaleAmount || 0, taxGroupReport.netTaxAmount || 0);
+        await this.taxGroupRepo.save(taxGroupReport);
+        // taxGroupReport.totalSaleAmount = 
     }
 
 
@@ -419,7 +444,7 @@ export class ReportDigestionService {
                 await this.digestComissionIncomeForReport(freshReport,
                     payment,
                     freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
-                    
+
             }
 
             if (flag && freshReport.reportType === "PLATFORM_FLOW") {

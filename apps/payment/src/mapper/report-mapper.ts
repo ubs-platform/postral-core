@@ -24,6 +24,7 @@ export class ReportMapper {
         dto.archived = entity.archived;
         dto.totalExpense = entity.totalExpense;
         dto.netRevenueWithoutExpense = entity.netRevenueWithoutExpense;
+        dto.reportType = entity.reportType;
         return dto;
     }
 

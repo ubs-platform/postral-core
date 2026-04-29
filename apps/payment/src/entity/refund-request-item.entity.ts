@@ -47,4 +47,14 @@ export class RefundRequestItem extends BaseEntity {
 
     @Column(MoneyDbField)
     refundTaxAmount?: number = 0;
+    
+    @Column()
+    itemClass: string = "";
+
+    @Column(MoneyDbField)
+    appComissionAmount: number = 0;
+
+    @Column(MoneyDbField)
+    appComissionPercent: number = 0;
+
 }

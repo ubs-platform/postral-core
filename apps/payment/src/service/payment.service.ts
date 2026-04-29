@@ -131,7 +131,6 @@ export class PaymentService {
                     totalAmount: item.refundAmount,
                     taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
                     sellerAccountId: refundRequest.requestedToPaymentAccountId,
-
                 });
 
                 return pi;
