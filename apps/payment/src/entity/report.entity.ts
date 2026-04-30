@@ -107,6 +107,12 @@ export class Report implements BaseReport{
     @Column(MoneyDbField)
     totalExpense = 0;
 
+    // Vergisiz net hakediş: netRevenue - masraflar
     @Column(MoneyDbField)
     netRevenueWithoutExpense = 0;
+
+    // Vergili net hakediş: netSaleAmount - masraflar.
+    // Satıcıya hakediş ödemesinde bu değer kullanılır çünkü vergisini satıcı öder.
+    @Column(MoneyDbField)
+    netRevenueWithoutExpenseTaxed = 0;
 }

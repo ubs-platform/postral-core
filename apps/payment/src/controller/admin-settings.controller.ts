@@ -24,4 +24,5 @@ export class AdminSettingsController {
     async updateAdminSettings(@Body() settings: Partial<AdminSettings>) {
         return await this.adminSettingsService.upsertAdminSettings(settings);
     }
+
 }

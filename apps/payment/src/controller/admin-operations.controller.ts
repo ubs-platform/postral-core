@@ -30,6 +30,6 @@ export class AdminOperationsController {
      */
     @Post("run-billing")
     async runBilling() {
-        await this.billingService.runBilling();
+        await this.billingService.runBilling(undefined, "THROW");
     }
 }

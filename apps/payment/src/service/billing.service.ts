@@ -44,9 +44,12 @@ export class BillingService {
     // ─────────────────────────────────────────────────────────────
     // runBilling — admin panelinden veya cron'dan tetiklenebilir
     // ─────────────────────────────────────────────────────────────
-    async runBilling(settings?: AdminSettingsDto) {
+    async runBilling(settings?: AdminSettingsDto, onMissingConfig : "THROW" | "SKIP" = "SKIP") {
         const resolvedSettings = settings ?? await this.adminSettingsService.getAdminSettings();
         if (!resolvedSettings.billingAccountId) {
+            if (onMissingConfig === "THROW") {
+                throw new Error('runBilling: billingAccountId is not configured. Cannot proceed.');
+            }
             this.logger.warn('runBilling: billingAccountId is not configured. Skipping.');
             return;
         }
@@ -130,7 +133,7 @@ export class BillingService {
         if (reports.length === 0) return;
 
         const totalEarnings = reports.reduce(
-            (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netRevenueWithoutExpense || 0),
+            (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netRevenueWithoutExpenseTaxed || 0),
             0,
         );
         if (totalEarnings <= 0) {
@@ -192,6 +195,9 @@ export class BillingService {
         item.sellerAccountId = sellerAccountId;
         item.sellerAccountName = '';
         item.variation = '';
+        item.entityGroup = "";
+        item.entityName = "";
+        item.entityId = "";
         item.unit = 'ITEM';
 
         const payment = new Payment();

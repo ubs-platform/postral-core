@@ -125,6 +125,8 @@ export class ReportDigestionService {
         const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId, expenseKey: REPORT_TOTAL } });
         report.totalExpense = totalExpense?.expenseAmount || 0;
         report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);
+        // Vergili hakediş: satıcı kendi vergisini ödeyeceği için vergi dahil tutar verilir (netSaleAmount - masraflar)
+        report.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.totalExpense || 0);
         return await this.stampTimeAndSaveReport(report, payment);
     }
 
