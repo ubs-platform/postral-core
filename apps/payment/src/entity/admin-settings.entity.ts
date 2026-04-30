@@ -1,7 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { Payment } from './payment.entity';
 import { Account } from './account.entity';
-import { ReportQuery } from './report-query.entity';
 import { ItemTaxEntity } from './item-tax.entity';
 
 @Entity()
@@ -41,6 +39,20 @@ export class AdminSettings {
     @JoinColumn({ name: 'comissionItemTaxId' })
     comissionItemTax?: ItemTaxEntity;
 
+
+    // Faturalandırma işlemleri için platformun kendi hesabı.
+    // Komisyon ödemelerinde platform bu hesapla alacaklı, hakediş ödemelerinde borçlu olur.
+    @Column({ type: 'uuid', nullable: true })
+    billingAccountId?: string;
+
+    @ManyToOne(() => Account, { nullable: true, eager: true })
+    @JoinColumn({ name: 'billingAccountId' })
+    billingAccount?: Account;
+
+    // Fatura kesim günleri (ayın kaçında). Örnek: [1, 15] → her ayın 1'i ve 15'inde çalışır.
+    // Seçilen günlerde önceki döneme ait faturalanmamış günlük raporlar toplanır.
+    @Column({ type: 'simple-json', nullable: true })
+    billingDays?: number[];
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();

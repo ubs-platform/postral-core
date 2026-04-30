@@ -72,6 +72,7 @@ import { AdminSettingsService } from './service/admin-settings.service';
 import { CryptionUtil } from './util/cryption-util';
 import { AdminOperationsService } from './service/admin-operations.service';
 import { AdminOperationsController } from './controller/admin-operations.controller';
+import { BillingService } from './service/billing.service';
 import { connection } from 'mongoose';
 
 @Module({
@@ -155,6 +156,7 @@ import { connection } from 'mongoose';
         AdminSettingsService,
         CryptionUtil,
         AdminOperationsService,
+        BillingService,
     ],
     controllers: [
         PaymentController,

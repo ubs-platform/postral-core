@@ -23,6 +23,12 @@ export class AdminSettingsDto {
 
     // Komisyonlarda kullanılacak vergi oranı. Admin tarafından seçilecek. Seçilen vergi oranı, ürünlerde kullanılan tax entitysi içerisinden seçilecek.
 
+    // Faturalandırma için platformun kendi hesap ID'si.
+    billingAccountId?: string;
+
+    // Fatura kesim günleri (ayın kaçında). Örnek: [1, 15]
+    billingDays?: number[];
+
     createdAt: Date = new Date();
 
     updatedAt: Date = new Date();

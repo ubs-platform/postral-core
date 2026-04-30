@@ -99,6 +99,11 @@ export class Report implements BaseReport{
 
     @Column({ type: 'boolean', default: false })
     archived: boolean = false;
+
+    // Fatura kesildiğinde set edilir. NULL ise henüz faturalanmamış demektir.
+    @Column({ type: 'datetime', nullable: true })
+    billedAt?: Date;
+
     @Column(MoneyDbField)
     totalExpense = 0;
 

@@ -59,6 +59,8 @@ export class AdminSettingsService {
         dto.updatedAt = settings.updatedAt;
         dto.comissionItemTaxId = settings.comissionItemTaxId;
         dto.comissionItemTax = settings.comissionItemTax ? this.taxMapper.toDTO(settings.comissionItemTax) : undefined;
+        dto.billingAccountId = settings.billingAccountId;
+        dto.billingDays = settings.billingDays;
         return dto;
     }
 
@@ -66,6 +68,8 @@ export class AdminSettingsService {
         settings.sellerPaysPaymentServiceFee = dto.sellerPaysPaymentServiceFee;
         settings.comissionsCalculatedFromNet = dto.comissionsCalculatedFromNet;
         settings.comissionItemTaxId = dto.comissionItemTaxId;
+        settings.billingAccountId = dto.billingAccountId;
+        settings.billingDays = dto.billingDays;
     }
 
 
