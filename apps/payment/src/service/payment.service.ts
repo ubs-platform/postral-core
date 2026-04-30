@@ -343,11 +343,17 @@ export class PaymentService {
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
             await this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
             // Alıcı hesabına webhook bildirim gönder
-            if (payment.customerAccountId) {
-                this.webhookDispatchService.send(payment.customerAccountId, 'PAYMENT_COMPLETED', {
-                    paymentId: payment.id,
-                    accountId: payment.customerAccountId,
-                }).catch((err) => console.error('Webhook dispatch error (PAYMENT_COMPLETED):', err));
+            const accountIds = new Set<string>([payment.customerAccountId, ...payment.items.map(i => i.sellerAccountId)]);
+            for (const accountId of accountIds) {
+                if (accountId) {
+                    this.webhookDispatchService.send(accountId, 'PAYMENT_COMPLETED', {
+                        paymentId: payment.id,
+                        accountId: accountId,
+                    }).catch((err) => {
+                        //TODO: Webhook'ları hem logla hem de başarısızları etiketleyerek sakla. Payloadlar ayrı entity olacak ve cronla tekrar gönderilmeye çalışılacak.
+                        console.error('Webhook dispatch error (PAYMENT_COMPLETED):', err)
+                    });
+                }
             }
         }
 
