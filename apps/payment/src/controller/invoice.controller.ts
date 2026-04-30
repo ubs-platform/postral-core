@@ -126,11 +126,14 @@ export class InvoiceController {
 
 
     @Get(':id/ubl')
+    @UseGuards(JwtAuthGuard)
     async downloadUbl(
         @Param('id') id: string,
+        @CurrentUser() user: UserAuthBackendDTO,
         @Res() reply: FastifyReply,
     ): Promise<void> {
         const invoice = await this.invoiceService.findById(id);
+        await this.invoiceService.assertSellerIsOwner(invoice.sellerId, user);
         const xmlContent = await this.ublGeneratorService.generateUblXml(invoice);
         const filename = `invoice-${invoice.invoiceNumber || id}.xml`;
         reply
