@@ -9,7 +9,9 @@ import {
     UseInterceptors,
     UseGuards,
     Query,
+    Res,
 } from '@nestjs/common';
+import { FastifyReply } from 'fastify';
 import { InvoiceService } from '../service/invoice.service';
 import {
     InvoiceDTO,
@@ -32,6 +34,7 @@ import { exec } from 'child_process';
 import { AuthUtilService } from '../service/auth-util.service';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
+import { UblGeneratorService } from '../service/ubl-generator.service';
 
 export interface UploadFileCategoryResponse {
     category?: string;
@@ -57,6 +60,7 @@ export class InvoiceController {
         private readonly paymentService: PaymentService,
         private readonly paymentSearchService: SellerPaymentOrderSearchService,
         private readonly eoService: EntityOwnershipService,
+        private readonly ublGeneratorService: UblGeneratorService,
     ) { }
 
 
@@ -120,6 +124,20 @@ export class InvoiceController {
         return await this.invoiceService.search(q);
     }
 
+
+    @Get(':id/ubl')
+    async downloadUbl(
+        @Param('id') id: string,
+        @Res() reply: FastifyReply,
+    ): Promise<void> {
+        const invoice = await this.invoiceService.findById(id);
+        const xmlContent = await this.ublGeneratorService.generateUblXml(invoice);
+        const filename = `invoice-${invoice.invoiceNumber || id}.xml`;
+        reply
+            .header('Content-Disposition', `attachment; filename="${filename}"`)
+            .type('application/xml')
+            .send(xmlContent);
+    }
 
     @Put(':id/finalize')
     @UseGuards(JwtAuthGuard)
