@@ -1,3 +1,6 @@
+DROP DATABASE IF EXISTS `postral_core`;
+CREATE DATABASE IF NOT EXISTS `postral_core` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
+USE `postral_core`;
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19-12.1.2-MariaDB, for debian-linux-gnu (x86_64)
 --
@@ -1143,7 +1146,7 @@ CREATE TABLE `report` (
   `netRevenueWithoutExpense` decimal(19,4) NOT NULL DEFAULT 0.0000,
   `billedAt` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `IDX_f0f5f49dcdd1b3ca89348b8510` (`queryId`,`reportType`,`periodLabel`,`currency`),
+  -- UNIQUE KEY `IDX_f0f5f49dcdd1b3ca89348b8510` (`queryId`,`periodLabel`,`currency`),
   CONSTRAINT `FK_5c41976ef4369687fa8516891cc` FOREIGN KEY (`queryId`) REFERENCES `report_query` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
