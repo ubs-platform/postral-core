@@ -198,7 +198,7 @@ export class UblGeneratorService {
             if (address.country) {
                 postalAddress
                     .ele('cac:Country')
-                    .ele('cbc:IdentificationCode')
+                    .ele('cbc:Name')
                     .txt(address.country);
             }
         }
