@@ -73,6 +73,9 @@ import { CryptionUtil } from './util/cryption-util';
 import { AdminOperationsService } from './service/admin-operations.service';
 import { AdminOperationsController } from './controller/admin-operations.controller';
 import { BillingService } from './service/billing.service';
+import { WebhookConfigService } from './service/webhook-config.service';
+import { WebhookDispatchService } from './service/webhook-dispatch.service';
+import { WebhookConfigController } from './controller/webhook-config.controller';
 import { connection } from 'mongoose';
 
 @Module({
@@ -157,6 +160,8 @@ import { connection } from 'mongoose';
         CryptionUtil,
         AdminOperationsService,
         BillingService,
+        WebhookConfigService,
+        WebhookDispatchService,
     ],
     controllers: [
         PaymentController,
@@ -177,7 +182,8 @@ import { connection } from 'mongoose';
         RefundController,
         ReportQueryController,
         AdminSettingsController,
-        AdminOperationsController
+        AdminOperationsController,
+        WebhookConfigController,
     ],
 })
 export class PaymentModule { }

@@ -29,6 +29,7 @@ import { Cron } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './account-payment-transaction.service';
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
+import { WebhookDispatchService } from './webhook-dispatch.service';
 
 @Injectable()
 export class PaymentService {
@@ -49,6 +50,7 @@ export class PaymentService {
         private reportDigestionService: ReportDigestionService,
         private transactionMapper: TransactionMapper,
         private paymentCommonService: PaymentCommonService,
+        private webhookDispatchService: WebhookDispatchService,
     ) { }
 
     async onModuleInit() {
@@ -340,6 +342,13 @@ export class PaymentService {
             await this.postPaymentOperation(payment);
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
             await this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+            // Alıcı hesabına webhook bildirim gönder
+            if (payment.customerAccountId) {
+                this.webhookDispatchService.send(payment.customerAccountId, 'PAYMENT_COMPLETED', {
+                    paymentId: payment.id,
+                    accountId: payment.customerAccountId,
+                }).catch((err) => console.error('Webhook dispatch error (PAYMENT_COMPLETED):', err));
+            }
         }
 
         return dto;
