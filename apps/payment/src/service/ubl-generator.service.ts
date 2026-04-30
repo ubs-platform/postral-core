@@ -23,7 +23,20 @@ export class UblGeneratorService {
             });
         }
 
-        const currency = 'TRY';
+        const invoiceData = invoice as Record<string, unknown>;
+        const paymentData =
+            typeof invoiceData.payment === 'object' && invoiceData.payment !== null
+                ? (invoiceData.payment as Record<string, unknown>)
+                : undefined;
+        const currencyCandidate =
+            paymentData?.currency ??
+            invoiceData.currency ??
+            invoiceData.paymentCurrency;
+        const currency =
+            typeof currencyCandidate === 'string' &&
+            currencyCandidate.trim().length > 0
+                ? currencyCandidate.trim().toUpperCase()
+                : 'TRY';
         const invoiceNumber = invoice.invoiceNumber || invoice.id;
 
         const totalUnTaxAmount = items.reduce(
