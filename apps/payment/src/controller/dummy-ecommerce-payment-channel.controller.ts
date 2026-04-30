@@ -1,9 +1,11 @@
 import {
+    Body,
     Controller,
     Get,
     Inject,
     Param,
     Post,
+    Put,
     Query,
     Res,
 } from '@nestjs/common';
@@ -17,6 +19,7 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 import { FastifyReply } from 'fastify';
 import { Repository } from 'typeorm';
 import { DummyEcommerceOperation } from '../entity/dummy-ecommerce-operation.entity';
+import { exec } from 'child_process';
 
 @Controller('dummy-ecommerce-payment-channel')
 export class DummyEcommercePaymentChannelController {
@@ -26,7 +29,7 @@ export class DummyEcommercePaymentChannelController {
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
         @InjectRepository(DummyEcommerceOperation)
         private readonly operationRepo: Repository<DummyEcommerceOperation>,
-    ) {}
+    ) { }
 
     private async getStatus(operationId: string): Promise<PaymentOperationStatus | null> {
         const record = await this.operationRepo.findOne({ where: { operationId } });
@@ -195,5 +198,32 @@ export class DummyEcommercePaymentChannelController {
         return fastifyReply.status(302).redirect(
             `${redirectUrlBackToApp}?operationId=${operationId}&status=${currentStatus}`,
         );
+    }
+
+    @Put('kdialog')
+    async kDialogTestPut(@Body() body: any) {
+        return this.kDialogTest({ body });
+    }
+    
+    @Post('kdialog')
+    async kDialogTestPost(@Body() body: any) {
+        return this.kDialogTest({ body });
+    }
+
+    @Get('kdialog')
+    async kDialogTestGet(@Query() query: any, @Body() body: any) {
+        return this.kDialogTest({ query, body });
+    }
+
+    async kDialogTest(body: any) {
+        console.log('Received KDialog request with body:', body);
+        exec('kdialog --msgbox "Gelen mesaj: ' + JSON.stringify(body) + '"', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing kdialog: ${error}`);
+                return;
+            }
+            console.log(`kdialog output: ${stdout}`);
+        });
+        return { message: 'KDialog test successful', receivedBody: body };
     }
 }
