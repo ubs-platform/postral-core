@@ -9,6 +9,7 @@ import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { AdminSettingsService } from './admin-settings.service';
 import { AdminSettingsDto } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
+import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 
 @Injectable()
 export class BillingService {
@@ -22,7 +23,7 @@ export class BillingService {
         @InjectRepository(Payment)
         private readonly paymentRepo: Repository<Payment>,
         private readonly adminSettingsService: AdminSettingsService,
-    ) {}
+    ) { }
 
     // ─────────────────────────────────────────────────────────────
     // Cron: her gün 00:05'te çalışır, bugün fatura günüyse işleme başlar
@@ -44,7 +45,7 @@ export class BillingService {
     // ─────────────────────────────────────────────────────────────
     // runBilling — admin panelinden veya cron'dan tetiklenebilir
     // ─────────────────────────────────────────────────────────────
-    async runBilling(settings?: AdminSettingsDto, onMissingConfig : "THROW" | "SKIP" = "SKIP") {
+    async runBilling(settings?: AdminSettingsDto, onMissingConfig: "THROW" | "SKIP" = "SKIP") {
         const resolvedSettings = settings ?? await this.adminSettingsService.getAdminSettings();
         if (!resolvedSettings.billingAccountId) {
             if (onMissingConfig === "THROW") {
@@ -178,11 +179,10 @@ export class BillingService {
     }): Promise<Payment> {
         const { customerAccountId, sellerAccountId, totalAmount, currency, itemId, itemName, taxRate } = params;
 
-        const taxAmount = AmountCalculationUtil.multiplyNumberValues(
-            totalAmount,
-            AmountCalculationUtil.divideNumberValues(taxRate, 100),
-        );
-        const unTaxAmount = AmountCalculationUtil.minusNumberValues(totalAmount, taxAmount);
+        const taxDto = TaxCalculationUtil.generateTaxDto(taxRate.toString(), totalAmount, taxRate, null);
+        const taxAmount = taxDto.taxAmount;
+
+        const unTaxAmount = taxDto.untaxAmount;
 
         const item = new PostralPaymentItem();
         item.itemId = itemId;
