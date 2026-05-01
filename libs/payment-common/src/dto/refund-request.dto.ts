@@ -25,18 +25,18 @@ export class RefundRequestDTO {
         refundTaxAmount?: number;
         variation?: string;
     }[];
-    requestedByAccountId: string;
+    requestedByAccountId?: string;
     resolvedByAccountId?: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
     /**
  * Payment Account Id. Bu, refund request'i kimin oluşturduğunu takip etmek için kullanılabilir. 
  * Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
  */
-    requestedByPaymentAccountId: string;
+    requestedByPaymentAccountId?: string;
 
     /**
  * Payment Account Id. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
  */
-    requestedToPaymentAccountId: string;
+    requestedToPaymentAccountId?: string;
 }

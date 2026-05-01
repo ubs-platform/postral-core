@@ -25,7 +25,7 @@ export class PaymentItemMapper {
         pi.entityId = dto.entityId;
         pi.entityName = dto.entityName;
         pi.sellerAccountId = dto.sellerAccountId;
-        pi.sellerAccountName = dto.sellerAccountName;
+        // pi.sellerAccountName = dto.sellerAccountName;
         pi.itemClass = dto.itemClass || "";
         pi.unit = dto.unit;
         pi.appComissionAmount = dto.appComissionAmount || 0;

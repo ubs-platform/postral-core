@@ -65,7 +65,7 @@ export class RefundService {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
 
-        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'approve');
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId!, 'approve');
         this.assertItemsBelongToSingleSeller(payment, request.items);
         await this.triggerPaymentChannelRefund(payment);
         await this.paymentService.createRefundPayment(
@@ -83,7 +83,7 @@ export class RefundService {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
 
-        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'reject');
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId!, 'reject');
 
         return this.resolveRefundRequest(request, user, 'REJECTED');
     }

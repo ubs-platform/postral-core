@@ -183,7 +183,7 @@ export class BillingService {
         const taxAmount = taxDto.taxAmount;
 
         const unTaxAmount = taxDto.untaxAmount;
-
+        
         const item = new PostralPaymentItem();
         item.itemId = itemId;
         item.name = itemName;
