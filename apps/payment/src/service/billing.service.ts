@@ -81,7 +81,9 @@ export class BillingService {
 
     // ─────────────────────────────────────────────────────────────
     // Komisyon faturası: Satıcı → Platform'a öder
-    // Günlük PLATFORM_SELLER raporlarındaki netRevenue toplanır
+    // Günlük PLATFORM_SELLER raporlarındaki netSaleAmount toplanır.
+    // Vergi'yi yine platform ödeyeceği için netRevenue kullanılmaz.
+    // Vergi oranı admin settings'ten alınır, faturaya tek bir item olarak eklenir.
     // ─────────────────────────────────────────────────────────────
     private async createCommissionBillingForSeller(
         sellerAccountId: string,
@@ -92,7 +94,7 @@ export class BillingService {
         if (reports.length === 0) return;
 
         const totalCommission = reports.reduce(
-            (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netRevenue || 0),
+            (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netSaleAmount || 0),
             0,
         );
         if (totalCommission <= 0) {
