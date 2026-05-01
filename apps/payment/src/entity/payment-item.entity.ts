@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Payment } from './payment.entity';
 import { MoneyDbField } from './base';
+import { Account } from './account.entity';
 
 @Entity()
 export class PostralPaymentItem {
@@ -51,11 +52,16 @@ export class PostralPaymentItem {
     })
     payment!: Payment;
 
-    @Column()
-    sellerAccountId: string = "";
+    @Column({ nullable: true })
+    sellerAccountId?: string;
 
-    @Column()
-    sellerAccountName: string = "";
+    @ManyToOne(() => Account, { eager: true, nullable: true })
+    @JoinColumn({ name: 'sellerAccountId' })
+    sellerAccount?: Account;
+
+    get sellerAccountName(): string {
+        return this.sellerAccount ? this.sellerAccount.name : '';
+    }
 
     @Column()
     unit: string = "";

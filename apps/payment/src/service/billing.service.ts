@@ -195,7 +195,7 @@ export class BillingService {
         item.taxAmount = taxAmount;
         item.unTaxAmount = unTaxAmount;
         item.sellerAccountId = sellerAccountId;
-        item.sellerAccountName = '';
+        // item.sellerAccountName = '';
         item.variation = '';
         item.entityGroup = "";
         item.entityName = "";
@@ -208,7 +208,7 @@ export class BillingService {
         payment.totalAmount = totalAmount;
         payment.taxAmount = taxAmount;
         payment.customerAccountId = customerAccountId;
-        payment.customerAccountName = '';
+        // payment.customerAccountName = '';
         payment.paymentStatus = 'COMPLETED';
         payment.includeInReportDigestion = false;
         payment.items = [item];

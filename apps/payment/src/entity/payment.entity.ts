@@ -13,6 +13,7 @@ import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
 import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { MoneyDbField } from './base';
+import { Account } from './account.entity';
 
 @Entity()
 export class Payment {
@@ -46,11 +47,15 @@ export class Payment {
     })
     taxes!: PostralPaymentTax[];
 
-    @Column()
-    customerAccountId!: string;
-
     @Column({ nullable: true })
-    customerAccountName!: string;
+    customerAccountId?: string;
+
+    @ManyToOne(() => Account, { eager: true, nullable: true })
+    @JoinColumn({ name: 'customerAccountId' })
+    customerAccount?: Account;
+
+    // @Column({ nullable: true })
+    // customerAccountName!: string;
 
     @Column({ type: 'varchar' })
     paymentStatus!: PaymentStatus;
@@ -97,4 +102,8 @@ export class Payment {
     // Raporlara dahil edilsin mi diye kontrol için eklendi, digestion sırasında includeInReportDigestion = false olan raporlar atlanacak.
     @Column({ default: true })
     includeInReportDigestion: boolean = true;
+
+    get customerAccountName(): string {
+        return this.customerAccount ? this.customerAccount.name : '';
+    }
 }
