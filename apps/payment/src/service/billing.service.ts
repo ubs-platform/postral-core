@@ -10,6 +10,7 @@ import { AdminSettingsService } from './admin-settings.service';
 import { AdminSettingsDto } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
+import { PaymentOperationManagementService } from './payment-operation-management.service';
 
 @Injectable()
 export class BillingService {
@@ -23,6 +24,7 @@ export class BillingService {
         @InjectRepository(Payment)
         private readonly paymentRepo: Repository<Payment>,
         private readonly adminSettingsService: AdminSettingsService,
+        private readonly paymentOperationManagementService: PaymentOperationManagementService,
     ) { }
 
     // ─────────────────────────────────────────────────────────────
@@ -209,12 +211,15 @@ export class BillingService {
         payment.taxAmount = taxAmount;
         payment.customerAccountId = customerAccountId;
         // payment.customerAccountName = '';
-        payment.paymentStatus = 'COMPLETED';
+        payment.paymentStatus = 'WAITING';
+        payment.openPayment = true;
         payment.includeInReportDigestion = false;
         payment.items = [item];
         payment.taxes = [];
 
-        return await this.paymentRepo.save(payment);
+        const saved = await this.paymentRepo.save(payment);
+        await this.paymentOperationManagementService.createOpenPaymentOperation(saved.id, totalAmount, currency);
+        return saved;
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../entity/payment.entity';
 import { Repository } from 'typeorm';
@@ -326,7 +326,8 @@ export class PaymentService {
                 id,
             );
 
-        if (paidAmount >= payment.totalAmount) {
+        // Açık faturalar confirmOpenPayment ile tamamlanır, otomatik tamamlama engellenir
+        if (!payment.openPayment && paidAmount >= payment.totalAmount) {
             payment.paymentStatus = 'COMPLETED';
         }
 
@@ -372,5 +373,55 @@ export class PaymentService {
 
         // validatePaymentOperationsInChannelWrapServices=false: operasyon zaten yukarıda güncellendi
         await this.updatePaymentByOperationStatuses(operation.paymentId, false);
+    }
+
+    async confirmOpenPayment(paymentId: string, sellerAccountId: string): Promise<PaymentDTO> {
+        let payment = await this.findPaymentByIdRaw(paymentId, true);
+        if (!payment) {
+            throw new NotFoundException('Payment not found');
+        }
+        if (!payment.openPayment) {
+            throw new BadRequestException('This payment is not an open payment');
+        }
+        if (payment.paymentStatus !== 'WAITING') {
+            throw new BadRequestException('Open payment is already resolved');
+        }
+
+        // Yetki kontrolü: satıcı ya müşteri (komisyon) ya da items içinde sellerAccountId (hakediş)
+        const isCustomer = payment.customerAccountId === sellerAccountId;
+        const isSeller = payment.items?.some((i) => i.sellerAccountId === sellerAccountId);
+        if (!isCustomer && !isSeller) {
+            throw new ForbiddenException('You are not authorized to confirm this payment');
+        }
+
+        payment.paymentStatus = 'COMPLETED';
+        payment = await this.paymentrepo.save(payment);
+        const dto = this.paymentMapper.toDto(payment);
+        this.paymentStream.next(dto);
+
+        await this.postPaymentOperation(payment);
+
+        // Tüm SellerPaymentOrders'ı ve payment'ı kapat
+        await this.sellerPaymentOrderService.closeOpenPaymentOrders(payment.id);
+        payment.openPayment = false;
+        await this.paymentrepo.save(payment);
+
+        if (payment.includeInReportDigestion) {
+            const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
+            await this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+            const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
+            for (const accountId of accountIds) {
+                if (accountId) {
+                    this.webhookDispatchService.send(accountId, 'PAYMENT_COMPLETED', {
+                        paymentId: payment.id,
+                        accountId: accountId,
+                    }).catch((err) => {
+                        console.error('Webhook dispatch error (PAYMENT_COMPLETED / openPayment):', err);
+                    });
+                }
+            }
+        }
+
+        return dto;
     }
 }

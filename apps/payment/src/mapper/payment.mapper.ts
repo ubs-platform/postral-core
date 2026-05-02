@@ -30,6 +30,7 @@ export class PaymentMapper {
             createdAt: saved.createdAt,
             updatedAt: saved.updatedAt,
             includeInReportDigestion: saved.includeInReportDigestion,
+            openPayment: saved.openPayment,
         };
     }
 
@@ -51,6 +52,7 @@ export class PaymentMapper {
             items: this.paymentItemMapper.toDto(saved.items),
             taxes: this.paymentTaxMapper.toDto(saved.taxes),
             includeInReportDigestion: saved.includeInReportDigestion,
+            openPayment: saved.openPayment,
         };
     }
 }

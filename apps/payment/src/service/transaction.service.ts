@@ -62,6 +62,7 @@ export class SellerPaymentOrderService {
         entity.errorStatus = dto.errorStatus;
         entity.sellerOrderType = dto.transactionType;
         entity.operationNote = dto.operationNote;
+        entity.openPayment = dto.openPayment ?? false;
         return entity;
     }
 
@@ -154,5 +155,9 @@ export class SellerPaymentOrderService {
             invoiceCount,
             hasFinalizedInvoice,
         });
+    }
+
+    async closeOpenPaymentOrders(paymentId: string): Promise<void> {
+        await this.transactionRepository.update({ paymentId }, { openPayment: false });
     }
 }

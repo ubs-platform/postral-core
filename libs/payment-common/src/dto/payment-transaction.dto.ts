@@ -24,6 +24,7 @@ export class SellerPaymentOrderDTO {
     description?: string;
     invoiceCount?: number;
     hasFinalizedInvoice?: boolean;
+    openPayment?: boolean;
 }
 
 export class PaymentSellerOrderSearchDTO {

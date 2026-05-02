@@ -103,6 +103,10 @@ export class Payment {
     @Column({ default: true })
     includeInReportDigestion: boolean = true;
 
+    // Açık fatura: ödeme tamamlanmaz ancak güven ilişkisiyle tamamlanmış sayılır. Satıcı onayıyla kapatılır.
+    @Column({ default: false })
+    openPayment: boolean = false;
+
     get customerAccountName(): string {
         return this.customerAccount ? this.customerAccount.name : '';
     }
