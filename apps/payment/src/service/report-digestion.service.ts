@@ -182,10 +182,12 @@ export class ReportDigestionService {
         return expense;
     }
 
-    private async updateProviderFeeExpenseForReport(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
+    private async updateProviderFeeExpenseForReport(reportId: string, payment: PaymentFullDTO, accountId: "PLATFORM" | string): Promise<void> {
+        const isPlatformReport = accountId === "PLATFORM";
+
         const [operations, paymentSellerOrder] = await Promise.all([
             this.paymentChannelOperationRepo.find({
-                where: { paymentId: payment.id, providerFeeDebitFrom: Not('PLATFORM'), providerFee: Not(0) },
+                where: { paymentId: payment.id, providerFeeDebitFrom: !isPlatformReport ? Not('PLATFORM') : 'PLATFORM' , providerFee: Not(0) },
             }),
             this.sellerPaymentOrderService.findByPaymentIdAndAccountId(payment.id, accountId),
         ]);
@@ -449,6 +451,8 @@ export class ReportDigestionService {
             }
 
             if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
+                await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
+
                 await this.digestComissionIncomeForReport(freshReport,
                     payment,
                     freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
