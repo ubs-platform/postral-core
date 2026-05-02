@@ -164,7 +164,7 @@ export class PaymentService {
 
     async generateAccountPaymentTransactions(paymentId: string) {
         const payment = await this.findPaymentById(paymentId, true) as PaymentFullDTO;
-        this.accountPaymentTransactionService.fromPayment(payment);
+        await this.accountPaymentTransactionService.fromPayment(payment);
     }
 
 
@@ -424,4 +424,65 @@ export class PaymentService {
 
         return dto;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Fatura payment'ını doğrudan entity olarak oluşturur.
+    // init() bypass edilir: komisyon hesabı yapılmaz, event gönderilmez,
+    // includeInReportDigestion = false olarak işaretlenir.
+    // ─────────────────────────────────────────────────────────────
+    public async createBillingPayment(params: {
+        customerAccountId: string;
+        sellerAccountId: string;
+        totalAmount: number;
+        currency: string;
+        itemId: string;
+        itemName: string;
+        taxRate: number;
+    }): Promise<Payment> {
+        const { customerAccountId, sellerAccountId, totalAmount, currency, itemId, itemName, taxRate } = params;
+
+        const taxDto = TaxCalculationUtil.generateTaxDto(taxRate.toString(), totalAmount, taxRate, null);
+        const taxAmount = taxDto.taxAmount;
+
+        const unTaxAmount = taxDto.untaxAmount;
+
+        const item = new PostralPaymentItem();
+        item.itemId = itemId;
+        item.name = itemName;
+        item.quantity = 1;
+        item.totalAmount = totalAmount;
+        item.unitAmount = totalAmount;
+        item.originalUnitAmount = totalAmount;
+        item.taxPercent = taxRate;
+        item.taxAmount = taxAmount;
+        item.unTaxAmount = unTaxAmount;
+        item.sellerAccountId = sellerAccountId;
+        // item.sellerAccountName = '';
+        item.variation = '';
+        item.entityGroup = "";
+        item.entityName = "";
+        item.entityId = "";
+        item.unit = 'ITEM';
+
+        const payment = new Payment();
+        payment.type = 'PURCHASE';
+        payment.currency = currency;
+        payment.totalAmount = totalAmount;
+        payment.taxAmount = taxAmount;
+        payment.customerAccountId = customerAccountId;
+        // payment.customerAccountName = '';
+        payment.paymentStatus = 'WAITING';
+        payment.openPayment = true;
+        payment.includeInReportDigestion = false;
+        payment.items = [item];
+        payment.taxes = [];
+
+        const saved = await this.paymentrepo.save(payment);
+        // await this.generateAccountPaymentTransactions(saved.id);
+        await this.paymentOperationManagementService.createOpenPaymentOperation(saved.id, totalAmount, currency);
+        await this.generateSellerPaymentOrders(saved);
+        // await this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(saved));
+        return saved;
+    }
+
 }

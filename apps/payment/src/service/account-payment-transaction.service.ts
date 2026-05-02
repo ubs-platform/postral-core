@@ -95,15 +95,15 @@ export class AccountPaymentTransactionService {
             const paymentItem = paymentReal.items[index];
             let sellerTransaction = new AccountPaymentTransactionDTO();
             sellerTransaction.corelationId = korelasyon;
-            if (transactionPerSellerAccountMap.has(paymentItem.sellerAccountId)) {
-                sellerTransaction = transactionPerSellerAccountMap.get(paymentItem.sellerAccountId)!;
+            if (transactionPerSellerAccountMap.has(paymentItem.sellerAccountId!)) {
+                sellerTransaction = transactionPerSellerAccountMap.get(paymentItem.sellerAccountId!)!;  
                 sellerTransaction.amount = AmountCalculationUtil.addNumberValues(sellerTransaction.amount, paymentItem.totalAmount);
                 sellerTransaction.taxAmount = AmountCalculationUtil.addNumberValues(sellerTransaction.taxAmount, paymentItem.taxAmount);
             } else {
                 TypeAssertionUtil.assertIsNumber(paymentItem.totalAmount, "paymentItem totalAmount must be a number");
                 TypeAssertionUtil.assertIsNumber(paymentItem.taxAmount, "paymentItem taxAmount must be a number");
                 transactionSellerNames.add(paymentItem.sellerAccountName!);
-                sellerTransaction.accountId = paymentItem.sellerAccountId;
+                sellerTransaction.accountId = paymentItem.sellerAccountId!;
                 sellerTransaction.accountName = paymentItem.sellerAccountName!;
                 sellerTransaction.amount = paymentItem.totalAmount;
                 sellerTransaction.taxAmount = paymentItem.taxAmount;
@@ -113,7 +113,7 @@ export class AccountPaymentTransactionService {
                 sellerTransaction.description = `Payment ${paymentReal.type.toLowerCase()} for payment id ${paymentReal.id}. Customer: ${paymentReal.customerAccountName}`;
             }
 
-            transactionPerSellerAccountMap.set(paymentItem.sellerAccountId, sellerTransaction);
+            transactionPerSellerAccountMap.set(paymentItem.sellerAccountId!, sellerTransaction);
         }
         transactions.push(...transactionPerSellerAccountMap.values());
         const customerTransaction = new AccountPaymentTransactionDTO();

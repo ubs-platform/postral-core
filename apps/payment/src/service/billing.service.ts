@@ -11,6 +11,7 @@ import { AdminSettingsDto } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { PaymentOperationManagementService } from './payment-operation-management.service';
+import { PaymentService } from './payment.service';
 
 @Injectable()
 export class BillingService {
@@ -25,6 +26,7 @@ export class BillingService {
         private readonly paymentRepo: Repository<Payment>,
         private readonly adminSettingsService: AdminSettingsService,
         private readonly paymentOperationManagementService: PaymentOperationManagementService,
+        private readonly paymentService: PaymentService
     ) { }
 
     // ─────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ export class BillingService {
         const periodDesc = this.buildPeriodDesc(reports);
         const taxRate = settings.comissionItemTax?.variations?.[0]?.taxRate ?? 0;
 
-        const payment = await this.createBillingPayment({
+        const payment = await this.paymentService.createBillingPayment({
             // Komisyonu satıcı öder: satıcı müşteri, platform satıcı konumunda
             customerAccountId: sellerAccountId,
             sellerAccountId: settings.billingAccountId!,
@@ -148,7 +150,7 @@ export class BillingService {
 
         const periodDesc = this.buildPeriodDesc(reports);
 
-        const payment = await this.createBillingPayment({
+        const payment = await this.paymentService.createBillingPayment({
             // Hakediş: platform ödüyor, satıcı alıyor
             customerAccountId: settings.billingAccountId!,
             sellerAccountId: sellerAccountId,
@@ -165,62 +167,7 @@ export class BillingService {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Fatura payment'ını doğrudan entity olarak oluşturur.
-    // init() bypass edilir: komisyon hesabı yapılmaz, event gönderilmez,
-    // includeInReportDigestion = false olarak işaretlenir.
-    // ─────────────────────────────────────────────────────────────
-    private async createBillingPayment(params: {
-        customerAccountId: string;
-        sellerAccountId: string;
-        totalAmount: number;
-        currency: string;
-        itemId: string;
-        itemName: string;
-        taxRate: number;
-    }): Promise<Payment> {
-        const { customerAccountId, sellerAccountId, totalAmount, currency, itemId, itemName, taxRate } = params;
 
-        const taxDto = TaxCalculationUtil.generateTaxDto(taxRate.toString(), totalAmount, taxRate, null);
-        const taxAmount = taxDto.taxAmount;
-
-        const unTaxAmount = taxDto.untaxAmount;
-        
-        const item = new PostralPaymentItem();
-        item.itemId = itemId;
-        item.name = itemName;
-        item.quantity = 1;
-        item.totalAmount = totalAmount;
-        item.unitAmount = totalAmount;
-        item.originalUnitAmount = totalAmount;
-        item.taxPercent = taxRate;
-        item.taxAmount = taxAmount;
-        item.unTaxAmount = unTaxAmount;
-        item.sellerAccountId = sellerAccountId;
-        // item.sellerAccountName = '';
-        item.variation = '';
-        item.entityGroup = "";
-        item.entityName = "";
-        item.entityId = "";
-        item.unit = 'ITEM';
-
-        const payment = new Payment();
-        payment.type = 'PURCHASE';
-        payment.currency = currency;
-        payment.totalAmount = totalAmount;
-        payment.taxAmount = taxAmount;
-        payment.customerAccountId = customerAccountId;
-        // payment.customerAccountName = '';
-        payment.paymentStatus = 'WAITING';
-        payment.openPayment = true;
-        payment.includeInReportDigestion = false;
-        payment.items = [item];
-        payment.taxes = [];
-
-        const saved = await this.paymentRepo.save(payment);
-        await this.paymentOperationManagementService.createOpenPaymentOperation(saved.id, totalAmount, currency);
-        return saved;
-    }
 
     // ─────────────────────────────────────────────────────────────
     // Helpers
