@@ -182,12 +182,12 @@ export class ReportDigestionService {
         return expense;
     }
 
-    private async updateProviderFeeExpenseForReport(reportId: string, payment: PaymentFullDTO, accountId: "PLATFORM" | string): Promise<void> {
-        const isPlatformReport = accountId === "PLATFORM";
+    private async updateProviderFeeExpenseForReportAccountId(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
+        // const isPlatformReport = accountId === "PLATFORM";
 
         const [operations, paymentSellerOrder] = await Promise.all([
             this.paymentChannelOperationRepo.find({
-                where: { paymentId: payment.id, providerFeeDebitFrom: !isPlatformReport ? Not('PLATFORM') : 'PLATFORM' , providerFee: Not(0) },
+                where: { paymentId: payment.id, providerFeeDebitFrom: Not('PLATFORM'), providerFee: Not(0) },
             }),
             this.sellerPaymentOrderService.findByPaymentIdAndAccountId(payment.id, accountId),
         ]);
@@ -213,6 +213,26 @@ export class ReportDigestionService {
             await this.reportExpenseRepo.save(totalExpense);
         }
 
+    }
+
+    private async updateProviderFeeExpenseForPlatformReport(reportId: string, payment: PaymentFullDTO): Promise<void> {
+        // providerFeeDebitFrom: 'PLATFORM' olarak filtrelemek ilk başta mantıklı geldi ama satıcı ödediği zaman 
+        // sadece bu kadar miktarı sadece satıcıdan kesiyoruz. 
+        // Bir nevi aracı oluyoruz ve hakedişten de düşüyoruz. 
+        // Satıcının ödemesi demek sadece satıcıdan o kadar miktarı kesmemiz demek. O yüzden providerFeeDebitFrom alanına bakmadan, providerFee'si 0 olmayan tüm operasyonları 
+        // alarak kendi hanemize yazmamız gerekiyor.
+        const operations = await this.paymentChannelOperationRepo.find({
+            where: { paymentId: payment.id, providerFee: Not(0) },
+        });
+        for (const operation of operations) {
+            if (operation.providerFee <= 0) continue;
+            const feeExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', PAYMENT_SERVICE_FEE, payment.currency);
+            feeExpense.expenseAmount = AmountCalculationUtil.addNumberValues(feeExpense.expenseAmount, operation.providerFee);
+            await this.reportExpenseRepo.save(feeExpense);
+            const totalExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', REPORT_TOTAL, payment.currency);
+            totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, operation.providerFee);
+            await this.reportExpenseRepo.save(totalExpense);
+        }
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
@@ -445,13 +465,13 @@ export class ReportDigestionService {
             let flag = payment.includeInReportDigestion
             if (flag && freshReport.reportType === "SELLER") {
                 await this.updateExpensesForReport(freshReport.id, payment, accountId);
-                await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
+                await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
                 await this.digestPayment(freshReport, payment);
                 await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
             }
 
             if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
-                await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
+                await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
 
                 await this.digestComissionIncomeForReport(freshReport,
                     payment,

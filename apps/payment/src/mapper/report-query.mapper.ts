@@ -17,6 +17,7 @@ export class ReportQueryMapper {
         dto.dateGrouping = entity.dateGrouping;
         dto.createdAt = entity.createdAt;
         dto.updatedAt = entity.updatedAt;
+        dto.reportType = entity.reportType;
         return dto;
     }
 
@@ -26,6 +27,7 @@ export class ReportQueryMapper {
         entity.ownerAccountId = dto.ownerAccountId;
         entity.currency = dto.currency;
         entity.dateGrouping = dto.dateGrouping;
+        entity.reportType = dto.reportType;
         return entity;
     }
 }
