@@ -7,6 +7,7 @@ import {
     PaymentItemDto,
 } from '@tk-postral/payment-common';
 import { PaymentItemSearchService } from './payment-item-search.service';
+import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 
 @Injectable()
 export class UblGeneratorService {
@@ -39,17 +40,14 @@ export class UblGeneratorService {
                 : 'TRY';
         const invoiceNumber = invoice.invoiceNumber || invoice.id;
 
-        const totalUnTaxAmount = items.reduce(
-            (sum, item) => sum + (Number(item.unTaxAmount) || 0),
-            0,
+        const totalUnTaxAmount = AmountCalculationUtil.addNumberValues(
+            ...items.map(item => Number(item.unTaxAmount) || 0),
         );
-        const totalTaxAmount = items.reduce(
-            (sum, item) => sum + (Number(item.taxAmount) || 0),
-            0,
+        const totalTaxAmount = AmountCalculationUtil.addNumberValues(
+            ...items.map(item => Number(item.taxAmount) || 0),
         );
-        const totalAmount = items.reduce(
-            (sum, item) => sum + (Number(item.totalAmount) || 0),
-            0,
+        const totalAmount = AmountCalculationUtil.addNumberValues(
+            ...items.map(item => Number(item.totalAmount) || 0),
         );
 
         const issueDate = invoice.invoiceDate
@@ -235,8 +233,14 @@ export class UblGeneratorService {
             if (!groups[percent]) {
                 groups[percent] = { taxableAmount: 0, taxAmount: 0 };
             }
-            groups[percent].taxableAmount += Number(item.unTaxAmount) || 0;
-            groups[percent].taxAmount += Number(item.taxAmount) || 0;
+            groups[percent].taxableAmount = AmountCalculationUtil.addNumberValues(
+                groups[percent].taxableAmount,
+                Number(item.unTaxAmount) || 0,
+            );
+            groups[percent].taxAmount = AmountCalculationUtil.addNumberValues(
+                groups[percent].taxAmount,
+                Number(item.taxAmount) || 0,
+            );
         }
         return groups;
     }
