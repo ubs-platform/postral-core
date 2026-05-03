@@ -135,9 +135,10 @@ export class InvoiceController {
         const invoice = await this.invoiceService.findById(id);
         await this.invoiceService.assertSellerIsOwner(invoice.sellerId, user);
         const xmlContent = await this.ublGeneratorService.generateUblXml(invoice);
-        const filename = `invoice-${invoice.invoiceNumber || id}.xml`;
+        const safeBase = (invoice.invoiceNumber || id).replace(/[^a-zA-Z0-9\-_.]/g, '_');
+        const safeFilename = `invoice-${safeBase}.xml`;
         reply
-            .header('Content-Disposition', `attachment; filename="${filename}"`)
+            .header('Content-Disposition', `attachment; filename="${safeFilename}"`)
             .type('application/xml')
             .send(xmlContent);
     }
