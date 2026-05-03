@@ -40,14 +40,13 @@ export class UblGeneratorService {
                 : 'TRY';
         const invoiceNumber = invoice.invoiceNumber || invoice.id;
 
-        const totalUnTaxAmount = AmountCalculationUtil.addNumberValues(
-            ...items.map(item => Number(item.unTaxAmount) || 0),
-        );
-        const totalTaxAmount = AmountCalculationUtil.addNumberValues(
-            ...items.map(item => Number(item.taxAmount) || 0),
-        );
-        const totalAmount = AmountCalculationUtil.addNumberValues(
-            ...items.map(item => Number(item.totalAmount) || 0),
+        const { totalUnTaxAmount, totalTaxAmount, totalAmount } = items.reduce(
+            (acc, item) => ({
+                totalUnTaxAmount: AmountCalculationUtil.addNumberValues(acc.totalUnTaxAmount, Number(item.unTaxAmount) || 0),
+                totalTaxAmount: AmountCalculationUtil.addNumberValues(acc.totalTaxAmount, Number(item.taxAmount) || 0),
+                totalAmount: AmountCalculationUtil.addNumberValues(acc.totalAmount, Number(item.totalAmount) || 0),
+            }),
+            { totalUnTaxAmount: 0, totalTaxAmount: 0, totalAmount: 0 },
         );
 
         const issueDate = invoice.invoiceDate
