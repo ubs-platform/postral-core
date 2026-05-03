@@ -73,9 +73,11 @@ import { CryptionUtil } from './util/cryption-util';
 import { AdminOperationsService } from './service/admin-operations.service';
 import { AdminOperationsController } from './controller/admin-operations.controller';
 import { BillingService } from './service/billing.service';
+import { UblGeneratorService } from './service/ubl-generator.service';
 import { WebhookConfigService } from './service/webhook-config.service';
 import { WebhookDispatchService } from './service/webhook-dispatch.service';
 import { WebhookConfigController } from './controller/webhook-config.controller';
+
 import { connection } from 'mongoose';
 
 @Module({
@@ -160,6 +162,7 @@ import { connection } from 'mongoose';
         CryptionUtil,
         AdminOperationsService,
         BillingService,
+        UblGeneratorService,
         WebhookConfigService,
         WebhookDispatchService,
     ],

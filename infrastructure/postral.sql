@@ -1,3 +1,6 @@
+DROP DATABASE IF EXISTS `postral_core`;
+CREATE DATABASE IF NOT EXISTS `postral_core` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;
+USE `postral_core`;
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19-12.1.2-MariaDB, for debian-linux-gnu (x86_64)
 --
@@ -1095,6 +1098,9 @@ CREATE TABLE `refund_request` (
 LOCK TABLES `refund_request` WRITE;
 /*!40000 ALTER TABLE `refund_request` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `refund_request` VALUES
+('72c735c3-3aec-4bf9-9cfd-a2baa2dae9d6','APPROVED','68fe859434da9a8bb89ce130','69b297584a58c54d129dbe60','2026-04-29 14:21:22','2026-04-29 11:22:32','bb251590-67d6-4165-8321-7a04fa357242','c783e9dc-07aa-4fe4-95e9-be16246156bb','2bfd50af-8fab-4d7d-8b6d-832dbe2d3ac4'),
+('9715ba6b-2d0c-4247-91a6-d747f7cc737c','APPROVED','68fe859434da9a8bb89ce130','69b297584a58c54d129dbe60','2026-04-29 13:58:35','2026-04-29 10:58:43','bb251590-67d6-4165-8321-7a04fa357242','c783e9dc-07aa-4fe4-95e9-be16246156bb','fadd1328-7198-408e-8405-9eda402b9dda');
 /*!40000 ALTER TABLE `refund_request` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
@@ -1135,6 +1141,12 @@ CREATE TABLE `refund_request_item` (
 LOCK TABLES `refund_request_item` WRITE;
 /*!40000 ALTER TABLE `refund_request_item` DISABLE KEYS */;
 set autocommit=0;
+INSERT INTO `refund_request_item` VALUES
+('c9cc556d-7c76-4d9f-8cb8-343f9661cfdb','27e59a07-98d3-495a-8b33-db7b515d962e','72c735c3-3aec-4bf9-9cfd-a2baa2dae9d6','Tost','basil','dbf8a42f-69f0-4181-8373-2a0b3ea01061',1.0000,12.0000,10.0000,12.0000,10.0000,2.0000,'electronics',2.0000,5.0000),
+('472172d7-4547-4029-9309-7319884ab1e5','bd5e191f-6aa0-42b8-b784-a7e1367581a2','9715ba6b-2d0c-4247-91a6-d747f7cc737c','Hayat Reçeli','default','a7d0eb1b-0c3f-4b45-8b6e-44ed9d7205a9',1.0000,342.0000,310.9091,342.0000,310.9091,31.0909,'',0.0000,0.0000),
+('e31442d4-a831-4545-8cb8-abd7a552ebe6','a492f455-2ee5-456d-99b3-74f1051520d1','72c735c3-3aec-4bf9-9cfd-a2baa2dae9d6','Hayat Reçeli','default','a7d0eb1b-0c3f-4b45-8b6e-44ed9d7205a9',1.0000,342.0000,310.9091,342.0000,310.9091,31.0909,'books_media',46.6364,5.0000),
+('e8bb5ff2-8f2b-4a33-82f3-adfc6dea0afc','291b60a1-6dcf-4aa0-a869-df808a3f3f83','72c735c3-3aec-4bf9-9cfd-a2baa2dae9d6','Something','default','9dd18852-2002-46a6-87cb-0de0d0ef4ccf',1.0000,15.0000,12.5000,15.0000,12.5000,2.5000,'automotive',2.5000,5.0000),
+('a2f689cd-b55d-4263-a632-be6ff1ef4829','7583bedb-7eff-4a18-a330-b7fd8ec3aaff','9715ba6b-2d0c-4247-91a6-d747f7cc737c','Something','default','9dd18852-2002-46a6-87cb-0de0d0ef4ccf',1.0000,15.0000,12.5000,15.0000,12.5000,2.5000,'',0.0000,0.0000);
 /*!40000 ALTER TABLE `refund_request_item` ENABLE KEYS */;
 UNLOCK TABLES;
 commit;
