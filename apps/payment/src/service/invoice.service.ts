@@ -27,6 +27,7 @@ import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { WebhookDispatchService } from './webhook-dispatch.service';
 
 @Injectable()
 export class InvoiceService {
@@ -36,6 +37,7 @@ export class InvoiceService {
         private readonly invoiceMapper: InvoiceMapper,
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
         private readonly eoService: EntityOwnershipService,
+        private readonly webhookDispatchService: WebhookDispatchService,
     ) { }
 
     async assertSellerIsOwner(user: UserAuthBackendDTO, accountId: string) {
@@ -87,6 +89,14 @@ export class InvoiceService {
 
         if (saved.sellerPaymentOrderId) {
             await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
+        }
+
+        const sellerAccountId = saved.sellerInvoiceAccount?.realAccountId;
+        if (sellerAccountId) {
+            this.webhookDispatchService.send(sellerAccountId, 'INVOICE_UPLOADED', {
+                invoiceId: saved.id,
+                accountId: sellerAccountId,
+            }).catch((err) => console.error('Webhook dispatch error (INVOICE_UPLOADED):', err));
         }
 
         return this.invoiceMapper.toDto(saved);
@@ -281,6 +291,14 @@ export class InvoiceService {
                     // TypeORM transaction callback içinde await olduğu için manager commit olana kadar bekleyecektir.
                     // Microservice emit, manager.save'den sonra yapılabilir.
                     this.emitInvoiceUpdatedEvent(updatedInvoice.sellerPaymentOrderId);
+                }
+
+                const sellerAccountId = invoice.sellerInvoiceAccount?.realAccountId;
+                if (sellerAccountId) {
+                    this.webhookDispatchService.send(sellerAccountId, 'INVOICE_FINALIZED', {
+                        invoiceId: updatedInvoice.id,
+                        accountId: sellerAccountId,
+                    }).catch((err) => console.error('Webhook dispatch error (INVOICE_FINALIZED):', err));
                 }
 
                 return this.invoiceMapper.toDto(updatedInvoice);

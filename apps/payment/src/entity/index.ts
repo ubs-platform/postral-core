@@ -23,6 +23,8 @@ import { ReportTaxGroup } from './report-tax-group.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { ReportExpense } from './report-expense.entity';
 import { AdminSettings } from './admin-settings.entity';
+import { WebhookConfig } from './webhook-config.entity';
+import { WebhookEventLog } from './webhook-event-log.entity';
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -49,7 +51,9 @@ export const PaymentsEntities = [
     ReportTaxGroup,
     ReportPaymentRelation,
     ReportExpense,
-    AdminSettings
+    AdminSettings,
+    WebhookConfig,
+    WebhookEventLog,
 ];
 
 export {
@@ -78,7 +82,9 @@ export {
     ReportPaymentRelation,
     ReportExpense as ReportComission,
     ReportExpense,
-    AdminSettings
+    AdminSettings,
+    WebhookConfig,
+    WebhookEventLog,
 }
 
 // export * from './payment-item.entity';
