@@ -62,10 +62,15 @@ export class RefundService {
         user: UserAuthBackendDTO,
         requestId: string,
     ): Promise<RefundRequestDTO> {
+  
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
 
-        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId!, 'approve');
+        if (!request.requestedToPaymentAccountId) {
+            throw new BadRequestException('Refund request does not have a target payment account');
+        }
+
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'approve');
         this.assertItemsBelongToSingleSeller(payment, request.items);
         await this.triggerPaymentChannelRefund(payment);
         await this.paymentService.createRefundPayment(
@@ -82,8 +87,10 @@ export class RefundService {
     ): Promise<RefundRequestDTO> {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
-
-        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId!, 'reject');
+        if (!request.requestedToPaymentAccountId) {
+            throw new BadRequestException('Refund request does not have a target payment account');
+        }
+        await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'reject');
 
         return this.resolveRefundRequest(request, user, 'REJECTED');
     }

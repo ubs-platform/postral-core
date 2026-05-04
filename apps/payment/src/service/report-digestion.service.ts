@@ -365,7 +365,7 @@ export class ReportDigestionService {
             this.logger.warn(`Report ${platformReport.id} has no query loaded, cannot digest commission`);
             return;
         }
-        let totalComission = 0;
+        // let totalComission = 0;
         const percent = adminSettings.comissionItemTax?.variations?.[0]?.taxRate || 0;
         if (percent === 0) {
             this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
@@ -402,6 +402,9 @@ export class ReportDigestionService {
         platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
         platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
         platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
+
+        const totalComission = AmountCalculationUtil.minusNumberValues(currentComissionTotal, refundComissionTotal);
+
         let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
         totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(totalComissionExpenseReport);
@@ -547,18 +550,20 @@ export class ReportDigestionService {
 
             ],
         });
-
-        const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));
+        
+        const sellerAccountNamesMap = new Map(payment.items.map(i => [i.sellerAccountId, i.sellerAccountName]));
+        const sellerAccountIds = new Set(sellerAccountNamesMap.keys());
+        // const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));
         const batchInsert: Partial<ReportQuery>[] = [];
-        for (let i = 0; i < paymentSellerAccounts.size; i++) {
-            const accountId = Array.from(paymentSellerAccounts)[i];
-            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId.id),
-                existDailySellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'SELLER' && q.ownerAccountId === accountId.id);
+        for (let i = 0; i < sellerAccountIds.size; i++) {
+            const accountId = Array.from(sellerAccountIds)[i];
+            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId),
+                existDailySellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'SELLER' && q.ownerAccountId === accountId);
 
             if (!existDailyPlatformSellerQuery) {
                 const newQuery = new ReportQuery();
-                const accountName = accountId.name
-                newQuery.ownerAccountId = accountId.id;
+                const accountName = sellerAccountNamesMap.get(accountId);
+                newQuery.ownerAccountId = accountId;
                 newQuery.dateGrouping = 'DAILY';
                 newQuery.reportType = 'PLATFORM_SELLER';
                 newQuery.currency = payment.currency;
@@ -569,8 +574,8 @@ export class ReportDigestionService {
 
             if (!existDailySellerQuery) {
                 const newQuery = new ReportQuery();
-                const accountName = accountId.name
-                newQuery.ownerAccountId = accountId.id;
+                const accountName = sellerAccountNamesMap.get(accountId);
+                newQuery.ownerAccountId = accountId;
                 newQuery.dateGrouping = 'DAILY';
                 newQuery.reportType = 'SELLER';
                 newQuery.currency = payment.currency;
