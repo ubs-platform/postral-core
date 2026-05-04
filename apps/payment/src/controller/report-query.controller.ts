@@ -42,16 +42,24 @@ export class ReportQueryController extends BaseCrudController<
     }
 
     checkUser(operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID', user: Optional<UserAuthBackendDTO>, queriesAndPaths: Optional<{ [key: string]: any; }>, body: Optional<ReportQueryDTO>): Promise<void> {
-        if (
-            (operation === "ADD" || operation === "EDIT") &&
-            !user?.roles?.includes('ADMIN') &&
-            body?.reportType !== "SELLER") {
-            throw new BadRequestException('Only admin can create or edit non-seller report queries');
+        // Body is only present for ADD and EDIT operations, so we only need to check for those
+        if (operation === "ADD" || operation === "EDIT") {
+            if (
+                !user?.roles?.includes('ADMIN') &&
+                body?.reportType !== "SELLER") {
+                throw new BadRequestException('Only admin can create or edit non-seller report queries');
+            }
+
+            if (body?.reportType === "PLATFORM_SELLER" && body.dateGrouping !== "DAILY") {
+                throw new BadRequestException('Platform-Seller report queries must have DAILY date grouping, because it will used for generating invoices to sellers.');
+            }
+
+            if (body?.reportType === "SELLER" && !body.ownerAccountId) {
+                throw new BadRequestException('Seller report queries must have an owner account ID.');
+            }
         }
 
-        if ((operation === "EDIT" || operation === "ADD") && body?.reportType === "PLATFORM_SELLER" && body.dateGrouping !== "DAILY") {
-            throw new BadRequestException('Platform-Seller report queries must have DAILY date grouping, because it will used for generating invoices to sellers.');
-        }
+
         return Promise.resolve();
     }
 }
