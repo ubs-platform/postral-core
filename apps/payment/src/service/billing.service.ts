@@ -1,16 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { Payment } from '../entity/payment.entity';
-import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { AdminSettingsService } from './admin-settings.service';
 import { AdminSettingsDto } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
-import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
-import { PaymentOperationManagementService } from './payment-operation-management.service';
 import { PaymentService } from './payment.service';
 
 @Injectable()
@@ -22,10 +18,7 @@ export class BillingService {
         private readonly reportRepo: Repository<Report>,
         @InjectRepository(ReportQuery)
         private readonly queryRepo: Repository<ReportQuery>,
-        @InjectRepository(Payment)
-        private readonly paymentRepo: Repository<Payment>,
         private readonly adminSettingsService: AdminSettingsService,
-        private readonly paymentOperationManagementService: PaymentOperationManagementService,
         private readonly paymentService: PaymentService
     ) { }
 
