@@ -618,4 +618,3 @@ export class ReportDigestionService {
         return Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
     }
 }
-flag
