@@ -8,7 +8,9 @@ import {
     Put,
     Query,
     Res,
+    UseGuards,
 } from '@nestjs/common';
+import { NonProductionGuard } from '../guard/non-production.guard';
 import { ClientKafka, MessagePattern } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -200,16 +202,19 @@ export class DummyEcommercePaymentChannelController {
         );
     }
 
+    @UseGuards(NonProductionGuard)
     @Put('kdialog')
     async kDialogTestPut(@Body() body: any) {
         return this.kDialogTest({ body });
     }
     
+    @UseGuards(NonProductionGuard)
     @Post('kdialog')
     async kDialogTestPost(@Body() body: any) {
         return this.kDialogTest({ body });
     }
 
+    @UseGuards(NonProductionGuard)
     @Get('kdialog')
     async kDialogTestGet(@Query() query: any, @Body() body: any) {
         return this.kDialogTest({ query, body });
