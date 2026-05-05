@@ -103,16 +103,6 @@ import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-ent
             },
         ]),
         BackendJwtUtilsModule,
-        MulterModule.register({
-            storage: diskStorage({
-                destination: './uploads/invoices',
-                filename: (req, file, cb) => {
-                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                    const ext = extname(file.originalname);
-                    cb(null, `invoice-${uniqueSuffix}${ext}`);
-                },
-            }),
-        }),
     ],
     exports: [TypeOrmModule],
     providers: [

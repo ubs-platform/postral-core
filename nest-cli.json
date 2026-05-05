@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/postral-entities/tsconfig.lib.json"
       }
+    },
+    "testo": {
+      "type": "application",
+      "root": "apps/testo",
+      "entryFile": "main",
+      "sourceRoot": "apps/testo/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/testo/tsconfig.app.json"
+      }
     }
   }
 }
