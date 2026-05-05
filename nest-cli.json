@@ -27,6 +27,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/payment-common/tsconfig.lib.json"
       }
+    },
+    "postral-entities": {
+      "type": "library",
+      "root": "libs/postral-entities",
+      "entryFile": "index",
+      "sourceRoot": "libs/postral-entities/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/postral-entities/tsconfig.lib.json"
+      }
     }
   }
 }

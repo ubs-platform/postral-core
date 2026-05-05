@@ -1,3 +1,6 @@
+export type RefundRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+
 export class RefundRequestItemDTO {
     paymentItemId: string;
     refundCount: number;

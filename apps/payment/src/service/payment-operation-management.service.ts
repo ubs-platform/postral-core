@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Payment, PaymentChannelOperation } from '../entity';
+import { Payment, PaymentChannelOperation } from '@tk-postral/postral-entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';

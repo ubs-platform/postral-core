@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
-import { WebhookConfig } from '../entity/webhook-config.entity';
+import { WebhookConfig } from '@tk-postral/postral-entities';
 import { CryptionUtil } from '../util/cryption-util';
 import {
     WebhookConfigCreateDTO,

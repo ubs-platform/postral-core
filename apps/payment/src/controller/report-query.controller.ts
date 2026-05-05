@@ -3,7 +3,7 @@ import { ReportQueryCrudService } from '../service/report-query.service';
 import { ReportService } from '../service/report.service';
 import { ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
 import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
-import { ReportQuery } from '../entity/report-query.entity';
+import { ReportQuery } from '@tk-postral/postral-entities';
 import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';

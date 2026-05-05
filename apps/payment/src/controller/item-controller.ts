@@ -2,19 +2,14 @@ import {
     Controller,
     Get,
     Post,
-    Put,
     Delete,
     Param,
     Body,
     UseGuards,
     NotFoundException,
     UnauthorizedException,
-    Query,
 } from '@nestjs/common';
-import { AccountService } from '../service/account.service';
 import {
-    AccountDTO,
-    AccountSearchParamsDTO,
     ItemAddDTO,
     ItemDTO,
     ItemEditDTO,
@@ -23,17 +18,16 @@ import {
 } from '@tk-postral/payment-common';
 import {
     CurrentUser,
-    EntityOwnershipGroupClientService,
     EntityOwnershipService,
     JwtAuthGuard,
 } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
-import { identity, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
-import { Account } from '../entity';
+import { Item } from '@tk-postral/postral-entities';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
-import { Item } from '../entity/item.entity';
+
 import { ItemCrudService } from '../service/item-crud.service';
 import { ItemPriceService } from '../service/item-price.service';
 

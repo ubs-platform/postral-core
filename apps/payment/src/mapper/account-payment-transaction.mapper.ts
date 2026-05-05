@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { AccountPaymentTransaction } from "../entity/account-payment-transaction.entity";
+import { AccountPaymentTransaction } from '@tk-postral/postral-entities';
 import { AccountPaymentTransactionDTO } from "@tk-postral/payment-common";
 @Injectable()
 export class AccountPaymentTransactionMapper {

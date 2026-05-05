@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PaymentFullDTO, PaymentDTO } from "@tk-postral/payment-common";
-import { Payment } from "../entity";
+import { Payment } from '@tk-postral/postral-entities';
 import { InjectRepository } from "@nestjs/typeorm";
 import { PaymentMapper } from "../mapper/payment.mapper";
 import { PaymentTaxMapper } from "../mapper/payment-tax.mapper";

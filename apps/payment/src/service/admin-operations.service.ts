@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Account, Address, InvoiceAccount, InvoiceAddress } from "../entity";
+import { Account, Address, InvoiceAccount, InvoiceAddress } from '@tk-postral/postral-entities';
 import { Repository } from "typeorm";
 import { CryptionUtil } from "../util/cryption-util";
 import { ReportDigestionService } from "./report-digestion.service";

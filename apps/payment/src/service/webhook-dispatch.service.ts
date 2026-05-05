@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
-import { WebhookEventLog } from '../entity/webhook-event-log.entity';
+import { WebhookEventLog } from '@tk-postral/postral-entities';
 import { WebhookConfigService } from './webhook-config.service';
 import { CryptionUtil } from '../util/cryption-util';
 

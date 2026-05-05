@@ -9,7 +9,7 @@ import {
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
-import { Account } from '../entity';
+import { Account } from '@tk-postral/postral-entities';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { AuthUtilService } from '../service/auth-util.service';
 

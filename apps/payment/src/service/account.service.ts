@@ -20,7 +20,7 @@
 // import { NotFoundError } from 'rxjs';
 
 import { Injectable } from '@nestjs/common';
-import { Account } from '../entity';
+import { Account } from '@tk-postral/postral-entities';
 import { AccountDTO, AccountSearchParamsDTO, RelatedAccountFilterDto } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, In, Repository } from 'typeorm';

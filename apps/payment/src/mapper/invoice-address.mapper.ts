@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InvoiceAddressDto } from '@tk-postral/payment-common';
-import { InvoiceAddress } from '../entity/invoice-address.entity';
-import { Address } from '../entity';
+import { InvoiceAddress, Address } from '@tk-postral/postral-entities';
 import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()

@@ -2,10 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
-import { Report } from '../entity/report.entity';
+
 import { ReportDTO, ReportFullDTO, ReportSearchPaginationDTO } from '@tk-postral/payment-common';
-import { ReportExpense, ReportTaxGroup } from '../entity';
-import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
+
 import { PaymentCommonService } from './payment-common.service';
 import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
 import { ReportMapper } from '../mapper/report-mapper';
@@ -13,6 +12,7 @@ import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { AuthUtilService } from './auth-util.service';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { ReportDigestionService } from './report-digestion.service';
+import { ReportTaxGroup, ReportExpense, ReportPaymentRelation, Report } from '@tk-postral/postral-entities';
 
 @Injectable()
 export class ReportService {

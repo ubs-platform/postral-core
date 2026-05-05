@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ItemTaxEntity, ItemTaxVariation } from "../entity";
+import { ItemTaxEntity, ItemTaxVariation } from '@tk-postral/postral-entities';
 import { ItemTaxDTO } from "@tk-postral/payment-common";
 
 @Injectable()

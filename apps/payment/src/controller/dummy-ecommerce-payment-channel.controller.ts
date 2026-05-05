@@ -20,7 +20,7 @@ import {
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { FastifyReply } from 'fastify';
 import { Repository } from 'typeorm';
-import { DummyEcommerceOperation } from '../entity/dummy-ecommerce-operation.entity';
+import { DummyEcommerceOperation } from '@tk-postral/postral-entities';
 import { exec } from 'child_process';
 
 @Controller('dummy-ecommerce-payment-channel')

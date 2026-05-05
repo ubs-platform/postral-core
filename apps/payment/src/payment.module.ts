@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Payment } from './entity/payment.entity';
-import { PostralPaymentItem } from './entity/payment-item.entity';
+
 import { PaymentService } from './service/payment.service';
 import { PaymentController } from './controller/payment.controller';
 import { PaymentSearchService } from './service/payment-search.service';
@@ -11,7 +10,6 @@ import { PaymentItemMapper } from './mapper/payment-item.mapper';
 import { EventSenderService } from './service/event-management.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { randomUUID } from 'crypto';
-import { PaymentsEntities } from './entity';
 import { AccountService } from './service/account.service';
 import { AccountMapper } from './mapper/account.mapper';
 import { AppComissionService } from './service/app-commission.service';
@@ -79,12 +77,12 @@ import { WebhookDispatchService } from './service/webhook-dispatch.service';
 import { WebhookConfigController } from './controller/webhook-config.controller';
 
 import { connection } from 'mongoose';
+import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
 
 @Module({
     imports: [
         ScheduleModule.forRoot(),
-
-        TypeOrmModule.forFeature(PaymentsEntities),
+        PostralEntitiesModule,
         TypeOrmModule.forRoot({
             type: process.env.POSTRAL_DB_DRIVER as any || 'mariadb',
             host: process.env.POSTRAL_DB_HOST || 'localhost',

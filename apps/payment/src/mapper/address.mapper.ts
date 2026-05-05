@@ -1,7 +1,6 @@
 import { AccountDTO, AccountAddressDto } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
+import { Account, Address } from '@tk-postral/postral-entities';
 import { Inject, Injectable } from '@nestjs/common';
-import { Address } from '../entity/address.entity';
 import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()

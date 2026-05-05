@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
-import { Invoice } from '../entity/invoice.entity';
+import { Invoice } from '@tk-postral/postral-entities';
 import { InvoiceMapper } from '../mapper/invoice.mapper';
 import {
     InvoiceCreateDTO,

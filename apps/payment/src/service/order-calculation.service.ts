@@ -8,7 +8,7 @@ import {
     ItemListCalculationInputDto,
     ItemListCalculationDto,
 } from '@tk-postral/payment-common/dto/calculation.dto';
-import { PostralPaymentItem } from '../entity';
+import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
 import { ItemTaxService } from './item-tax.service';

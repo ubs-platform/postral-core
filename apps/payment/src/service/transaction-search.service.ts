@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Payment } from '../entity/payment.entity';
+import { Payment, SellerPaymentOrder } from '@tk-postral/postral-entities';
 import {
     In,
     Repository,
@@ -26,7 +26,6 @@ import { AccountMapper } from '../mapper/account.mapper';
 import { AccountService } from './account.service';
 import { PaymentSearchFlatDTO } from '@tk-postral/payment-common';
 import { TransactionMapper } from '../mapper/transaction.mapper';
-import { SellerPaymentOrder } from '../entity';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { exec } from 'child_process';
 import { AuthUtilService } from './auth-util.service';

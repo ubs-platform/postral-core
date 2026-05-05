@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReportQuery } from '../entity/report-query.entity';
+import { ReportQuery } from '@tk-postral/postral-entities';
 import { ReportQueryDTO } from '@tk-postral/payment-common';
 
 @Injectable()

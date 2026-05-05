@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentItemDto } from '@tk-postral/payment-common';
-import { PostralPaymentItem } from '../entity/payment-item.entity';
+import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { exec } from 'child_process';
 
 @Injectable()

@@ -9,10 +9,8 @@ import {
     ItemPriceSearchDTO,
     ItemSearchDTO,
 } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
-import { Item } from '../entity/item.entity';
+import { Account, Item, ItemPrice } from '@tk-postral/postral-entities';
 import { ItemMapper } from '../mapper/item.mapper';
-import { ItemPrice } from '../entity/item-price.entity';
 import { ItemPriceMapper } from '../mapper/item-price.mapper';
 import * as moment from 'moment';
 
