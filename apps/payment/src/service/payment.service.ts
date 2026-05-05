@@ -4,7 +4,7 @@ import { Payment, PostralPaymentItem } from '@tk-postral/postral-entities';
 import { Repository } from 'typeorm';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
+import { TaxCalculationUtil } from '@tk-postral/common-utils';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,

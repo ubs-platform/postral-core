@@ -6,8 +6,7 @@ import { Repository } from "typeorm/repository/Repository";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UUID } from "typeorm/driver/mongodb/bson.typings";
 import { randomUUID } from "crypto";
-import { AmountCalculationUtil } from "../util/calcs/amount-calculations";
-import { TypeAssertionUtil } from "../util/type-assertion";
+import { AmountCalculationUtil, TypeAssertionUtil } from "@tk-postral/common-utils";
 import { Or } from "typeorm";
 
 @Injectable()

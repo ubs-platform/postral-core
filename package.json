@@ -140,6 +140,7 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
+      "^@tk-postral/common-utils(|/.*)$": "<rootDir>/libs/common-utils/src/$1",
       "^@tk-postral/payments(|/.*)$": "<rootDir>/libs/payments/src/$1",
       "^@tk-postral/postral-entities(|/.*)$": "<rootDir>/libs/postral-entities/src/$1"
     }

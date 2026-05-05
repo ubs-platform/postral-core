@@ -5,7 +5,7 @@ import { Cron } from '@nestjs/schedule';
 import { Report, ReportQuery } from '@tk-postral/postral-entities';
 import { AdminSettingsService } from './admin-settings.service';
 import { AdminSettingsDto } from '@tk-postral/payment-common';
-import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
+import { AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentService } from './payment.service';
 
 @Injectable()

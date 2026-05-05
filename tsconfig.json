@@ -21,6 +21,12 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@tk-postral/common-utils": [
+        "libs/common-utils/src"
+      ],
+      "@tk-postral/common-utils/*": [
+        "libs/common-utils/src/*"
+      ],
       "@tk-postral/payment-common": [
         "libs/payment-common/src"
       ],

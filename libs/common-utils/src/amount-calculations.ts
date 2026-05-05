@@ -1,4 +1,4 @@
-import { TypeAssertionUtil } from "../type-assertion";
+import { TypeAssertionUtil } from "./type-assertion";
 import * as BigJs from "big.js";
 export class AmountCalculationUtil {
 

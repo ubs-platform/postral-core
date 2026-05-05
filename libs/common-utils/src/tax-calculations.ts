@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '@tk-postral/payment-common';
-import { ArrayToObjectUtil } from '../array-to-object';
-import { TypeAssertionUtil } from '../type-assertion';
+import { ArrayToObjectUtil } from './array-to-object';
+import { TypeAssertionUtil } from './type-assertion';
 import { AmountCalculationUtil } from './amount-calculations';
 
 export class TaxCalculationUtil {

@@ -15,8 +15,7 @@ import {
     PaymentFullDTO,
     RefundRequestDTO,
 } from '@tk-postral/payment-common';
-import { TypeAssertionUtil } from '../util/type-assertion';
-import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
+import { TypeAssertionUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 

@@ -10,6 +10,15 @@
     "webpack": true
   },
   "projects": {
+    "common-utils": {
+      "type": "library",
+      "root": "libs/common-utils",
+      "entryFile": "index",
+      "sourceRoot": "libs/common-utils/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/common-utils/tsconfig.lib.json"
+      }
+    },
     "payment": {
       "type": "application",
       "root": "apps/payment",

@@ -7,7 +7,7 @@ import {
     PaymentItemDto,
 } from '@tk-postral/payment-common';
 import { PaymentItemSearchService } from './payment-item-search.service';
-import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
+import { AmountCalculationUtil } from '@tk-postral/common-utils';
 
 @Injectable()
 export class UblGeneratorService {

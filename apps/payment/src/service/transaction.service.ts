@@ -1,28 +1,15 @@
-import { Injectable, NotFoundException, Post } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { PaymentMapper } from '../mapper/payment.mapper';
-import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
-
-import { EventSenderService } from './event-management.service';
 import {
-    PaymentItemDto,
-    PaymentInitDTO,
-    PaymentDTO,
-    TaxDTO,
-    PaymentTransactionDTO,
     SellerPaymentOrderDTO,
 } from '@tk-postral/payment-common';
-import { ItemService } from './item.service';
-import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
-import { ItemPriceService } from './item-price.service';
 
-import { ArrayToObjectUtil } from '../util/array-to-object';
-import { error } from 'console';
+import { ArrayToObjectUtil, TaxCalculationUtil } from '@tk-postral/common-utils';
 import { SellerPaymentOrder } from '@tk-postral/postral-entities';
+
 @Injectable()
 export class SellerPaymentOrderService {
     constructor(
