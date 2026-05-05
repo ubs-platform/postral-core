@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { AdminSettings } from "../entity";
+import { AdminSettings } from '@tk-postral/postral-entities';
 import { Repository } from "typeorm";
 import { AdminSettingsDto } from "@tk-postral/payment-common";
 import { ItemTaxMapper } from "../mapper/item-tax.mapper";

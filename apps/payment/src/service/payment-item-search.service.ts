@@ -7,7 +7,7 @@ import {
     PaymentItemDto,
     PaymentItemSearchDTO,
 } from '@tk-postral/payment-common';
-import { PostralPaymentItem } from '../entity';
+import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { exec } from 'child_process';
 

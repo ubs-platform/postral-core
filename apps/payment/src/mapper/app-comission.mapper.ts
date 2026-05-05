@@ -1,7 +1,6 @@
 import { AccountDTO } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
+import { Account, AppComission } from '@tk-postral/postral-entities';
 import { Inject, Injectable } from '@nestjs/common';
-import { AppComission } from '../entity/app-commission.entity';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
 
 @Injectable()

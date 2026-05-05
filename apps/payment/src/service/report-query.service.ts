@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { ReportQuery } from '../entity/report-query.entity';
+import { ReportQuery } from '@tk-postral/postral-entities';
 import { ReportQueryDTO, ReportQuerySearchDTO } from '@tk-postral/payment-common';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';

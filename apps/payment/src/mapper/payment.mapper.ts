@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Payment } from '../entity/payment.entity';
+import { Payment } from '@tk-postral/postral-entities';
 import { PaymentDTO, PaymentFullDTO } from '@tk-postral/payment-common';
 import { PaymentItemMapper } from './payment-item.mapper';
 import { PaymentTaxMapper } from './payment-tax.mapper';

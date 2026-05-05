@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ReportDTO, ReportFullDTO } from "@tk-postral/payment-common";
-import { Report } from "../entity/report.entity";
-import { ReportExpense, ReportTaxGroup } from "../entity";
+import { Report, ReportExpense, ReportTaxGroup } from '@tk-postral/postral-entities';
 @Injectable()
 export class ReportMapper {
 

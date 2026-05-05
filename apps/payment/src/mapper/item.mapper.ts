@@ -1,7 +1,6 @@
 import { AccountDTO, ItemDTO, ItemEditDTO } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
+import { Account, Item } from '@tk-postral/postral-entities';
 import { Inject, Injectable } from '@nestjs/common';
-import { Item } from '../entity/item.entity';
 import e from 'express';
 
 @Injectable()

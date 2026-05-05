@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Account } from '../entity';
+import { Account, Address } from '@tk-postral/postral-entities';
 import { AccountDTO, AccountSearchParamsDTO, AccountAddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, In, Like, Repository } from 'typeorm';
@@ -11,7 +11,6 @@ import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper'
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
-import { Address } from '../entity/address.entity';
 import { AddressMapper } from '../mapper/address.mapper';
 import { exec } from 'child_process';
 import { AuthUtilService } from './auth-util.service';

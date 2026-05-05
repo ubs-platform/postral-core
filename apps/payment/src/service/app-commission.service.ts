@@ -1,12 +1,10 @@
 import { Injectable, NotFoundException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Payment } from '../entity/payment.entity';
+import { Payment, PostralPaymentItem, PostralPaymentTax, Account, AppComission } from '@tk-postral/postral-entities';
 import { IsNull, Repository } from 'typeorm';
-import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';
-import { PostralPaymentTax } from '../entity/payment-tax.entity';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
@@ -15,10 +13,8 @@ import {
     TaxDTO,
     AccountDTO,
 } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
 import { AccountMapper } from '../mapper/account.mapper';
 import { NotFoundError } from 'rxjs';
-import { AppComission } from '../entity/app-commission.entity';
 import { AppComissionMapper } from '../mapper/app-comission.mapper';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
 import { SearchRequest, SearchResult } from '@ubs-platform/crud-base-common';

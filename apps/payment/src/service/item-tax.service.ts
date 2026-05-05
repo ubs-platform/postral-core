@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AddressSearchParamsDTO, ItemTaxDTO, ItemTaxSearchDTO } from '@tk-postral/payment-common';
 import { BaseCrudService } from '@ubs-platform/crud-base';
-import { ItemTaxEntity } from '../entity';
+import { ItemTaxEntity } from '@tk-postral/postral-entities';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';

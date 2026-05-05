@@ -1,8 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Payment } from '../entity/payment.entity';
+import { Payment, PostralPaymentItem } from '@tk-postral/postral-entities';
 import { Repository } from 'typeorm';
-import { PostralPaymentItem } from '../entity/payment-item.entity';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil } from '../util/calcs/tax-calculations';

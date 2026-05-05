@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { RefundRequest } from '../entity/refund-request.entity';
-import { RefundRequestItem } from '../entity/refund-request-item.entity';
-import { Payment } from '../entity/payment.entity';
-import { PostralPaymentItem } from '../entity/payment-item.entity';
+import { RefundRequest, RefundRequestItem, Payment, PostralPaymentItem, RefundRequestStatus } from '@tk-postral/postral-entities';
 import { PaymentService } from './payment.service';
 import { AuthUtilService } from './auth-util.service';
 import {
@@ -23,7 +20,6 @@ import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EventSenderService } from './event-management.service';
 import { RawSearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
-import { RefundRequestStatus } from '../entity/refund-request.entity';
 import { lastValueFrom } from 'rxjs';
 import { exec } from 'child_process';
 

@@ -1,19 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
-import { Report } from '../entity/report.entity';
-import { ReportQuery } from '../entity/report-query.entity';
+import { Report, ReportQuery, ReportComission, ReportTaxGroup, PaymentChannelOperation, ReportPaymentRelation, ReportExpense } from '@tk-postral/postral-entities';
 import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType } from '@tk-postral/payment-common';
-import { ReportComission, ReportTaxGroup } from '../entity';
-import { PaymentChannelOperation } from '../entity/payment-channel-operation.entity';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
-import { ReportPaymentRelation } from '../entity/report-payment-relation.entity';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
-import { ReportExpense } from '../entity/report-expense.entity';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 

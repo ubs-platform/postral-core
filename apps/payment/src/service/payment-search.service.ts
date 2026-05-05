@@ -1,6 +1,6 @@
 import { Injectable, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Payment } from '../entity/payment.entity';
+import { Payment } from '@tk-postral/postral-entities';
 import {
     In,
     Repository,

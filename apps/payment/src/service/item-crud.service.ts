@@ -7,8 +7,7 @@ import {
     ItemEditDTO,
     ItemSearchDTO,
 } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
-import { Item } from '../entity/item.entity';
+import { Account, Item } from '@tk-postral/postral-entities';
 import { ItemMapper } from '../mapper/item.mapper';
 import { ItemPriceService } from './item-price.service';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';

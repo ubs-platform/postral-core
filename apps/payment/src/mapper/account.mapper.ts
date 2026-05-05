@@ -1,5 +1,5 @@
 import { AccountDTO } from '@tk-postral/payment-common';
-import { Account } from '../entity/account.entity';
+import { Account } from '@tk-postral/postral-entities';
 import { Inject, Injectable } from '@nestjs/common';
 import { CryptionUtil } from '../util/cryption-util';
 

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Invoice } from '../entity/invoice.entity';
+import { Invoice, SellerPaymentOrder } from '@tk-postral/postral-entities';
 import {
     InvoiceCreateDTO,
     InvoiceDTO,
@@ -9,7 +9,6 @@ import {
 } from '@tk-postral/payment-common';
 import { InvoiceAddressMapper } from './invoice-address.mapper';
 import { InvoiceAccountMapper } from './invoice-account.mapper';
-import { SellerPaymentOrder } from '../entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';

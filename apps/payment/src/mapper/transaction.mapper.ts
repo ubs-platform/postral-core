@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Payment } from '../entity/payment.entity';
+import { Payment, SellerPaymentOrder } from '@tk-postral/postral-entities';
 import { PaymentDTO, PaymentItemDto } from '@tk-postral/payment-common';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { SellerPaymentOrderDTO } from '@tk-postral/payment-common';
-import { SellerPaymentOrder } from '../entity';
 import { exec } from 'child_process';
 
 @Injectable()
