@@ -26,6 +26,12 @@
       ],
       "@tk-postral/payment-common/*": [
         "libs/payment-common/src/*"
+      ],
+      "@tk-postral/postral-entities": [
+        "libs/postral-entities/src"
+      ],
+      "@tk-postral/postral-entities/*": [
+        "libs/postral-entities/src/*"
       ]
     }
   }

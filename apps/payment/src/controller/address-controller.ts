@@ -10,7 +10,7 @@ import { PostralConstants } from '../util/consts';
 import { BaseCrudController, CrudControllerConfig } from '@ubs-platform/crud-base';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { AddressService } from '../service/address.service';
-import { Address } from '../entity/address.entity';
+import { Address } from '@tk-postral/postral-entities';
 import { AuthUtilService } from '../service/auth-util.service';
 
 @Controller('address')

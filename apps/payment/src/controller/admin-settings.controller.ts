@@ -2,7 +2,7 @@ import { Body, Controller, Get, Put, UseGuards } from "@nestjs/common";
 import { AdminSettingsService } from "../service/admin-settings.service";
 import { JwtAuthGuard } from "@ubs-platform/users-microservice-helper";
 import { Roles, RolesGuard } from "@ubs-platform/users-roles";
-import { AdminSettings } from "../entity";
+import { AdminSettings } from "@tk-postral/postral-entities";
 
 @Controller("admin-settings")
 export class AdminSettingsController {
