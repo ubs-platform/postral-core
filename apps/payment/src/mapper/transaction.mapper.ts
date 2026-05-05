@@ -19,10 +19,11 @@ export class TransactionMapper {
         transaction.taxAmount = paymentItem.taxAmount;
         transaction.currency = payment.currency;
         transaction.paymentId = payment.id;
-        transaction.sourceAccountId = payment.customerAccountId;
-        transaction.targetAccountId = paymentItem.sellerAccountId;
+        transaction.sourceAccountId = payment.customerAccountId!;
+        transaction.targetAccountId = paymentItem.sellerAccountId!;
         transaction.paymentStatus = payment.paymentStatus;
         transaction.transactionType = payment.type === 'PURCHASE' ? 'CREDIT_TO_SELLER' : 'DEBIT_FROM_SELLER';
+        transaction.openPayment = payment.openPayment;
         return transaction;
     }
 
@@ -49,6 +50,7 @@ export class TransactionMapper {
             untaxedAmount: saved.untaxedAmount,
             invoiceCount: saved.invoiceCount,
             hasFinalizedInvoice: saved.hasFinalizedInvoice,
+            openPayment: saved.openPayment,
         };
     }
 }

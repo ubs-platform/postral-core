@@ -75,6 +75,14 @@ export class PaymentController {
         return await this.ps.cancelPayment(id);
     }
 
+    @Post('/:id/confirm')
+    public async confirmOpenPayment(
+        @Param() { id }: { id: string },
+        @Body() body: { sellerAccountId: string },
+    ) {
+        return await this.ps.confirmOpenPayment(id, body.sellerAccountId);
+    }
+
     @Sse('/:id/operation/stream')
     public async streamPaymentStatus(@Param() { id }: { id: string }) {
         return this.ps.paymentStream.pipe(filter((p) => p.id === id));

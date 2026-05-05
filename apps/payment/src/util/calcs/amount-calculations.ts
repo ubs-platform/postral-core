@@ -49,6 +49,8 @@ export class AmountCalculationUtil {
         return Number(startValue);
     }
 
+    
+
 
     static divideNumberValues(initialValue: number, ...values: number[]): number {
         if (initialValue === 0) {

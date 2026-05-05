@@ -22,6 +22,9 @@ export class ReportMapper {
         dto.lastDigestedAt = entity.lastDigestedAt;
         dto.createdAt = entity.createdAt;
         dto.archived = entity.archived;
+        dto.totalExpense = entity.totalExpense;
+        dto.netRevenueWithoutExpense = entity.netRevenueWithoutExpense;
+        dto.reportType = entity.reportType;
         return dto;
     }
 

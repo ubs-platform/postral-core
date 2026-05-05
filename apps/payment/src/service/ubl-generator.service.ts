@@ -24,10 +24,10 @@ export class UblGeneratorService {
             });
         }
 
-        const invoiceData = invoice as Record<string, unknown>;
+        const invoiceData = invoice as Record<string, any>;
         const paymentData =
             typeof invoiceData.payment === 'object' && invoiceData.payment !== null
-                ? (invoiceData.payment as Record<string, unknown>)
+                ? (invoiceData.payment as Record<string, any>)
                 : undefined;
         const currencyCandidate =
             paymentData?.currency ??

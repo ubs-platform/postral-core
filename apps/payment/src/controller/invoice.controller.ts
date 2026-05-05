@@ -81,7 +81,7 @@ export class InvoiceController {
             );
         }
     }
-    
+
     // Dosya yükleme işlemini farklı serviste yapacağım invoice id ile eşlenecek. O nedenle sadece metadata işlemleri burada olacak.
     @Post()
     @UseInterceptors()
@@ -133,7 +133,14 @@ export class InvoiceController {
         @Res() reply: FastifyReply,
     ): Promise<void> {
         const invoice = await this.invoiceService.findById(id);
-        await this.invoiceService.assertSellerIsOwner(invoice.sellerId, user);
+        const sellerAccountId = invoice.sellerInvoiceAccount?.realAccountId;
+        if (!sellerAccountId) {
+            throw new Error('Seller or customer account information is missing');
+        }
+        if (sellerAccountId) {
+            await this.invoiceService.assertSellerIsOwner(user, sellerAccountId);
+        }
+        // await this.invoiceService.assertSellerIsOwner(sellerAccountId, user);
         const xmlContent = await this.ublGeneratorService.generateUblXml(invoice);
         const safeBase = (invoice.invoiceNumber || id).replace(/[^a-zA-Z0-9\-_.]/g, '_');
         const safeFilename = `invoice-${safeBase}.xml`;

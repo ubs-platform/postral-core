@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { AdminSettings } from "../entity";
 import { Repository } from "typeorm";
 import { AdminSettingsDto } from "@tk-postral/payment-common";
+import { ItemTaxMapper } from "../mapper/item-tax.mapper";
 
 @Injectable()
 export class AdminSettingsService {
@@ -12,11 +13,11 @@ export class AdminSettingsService {
     /**
      *
      */
-    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>) { }
+    constructor(@InjectRepository(AdminSettings) private adminSettingsRepository: Repository<AdminSettings>, private taxMapper: ItemTaxMapper) { }
 
     // İlk kaydı düzenler ya da yoksa yeni oluşturur
     async upsertAdminSettings(settings: Partial<AdminSettingsDto>): Promise<AdminSettingsDto> {
-        let existingSettingsLs = await this.adminSettingsRepository.find();
+        let existingSettingsLs = await this.findRaw();
         const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
         if (existingSettings) {
             // Güncelleme işlemi
@@ -33,7 +34,7 @@ export class AdminSettingsService {
     }
 
     async getAdminSettings(): Promise<AdminSettingsDto> {
-        let existingSettingsLs = await this.adminSettingsRepository.find();
+        let existingSettingsLs = await this.findRaw();
         const existingSettings = existingSettingsLs.length > 0 ? existingSettingsLs[0] : null;
         if (!existingSettings) {
             // Eğer ayarlar yoksa, varsayılan bir kayıt oluşturabiliriz
@@ -45,6 +46,10 @@ export class AdminSettingsService {
         return this.toDto(existingSettings);
     }
 
+    private async findRaw() {
+        return await this.adminSettingsRepository.find({ relations: ['comissionItemTax', "comissionItemTax.variations"] });
+    }
+
     toDto(settings: AdminSettings) {
         const dto = new AdminSettingsDto();
         dto.id = settings.id;
@@ -52,12 +57,19 @@ export class AdminSettingsService {
         dto.comissionsCalculatedFromNet = settings.comissionsCalculatedFromNet;
         dto.createdAt = settings.createdAt;
         dto.updatedAt = settings.updatedAt;
+        dto.comissionItemTaxId = settings.comissionItemTaxId;
+        dto.comissionItemTax = settings.comissionItemTax ? this.taxMapper.toDTO(settings.comissionItemTax) : undefined;
+        dto.billingAccountId = settings.billingAccountId;
+        dto.billingDays = settings.billingDays;
         return dto;
     }
 
     updateFromDto(settings: AdminSettings, dto: AdminSettingsDto) {
         settings.sellerPaysPaymentServiceFee = dto.sellerPaysPaymentServiceFee;
         settings.comissionsCalculatedFromNet = dto.comissionsCalculatedFromNet;
+        settings.comissionItemTaxId = dto.comissionItemTaxId;
+        settings.billingAccountId = dto.billingAccountId;
+        settings.billingDays = dto.billingDays;
     }
 
 

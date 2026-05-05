@@ -74,6 +74,7 @@ export class ReportService {
         if (oldReportArchived.query == null) {
             throw new Error(`Report ${oldReportId} has no query loaded`);
         }
+
         const payments = await this.paymentCommonService.findPaymentDoesntHaveReportRelation(accountId, oldReportId);
         const batchInsert: Partial<ReportPaymentRelation>[] = [];
         for (const payment of payments) {
@@ -137,6 +138,9 @@ export class ReportService {
     async fetchInProgressReportIds(
         reportIds: string[]
     ): Promise<Map<String, String>> {
+        if (reportIds.length === 0) {
+            return new Map<string, string>();
+        }
         const map = new Map<string, string>();
         const alreadyWorkingReports = await this.reportPaymentRelationRepo
             .createQueryBuilder('relation')
@@ -170,6 +174,19 @@ export class ReportService {
         let userRelatedAccountIds: string[] = [];
         if (q.admin !== 'true' && user) {
             userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
+        }
+
+        // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim
+        if (userRelatedAccountIds.length === 0 && q.admin !== 'true') {
+            return {
+                content: [],
+                maxItemLength: 0,
+                maxPagesIndex: 0,
+                page: 0,
+                size: 0,
+                firstPage: true,
+                lastPage: true,
+            };
         }
 
         return await TypeormSearchUtil.modelSearch<Report>(

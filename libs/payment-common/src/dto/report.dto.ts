@@ -1,6 +1,14 @@
 import { BaseReport } from "./base-report.dto";
 import { SearchRequest } from "@ubs-platform/crud-base-common";
 
+/**
+ * Seller: Seller'in kazancı ve giderleri, yani müşteriden aldığı toplam ödeme - yaptığı toplam iade - satıcıya ödediği toplam ödeme - giderler
+ * Platform: Platformun kazancı, Satıcılardan aldığı komisyonlar ve diğer ücretler - platformun ödediği toplam ödeme - giderler
+ * PlatformFlow: Platforma giren ve çıkan para akışı, yani müşteriden alınan toplam ödeme - yapılan toplam iade
+ * PlatformSeller: Platformun satıcıya ödediği toplam ödeme - satıcılardan aldığı toplam komisyonlar ve diğer ücretler. Faturalandırma için bu kullanılacak
+ */
+export type ReportType = "SELLER" | "PLATFORM_FLOW" | "PLATFORM_SELLER" | "PLATFORM";
+
 export class ReportDTO implements BaseReport {
 
     id!: string;
@@ -20,6 +28,10 @@ export class ReportDTO implements BaseReport {
     archived?: boolean;
     totalExpenseAmount!: number;
     totalSaleAmountWithoutExpense!: number;
+    reportType!: ReportType;
+    totalExpense!: number;
+    netRevenueWithoutExpense!: number;
+    netRevenueWithoutExpenseTaxed!: number;
 }
 
 

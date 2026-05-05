@@ -29,4 +29,10 @@ export interface BaseReport {
 
     // Net gelir (net satın alma - net vergi)
     netRevenue: number;
+
+    // Net hakediş vergisiz (netRevenue - masraflar)
+    netRevenueWithoutExpense?: number;
+
+    // Net hakediş vergili (netSaleAmount - masraflar). Satıcıya hakediş ödemesinde kullanılır.
+    netRevenueWithoutExpenseTaxed?: number;
 }

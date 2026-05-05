@@ -27,6 +27,8 @@ export interface PaymentDTO {
     currency: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    includeInReportDigestion?: boolean;
+    openPayment?: boolean;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {

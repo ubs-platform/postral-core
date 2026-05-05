@@ -7,8 +7,8 @@ export interface PaymentItemDto {
     taxPercent: number;
     taxAmount: number;
     variation: string;
-    sellerAccountId: string;
-    sellerAccountName: string;
+    sellerAccountId?: string;
+    sellerAccountName?: string;
     entityGroup?: string;
     entityId?: string;
     entityName?: string;

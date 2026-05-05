@@ -50,14 +50,14 @@ export class RefundRequest extends BaseEntity {
      * Payment Account Id. Bu, refund request'i kimin oluşturduğunu takip etmek için kullanılabilir. 
      * Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
      */
-    @Column()
-    requestedByPaymentAccountId!: string;
+    @Column({nullable: true})
+    requestedByPaymentAccountId?: string;
 
     /**
  * Payment Account Id. This, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
  */
-    @Column()
-    requestedToPaymentAccountId!: string;
+    @Column({nullable: true})
+    requestedToPaymentAccountId?: string;
 
 
 
@@ -65,7 +65,7 @@ export class RefundRequest extends BaseEntity {
      * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.
      */
     @Column({ nullable: true })
-    resolvedByAccountId!: string;
+    resolvedByAccountId?: string;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();

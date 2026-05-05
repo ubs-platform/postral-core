@@ -247,6 +247,20 @@ export class PaymentOperationManagementService {
      * Yetkilendirilmiş ve tetiklenmeye hazır olan ödeme operasyonlarını tetikler. Genellikle bir ödemenin tamamlanması için tüm operasyonların tamamlanması gerekir, bu yüzden ödeme id'sine göre çekip tetikliyoruz. Ancak bazı durumlarda operasyon bazında da tetikleme yapılabilir, bu durumda operationId'ye göre çekip tetikleyecek bir method daha ekleyebiliriz.
      * @param id 
      */
+    async createOpenPaymentOperation(paymentId: string, amount: number, currency: string): Promise<PaymentChannelOperation> {
+        const op = new PaymentChannelOperation();
+        op.paymentId = paymentId;
+        op.paymentChannelId = 'OPEN_PAYMENT';
+        op.operationId = 'OPEN_PAYMENT';
+        op.amount = amount;
+        op.currency = currency;
+        op.status = 'COMPLETED';
+        op.providerFee = 0;
+        op.feeCutInstantly = false;
+        op.providerFeeDebitFrom = 'PLATFORM';
+        return await this.paymentChannelOperationRepo.save(op);
+    }
+
     async firePaymentOperationsByPaymentId(id: string) {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [{ paymentId: id, status: 'READY' }],

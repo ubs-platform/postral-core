@@ -13,6 +13,7 @@ import { PaymentErrorStatus, PaymentStatus } from '@tk-postral/payment-common';
 import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { MoneyDbField } from './base';
+import { Account } from './account.entity';
 
 @Entity()
 export class Payment {
@@ -46,11 +47,15 @@ export class Payment {
     })
     taxes!: PostralPaymentTax[];
 
-    @Column()
-    customerAccountId!: string;
-
     @Column({ nullable: true })
-    customerAccountName!: string;
+    customerAccountId?: string;
+
+    @ManyToOne(() => Account, { eager: true, nullable: true })
+    @JoinColumn({ name: 'customerAccountId' })
+    customerAccount?: Account;
+
+    // @Column({ nullable: true })
+    // customerAccountName!: string;
 
     @Column({ type: 'varchar' })
     paymentStatus!: PaymentStatus;
@@ -94,4 +99,15 @@ export class Payment {
     @OneToMany(() => ReportPaymentRelation, (rpr) => rpr.payment, { eager: false })
     reportPaymentRelations!: ReportPaymentRelation[];
 
+    // Raporlara dahil edilsin mi diye kontrol için eklendi, digestion sırasında includeInReportDigestion = false olan raporlar atlanacak.
+    @Column({ default: true })
+    includeInReportDigestion: boolean = true;
+
+    // Açık fatura: ödeme tamamlanmaz ancak güven ilişkisiyle tamamlanmış sayılır. Satıcı onayıyla kapatılır.
+    @Column({ default: false })
+    openPayment: boolean = false;
+
+    get customerAccountName(): string {
+        return this.customerAccount ? this.customerAccount.name : '';
+    }
 }

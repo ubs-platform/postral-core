@@ -72,6 +72,7 @@ import { AdminSettingsService } from './service/admin-settings.service';
 import { CryptionUtil } from './util/cryption-util';
 import { AdminOperationsService } from './service/admin-operations.service';
 import { AdminOperationsController } from './controller/admin-operations.controller';
+import { BillingService } from './service/billing.service';
 import { UblGeneratorService } from './service/ubl-generator.service';
 import { WebhookConfigService } from './service/webhook-config.service';
 import { WebhookDispatchService } from './service/webhook-dispatch.service';
@@ -160,6 +161,7 @@ import { connection } from 'mongoose';
         AdminSettingsService,
         CryptionUtil,
         AdminOperationsService,
+        BillingService,
         UblGeneratorService,
         WebhookConfigService,
         WebhookDispatchService,

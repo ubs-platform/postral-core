@@ -71,6 +71,10 @@ export class SellerPaymentOrder extends BaseEntity {
     @Column({ type: 'boolean', default: false })
     hasFinalizedInvoice: boolean = false;
 
+    // Açık fatura: parent Payment'ın openPayment değerini miras alır. confirmOpenPayment sonrası false'a çekilir.
+    @Column({ type: 'boolean', default: false })
+    openPayment: boolean = false;
+
     // faturalar için burası kullanılabilir
     // invoiceId: string;
 

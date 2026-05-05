@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report } from '../entity/report.entity';
 import { ReportQuery } from '../entity/report-query.entity';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType } from '@tk-postral/payment-common';
 import { ReportComission, ReportTaxGroup } from '../entity';
 import { PaymentChannelOperation } from '../entity/payment-channel-operation.entity';
 import { AmountCalculationUtil } from '../util/calcs/amount-calculations';
@@ -15,6 +15,7 @@ import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { ReportExpense } from '../entity/report-expense.entity';
 import { PaymentItemDto } from '@tk-postral/payment-common';
+import { AdminSettingsService } from './admin-settings.service';
 
 @Injectable()
 export class ReportDigestionService {
@@ -37,6 +38,7 @@ export class ReportDigestionService {
         private readonly comissionService: AppComissionService,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
+        private readonly admSettings: AdminSettingsService,
     ) { }
 
 
@@ -65,6 +67,7 @@ export class ReportDigestionService {
             reportNew.periodLabel = periodLabel;
             reportNew.currency = currency;
             reportNew.accountId = query.ownerAccountId!;
+            reportNew.reportType = query.reportType;
             return await this.reportRepo.save(reportNew);
         } catch (err: any) {
             throw err;
@@ -94,6 +97,9 @@ export class ReportDigestionService {
             // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
             await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
         }
+
+
+        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
     }
 
     async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
@@ -116,8 +122,45 @@ export class ReportDigestionService {
         const accountId = report.query.ownerAccountId;
         // todo: totalExpense içindeki değeri toplam Satıştan bağımsız bir alan yaratıp güncellemek daha sağlıklı olabilir, çünkü komisyon ve diğer masraflar satıştan bağımsız olarak artabilir. Şu anki yapıda totalExpense raporun net satışından bağımsız olarak artıyor, bu da raporun okunmasını zorlaştırıyor. TotalExpense'ı sadece komisyon ve diğer masrafları içerecek şekilde güncellersek, raporun net satışını ve toplam masraflarını ayrı ayrı görebiliriz, bu da analiz yaparken daha fazla esneklik sağlar.
         await this.reportCalculation(report, payment, accountId!);
+        const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId, expenseKey: REPORT_TOTAL } });
+        report.totalExpense = totalExpense?.expenseAmount || 0;
+        report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);
+        // Vergili hakediş: satıcı kendi vergisini ödeyeceği için vergi dahil tutar verilir (netSaleAmount - masraflar)
+        report.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.totalExpense || 0);
+        return await this.stampTimeAndSaveReport(report, payment);
+    }
+
+    private async digestPlatformFlowReport(report: Report, payment: PaymentFullDTO) {
+        if (report.query == null) {
+            this.logger.warn(`Report ${report.id} has no query loaded`);
+            return;
+        }
+        for (const item of payment.items) {
+            if (payment.type === 'PURCHASE') {
+                report.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalSaleAmount || 0);
+                report.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalSaleTaxAmount || 0);
+            } else if (payment.type === 'REFUND') {
+                report.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalRefundAmount || 0);
+                report.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalRefundTaxAmount || 0);
+            }
+        }
+        report.paymentCount = AmountCalculationUtil.addNumberValues(report.paymentCount, 1);
+        report.netTaxAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
+        report.netSaleAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
+        report.netRevenue = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
+        const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId: report.accountId, expenseKey: REPORT_TOTAL } });
+        report.totalExpense = totalExpense?.expenseAmount || 0;
+        report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);
+        report.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.totalExpense || 0);
+        return await this.stampTimeAndSaveReport(report, payment);
+    }
+
+
+    private async stampTimeAndSaveReport(report: Report, payment?: PaymentFullDTO): Promise<Report> {
         report.lastDigestedAt = new Date();
-        report.lastDigestedPaymentId = payment.id;
+        if (payment) {
+            report.lastDigestedPaymentId = payment.id;
+        }
         return await this.reportRepo.save(report);
     }
 
@@ -126,10 +169,10 @@ export class ReportDigestionService {
         return await this.reportCalculationByPaymentItems(report, payment.type, paymentItems, accountId);
     }
 
-    private async reportCalculationByPaymentItems(report: BaseReport, paymentType: string, paymentItems: PaymentItemDto[], accountId: string) {
+    private async reportCalculationByPaymentItems(report: BaseReport, paymentType: string, paymentItems: PaymentItemDto[], accountId: string | null) {
 
         for (const item of paymentItems) {
-            if (item.sellerAccountId !== accountId) continue;
+            if (accountId !== null && item.sellerAccountId !== accountId) continue;
             if (paymentType === 'PURCHASE') {
                 report.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.totalAmount, report.totalSaleAmount || 0);
                 report.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(item.taxAmount, report.totalSaleTaxAmount || 0);
@@ -164,14 +207,15 @@ export class ReportDigestionService {
         return expense;
     }
 
-    private async updateProviderFeeExpenseForReport(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
+    private async updateProviderFeeExpenseForReportAccountId(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
+        // const isPlatformReport = accountId === "PLATFORM";
+
         const [operations, paymentSellerOrder] = await Promise.all([
             this.paymentChannelOperationRepo.find({
                 where: { paymentId: payment.id, providerFeeDebitFrom: Not('PLATFORM'), providerFee: Not(0) },
             }),
             this.sellerPaymentOrderService.findByPaymentIdAndAccountId(payment.id, accountId),
         ]);
-
 
 
         for (const operation of operations) {
@@ -193,86 +237,89 @@ export class ReportDigestionService {
             totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
             await this.reportExpenseRepo.save(totalExpense);
         }
+
     }
 
-    private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+    private async updateProviderFeeExpenseForPlatformReport(reportId: string, payment: PaymentFullDTO): Promise<void> {
+        // providerFeeDebitFrom: 'PLATFORM' olarak filtrelemek ilk başta mantıklı geldi ama satıcı ödediği zaman 
+        // sadece bu kadar miktarı sadece satıcıdan kesiyoruz. 
+        // Bir nevi aracı oluyoruz ve hakedişten de düşüyoruz. 
+        // Satıcının ödemesi demek sadece satıcıdan o kadar miktarı kesmemiz demek. O yüzden providerFeeDebitFrom alanına bakmadan, providerFee'si 0 olmayan tüm operasyonları 
+        // alarak kendi hanemize yazmamız gerekiyor.
+        const operations = await this.paymentChannelOperationRepo.find({
+            where: { paymentId: payment.id, providerFee: Not(0) },
+        });
+        for (const operation of operations) {
+            if (operation.providerFee <= 0) continue;
+            const feeExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', PAYMENT_SERVICE_FEE, payment.currency);
+            feeExpense.expenseAmount = AmountCalculationUtil.addNumberValues(feeExpense.expenseAmount, operation.providerFee);
+            await this.reportExpenseRepo.save(feeExpense);
+            const totalExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', REPORT_TOTAL, payment.currency);
+            totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, operation.providerFee);
+            await this.reportExpenseRepo.save(totalExpense);
+        }
+    }
+
+    private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId) {
         // Eğer birden fazla instance bir rapora işleseydi, bu yapı daha doğru olurdu. Ancak tek bir rapor tek bir instance işleyeceği için burada expense'leri bir 
         // anda çekip güncelleyebilirim, böylece performans artışı sağlanır. 
         // Eğer birden fazla instance aynı raporu işleyebilseydi, her expense güncellemesi için fetchOrCreate yapmak zorunda kalırdım, bu da performansı ciddi şekilde düşürürdü.
 
         const allExpenses = await this.reportExpenseRepo.find({
-            where: { reportId: mainReportId, accountId },
+            where: { reportId: mainReportId, accountId: expenseAccountId },
         });
         const expenseMap = new Map(allExpenses.map(e => [e.expenseKey, e]));
+
+        // Eğer payment type PURCHASE ise, masraflar artacak, REFUND ise masraflar azalacak, çünkü iade durumunda komisyon iadesi de oluyor.
+        const action = payment.type === "PURCHASE" ? AmountCalculationUtil.addNumberValues : AmountCalculationUtil.minusNumberValues;
+
+
         for (let index = 0; index < payment.items.length; index++) {
             const item = payment.items[index];
-            if (item.sellerAccountId !== accountId) continue;
+            if (itemFilterAccountId !== null && item.sellerAccountId !== itemFilterAccountId) continue;
 
             if (item.itemClass) {
                 const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
                 let itemClassExpenseReport = expenseMap.get(expenseKey);
                 if (!itemClassExpenseReport) {
-                    itemClassExpenseReport = ReportExpense.create(mainReportId, accountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
+                    itemClassExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
                     expenseMap.set(expenseKey, itemClassExpenseReport);
                 }
-                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
-                
+
+                itemClassExpenseReport.expenseAmount = action(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
+
                 // await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
 
             const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
             let totalComissionExpenseReport = expenseMap.get(totalComissionExpenseKey);
             if (!totalComissionExpenseReport) {
-                totalComissionExpenseReport = ReportExpense.create(mainReportId, accountId, totalComissionExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(totalComissionExpenseKey));
+                totalComissionExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, totalComissionExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(totalComissionExpenseKey));
                 expenseMap.set(totalComissionExpenseKey, totalComissionExpenseReport);
             }
-            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
+            totalComissionExpenseReport.expenseAmount = action(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
 
             const reportTotalExpenseKey = REPORT_TOTAL;
             let reportTotalExpenseReport = expenseMap.get(reportTotalExpenseKey);
             if (!reportTotalExpenseReport) {
-                reportTotalExpenseReport = ReportExpense.create(mainReportId, accountId, reportTotalExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(reportTotalExpenseKey));
+                reportTotalExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, reportTotalExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(reportTotalExpenseKey));
                 expenseMap.set(reportTotalExpenseKey, reportTotalExpenseReport);
             }
 
-            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
+            reportTotalExpenseReport.expenseAmount = action(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
             // await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
 
         await this.reportExpenseRepo.save(Array.from(expenseMap.values()));
 
-        return;
-        // Eğer hesaplamalarda hata olursa bunu tekrar açabilirim, ama şimdilik return altında kalsın
-        for (let index = 0; index < payment.items.length; index++) {
-            const item = payment.items[index];
-            if (item.sellerAccountId !== accountId) continue;
-
-
-            if (item.itemClass) {
-                const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
-                const itemClassExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, expenseKey, payment.currency);
-                itemClassExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
-                await this.reportExpenseRepo.save(itemClassExpenseReport);
-            }
-
-            const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
-            const totalComissionExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, totalComissionExpenseKey, payment.currency);
-            totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
-            await this.reportExpenseRepo.save(totalComissionExpenseReport);
-
-            const reportTotalExpenseKey = REPORT_TOTAL;
-            const reportTotalExpenseReport = await this.fetchOrCreateReportExpense(mainReportId, accountId, reportTotalExpenseKey, payment.currency);
-            reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
-            await this.reportExpenseRepo.save(reportTotalExpenseReport);
-        }
     }
 
-    private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string) {
+    private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string | null) {
         const paymentItemsPerTaxGroup: { [taxGroup: string]: PaymentItemDto[] } = {};
         for (let index = 0; index < payment.items.length; index++) {
             // Payment itemleri dolaşarak tax percentleri almam gerekiyor çünkü paymentta diğer satıcılarla ilgili bilgi olabilir...
             const item = payment.items[index];
-            if (item.sellerAccountId !== accountId) continue;
+            if (accountId !== null && item.sellerAccountId !== accountId) continue;
 
             const percentGroup = item.taxPercent ?? 0;
 
@@ -304,6 +351,90 @@ export class ReportDigestionService {
         return count > 0;
     }
 
+    /**
+     * 
+     * @param platformReport 
+     * @param payment 
+     * @param accountId Eğer account id varsa filtrelenir, yoksa filtrelenmez. Bu da 
+     * @returns 
+     */
+    async digestComissionIncomeForReport(platformReport: Report, payment: PaymentFullDTO, accountId?: string) {
+        const adminSettings = await this.admSettings.getAdminSettings();
+
+        if (platformReport.query == null) {
+            this.logger.warn(`Report ${platformReport.id} has no query loaded, cannot digest commission`);
+            return;
+        }
+        // let totalComission = 0;
+        const percent = adminSettings.comissionItemTax?.variations?.[0]?.taxRate || 0;
+        if (percent === 0) {
+            this.logger.warn("Comission Item Tax is not set in Admin Settings, defaulting to 0%");
+        }
+        const taxMax = AmountCalculationUtil.divideNumberValues(percent, AmountCalculationUtil.addNumberValues(percent, 100));
+        let currentComissionTotal = 0, currentComissionTaxTotal = 0, refundComissionTotal = 0, refundComissionTaxTotal = 0;
+        for (const item of payment.items) {
+            // Eğer accountId varsa, sadece o satıcının ürünleri üzerinden komisyon hesaplanır, 
+            // yoksa tüm ürünler üzerinden hesaplanır. Çünkü platform raporlarında tüm ürünlerin komisyonunu göstermek 
+            // isteyebilirim, seller raporlarında ise sadece ilgili satıcının komisyonunu göstermek isteyebilirim.
+            if (accountId && item.sellerAccountId !== accountId) continue;
+
+            if (payment.type === 'PURCHASE') {
+                currentComissionTotal = AmountCalculationUtil.addNumberValues(item.appComissionAmount, currentComissionTotal);
+                platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
+                currentComissionTaxTotal = AmountCalculationUtil.addNumberValues(taxAmount, currentComissionTaxTotal);
+                platformReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalSaleTaxAmount || 0);
+            } else if (payment.type === 'REFUND') {
+
+                // Trendyol aldığı komisyonu iade ediyor, bu yüzden refundlarda komisyon iadesi de oluyor. 
+                // Hepsiburada da aynı şekilde yapıyor, iade edilen ürünün komisyonunu iade ediyor.
+                // TODO: Bunu düşünelim... İade durumunda komisyon iadesi olmasın diye bir ayar ekleyebiliriz, böylece isteyen platformlar iade durumunda komisyon iadesi olmasın diye ayar yapabilirler. 
+                // Şu an her iki platform da iade durumunda komisyon iadesi yapıyor, bu yüzden ben de şu an öyle yapıyorum, 
+                // ama ileride bunu değiştirebiliriz.
+                refundComissionTotal = AmountCalculationUtil.addNumberValues(item.appComissionAmount, refundComissionTotal);
+                platformReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalRefundAmount || 0);
+                const taxAmount = AmountCalculationUtil.multiplyNumberValues(item.appComissionAmount, taxMax);
+                refundComissionTaxTotal = AmountCalculationUtil.addNumberValues(taxAmount, refundComissionTaxTotal);
+                platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
+            }
+        }
+        platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
+        platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
+        platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
+        platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
+
+        const totalComission = AmountCalculationUtil.minusNumberValues(currentComissionTotal, refundComissionTotal);
+
+        let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
+        totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
+        await this.reportExpenseRepo.save(totalComissionExpenseReport);
+
+        let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
+        reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
+        await this.reportExpenseRepo.save(reportTotalExpenseReport);
+        await this.stampTimeAndSaveReport(platformReport, payment);
+
+        let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: platformReport.id, taxPercent: percent.toString(), currency: payment.currency } });
+        if (!taxGroupReport) {
+            taxGroupReport = new ReportTaxGroup();
+            taxGroupReport.taxGroupName = "%" + percent + " (Commission Tax)";
+            taxGroupReport.taxPercent = percent.toString();
+            taxGroupReport.reportId = platformReport.id;
+            taxGroupReport.currency = payment.currency;
+        }
+        taxGroupReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalSaleAmount, currentComissionTotal);
+        taxGroupReport.totalRefundAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalRefundAmount, refundComissionTotal);
+        taxGroupReport.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalSaleTaxAmount, currentComissionTaxTotal);
+        taxGroupReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxGroupReport.totalRefundTaxAmount, refundComissionTaxTotal);
+
+        taxGroupReport.paymentCount = AmountCalculationUtil.addNumberValues(taxGroupReport.paymentCount, 1);
+        taxGroupReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(taxGroupReport.totalSaleTaxAmount || 0, taxGroupReport.totalRefundTaxAmount || 0);
+        taxGroupReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(taxGroupReport.totalSaleAmount || 0, taxGroupReport.totalRefundAmount || 0);
+        taxGroupReport.netRevenue = AmountCalculationUtil.minusNumberValues(taxGroupReport.netSaleAmount || 0, taxGroupReport.netTaxAmount || 0);
+        await this.taxGroupRepo.save(taxGroupReport);
+        // taxGroupReport.totalSaleAmount = 
+    }
+
 
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
@@ -328,11 +459,11 @@ export class ReportDigestionService {
 
         // WAITING durumundaki raporları DIGESTING yapıyorum. 
         // Böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
-
         await this.reportPaymentRelationRepo.update(
             {
                 digestionStatus: 'WAITING',
-                reportId: Not(In(alreadyWorkingReports)),
+                // Boş array olunca hata veriyor... Eğer arkada zaten çalışan yoksa hepsini dahil edebiliriz...
+                ...(alreadyWorkingReports.length > 0 ? { reportId: Not(In(alreadyWorkingReports)) } : {}),
             },
             {
                 digestionStatus: 'DIGESTING',
@@ -359,12 +490,30 @@ export class ReportDigestionService {
                 this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
                 continue;
             }
-            // await this.updateExpensesForReport(freshReport.id, payment, accountId);
-            // const totalExpense = await this.fetchOrCreateReportExpense(freshReport.id, accountId, REPORT_TOTAL, payment.currency);
-            await this.updateExpensesForReport(freshReport.id, payment, accountId);
-            await this.updateProviderFeeExpenseForReport(freshReport.id, payment, accountId);
-            await this.digestPayment(freshReport, payment);
-            await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+            let flag = payment.includeInReportDigestion
+            if (flag && freshReport.reportType === "SELLER") {
+                await this.updateExpensesForReport(freshReport.id, payment, accountId);
+                await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
+                await this.digestPayment(freshReport, payment);
+                await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+            }
+
+            if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
+                await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+
+                await this.digestComissionIncomeForReport(freshReport,
+                    payment,
+                    freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
+
+            }
+
+            if (flag && freshReport.reportType === "PLATFORM_FLOW") {
+                await this.updateExpensesForReport(freshReport.id, payment, accountId, null);
+                await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+                await this.digestPlatformFlowReport(freshReport, payment);
+                await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
+            }
+
             relation.digestionStatus = 'COMPLETED';
             relation.digestionId = '';
             relation.digestionCompletedAt = new Date();
@@ -382,12 +531,66 @@ export class ReportDigestionService {
      */
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
         const itemSellerAccountIds = payment.items?.map(i => i.sellerAccountId) ?? [];
-        return await this.queryRepo.find({
-            where: {
-                currency: payment.currency,
-                ownerAccountId: In([...itemSellerAccountIds]),
-            },
+        // Eğer PLATFORM_SELLER - Günlük yoksa yeni query oluşturulacak...
+
+
+        const existingQueries = await this.queryRepo.find({
+            where: [
+                // Satıcının kendisi ile ilgili raporları çekmek istediğim için ownerAccountId'ye göre de filtreleme yapıyorum. Çünkü bir payment içinde farklı satıcıların ürünleri olabilir, bu yüzden payment ile ilişkili tüm raporları çekmek istiyorum, ancak seller raporlarında sadece ilgili satıcının raporlarıyla eşleşsin istiyorum, diğer raporlarda ise tüm payment ile eşleşsin istiyorum.
+                {
+                    currency: payment.currency,
+                    ownerAccountId: In([...itemSellerAccountIds]),
+                    reportType: 'SELLER',
+                },
+                // Platformun komisyondan geliri ve ödeme hizmeti sağlayıcı ücretinden gelen giderleri raporlamak istediğim için PLATFORM ve PLATFORM_FLOW raporları da payment ile eşleşiyor olacak. PLATFORM raporunda sadece toplam komisyon gelirini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum, PLATFORM_FLOW raporunda ise her bir ödeme için ayrı ayrı komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum.
+                {
+                    currency: payment.currency,
+                    reportType: In(['PLATFORM', "PLATFORM_SELLER", "PLATFORM_FLOW"]),
+                },
+
+            ],
         });
+        
+        const sellerAccountNamesMap = new Map(payment.items.map(i => [i.sellerAccountId, i.sellerAccountName]));
+        const sellerAccountIds = new Set(sellerAccountNamesMap.keys());
+        // const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));
+        const batchInsert: Partial<ReportQuery>[] = [];
+        for (let i = 0; i < sellerAccountIds.size; i++) {
+            const accountId = Array.from(sellerAccountIds)[i];
+            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId),
+                existDailySellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'SELLER' && q.ownerAccountId === accountId);
+
+            if (!existDailyPlatformSellerQuery) {
+                const newQuery = new ReportQuery();
+                const accountName = sellerAccountNamesMap.get(accountId);
+                newQuery.ownerAccountId = accountId;
+                newQuery.dateGrouping = 'DAILY';
+                newQuery.reportType = 'PLATFORM_SELLER';
+                newQuery.currency = payment.currency;
+                newQuery.name = `Platform Seller Report / ${accountName} / ${payment.currency} / DAILY`;
+                newQuery.description = "Bu rapor, satıcıların platformdan elde ettiği komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir.";
+                batchInsert.push(newQuery);
+            }
+
+            if (!existDailySellerQuery) {
+                const newQuery = new ReportQuery();
+                const accountName = sellerAccountNamesMap.get(accountId);
+                newQuery.ownerAccountId = accountId;
+                newQuery.dateGrouping = 'DAILY';
+                newQuery.reportType = 'SELLER';
+                newQuery.currency = payment.currency;
+                newQuery.name = `Seller Report / ${accountName} / ${payment.currency} / DAILY`;
+                newQuery.description = "Bu rapor, satıcıların satış performansını günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir. Satıcının Platforma hakedişi için yapılacak faturalandırma için kullanılacaktır.";
+                batchInsert.push(newQuery);
+            }
+        }
+
+        if (batchInsert.length > 0) {
+            const newlySaved = await this.queryRepo.save(batchInsert);
+            existingQueries.push(...newlySaved);
+        }
+
+        return existingQueries;
     }
 
     buildPeriodLabel(grouping: ReportDateGrouping, date: Date): string {

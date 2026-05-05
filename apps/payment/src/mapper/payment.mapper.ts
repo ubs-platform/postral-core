@@ -22,14 +22,15 @@ export class PaymentMapper {
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
-            customerAccountId: saved.customerAccountId,
-            customerAccountName: saved.customerAccountName,
+            customerAccountId: saved.customerAccountId!,
+            customerAccountName: saved.customerAccountName!,
             paymentChannelId: saved.paymentChannelId,
             paymentStatus: saved.paymentStatus,
             errorStatus: saved.errorStatus,
             createdAt: saved.createdAt,
             updatedAt: saved.updatedAt,
-
+            includeInReportDigestion: saved.includeInReportDigestion,
+            openPayment: saved.openPayment,
         };
     }
 
@@ -41,8 +42,8 @@ export class PaymentMapper {
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
-            customerAccountId: saved.customerAccountId,
-            customerAccountName: saved.customerAccountName,
+            customerAccountId: saved.customerAccountId!,
+            customerAccountName: saved.customerAccountName!,
             paymentChannelId: saved.paymentChannelId,
             paymentStatus: saved.paymentStatus,
             errorStatus: saved.errorStatus,
@@ -50,7 +51,8 @@ export class PaymentMapper {
             updatedAt: saved.updatedAt,
             items: this.paymentItemMapper.toDto(saved.items),
             taxes: this.paymentTaxMapper.toDto(saved.taxes),
-
+            includeInReportDigestion: saved.includeInReportDigestion,
+            openPayment: saved.openPayment,
         };
     }
 }
