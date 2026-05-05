@@ -10,8 +10,8 @@ import {
 } from 'typeorm';
 import { RefundRequestItem } from './refund-request-item.entity';
 import { Payment } from './payment.entity';
+import { RefundRequestStatus } from '@tk-postral/payment-common';
 
-export type RefundRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 @Entity()
 export class RefundRequest extends BaseEntity {
