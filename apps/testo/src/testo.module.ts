@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostralEntitiesModule, PaymentsEntities } from '@tk-postral/postral-entities';
-import { Axios } from "axios";
 import { LoginOperator } from './chapters/login-operator';
-
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -22,11 +21,13 @@ import { LoginOperator } from './chapters/login-operator';
         connectionLimit: 5
       }
     }),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
+
   ],
   controllers: [],
-  providers: [{
-    provide: Axios,
-    useValue: new Axios()
-  },LoginOperator],
+  providers: [LoginOperator],
 })
 export class TestoModule { }
