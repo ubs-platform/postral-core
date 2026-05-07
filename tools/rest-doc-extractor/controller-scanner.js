@@ -36,173 +36,231 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControllerScanner = void 0;
 const ts_morph_1 = require("ts-morph");
 const typescript_utils_js_1 = require("./parser/typescript-utils.js");
-const crypto_1 = require("crypto");
 const path = __importStar(require("path"));
 const extractReturnTypes_js_1 = require("./parser/extractReturnTypes.js");
+const directory_util_js_1 = require("../util/directory-util.js");
 class ControllerScanner {
-    static scanAllControllers(mainPath) {
-        const collectionsByProject = {};
-        const globalPrefixes = {};
+    static getTypescriptRootProject(mainPath) {
         const project = new ts_morph_1.Project({
             tsConfigFilePath: path.join(mainPath, 'tsconfig.json'),
             skipAddingFilesFromTsConfig: true,
         });
-        const testSourceFiles = project.addSourceFilesAtPaths([
+        project.addSourceFilesAtPaths([
             mainPath + '/apps/**/*.ts',
             mainPath + '/libs/**/*.ts',
         ]);
-        testSourceFiles.forEach((typescriptFile) => {
+        return project;
+    }
+    static collectClasses(typescriptProject) {
+        const project = typescriptProject;
+        const allClasses = [];
+        project.getSourceFiles().forEach((typescriptFile) => {
             const baseName = typescriptFile.getBaseName();
             const skipPatterns = [
                 '.d.ts',
                 '.spec.ts',
-                '.module.ts',
                 '.enum.ts',
             ];
             const skipPaths = ['node_modules', 'dist', 'rest-doc-extractor'];
             if (skipPatterns.some((pattern) => baseName.endsWith(pattern)) ||
                 skipPaths.some((p) => typescriptFile.getFilePath().includes(p + '/'))) {
+                console.info("Atlanıyor: " + baseName);
                 return;
             }
-            mainPath + '/**/*.ts';
-            const appNameRegex = /apps\/([^\/]+)\/src/, libNameRegex = /libs\/([^\/]+)\/src/;
-            const appMatch = typescriptFile.getFilePath().match(appNameRegex), libMatch = typescriptFile.getFilePath().match(libNameRegex);
-            let projectName = 'unknown';
-            if (appMatch || libMatch) {
-                projectName = (appMatch ? appMatch[1] : libMatch[1]).replace(/[^a-zA-Z0-9]/g, '-');
-            }
-            else {
-                projectName = 'root-' + (0, crypto_1.randomUUID)().slice(0, 4);
-            }
-            if (!collectionsByProject[projectName]) {
-                collectionsByProject[projectName] = [];
-            }
-            const collectionsForThisProject = collectionsByProject[projectName];
-            const filePath = typescriptFile.getFilePath();
-            console.info('Dosya: ' + filePath);
-            if (filePath.includes('main.ts')) {
-                const capturedGlobalPrefix = /globalPrefix\s*=\s*"(.*)"|globalPrefix\s*=\s*'(.*)'|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(typescriptFile.getFullText());
-                if (capturedGlobalPrefix) {
-                    globalPrefixes[projectName] =
-                        capturedGlobalPrefix[1] ||
-                            capturedGlobalPrefix[2] ||
-                            capturedGlobalPrefix[3] ||
-                            capturedGlobalPrefix[4];
-                    console.info('Global prefix: ' +
-                        (capturedGlobalPrefix[1] ||
-                            capturedGlobalPrefix[2] ||
-                            capturedGlobalPrefix[3] ||
-                            capturedGlobalPrefix[4]));
-                }
-            }
             typescriptFile.getClasses().forEach((tsClass) => {
-                const itIsController = tsClass.getDecorator('Controller');
-                if (itIsController) {
-                    let parentPath = typescript_utils_js_1.TypescriptNestUtils.firstParameterAsString(itIsController);
-                    console.debug(tsClass.getName() + ' bir controller');
-                    const methods = [];
-                    tsClass.getMethods().forEach((method) => {
-                        const methodDecorators = [
-                            method.getDecorator('Get'),
-                            method.getDecorator('Post'),
-                            method.getDecorator('Put'),
-                            method.getDecorator('Delete'),
-                        ].filter((a) => a);
-                        if (methodDecorators[0]) {
-                            let reqBody;
-                            const returnTypeRaw = typescript_utils_js_1.TypescriptNestUtils.extractFromPromise(method.getReturnType());
-                            const restMethodDecorator = methodDecorators[0];
-                            const queryParameters = [];
-                            const pathParameters = [];
-                            let methodType = restMethodDecorator.getName();
-                            let path = typescript_utils_js_1.TypescriptNestUtils.firstParameterAsString(restMethodDecorator);
-                            console.info(path);
-                            method.getParameters().forEach((parameter) => {
-                                const restParameterTypeName = parameter
-                                    .getDecorators()
-                                    .find((a) => ['Body', 'Query', 'Param'].includes(a.getName()))
-                                    ?.getName();
-                                if (!restParameterTypeName) {
-                                    console.error('Bilinmeyen parametre türü: ' +
-                                        parameter.getName() +
-                                        ' dekoratör bulunamadı');
-                                }
-                                else {
-                                    if (restParameterTypeName === 'Body') {
-                                        const bodyType = parameter
-                                            .getTypeNode()
-                                            .getType();
-                                        const typeText = (0, extractReturnTypes_js_1.inlineTypeText)(bodyType, method, {});
-                                        reqBody = {
-                                            typeNode: bodyType,
-                                            typeName: bodyType
-                                                .getSymbol()
-                                                ?.getName() ??
-                                                bodyType.getText(),
-                                            importedFrom: typescript_utils_js_1.TypescriptNestUtils.findImportSource(bodyType),
-                                            typeExpandedText: typeText,
-                                        };
-                                        console.info('Payload parametre: ' +
-                                            parameter.getName() +
-                                            ' tipi: ' +
-                                            parameter.getType().getText());
-                                    }
-                                    else {
-                                        const extractedParameters = typescript_utils_js_1.TypescriptNestUtils.extractRestMethodPrimitiveParameterInfo(parameter);
-                                        if (restParameterTypeName === 'Query') {
-                                            queryParameters.push(...extractedParameters);
-                                        }
-                                        else if (restParameterTypeName === 'Param') {
-                                            pathParameters.push(...extractedParameters);
-                                        }
-                                    }
-                                }
-                            });
-                            const returnTypeInline = (0, extractReturnTypes_js_1.inlineTypeText)(returnTypeRaw, method, { maxDepth: 1 });
-                            const returnRestAp = {
-                                typeNode: returnTypeRaw,
-                                typeName: ControllerScanner.returnTypeNameDetermination(returnTypeRaw),
-                                importedFrom: typescript_utils_js_1.TypescriptNestUtils.findImportSource(returnTypeRaw),
-                                typeExpandedText: returnTypeInline,
-                            };
-                            methods.push({
-                                methodType: methodType.toUpperCase(),
-                                path: path,
-                                methodName: method.getName(),
-                                queryParameters: queryParameters,
-                                pathParameters: pathParameters,
-                                responseType: returnRestAp,
-                                requestBody: reqBody,
-                            });
-                        }
-                    });
-                    collectionsForThisProject.push({
-                        methods: methods,
-                        name: tsClass.getName(),
-                        parentPath,
-                    });
-                }
+                console.info("Ekleniyor " + tsClass.getName());
+                allClasses.push(tsClass);
             });
         });
-        Object.keys(collectionsByProject).forEach((key) => {
-            const globalPrefix = globalPrefixes[key];
-            if (globalPrefix) {
-                collectionsByProject[key].forEach((controller) => {
-                    controller.parentPath =
-                        '/' +
-                            ControllerScanner.combineUrlPaths(key, globalPrefix, controller);
+        return allClasses;
+    }
+    static isControllerClass(tsClass) {
+        return tsClass.getDecorator('Controller');
+    }
+    static isModuleClass(tsClass) {
+        return tsClass.getDecorator('Module');
+    }
+    static getControllerMethods(appModuleName, prefix, tsClass) {
+        const methods = [];
+        tsClass.getMethods().forEach((method) => {
+            const methodDecorators = [
+                method.getDecorator('Get'),
+                method.getDecorator('Post'),
+                method.getDecorator('Put'),
+                method.getDecorator('Delete'),
+            ].filter((a) => a);
+            if (!methodDecorators || methodDecorators.length <= 0)
+                return;
+            let reqBody = null;
+            const returnTypeRaw = typescript_utils_js_1.TypescriptNestUtils.extractFromPromise(method.getReturnType());
+            const restMethodDecorator = methodDecorators[0];
+            const queryParameters = [];
+            const pathParameters = [];
+            let methodType = restMethodDecorator.getName();
+            let restPath = typescript_utils_js_1.TypescriptNestUtils.firstParameterAsString(restMethodDecorator);
+            console.info(restPath);
+            method.getParameters().forEach((parameter) => {
+                if (!parameter)
+                    return;
+                const restParameterTypeName = parameter
+                    .getDecorators()
+                    .find((a) => ['Body', 'Query', 'Param'].includes(a.getName()))
+                    ?.getName();
+                if (!restParameterTypeName) {
+                    console.error('Bilinmeyen parametre türü: ' +
+                        parameter.getName() +
+                        ' dekoratör bulunamadı');
+                }
+                else {
+                    if (restParameterTypeName === 'Body') {
+                        const bodyType = parameter
+                            .getTypeNode()?.getType();
+                        if (bodyType == null) {
+                            console.error('Body parametresinin tipi bulunamadı: ' +
+                                parameter.getName());
+                            return;
+                        }
+                        const typeText = (0, extractReturnTypes_js_1.inlineTypeText)(bodyType, method, {});
+                        reqBody = {
+                            typeNode: bodyType,
+                            typeName: bodyType
+                                .getSymbol()
+                                ?.getName() ??
+                                bodyType.getText(),
+                            importedFrom: typescript_utils_js_1.TypescriptNestUtils.findImportSource(bodyType),
+                            typeExpandedText: typeText,
+                        };
+                        console.info('Payload parametre: ' +
+                            parameter.getName() +
+                            ' tipi: ' +
+                            parameter.getType().getText());
+                    }
+                    else {
+                        const extractedParameters = typescript_utils_js_1.TypescriptNestUtils.extractRestMethodPrimitiveParameterInfo(parameter);
+                        if (restParameterTypeName === 'Query') {
+                            queryParameters.push(...extractedParameters);
+                        }
+                        else if (restParameterTypeName === 'Param') {
+                            pathParameters.push(...extractedParameters);
+                        }
+                    }
+                }
+            });
+            const returnTypeInline = (0, extractReturnTypes_js_1.inlineTypeText)(returnTypeRaw, method, { maxDepth: 1 });
+            const returnRestAp = {
+                typeNode: returnTypeRaw,
+                typeName: ControllerScanner.returnTypeNameDetermination(returnTypeRaw),
+                importedFrom: typescript_utils_js_1.TypescriptNestUtils.findImportSource(returnTypeRaw),
+                typeExpandedText: returnTypeInline,
+            };
+            methods.push({
+                methodType: methodType.toUpperCase(),
+                methodName: method.getName(),
+                path: path.join(prefix, restPath).replace(/\\/g, '/'),
+                queryParameters: queryParameters,
+                pathParameters: pathParameters,
+                responseType: returnRestAp,
+                requestBody: reqBody || {
+                    typeNode: null,
+                    typeName: 'void',
+                    importedFrom: null,
+                    typeExpandedText: 'void',
+                },
+                applicationModuleName: appModuleName
+            });
+        });
+        return methods;
+    }
+    static extractControllerClassesFromModuleClass(tsClass, allClasses = [], maxDepth = 2, _visited = new Set()) {
+        const controllerClasses = [];
+        const moduleDecorator = this.isModuleClass(tsClass);
+        if (!moduleDecorator)
+            return controllerClasses;
+        const className = tsClass.getName() ?? '';
+        if (_visited.has(className))
+            return controllerClasses;
+        _visited.add(className);
+        const firstArg = moduleDecorator.getArguments()[0];
+        if (!firstArg || !firstArg.asKind(ts_morph_1.SyntaxKind.ObjectLiteralExpression))
+            return controllerClasses;
+        const objLiteral = firstArg.asKind(ts_morph_1.SyntaxKind.ObjectLiteralExpression);
+        if (!objLiteral)
+            return controllerClasses;
+        const controllersProp = objLiteral
+            .getProperty('controllers')
+            ?.asKind(ts_morph_1.SyntaxKind.PropertyAssignment);
+        if (controllersProp) {
+            const arrayTypeInitializer = controllersProp.getInitializer()
+                ?.asKind(ts_morph_1.SyntaxKind.ArrayLiteralExpression);
+            if (arrayTypeInitializer) {
+                arrayTypeInitializer.getElements().forEach(el => {
+                    const text = el.getText();
+                    const foundClass = allClasses.find(c => c.getName() === text)
+                        ?? tsClass.getSourceFile().getClass(text);
+                    if (foundClass) {
+                        controllerClasses.push(foundClass);
+                    }
                 });
             }
-        });
-        return collectionsByProject;
+        }
+        if (maxDepth > 0 && allClasses.length > 0) {
+            const importsProp = objLiteral
+                .getProperty('imports')
+                ?.asKind(ts_morph_1.SyntaxKind.PropertyAssignment);
+            if (importsProp) {
+                const importsArray = importsProp.getInitializer()
+                    ?.asKind(ts_morph_1.SyntaxKind.ArrayLiteralExpression);
+                if (importsArray) {
+                    importsArray.getElements().forEach(el => {
+                        const moduleName = el.getText();
+                        const moduleClass = allClasses.find(c => c.getName() === moduleName);
+                        if (moduleClass) {
+                            const controllersFromImport = this.extractControllerClassesFromModuleClass(moduleClass, allClasses, maxDepth - 1, _visited);
+                            controllerClasses.push(...controllersFromImport);
+                        }
+                    });
+                }
+            }
+        }
+        return controllerClasses;
     }
-    static combineUrlPaths(key, globalPrefix, controller) {
-        return [
-            'service',
-            key,
-            globalPrefix,
-            controller.parentPath
-        ].join('/');
+    static collectControllerClassesFromModuleClasses(allClasses) {
+        const controllerClasses = [];
+        this.circulateControllerClassesFromModuleClasses(allClasses, allClasses, (controllerClass) => {
+            if (!controllerClasses.includes(controllerClass)) {
+                controllerClasses.push(controllerClass);
+            }
+        });
+        return controllerClasses;
+    }
+    static circulateControllerClassesFromModuleClasses(moduleClasses, resolutionClasses, cb) {
+        for (let index = 0; index < moduleClasses.length; index++) {
+            const tsClass = moduleClasses[index];
+            if (!this.isModuleClass(tsClass)) {
+                console.info("Bir modül değil, atlanıyor: ", tsClass.getName());
+                continue;
+            }
+            console.info("İnceleniyor: ", tsClass.getName());
+            const controllersInModule = this.extractControllerClassesFromModuleClass(tsClass, resolutionClasses);
+            const extendedClass = tsClass.getBaseClass();
+            if (extendedClass) {
+                const controllersInExtendedModule = this.extractControllerClassesFromModuleClass(extendedClass, resolutionClasses);
+                controllersInExtendedModule.forEach(c => {
+                    if (!this.isControllerClass(c)) {
+                        console.info("Bir controller değil: " + c.getName());
+                        return;
+                    }
+                    cb(c);
+                });
+            }
+            controllersInModule.forEach(c => {
+                if (!this.isControllerClass(c)) {
+                    console.info("Bir controller değil: " + c.getName());
+                    return;
+                }
+                cb(c);
+            });
+        }
     }
     static returnTypeNameDetermination(returnTypeRaw) {
         if (returnTypeRaw.isArray()) {
@@ -253,6 +311,40 @@ class ControllerScanner {
         }
         return ((returnTypeRaw.getSymbol()?.getName() ?? returnTypeRaw.getText()) +
             tsArgsStr);
+    }
+    static extractGlobalPrefixFromSourceFile(sourceFileText) {
+        const capturedGlobalPrefix = /globalPrefix\s*=\s*"(.*)"|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(sourceFileText);
+        if (capturedGlobalPrefix) {
+            return capturedGlobalPrefix[1] ||
+                capturedGlobalPrefix[2] ||
+                capturedGlobalPrefix[3] ||
+                '';
+        }
+        return '';
+    }
+    static async scanAllControllers(mainPath) {
+        const methodsMappedByApp = {};
+        const appsPath = path.join(mainPath, 'apps');
+        const appList = await directory_util_js_1.DirectoryUtil.listFolderNamesNoRecursive(appsPath);
+        const rootProject = this.getTypescriptRootProject(mainPath);
+        const allProjectClasses = this.collectClasses(rootProject);
+        for (let index = 0; index < appList.length; index++) {
+            const appName = appList[index];
+            console.info('Scanning application: ' + appName);
+            let globalPrefix = '';
+            const methods = [];
+            const appClasses = allProjectClasses.filter(a => a.getSourceFile().getFilePath().includes(path.join('apps', appName, 'src')));
+            const mainSourceFile = rootProject.getSourceFiles().find(sf => sf.getFilePath().includes(path.join('apps', appName, 'src')) && sf.getBaseName() === 'main.ts');
+            if (mainSourceFile) {
+                globalPrefix = this.extractGlobalPrefixFromSourceFile(mainSourceFile.getFullText());
+            }
+            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
+                methods.push(...this.getControllerMethods(appName, globalPrefix, controllerClass));
+            });
+            methodsMappedByApp[appName] = methods;
+        }
+        console.log("Çıkış: ", methodsMappedByApp);
+        return methodsMappedByApp;
     }
 }
 exports.ControllerScanner = ControllerScanner;

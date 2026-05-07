@@ -85,4 +85,26 @@ export class DirectoryUtil {
             current = onQueue.pop();
         }
     }
+
+
+    static async listFolderNamesNoRecursive(folderPath: string) {
+        const folderNames: string[] = [];
+        
+        return FileSystem.readdir(folderPath, { withFileTypes: true }).then((entries) => {
+            for (const entry of entries) {
+                if (entry.isDirectory()) {
+                    folderNames.push(entry.name);
+                }
+            }
+            return folderNames;
+        }).catch((err) => {
+            console.error(
+                strColor(
+                    COLORS.BgRed,
+                    'Could not read directory: ' + folderPath + '\n' + err,
+                ),
+            );
+            throw err;
+        });
+    }
 }
