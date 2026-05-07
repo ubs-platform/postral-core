@@ -1,14 +1,18 @@
 import { writeFileSync } from 'fs';
 import { ControllerScanner } from '../rest-doc-extractor/controller-scanner';
 import { DirectoryUtil } from '../util/directory-util';
+import { exec } from 'child_process';
 
 export class RestApiDocGen {
     static async generate() {
         const mainPath = process.cwd();
         console.info('Project directory: ' + mainPath);
-        const byProject = ControllerScanner.scanAllControllers(mainPath);
-
+        const byProject = await ControllerScanner.scanAllControllers(mainPath);
+        if (Object.entries(byProject).length == 0) {
+            exec(`kdialog --msgbox 'ByProject içi dolu gelmiyor...'`)
+        }
         Object.entries(byProject).forEach(([key, ac]) => {
+            console.info(key, ac)
             ac.forEach((c) => {
                 c.methods.forEach((m) => {
                     m.pathParameters.forEach((p) => {

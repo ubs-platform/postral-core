@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { ClassDeclaration, Decorator, Project, SyntaxKind, ts, Type } from 'ts-morph';
+import { ClassDeclaration, ClassExpression, Decorator, Project, SyntaxKind, ts, Type } from 'ts-morph';
 import {
     RestApiCollection,
     RestApiMethod,
@@ -11,6 +11,7 @@ import { randomUUID } from 'crypto';
 import * as path from 'path';
 import { inlineTypeText } from './parser/extractReturnTypes.js';
 import { DirectoryUtil } from '../util/directory-util.js';
+import { exec } from 'child_process';
 
 export class ControllerScanner {
 
@@ -34,11 +35,10 @@ export class ControllerScanner {
         project.getSourceFiles().forEach((typescriptFile) => {
             const baseName = typescriptFile.getBaseName();
             const skipPatterns = [
-                '.d.ts',
                 '.spec.ts',
                 '.enum.ts',
             ];
-            const skipPaths = ['node_modules', 'dist', 'rest-doc-extractor'];
+            const skipPaths = ['dist', 'rest-doc-extractor'];
             if (
                 skipPatterns.some((pattern) => baseName.endsWith(pattern)) ||
                 skipPaths.some((p) =>
@@ -201,6 +201,39 @@ export class ControllerScanner {
                 applicationModuleName: appModuleName
             });
         });
+
+        // Extend olan sınıf varsa onun REST metotlarını da topla (kalıtım zinciri boyunca)
+        const baseClass = tsClass.getBaseClass();
+        if (baseClass) {
+            // Crud metotları NPMden aldığımız için anotasyonları vs. görmüyor (daha doğrusu derlenmiş halinde yok...) o yüzdne elle ekleyebiliriz napalım
+            const baseClassFilePath = baseClass.getSourceFile().getFilePath();
+            if (baseClassFilePath.includes("@ubs-platform") && baseClassFilePath.includes("base-crud-controller.d.ts")) {
+                // TODO: Crud controller metotlarını elle ekle...
+                // methods.push(
+                //     {
+                //         applicationModuleName: appModuleName,
+                //         methodName: "insert",
+                //         methodType: "POST",
+                //         requestBody: 
+                        
+                //     }
+                // )
+            }
+            // // /home/huseyin/dev/tk-ubs/postralmona/node_modules/@ubs-platform/crud-base/base-crud-controller.d.ts
+            // // exec(`kdialog --msgbox 'Base class var ${baseClass.getSourceFile().getFilePath()}'`);
+            // const baseMethods = this.getControllerMethods(appModuleName, prefix, baseClass);
+            // if (baseMethods.length > 0) {
+            //     exec(`kdialog --msgbox 'Base class var'`);
+            // }
+
+            // // Alt sınıfta override edilmemiş metodları ekle
+            // for (const baseMethod of baseMethods) {
+            //     if (!methods.some(m => m.methodName === baseMethod.methodName)) {
+            //         methods.push(baseMethod);
+            //     }
+            // }
+        }
+
         return methods;
     }
 
@@ -289,7 +322,7 @@ export class ControllerScanner {
     public static circulateControllerClassesFromModuleClasses(
         moduleClasses: ClassDeclaration[],
         resolutionClasses: ClassDeclaration[],
-        cb: (controllerClass: ClassDeclaration) => void,
+        cb: (controllerClass: ClassDeclaration, parentPath: string) => void,
     ) {
         for (let index = 0; index < moduleClasses.length; index++) {
             const tsClass = moduleClasses[index];
@@ -303,11 +336,13 @@ export class ControllerScanner {
             if (extendedClass) {
                 const controllersInExtendedModule = this.extractControllerClassesFromModuleClass(extendedClass, resolutionClasses);
                 controllersInExtendedModule.forEach(c => {
-                    if (!this.isControllerClass(c)) {
+                    const controllerDecorator = this.isControllerClass(c);
+                    if (!controllerDecorator) {
                         console.info("Bir controller değil: " + c.getName())
                         return;
                     }
-                    cb(c);
+                    const parentPath = controllerDecorator.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
+                    cb(c, parentPath);
                 });
             }
             controllersInModule.forEach(c => {
@@ -315,7 +350,8 @@ export class ControllerScanner {
                     console.info("Bir controller değil: " + c.getName())
                     return;
                 }
-                cb(c);
+                const parentPath = this.isControllerClass(c)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
+                cb(c, parentPath);
             });
         }
     }
@@ -388,7 +424,7 @@ export class ControllerScanner {
     }
 
     public static async scanAllControllers(mainPath: string) {
-        const methodsMappedByApp: Record<string, RestApiMethod[]> = {};
+        const methodsMappedByApp: Record<string, RestApiCollection[]> = {};
         const appsPath = path.join(mainPath, 'apps');
         const appList = await DirectoryUtil.listFolderNamesNoRecursive(appsPath);
         const rootProject = this.getTypescriptRootProject(mainPath);
@@ -399,7 +435,8 @@ export class ControllerScanner {
             const appName = appList[index];
             console.info('Scanning application: ' + appName);
             let globalPrefix = '';
-            const methods: RestApiMethod[] = [];
+            // const methods: RestApiMethod[] = [];
+            const collections: RestApiCollection[] = [];
             // Sadece bu uygulamaya ait sınıflar — modül iterasyonu için
             const appClasses = allProjectClasses.filter(
                 a => a.getSourceFile().getFilePath().includes(path.join('apps', appName, 'src')),
@@ -414,229 +451,23 @@ export class ControllerScanner {
             }
 
             // Modülleri app sınıflarında iterate et, controller/import aramasını tüm proje sınıflarında yap
-            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
-                methods.push(...this.getControllerMethods(appName, globalPrefix, controllerClass));
+            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass, parentPath) => {
+                collections.push({
+                    methods: this.getControllerMethods(appName, globalPrefix, controllerClass),
+                    name: controllerClass.getName() || "unnamed",
+                    parentPath: parentPath
+                })
             });
-            methodsMappedByApp[appName] = methods;
+            if (methodsMappedByApp[appName] == null) {
+                methodsMappedByApp[appName] = [];
+            }
+
+            methodsMappedByApp[appName].push(...collections);
         }
 
         console.log("Çıkış: ", methodsMappedByApp)
         return methodsMappedByApp;
 
     }
-
-
-
-    // public static scanAllControllers(mainPath: string) {
-    //     const collectionsByProject: { [key: string]: RestApiCollection[] } = {};
-    //     const globalPrefixes: { [key: string]: string } = {};
-    //     const project = new Project({
-    //         tsConfigFilePath: path.join(mainPath, 'tsconfig.json'),
-    //         skipAddingFilesFromTsConfig: true,
-    //     });
-
-    //     const testSourceFiles = project.addSourceFilesAtPaths([
-    //         mainPath + '/apps/**/*.ts',
-    //         mainPath + '/libs/**/*.ts',
-    //     ]);
-    //     testSourceFiles.forEach((typescriptFile) => {
-    //         const baseName = typescriptFile.getBaseName();
-    //         const skipPatterns = [
-    //             '.d.ts',
-    //             '.spec.ts',
-    //             '.module.ts',
-    //             '.enum.ts',
-    //         ];
-    //         const skipPaths = ['node_modules', 'dist', 'rest-doc-extractor'];
-    //         if (
-    //             skipPatterns.some((pattern) => baseName.endsWith(pattern)) ||
-    //             skipPaths.some((p) =>
-    //                 typescriptFile.getFilePath().includes(p + '/'),
-    //             )
-    //         ) {
-    //             return;
-    //         }
-    //         mainPath + '/**/*.ts';
-
-    //         const appNameRegex = /apps\/([^\/]+)\/src/,
-    //             libNameRegex = /libs\/([^\/]+)\/src/;
-    //         const appMatch = typescriptFile.getFilePath().match(appNameRegex),
-    //             libMatch = typescriptFile.getFilePath().match(libNameRegex);
-    //         let projectName = 'unknown';
-    //         if (appMatch || libMatch) {
-    //             projectName = (appMatch ? appMatch[1] : libMatch[1]).replace(
-    //                 /[^a-zA-Z0-9]/g,
-    //                 '-',
-    //             );
-    //         } else {
-    //             projectName = 'root-' + randomUUID().slice(0, 4);
-    //         }
-
-    //         if (!collectionsByProject[projectName]) {
-    //             collectionsByProject[projectName] = [];
-    //         }
-    //         const collectionsForThisProject = collectionsByProject[projectName];
-
-    //         const filePath = typescriptFile.getFilePath();
-    //         console.info('Dosya: ' + filePath);
-    //         if (filePath.includes('main.ts')) {
-
-
-    //         // const collection : RestApiCollection = {
-    //         //     methods:
-    //         // }
-
-    //         typescriptFile.getClasses().forEach((tsClass) => {
-    //             const itIsController = tsClass.getDecorator('Controller');
-
-    //             if (itIsController) {
-    //                 let parentPath =
-    //                     TypescriptNestUtils.firstParameterAsString(
-    //                         itIsController,
-    //                     );
-
-    //                 console.debug(tsClass.getName() + ' bir controller');
-    //                 const methods: RestApiMethod[] = [];
-    //                 tsClass.getMethods().forEach((method) => {
-    //                     const methodDecorators = [
-    //                         method.getDecorator('Get'),
-    //                         method.getDecorator('Post'),
-    //                         method.getDecorator('Put'),
-    //                         method.getDecorator('Delete'),
-    //                     ].filter((a) => a);
-    //                     if (methodDecorators[0]) {
-    //                         let reqBody: RestObjectTypeInfo;
-    //                         const returnTypeRaw =
-    //                             TypescriptNestUtils.extractFromPromise(
-    //                                 method.getReturnType(),
-    //                             );
-    //                         const restMethodDecorator = methodDecorators[0];
-    //                         const queryParameters: RestPrimitiveTypeInfo[] = [];
-    //                         const pathParameters: RestPrimitiveTypeInfo[] = [];
-    //                         // const restQueryResponse: RestApiMethod = null;
-    //                         let methodType = restMethodDecorator.getName();
-
-    //                         let path = TypescriptNestUtils.firstParameterAsString(
-    //                             restMethodDecorator,
-    //                         )
-    //                         console.info(path);
-    //                         method.getParameters().forEach((parameter) => {
-    //                             const restParameterTypeName = parameter
-    //                                 .getDecorators()
-    //                                 .find((a) =>
-    //                                     ['Body', 'Query', 'Param'].includes(
-    //                                         a.getName(),
-    //                                     ),
-    //                                 )
-    //                                 ?.getName();
-
-    //                             if (!restParameterTypeName) {
-    //                                 console.error(
-    //                                     'Bilinmeyen parametre türü: ' +
-    //                                     parameter.getName() +
-    //                                     ' dekoratör bulunamadı',
-    //                                 );
-    //                             } else {
-    //                                 if (restParameterTypeName === 'Body') {
-    //                                     const bodyType = parameter
-    //                                         .getTypeNode()
-    //                                         .getType();
-    //                                     const typeText = inlineTypeText(
-    //                                         bodyType,
-    //                                         method,
-    //                                         {},
-    //                                     );
-    //                                     reqBody = {
-    //                                         typeNode: bodyType,
-    //                                         typeName:
-    //                                             bodyType
-    //                                                 .getSymbol()
-    //                                                 ?.getName() ??
-    //                                             bodyType.getText(),
-    //                                         importedFrom:
-    //                                             TypescriptNestUtils.findImportSource(
-    //                                                 bodyType,
-    //                                             ),
-    //                                         typeExpandedText: typeText,
-    //                                     };
-    //                                     console.info(
-    //                                         'Payload parametre: ' +
-    //                                         parameter.getName() +
-    //                                         ' tipi: ' +
-    //                                         parameter.getType().getText(),
-    //                                     );
-    //                                 } else {
-    //                                     const extractedParameters =
-    //                                         TypescriptNestUtils.extractRestMethodPrimitiveParameterInfo(
-    //                                             parameter,
-    //                                         );
-    //                                     if (restParameterTypeName === 'Query') {
-    //                                         queryParameters.push(
-    //                                             ...extractedParameters,
-    //                                         );
-    //                                     } else if (
-    //                                         restParameterTypeName === 'Param'
-    //                                     ) {
-    //                                         pathParameters.push(
-    //                                             ...extractedParameters,
-    //                                         );
-    //                                     }
-    //                                 }
-    //                             }
-    //                         });
-    //                         //  returnType.getTypeNode().getType();
-    //                         const returnTypeInline = inlineTypeText(
-    //                             returnTypeRaw,
-    //                             method,
-    //                             { maxDepth: 1 },
-    //                         );
-    //                         const returnRestAp = {
-    //                             typeNode: returnTypeRaw,
-    //                             typeName:
-    //                                 ControllerScanner.returnTypeNameDetermination(
-    //                                     returnTypeRaw,
-    //                                 ),
-    //                             importedFrom:
-    //                                 TypescriptNestUtils.findImportSource(
-    //                                     returnTypeRaw,
-    //                                 ),
-    //                             typeExpandedText: returnTypeInline,
-    //                         };
-    //                         methods.push({
-    //                             methodType: methodType.toUpperCase() as
-    //                                 | 'GET'
-    //                                 | 'POST'
-    //                                 | 'PUT'
-    //                                 | 'DELETE',
-    //                             path: path,
-    //                             methodName: method.getName(),
-    //                             queryParameters: queryParameters,
-    //                             pathParameters: pathParameters,
-    //                             responseType: returnRestAp,
-    //                             requestBody: reqBody,
-    //                         });
-    //                     }
-    //                 });
-    //                 collectionsForThisProject.push({
-    //                     methods: methods,
-    //                     name: tsClass.getName(),
-    //                     parentPath,
-    //                 });
-    //             }
-    //         });
-    //     });
-    //     Object.keys(collectionsByProject).forEach((key) => {
-    //         const globalPrefix = globalPrefixes[key];
-    //         if (globalPrefix) {
-    //             collectionsByProject[key].forEach((controller) => {
-    //                 controller.parentPath =
-    //                     '/' +
-    //                     ControllerScanner.combineUrlPaths(key, globalPrefix, controller);
-    //             });
-    //         }
-    //     });
-    //     return collectionsByProject;
-    // }
-
 
 }

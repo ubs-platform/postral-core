@@ -1,4 +1,4 @@
-import { ParameterDeclaration, Type } from "ts-morph";
+import { Decorator, ParameterDeclaration, Type } from "ts-morph";
 import { RestPrimitiveTypeInfo } from "./api.data.js";
 import { ts } from "ts-morph";
 export declare class TypescriptNestUtils {
@@ -6,5 +6,6 @@ export declare class TypescriptNestUtils {
     static findImportSource(type: Type<ts.Type>): string;
     static extractRestMethodPrimitiveParameterInfo(param: ParameterDeclaration): RestPrimitiveTypeInfo[];
     private static propertiesFromType;
-    static firstParameterAsString(restMethodDecorator: any): string;
+    private static pathRelativeToRootProject;
+    static firstParameterAsString(restMethodDecorator: Decorator): string;
 }

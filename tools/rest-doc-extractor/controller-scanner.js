@@ -39,6 +39,7 @@ const typescript_utils_js_1 = require("./parser/typescript-utils.js");
 const path = __importStar(require("path"));
 const extractReturnTypes_js_1 = require("./parser/extractReturnTypes.js");
 const directory_util_js_1 = require("../util/directory-util.js");
+const child_process_1 = require("child_process");
 class ControllerScanner {
     static getTypescriptRootProject(mainPath) {
         const project = new ts_morph_1.Project({
@@ -57,11 +58,10 @@ class ControllerScanner {
         project.getSourceFiles().forEach((typescriptFile) => {
             const baseName = typescriptFile.getBaseName();
             const skipPatterns = [
-                '.d.ts',
                 '.spec.ts',
                 '.enum.ts',
             ];
-            const skipPaths = ['node_modules', 'dist', 'rest-doc-extractor'];
+            const skipPaths = ['dist', 'rest-doc-extractor'];
             if (skipPatterns.some((pattern) => baseName.endsWith(pattern)) ||
                 skipPaths.some((p) => typescriptFile.getFilePath().includes(p + '/'))) {
                 console.info("Atlanıyor: " + baseName);
@@ -169,6 +169,19 @@ class ControllerScanner {
                 applicationModuleName: appModuleName
             });
         });
+        const baseClass = tsClass.getBaseClass();
+        if (baseClass) {
+            (0, child_process_1.exec)(`kdialog --msgbox 'Base class var ${baseClass.getSourceFile().getFilePath()}'`);
+            const baseMethods = this.getControllerMethods(appModuleName, prefix, baseClass);
+            if (baseMethods.length > 0) {
+                (0, child_process_1.exec)(`kdialog --msgbox 'Base class var'`);
+            }
+            for (const baseMethod of baseMethods) {
+                if (!methods.some(m => m.methodName === baseMethod.methodName)) {
+                    methods.push(baseMethod);
+                }
+            }
+        }
         return methods;
     }
     static extractControllerClassesFromModuleClass(tsClass, allClasses = [], maxDepth = 2, _visited = new Set()) {
@@ -246,11 +259,13 @@ class ControllerScanner {
             if (extendedClass) {
                 const controllersInExtendedModule = this.extractControllerClassesFromModuleClass(extendedClass, resolutionClasses);
                 controllersInExtendedModule.forEach(c => {
-                    if (!this.isControllerClass(c)) {
+                    const controllerDecorator = this.isControllerClass(c);
+                    if (!controllerDecorator) {
                         console.info("Bir controller değil: " + c.getName());
                         return;
                     }
-                    cb(c);
+                    const parentPath = controllerDecorator.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
+                    cb(c, parentPath);
                 });
             }
             controllersInModule.forEach(c => {
@@ -258,7 +273,8 @@ class ControllerScanner {
                     console.info("Bir controller değil: " + c.getName());
                     return;
                 }
-                cb(c);
+                const parentPath = this.isControllerClass(c)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
+                cb(c, parentPath);
             });
         }
     }
@@ -332,16 +348,23 @@ class ControllerScanner {
             const appName = appList[index];
             console.info('Scanning application: ' + appName);
             let globalPrefix = '';
-            const methods = [];
+            const collections = [];
             const appClasses = allProjectClasses.filter(a => a.getSourceFile().getFilePath().includes(path.join('apps', appName, 'src')));
             const mainSourceFile = rootProject.getSourceFiles().find(sf => sf.getFilePath().includes(path.join('apps', appName, 'src')) && sf.getBaseName() === 'main.ts');
             if (mainSourceFile) {
                 globalPrefix = this.extractGlobalPrefixFromSourceFile(mainSourceFile.getFullText());
             }
-            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
-                methods.push(...this.getControllerMethods(appName, globalPrefix, controllerClass));
+            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass, parentPath) => {
+                collections.push({
+                    methods: this.getControllerMethods(appName, globalPrefix, controllerClass),
+                    name: controllerClass.getName() || "unnamed",
+                    parentPath: parentPath
+                });
             });
-            methodsMappedByApp[appName] = methods;
+            if (methodsMappedByApp[appName] == null) {
+                methodsMappedByApp[appName] = [];
+            }
+            methodsMappedByApp[appName].push(...collections);
         }
         console.log("Çıkış: ", methodsMappedByApp);
         return methodsMappedByApp;
