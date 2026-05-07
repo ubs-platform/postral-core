@@ -8,8 +8,9 @@ export declare class ControllerScanner {
     static getControllerMethods(appModuleName: string, prefix: string, tsClass: ClassDeclaration): RestApiMethod[];
     static extractControllerClassesFromModuleClass(tsClass: ClassDeclaration, allClasses?: ClassDeclaration[], maxDepth?: number, _visited?: Set<string>): ClassDeclaration[];
     static collectControllerClassesFromModuleClasses(allClasses: ClassDeclaration[]): ClassDeclaration[];
-    static circulateControllerClassesFromModuleClasses(moduleClasses: ClassDeclaration[], resolutionClasses: ClassDeclaration[], cb: (controllerClass: ClassDeclaration, parentPath: string) => void): void;
+    static circulateControllerClassesFromModuleClasses(moduleClasses: ClassDeclaration[], resolutionClasses: ClassDeclaration[], cb: (controllerClass: ClassDeclaration) => void): void;
     private static returnTypeNameDetermination;
     private static extractGlobalPrefixFromSourceFile;
     static scanAllControllers(mainPath: string): Promise<Record<string, RestApiCollection[]>>;
+    static combineRestPath(...segments: string[]): string;
 }

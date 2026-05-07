@@ -21,6 +21,7 @@ export interface RestApiMethod {
   applicationModuleName: string;
   methodName: string;
   methodType: string; // "Get" | "Put" | "Delete" | "Post";
+  description?: string;
   responseType?: RestObjectTypeInfo;
   queryParameters: RestPrimitiveTypeInfo[];
   pathParameters: RestPrimitiveTypeInfo[];

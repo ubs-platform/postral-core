@@ -66,6 +66,8 @@ export class ControllerScanner {
 
 
     public static getControllerMethods(appModuleName: string, prefix: string, tsClass: ClassDeclaration): RestApiMethod[] {
+        const parentPath = this.isControllerClass(tsClass)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
+
         const methods: RestApiMethod[] = [];
         tsClass.getMethods().forEach((method) => {
             const methodDecorators = [
@@ -188,7 +190,11 @@ export class ControllerScanner {
                     | 'PUT'
                     | 'DELETE',
                 methodName: method.getName(),
-                path: path.join(prefix, restPath).replace(/\\/g, '/'),
+                description: method.getJsDocs()
+                    .map(doc => doc.getDescription().trim())
+                    .filter(d => d)
+                    .join('\n') || undefined,
+                path: this.combineRestPath(prefix, parentPath, restPath).replace(/\\/g, '/'),
                 queryParameters: queryParameters,
                 pathParameters: pathParameters,
                 responseType: returnRestAp,
@@ -249,7 +255,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'fetchAll',
                         methodType: 'GET',
-                        path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                         queryParameters: searchProps,
                         pathParameters: [],
                         requestBody: voidInfo,
@@ -259,7 +265,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'search',
                         methodType: 'GET',
-                        path: path.join(prefix || '/', '_search').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, '_search').replace(/\\/g, '/'),
                         queryParameters: searchProps,
                         pathParameters: [],
                         requestBody: voidInfo,
@@ -269,7 +275,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'fetchOne',
                         methodType: 'GET',
-                        path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, ':id').replace(/\\/g, '/'),
                         queryParameters: [],
                         pathParameters: idPrimitive,
                         requestBody: voidInfo,
@@ -279,7 +285,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'add',
                         methodType: 'POST',
-                        path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                         queryParameters: [],
                         pathParameters: [],
                         requestBody: inputInfo,
@@ -289,7 +295,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'edit',
                         methodType: 'PUT',
-                        path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                         queryParameters: [],
                         pathParameters: [],
                         requestBody: inputInfo,
@@ -299,7 +305,7 @@ export class ControllerScanner {
                         applicationModuleName: appModuleName,
                         methodName: 'remove',
                         methodType: 'DELETE',
-                        path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                        path: this.combineRestPath(prefix, parentPath, ':id').replace(/\\/g, '/'),
                         queryParameters: [],
                         pathParameters: idPrimitive,
                         requestBody: voidInfo,
@@ -312,9 +318,6 @@ export class ControllerScanner {
             // // /home/huseyin/dev/tk-ubs/postralmona/node_modules/@ubs-platform/crud-base/base-crud-controller.d.ts
             // // exec(`kdialog --msgbox 'Base class var ${baseClass.getSourceFile().getFilePath()}'`);
             const baseMethods = this.getControllerMethods(appModuleName, prefix, baseClass);
-            if (baseMethods.length > 0) {
-                exec(`kdialog --msgbox 'Base class var'`);
-            }
 
             // Alt sınıfta override edilmemiş metodları ekle
             for (const baseMethod of baseMethods) {
@@ -412,7 +415,7 @@ export class ControllerScanner {
     public static circulateControllerClassesFromModuleClasses(
         moduleClasses: ClassDeclaration[],
         resolutionClasses: ClassDeclaration[],
-        cb: (controllerClass: ClassDeclaration, parentPath: string) => void,
+        cb: (controllerClass: ClassDeclaration) => void,
     ) {
         for (let index = 0; index < moduleClasses.length; index++) {
             const tsClass = moduleClasses[index];
@@ -431,8 +434,7 @@ export class ControllerScanner {
                         console.info("Bir controller değil: " + c.getName())
                         return;
                     }
-                    const parentPath = controllerDecorator.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
-                    cb(c, parentPath);
+                    cb(c);
                 });
             }
             controllersInModule.forEach(c => {
@@ -440,8 +442,7 @@ export class ControllerScanner {
                     console.info("Bir controller değil: " + c.getName())
                     return;
                 }
-                const parentPath = this.isControllerClass(c)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
-                cb(c, parentPath);
+                cb(c);
             });
         }
     }
@@ -500,8 +501,9 @@ export class ControllerScanner {
     }
 
     private static extractGlobalPrefixFromSourceFile(sourceFileText: string): string {
+        // exec(`kdialog --msgbox 'Global prefix aranıyor... Gelen metin uzunluğu: ${sourceFileText.length}'`);
         const capturedGlobalPrefix =
-            /globalPrefix\s*=\s*"(.*)"|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(
+            /globalPrefix\s*=\s*"(.*)"|globalPrefix\s*=\s*'(.*)'|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(
                 sourceFileText,
             );
         if (capturedGlobalPrefix) {
@@ -510,6 +512,7 @@ export class ControllerScanner {
                 capturedGlobalPrefix[3] ||
                 '';
         }
+        // exec(`kdialog --msgbox 'Global prefix bulunamadı, varsayılan olarak boş kabul edilecek.'`);
         return '';
     }
 
@@ -534,18 +537,19 @@ export class ControllerScanner {
 
             // global prefix'i main.ts source file text'inden bul (main.ts'de class olmaz)
             const mainSourceFile = rootProject.getSourceFiles().find(
-                sf => sf.getFilePath().includes(path.join('apps', appName, 'src')) && sf.getBaseName() === 'main.ts',
+                sf => sf.getFilePath().includes(path.join('apps', appName, 'src', 'main.ts'))
             );
             if (mainSourceFile) {
                 globalPrefix = this.extractGlobalPrefixFromSourceFile(mainSourceFile.getFullText());
+                // exec(`kdialog --msgbox 'Global prefix aranıyor: ${mainSourceFile.getFilePath()} bulundu: ${globalPrefix}'`);
             }
-
+            exec(`kdialog --msgbox 'Uygulama: ${appName} için controllerlar taranıyor. Global prefix: ${globalPrefix}'`);
             // Modülleri app sınıflarında iterate et, controller/import aramasını tüm proje sınıflarında yap
-            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass, parentPath) => {
+            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
                 collections.push({
                     methods: this.getControllerMethods(appName, globalPrefix, controllerClass),
                     name: controllerClass.getName() || "unnamed",
-                    parentPath: parentPath
+                    parentPath: ""
                 })
             });
             if (methodsMappedByApp[appName] == null) {
@@ -558,6 +562,13 @@ export class ControllerScanner {
         console.log("Çıkış: ", methodsMappedByApp)
         return methodsMappedByApp;
 
+    }
+
+    public static combineRestPath(...segments: string[]) {
+        return segments
+            .filter(p => p && p.trim() !== '')
+            .map(p => p.replace(/^\/|\/$/g, '')) // Baş ve sondaki slash'leri kaldır
+            .join('/');
     }
 
 }

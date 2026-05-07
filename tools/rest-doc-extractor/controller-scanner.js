@@ -81,6 +81,7 @@ class ControllerScanner {
         return tsClass.getDecorator('Module');
     }
     static getControllerMethods(appModuleName, prefix, tsClass) {
+        const parentPath = this.isControllerClass(tsClass)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
         const methods = [];
         tsClass.getMethods().forEach((method) => {
             const methodDecorators = [
@@ -156,7 +157,11 @@ class ControllerScanner {
             methods.push({
                 methodType: methodType.toUpperCase(),
                 methodName: method.getName(),
-                path: path.join(prefix, restPath).replace(/\\/g, '/'),
+                description: method.getJsDocs()
+                    .map(doc => doc.getDescription().trim())
+                    .filter(d => d)
+                    .join('\n') || undefined,
+                path: this.combineRestPath(prefix, parentPath, restPath).replace(/\\/g, '/'),
                 queryParameters: queryParameters,
                 pathParameters: pathParameters,
                 responseType: returnRestAp,
@@ -206,7 +211,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'fetchAll',
                     methodType: 'GET',
-                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                     queryParameters: searchProps,
                     pathParameters: [],
                     requestBody: voidInfo,
@@ -215,7 +220,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'search',
                     methodType: 'GET',
-                    path: path.join(prefix || '/', '_search').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, '_search').replace(/\\/g, '/'),
                     queryParameters: searchProps,
                     pathParameters: [],
                     requestBody: voidInfo,
@@ -224,7 +229,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'fetchOne',
                     methodType: 'GET',
-                    path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, ':id').replace(/\\/g, '/'),
                     queryParameters: [],
                     pathParameters: idPrimitive,
                     requestBody: voidInfo,
@@ -233,7 +238,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'add',
                     methodType: 'POST',
-                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                     queryParameters: [],
                     pathParameters: [],
                     requestBody: inputInfo,
@@ -242,7 +247,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'edit',
                     methodType: 'PUT',
-                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, '').replace(/\\/g, '/'),
                     queryParameters: [],
                     pathParameters: [],
                     requestBody: inputInfo,
@@ -251,7 +256,7 @@ class ControllerScanner {
                     applicationModuleName: appModuleName,
                     methodName: 'remove',
                     methodType: 'DELETE',
-                    path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                    path: this.combineRestPath(prefix, parentPath, ':id').replace(/\\/g, '/'),
                     queryParameters: [],
                     pathParameters: idPrimitive,
                     requestBody: voidInfo,
@@ -260,9 +265,6 @@ class ControllerScanner {
                 return methods;
             }
             const baseMethods = this.getControllerMethods(appModuleName, prefix, baseClass);
-            if (baseMethods.length > 0) {
-                (0, child_process_1.exec)(`kdialog --msgbox 'Base class var'`);
-            }
             for (const baseMethod of baseMethods) {
                 if (!methods.some(m => m.methodName === baseMethod.methodName)) {
                     methods.push(baseMethod);
@@ -351,8 +353,7 @@ class ControllerScanner {
                         console.info("Bir controller değil: " + c.getName());
                         return;
                     }
-                    const parentPath = controllerDecorator.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
-                    cb(c, parentPath);
+                    cb(c);
                 });
             }
             controllersInModule.forEach(c => {
@@ -360,8 +361,7 @@ class ControllerScanner {
                     console.info("Bir controller değil: " + c.getName());
                     return;
                 }
-                const parentPath = this.isControllerClass(c)?.getArguments()?.at(0)?.getText()?.replace(/['"`]/g, '') ?? '';
-                cb(c, parentPath);
+                cb(c);
             });
         }
     }
@@ -416,7 +416,8 @@ class ControllerScanner {
             tsArgsStr);
     }
     static extractGlobalPrefixFromSourceFile(sourceFileText) {
-        const capturedGlobalPrefix = /globalPrefix\s*=\s*"(.*)"|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(sourceFileText);
+        debugger;
+        const capturedGlobalPrefix = /globalPrefix\s*=\s*"(.*)"|globalPrefix\s*=\s*'(.*)'|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(sourceFileText);
         if (capturedGlobalPrefix) {
             return capturedGlobalPrefix[1] ||
                 capturedGlobalPrefix[2] ||
@@ -437,15 +438,16 @@ class ControllerScanner {
             let globalPrefix = '';
             const collections = [];
             const appClasses = allProjectClasses.filter(a => a.getSourceFile().getFilePath().includes(path.join('apps', appName, 'src')));
-            const mainSourceFile = rootProject.getSourceFiles().find(sf => sf.getFilePath().includes(path.join('apps', appName, 'src')) && sf.getBaseName() === 'main.ts');
+            const mainSourceFile = rootProject.getSourceFiles().find(sf => sf.getFilePath().includes(path.join('apps', appName, 'src', 'main.ts')));
             if (mainSourceFile) {
                 globalPrefix = this.extractGlobalPrefixFromSourceFile(mainSourceFile.getFullText());
             }
-            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass, parentPath) => {
+            (0, child_process_1.exec)(`kdialog --msgbox 'Uygulama: ${appName} için controllerlar taranıyor. Global prefix: ${globalPrefix}'`);
+            this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
                 collections.push({
                     methods: this.getControllerMethods(appName, globalPrefix, controllerClass),
                     name: controllerClass.getName() || "unnamed",
-                    parentPath: parentPath
+                    parentPath: ""
                 });
             });
             if (methodsMappedByApp[appName] == null) {
@@ -455,6 +457,12 @@ class ControllerScanner {
         }
         console.log("Çıkış: ", methodsMappedByApp);
         return methodsMappedByApp;
+    }
+    static combineRestPath(...segments) {
+        return segments
+            .filter(p => p && p.trim() !== '')
+            .map(p => p.replace(/^\/|\/$/g, ''))
+            .join('/');
     }
 }
 exports.ControllerScanner = ControllerScanner;

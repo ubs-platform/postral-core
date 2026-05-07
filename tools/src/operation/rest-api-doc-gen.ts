@@ -78,6 +78,10 @@ export class RestApiDocGen {
         lines.push(`### \`${method.methodType}\` ${pathDisplay}`, '');
         lines.push(`**Metot adı:** \`${method.methodName}\``, '');
 
+        if (method.description) {
+            lines.push(`> ${method.description.replace(/\n/g, '\n> ')}`, '');
+        }
+
         if (method.pathParameters?.length) {
             lines.push('**Path parametreleri:**', '');
             lines.push('| İsim | Tip |', '|------|-----|');
@@ -99,7 +103,7 @@ export class RestApiDocGen {
         const reqBody = method.requestBody;
         if (reqBody?.typeName && reqBody.typeName !== 'void') {
             lines.push('**Request body:**', '');
-            lines.push('```', reqBody.typeExpandedText ?? reqBody.typeName, '```');
+            lines.push('```', this.formatExpandedText(reqBody.typeExpandedText) ?? reqBody.typeName, '```');
             if (reqBody.importedFrom) lines.push('', `_Kaynak: \`${reqBody.importedFrom}\`_`);
             lines.push('');
         }
@@ -107,7 +111,7 @@ export class RestApiDocGen {
         const resType = method.responseType;
         if (resType?.typeName) {
             lines.push('**Yanıt tipi:**', '');
-            lines.push('```', resType.typeExpandedText ?? resType.typeName, '```');
+            lines.push('```', this.formatExpandedText(resType.typeExpandedText) ?? resType.typeName, '```');
             if (resType.importedFrom) lines.push('', `_Kaynak: \`${resType.importedFrom}\`_`);
             lines.push('');
         }
@@ -116,7 +120,34 @@ export class RestApiDocGen {
         return lines;
     }
 
+    static formatExpandedText(typeExpandedText: string): string {
+        if (!typeExpandedText) return '';
+        let indent = 0;
+        let result = '';
+        let skipSpaces = false;
+        for (let i = 0; i < typeExpandedText.length; i++) {
+            const ch = typeExpandedText[i];
+            if (skipSpaces && ch === ' ') continue;
+            skipSpaces = false;
+            if (ch === '{') {
+                indent++;
+                result += '{\n' + '  '.repeat(indent);
+                skipSpaces = true;
+            } else if (ch === '}') {
+                indent = Math.max(0, indent - 1);
+                result = result.replace(/[ \t]+$/, '');
+                result += '\n' + '  '.repeat(indent) + '}';
+            } else if (ch === ';') {
+                result += ';\n' + '  '.repeat(indent);
+                skipSpaces = true;
+            } else {
+                result += ch;
+            }
+        }
+        return result.trim();
+    }
+
     private static safeTypeName(p: RestPrimitiveTypeInfo): string {
-        return p.typeName ?? 'any';
+        return p.typeName.replaceAll("|", "\\|") ?? 'any';
     }
 }
