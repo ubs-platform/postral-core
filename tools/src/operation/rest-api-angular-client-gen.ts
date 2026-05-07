@@ -9,7 +9,7 @@ export class RestApiAngularClientGen {
     static async generate(workDir: string, paket: IksirPackage, exportPath?: string) {
         const mainPath = workDir;
         console.info('Project directory: ' + mainPath);
-        const byProject = ControllerScanner.scanAllControllers(mainPath);
+        const byProject = await ControllerScanner.scanAllControllers(mainPath);
         const exportPathEdited = exportPath ? exportPath : `${mainPath}/xr-generated/angular-services/${paket.packageObject.name}`
         await DirectoryUtil.ensureDirectory(exportPathEdited);
 

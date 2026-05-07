@@ -74,7 +74,7 @@ export class TypescriptNestUtils {
     ];
   }
 
-  private static propertiesFromType(type) {
+  public static propertiesFromType(type) {
     const properties = type.getProperties();
     return properties.map((prop) => {
       const propName = prop.getName();

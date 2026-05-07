@@ -171,7 +171,94 @@ class ControllerScanner {
         });
         const baseClass = tsClass.getBaseClass();
         if (baseClass) {
-            (0, child_process_1.exec)(`kdialog --msgbox 'Base class var ${baseClass.getSourceFile().getFilePath()}'`);
+            const baseClassFilePath = baseClass.getSourceFile().getFilePath();
+            if (baseClassFilePath.includes("@ubs-platform") && baseClassFilePath.includes("base-crud-controller.d.ts")) {
+                const typeArgs = tsClass.getExtends()?.getTypeArguments() ?? [];
+                const idType = typeArgs[1]?.getType() ?? null;
+                const inputType = typeArgs[2]?.getType() ?? null;
+                const outputType = typeArgs[3]?.getType() ?? null;
+                const searchType = typeArgs[4]?.getType() ?? null;
+                const makeTypeInfo = (type, fallbackName) => {
+                    if (!type)
+                        return { typeNode: null, typeName: fallbackName, importedFrom: null, typeExpandedText: fallbackName };
+                    const typeName = type.getSymbol()?.getName() ?? type.getText() ?? fallbackName;
+                    const importedFrom = typescript_utils_js_1.TypescriptNestUtils.findImportSource(type);
+                    const typeExpandedText = (0, extractReturnTypes_js_1.inlineTypeText)(type, null, { maxDepth: 1 });
+                    return { typeNode: type, typeName, importedFrom, typeExpandedText };
+                };
+                const idPrimitive = [{
+                        parameterName: 'id',
+                        typeNode: idType,
+                        typeName: idType?.getText() ?? 'any',
+                    }];
+                const searchProps = searchType
+                    ? typescript_utils_js_1.TypescriptNestUtils.propertiesFromType(searchType)
+                    : [];
+                const inputInfo = makeTypeInfo(inputType, 'any');
+                const outputInfo = makeTypeInfo(outputType, 'any');
+                const outputArrayInfo = {
+                    ...outputInfo,
+                    typeName: outputInfo.typeName ? outputInfo.typeName + '[]' : 'any[]',
+                    typeExpandedText: outputInfo.typeExpandedText + '[]',
+                };
+                const voidInfo = { typeNode: null, typeName: 'void', importedFrom: null, typeExpandedText: 'void' };
+                methods.push({
+                    applicationModuleName: appModuleName,
+                    methodName: 'fetchAll',
+                    methodType: 'GET',
+                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    queryParameters: searchProps,
+                    pathParameters: [],
+                    requestBody: voidInfo,
+                    responseType: outputArrayInfo,
+                }, {
+                    applicationModuleName: appModuleName,
+                    methodName: 'search',
+                    methodType: 'GET',
+                    path: path.join(prefix || '/', '_search').replace(/\\/g, '/'),
+                    queryParameters: searchProps,
+                    pathParameters: [],
+                    requestBody: voidInfo,
+                    responseType: outputInfo,
+                }, {
+                    applicationModuleName: appModuleName,
+                    methodName: 'fetchOne',
+                    methodType: 'GET',
+                    path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                    queryParameters: [],
+                    pathParameters: idPrimitive,
+                    requestBody: voidInfo,
+                    responseType: outputInfo,
+                }, {
+                    applicationModuleName: appModuleName,
+                    methodName: 'add',
+                    methodType: 'POST',
+                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    queryParameters: [],
+                    pathParameters: [],
+                    requestBody: inputInfo,
+                    responseType: outputInfo,
+                }, {
+                    applicationModuleName: appModuleName,
+                    methodName: 'edit',
+                    methodType: 'PUT',
+                    path: path.join(prefix || '/', '').replace(/\\/g, '/'),
+                    queryParameters: [],
+                    pathParameters: [],
+                    requestBody: inputInfo,
+                    responseType: outputInfo,
+                }, {
+                    applicationModuleName: appModuleName,
+                    methodName: 'remove',
+                    methodType: 'DELETE',
+                    path: path.join(prefix || '/', ':id').replace(/\\/g, '/'),
+                    queryParameters: [],
+                    pathParameters: idPrimitive,
+                    requestBody: voidInfo,
+                    responseType: voidInfo,
+                });
+                return methods;
+            }
             const baseMethods = this.getControllerMethods(appModuleName, prefix, baseClass);
             if (baseMethods.length > 0) {
                 (0, child_process_1.exec)(`kdialog --msgbox 'Base class var'`);

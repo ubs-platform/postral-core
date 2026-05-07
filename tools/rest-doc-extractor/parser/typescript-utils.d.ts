@@ -5,7 +5,7 @@ export declare class TypescriptNestUtils {
     static extractFromPromise(t: Type): Type<ts.Type>;
     static findImportSource(type: Type<ts.Type>): string;
     static extractRestMethodPrimitiveParameterInfo(param: ParameterDeclaration): RestPrimitiveTypeInfo[];
-    private static propertiesFromType;
+    static propertiesFromType(type: any): any;
     private static pathRelativeToRootProject;
     static firstParameterAsString(restMethodDecorator: Decorator): string;
 }
