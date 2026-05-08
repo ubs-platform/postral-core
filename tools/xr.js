@@ -7,6 +7,7 @@ const iksir_package_1 = require("./data/iksir-package");
 const nest_cli_wrap_1 = require("./operation/nest-cli-wrap");
 const rest_api_doc_gen_1 = require("./operation/rest-api-doc-gen");
 const rest_api_angular_client_gen_1 = require("./operation/rest-api-angular-client-gen");
+const rest_api_nestjs_client_gen_1 = require("./operation/rest-api-nestjs-client-gen");
 console.info(`
 ▗▖  ▗▖ ▗▄▖ ▗▖  ▗▖ ▗▄▖ ▗▖  ▗▖▗▄▄▖ 
 ▐▛▚▞▜▌▐▌ ▐▌▐▛▚▖▐▌▐▌ ▐▌ ▝▚▞▘ ▐▌ ▐▌
@@ -25,6 +26,13 @@ program
     .action(async (targetDirectory) => {
     const paket = await iksir_package_1.IksirPackage.scanRoot(workingDirectory);
     await rest_api_angular_client_gen_1.RestApiAngularClientGen.generate(workingDirectory, paket, targetDirectory);
+});
+program
+    .command('generate-nestjs-services [targetDirectory]')
+    .description('Projedeki REST API controller\'larından NestJS HttpService client servisleri üretir')
+    .action(async (targetDirectory) => {
+    const paket = await iksir_package_1.IksirPackage.scanRoot(workingDirectory);
+    await rest_api_nestjs_client_gen_1.RestApiNestjsClientGen.generate(workingDirectory, paket, targetDirectory);
 });
 program
     .command('generate-rest-doc')

@@ -6,6 +6,7 @@ import { IksirPackage } from './data/iksir-package';
 import { NestJsCliWrap } from './operation/nest-cli-wrap';
 import { RestApiDocGen } from './operation/rest-api-doc-gen';
 import { RestApiAngularClientGen } from './operation/rest-api-angular-client-gen';
+import { RestApiNestjsClientGen } from './operation/rest-api-nestjs-client-gen';
 
 console.info(
     `
@@ -30,6 +31,14 @@ program
     .action(async (targetDirectory: string | undefined) => {
         const paket = await IksirPackage.scanRoot(workingDirectory);
         await RestApiAngularClientGen.generate(workingDirectory, paket, targetDirectory);
+    });
+
+program
+    .command('generate-nestjs-services [targetDirectory]')
+    .description('Projedeki REST API controller\'larından NestJS HttpService client servisleri üretir')
+    .action(async (targetDirectory: string | undefined) => {
+        const paket = await IksirPackage.scanRoot(workingDirectory);
+        await RestApiNestjsClientGen.generate(workingDirectory, paket, targetDirectory);
     });
 
 program

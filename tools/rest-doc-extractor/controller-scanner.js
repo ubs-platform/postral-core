@@ -416,7 +416,6 @@ class ControllerScanner {
             tsArgsStr);
     }
     static extractGlobalPrefixFromSourceFile(sourceFileText) {
-        debugger;
         const capturedGlobalPrefix = /globalPrefix\s*=\s*"(.*)"|globalPrefix\s*=\s*'(.*)'|\.setGlobalPrefix\(('.*')\)|\.setGlobalPrefix\("(.*)"\)/g.exec(sourceFileText);
         if (capturedGlobalPrefix) {
             return capturedGlobalPrefix[1] ||
