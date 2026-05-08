@@ -65,7 +65,8 @@ export const NESTJS_SERVICE_METHOD = (restMethod: RestApiMethod) => {
     bodyType = restMethod.requestBody.typeName || 'any';
   }
 
-  const nestMethodBodyParamString = restMethod.requestBody ? `requestBody: ${bodyType}` : '';
+  const supportsBody = httpMethod !== 'get' && httpMethod !== 'delete';
+  const nestMethodBodyParamString = (supportsBody && restMethod.requestBody) ? `requestBody: ${bodyType}` : '';
   const nestMethodPathParameters = restMethod.pathParameters.map(param => `${param.parameterName}: ${param.typeName || "any"}`).join(', ');
   const nestMethodQueryParams = restMethod.queryParameters.map(param => `${param.parameterName}: ${param.typeName || "any"}`).join(', ');
   const queryParametersStringInMethod = restMethod.queryParameters.map(param => `\`${param.parameterName}=\${${param.parameterName}}\``).join(' + \'&\' + ');
@@ -82,7 +83,7 @@ export const NESTJS_SERVICE_METHOD = (restMethod: RestApiMethod) => {
   return `
   async ${methodName}(${[nestMethodPathParameters, nestMethodQueryParams, nestMethodBodyParamString].filter(x => x).join(', ')}): Promise<${responseType || 'any'}> {
     let urlAltered = this.interceptUrl("${url}")${urlAlteration};
-    return firstValueFrom(this.http.${httpMethod}<${restMethod.responseType?.typeName || 'any'}>(urlAltered${restMethod.requestBody ? ', requestBody' : ''}).pipe(map(r => r.data)));
+    return firstValueFrom(this.http.${httpMethod}<${restMethod.responseType?.typeName || 'any'}>(urlAltered${(supportsBody && restMethod.requestBody) ? ', requestBody' : ''}).pipe(map(r => r.data)));
   }
 `;
 };
