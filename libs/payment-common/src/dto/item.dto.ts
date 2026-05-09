@@ -5,11 +5,11 @@ export class ItemAddDTO {
 
     name!: string;
 
-    entityGroup!: string;
+    entityGroup?: string;
 
-    entityName!: string;
+    entityName?: string;
 
-    entityId!: string;
+    entityId?: string;
 
     unit!: string;
 
@@ -37,11 +37,11 @@ export class ItemDTO {
 
     name!: string;
 
-    entityGroup!: string;
+    entityGroup?: string;
 
-    entityName!: string;
+    entityName?: string;
 
-    entityId!: string;
+    entityId?: string;
 
     unit!: string;
 

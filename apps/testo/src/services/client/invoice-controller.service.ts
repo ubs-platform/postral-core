@@ -5,7 +5,7 @@
  * Generated on: 2026-05-09T10:40:29.248Z
  */
 import { InvoiceCreateDTO, InvoiceDTO, InvoiceUpdateDTO } from '@tk-postral/payment-common';
-import { RawSearchResult } from '@ubs-platform/crud-base-common';
+import { RawSearchResult, SearchResult } from '@ubs-platform/crud-base-common';
 
 
 
@@ -16,7 +16,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable()
 export class InvoiceControllerService {
-  readonly basePath = '';
+  readonly basePath = process.env.TESTO_POSTRAL_URL || '';;
   constructor(private http: HttpService) {}
 
   interceptUrl(url: string): string {

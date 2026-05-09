@@ -1,46 +1,47 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { LoginOperator } from "./login-operator";
+import { Injectable } from "@nestjs/common";
+import { AuthControllerService } from "../client/auth-controller.service";
+import { HttpService } from "@nestjs/axios";
+import { CommissionDriverService } from "./commission-driver.service";
+import { AddressDriverService } from "./address-driver.service";
+import { AccountDriverService } from "./account-driver.service";
+import { TaxDriverService } from "./tax-driver.service";
+import { ItemDriverService } from "./item-driver.service";
+import { ReportDriverService } from "./report-driver.service";
 
 @Injectable()
 export class MainDriverService {
     constructor(
-        private readonly loginOperator: LoginOperator
+        private readonly httpService: HttpService,
+        private readonly loginOperator: AuthControllerService,
+        private readonly commissionDriver: CommissionDriverService,
+        private readonly addressDriver: AddressDriverService,
+        private readonly accountDriver: AccountDriverService,
+        private readonly taxDriver: TaxDriverService,
+        private readonly itemDriver: ItemDriverService,
+        private readonly reportDriver: ReportDriverService,
     ) {
         console.info("MainDriverService initialized");
     }
 
-
-    async performOperations() {
+    async initialOperations() {
         // UBS Platformda default username ve password "kyle"dır. Neden "kyle" olduğunu lütfen sormayın :d
-        await this.loginOperator.login("kyle", "kyle");
-        // Platform için komisyonlar eklenecek.
-        // default: 10%
-        // reduced: 5%
-        
-        // TODO: Adres ekleme
-        // TODO: Accountlar eklenecek.
-        //          - Bireysel : "Hüseyin"
-        //          - Bireysel : "Cansu"
-        //          - Bireysel : "Efe"
-        //          - Kurumsal : "Kantçı Hüso" (Satıcı)
-        //          - Kurumsal : "Doofenshmirtz Evil Inc." (Satıcı)
-        //          - Kurumsal : "Tetakent Ltd. Şti." (Platform)
+        const loginInfo = await this.loginOperator.authenticate({ login: "kyle", password: "kyle" });
+        const token = loginInfo.token;
+        if (!token) {
+            console.error("Authentication failed. No token received.");
+            return;
+        }
+        console.info("Authentication successful. Token received.");
+        this.httpService.axiosRef.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        // TODO: Kurumsal hesap ("Tetakent Ltd. Şti") için 2 public vergi ekleme (Biri %10 biri %20)
-        //          Public: Bütün satıcılar bu vergiyi ürünlerine setleyebilirler. Örn. Devlet bu vergileri değiştirdiğinde o ürünler de güncellenecek. Snapshotlar değil tabi ki...
-        // TODO: Kurumsal satıcı hesabı ("Kantçı Hüso") için 5 farklı ürün ekleme. 3'ü %10 vergi, 2'si %20 vergi.
-        // TODO: Kurumsal satıcı hesabı ("Kantçı Hüso") için 2 farklı fiyat varyasyonu ekleme. Biri (default) 199₺, diğeri 299₺.
-        // TODO: Kurumsal satıcı hesabı ("Doofenshmirtz Evil Inc.") için 5 farklı ürün ekleme. 3'ü %10 vergi, 2'si %20 vergi.
-        // TODO: Kurumsal satıcı hesabı ("Doofenshmirtz Evil Inc.") için 2 farklı fiyat varyasyonu ekleme. Biri (default) 99₺, diğeri 199₺.
-        // TODO: Kurumsal hesaplar için farklı rapor queryleri ekleme. 
-        //      ("Kantçı Hüso") SELLER - DAILY
-        //      ("Kantçı Hüso") SELLER - ALL
-        //      ("Doofenshmirtz Evil Inc.") SELLER - DAILY
-        //      ("Doofenshmirtz Evil Inc.") SELLER - ALL
-        //      ("Tetakent Ltd. Şti.") PLATFORM - DAILY  
-        //      ("Tetakent Ltd. Şti.") PLATFORM-FLOW - DAILY
-        //      ("Tetakent Ltd. Şti.") PLATFORM-FLOW - ALL
-        // 
+        const [, address] = await Promise.all([
+            this.commissionDriver.setup(),
+            this.addressDriver.setup(),
+        ]);
 
+        const accounts = await this.accountDriver.setup(address.id!);
+        const taxes = await this.taxDriver.setup(accounts.tetakentComm.id);
+        await this.itemDriver.setup(accounts, taxes);
+        await this.reportDriver.setup(accounts);
     }
 }

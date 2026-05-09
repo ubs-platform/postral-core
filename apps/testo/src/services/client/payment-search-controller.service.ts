@@ -15,7 +15,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable()
 export class PaymentSearchControllerService {
-  readonly basePath = '';
+  readonly basePath = process.env.TESTO_POSTRAL_URL || '';;
   constructor(private http: HttpService) {}
 
   interceptUrl(url: string): string {

@@ -3,6 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostralEntitiesModule, PaymentsEntities } from '@tk-postral/postral-entities';
 import { LoginOperator } from './services/driver/login-operator';
 import { HttpModule } from '@nestjs/axios';
+import { PostralClientsModule } from './services/client/clients.module';
+import { MainDriverService } from './services/driver/main-driver';
+import { CommissionDriverService } from './services/driver/commission-driver.service';
+import { AddressDriverService } from './services/driver/address-driver.service';
+import { AccountDriverService } from './services/driver/account-driver.service';
+import { TaxDriverService } from './services/driver/tax-driver.service';
+import { ItemDriverService } from './services/driver/item-driver.service';
+import { ReportDriverService } from './services/driver/report-driver.service';
 
 @Module({
   imports: [
@@ -25,9 +33,18 @@ import { HttpModule } from '@nestjs/axios';
       timeout: 5000,
       maxRedirects: 5,
     }),
-
+    PostralClientsModule
   ],
   controllers: [],
-  providers: [LoginOperator],
+  providers: [
+    LoginOperator,
+    MainDriverService,
+    CommissionDriverService,
+    AddressDriverService,
+    AccountDriverService,
+    TaxDriverService,
+    ItemDriverService,
+    ReportDriverService,
+  ],
 })
 export class TestoModule { }

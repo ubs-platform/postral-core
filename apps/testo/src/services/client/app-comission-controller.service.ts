@@ -16,7 +16,7 @@ import { map } from 'rxjs/operators';
 
 @Injectable()
 export class AppComissionControllerService {
-  readonly basePath = '';
+  readonly basePath = process.env.TESTO_POSTRAL_URL || '';;
   constructor(private http: HttpService) {}
 
   interceptUrl(url: string): string {
