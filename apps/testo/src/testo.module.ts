@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostralEntitiesModule, PaymentsEntities } from '@tk-postral/postral-entities';
-import { LoginOperator } from './chapters/login-operator';
+import { LoginOperator } from './services/driver/login-operator';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({

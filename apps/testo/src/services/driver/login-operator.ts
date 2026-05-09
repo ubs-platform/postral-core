@@ -13,5 +13,6 @@ export class LoginOperator {
     }
 
     async login(username: string, password: string) {
+        // TODO: Login olacak fail olursa throw edilecek.
     }
 }
