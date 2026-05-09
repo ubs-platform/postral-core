@@ -43,5 +43,11 @@ export class MainDriverService {
         const taxes = await this.taxDriver.setup(accounts.tetakentComm.id);
         await this.itemDriver.setup(accounts, taxes);
         await this.reportDriver.setup(accounts);
+
+        // 4 tane satış yapılacak.
+        // - 1 ürün kantçı huso'dan, 1 ürün doofenshmirtz evil inc.'den satın alınacak.
+        // - 1 ürün premium versiyonundan, 1 ürün default versiyonundan satın alınacak.
+        // - Satışlar farklı günlerde yapılacak şekilde zamanlanacak, böylece raporlarda tarih bazlı gruplama da test edilmiş olacak.
+        
     }
 }
