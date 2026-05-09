@@ -39,7 +39,6 @@ const typescript_utils_js_1 = require("./parser/typescript-utils.js");
 const path = __importStar(require("path"));
 const extractReturnTypes_js_1 = require("./parser/extractReturnTypes.js");
 const directory_util_js_1 = require("../util/directory-util.js");
-const child_process_1 = require("child_process");
 class ControllerScanner {
     static getTypescriptRootProject(mainPath) {
         const project = new ts_morph_1.Project({
@@ -441,7 +440,6 @@ class ControllerScanner {
             if (mainSourceFile) {
                 globalPrefix = this.extractGlobalPrefixFromSourceFile(mainSourceFile.getFullText());
             }
-            (0, child_process_1.exec)(`kdialog --msgbox 'Uygulama: ${appName} için controllerlar taranıyor. Global prefix: ${globalPrefix}'`);
             this.circulateControllerClassesFromModuleClasses(appClasses, allProjectClasses, (controllerClass) => {
                 collections.push({
                     methods: this.getControllerMethods(appName, globalPrefix, controllerClass),
