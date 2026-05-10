@@ -65,6 +65,10 @@ export class ReportDigestionService {
             reportNew.reportType = query.reportType;
             return await this.reportRepo.save(reportNew);
         } catch (err: any) {
+            // Race condition: başka bir instance aynı anda insert etmiş olabilir.
+            // Unique constraint ihlali durumunda tekrar fetch edip döndürüyoruz.
+            const reFetched = await this.reportRepo.findOne({ where });
+            if (reFetched) return reFetched;
             throw err;
         }
     }
@@ -367,12 +371,14 @@ export class ReportDigestionService {
         }
         const taxMax = AmountCalculationUtil.divideNumberValues(percent, AmountCalculationUtil.addNumberValues(percent, 100));
         let currentComissionTotal = 0, currentComissionTaxTotal = 0, refundComissionTotal = 0, refundComissionTaxTotal = 0;
+        let processedItemCount = 0;
         for (const item of payment.items) {
             // Eğer accountId varsa, sadece o satıcının ürünleri üzerinden komisyon hesaplanır, 
             // yoksa tüm ürünler üzerinden hesaplanır. Çünkü platform raporlarında tüm ürünlerin komisyonunu göstermek 
             // isteyebilirim, seller raporlarında ise sadece ilgili satıcının komisyonunu göstermek isteyebilirim.
             if (accountId && item.sellerAccountId !== accountId) continue;
 
+            processedItemCount++;
             if (payment.type === 'PURCHASE') {
                 currentComissionTotal = AmountCalculationUtil.addNumberValues(item.appComissionAmount, currentComissionTotal);
                 platformReport.totalSaleAmount = AmountCalculationUtil.addNumberValues(item.appComissionAmount, platformReport.totalSaleAmount || 0);
@@ -393,7 +399,10 @@ export class ReportDigestionService {
                 platformReport.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(taxAmount, platformReport.totalRefundTaxAmount || 0);
             }
         }
-        platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
+        // paymentCount yalnızca ilgili item varsa artırılır; accountId filtresi nedeniyle hiç eşleşme olmadıysa sayacı artırma.
+        if (processedItemCount > 0) {
+            platformReport.paymentCount = AmountCalculationUtil.addNumberValues(platformReport.paymentCount, 1);
+        }
         platformReport.netTaxAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleTaxAmount || 0, platformReport.totalRefundTaxAmount || 0);
         platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
         platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
@@ -407,6 +416,13 @@ export class ReportDigestionService {
         let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
         reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
         await this.reportExpenseRepo.save(reportTotalExpenseReport);
+
+        // netRevenueWithoutExpense ve netRevenueWithoutExpenseTaxed alanlarını güncel totalExpense ile hesapla.
+        // digestPayment ile aynı mantık; platformReport için de güncellenmesi gerekiyor.
+        platformReport.totalExpense = reportTotalExpenseReport.expenseAmount;
+        platformReport.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(platformReport.netRevenue || 0, platformReport.totalExpense || 0);
+        platformReport.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.totalExpense || 0);
+
         await this.stampTimeAndSaveReport(platformReport, payment);
 
         let taxGroupReport = await this.taxGroupRepo.findOne({ where: { reportId: platformReport.id, taxPercent: percent.toString(), currency: payment.currency } });
