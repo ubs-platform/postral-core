@@ -54,7 +54,7 @@ export class ReportQueryController extends BaseCrudController<
                 throw new BadRequestException('Platform-Seller report queries must have DAILY date grouping, because it will used for generating invoices to sellers.');
             }
 
-            if (body?.reportType === "SELLER" && !body.ownerAccountId) {
+            if (operation === "EDIT" && body?.reportType === "SELLER" && !body.ownerAccountId) {
                 throw new BadRequestException('Seller report queries must have an owner account ID.');
             }
         }

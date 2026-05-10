@@ -1,6 +1,7 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Report } from './report.entity';
 import { ReportDateGrouping, ReportQueryType, ReportType } from '@tk-postral/payment-common';
+import { Account } from './account.entity';
 
 @Entity()
 export class ReportQuery {
@@ -21,6 +22,10 @@ export class ReportQuery {
     @Column({ nullable: true })
     ownerAccountId?: string;
 
+
+    @ManyToOne(() => Account, { eager: false })
+    @JoinColumn({ name: 'ownerAccountId' })
+    account?: Account;
     /**
      * If set, only payments with this currency are included.
      */

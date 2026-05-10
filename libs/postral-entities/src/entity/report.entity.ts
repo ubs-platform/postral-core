@@ -4,12 +4,14 @@ import {
     Index,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     Unique,
 } from 'typeorm';
 import { ReportQuery } from './report-query.entity';
 import { BaseReport, ReportType } from '@tk-postral/payment-common';
 import { MoneyDbField } from './base';
+import { Account } from './account.entity';
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -17,7 +19,7 @@ import { MoneyDbField } from './base';
  */
 @Entity()
 @Unique(['queryId', "reportType", 'periodLabel', 'currency'])
-export class Report implements BaseReport{
+export class Report implements BaseReport {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -31,15 +33,13 @@ export class Report implements BaseReport{
     @JoinColumn({ name: 'queryId' })
     query!: ReportQuery;
 
-    @Column({ nullable: true })
-    accountId?: string;
 
     @Column(MoneyDbField)
     totalSaleAmountWithoutExpense: number = 0;
 
     @Column(MoneyDbField)
     totalExpenseAmount: number = 0;
-    
+
 
     /**
      * Bucket label depending on ReportQuery.dateGrouping:
@@ -56,7 +56,7 @@ export class Report implements BaseReport{
     currency: string = "TRY";
 
     @Column({ type: 'datetime', nullable: true })
-    lastDigestedAt?: Date ;
+    lastDigestedAt?: Date;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     createdAt = new Date();

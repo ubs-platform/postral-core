@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { FindOperator, In, Repository } from 'typeorm';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 
 import { ReportDTO, ReportFullDTO, ReportSearchPaginationDTO } from '@tk-postral/payment-common';
@@ -160,7 +160,7 @@ export class ReportService {
 
     async fetchReportFull(reportId: string): Promise<ReportFullDTO> {
         const [mainReport, taxGroupReports, reportExpenses] = await Promise.all([
-            this.reportRepo.findOne({ where: { id: reportId } }),
+            this.reportRepo.findOne({ where: { id: reportId }, relations: ['query', 'query.account'] }),
             this.taxGroupRepo.find({ where: { reportId } }),
             this.expenseRepo.find({ where: { reportId }, order: { displayWeight: 'ASC' } }),
         ]);
@@ -172,11 +172,14 @@ export class ReportService {
 
     async searchPagination(q: ReportSearchPaginationDTO, user: UserAuthBackendDTO): Promise<SearchResult<ReportDTO>> {
         let userRelatedAccountIds: string[] = [];
+        let allowedGroup: string | FindOperator<any> = In(["PLATFORM_SELLER", "PLATFORM_FLOW", "PLATFORM"]);
         if (q.admin !== 'true' && user) {
             userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
+            allowedGroup = In(["SELLER", "PLATFORM_SELLER"]); // Satıcılar da ödeyeceği komisyonu görmesi daha doğru olacak... Onun dışında kendisini ilgilendiern direkt raporları görecek. Yani SELLER
+            // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim
         }
 
-        // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim
+        // Eğer sonuç boş ise queryye girmeden direkt boş sonuç döneceğiz, böylece gereksiz yere DB'ye gitmemiş oluruz
         if (userRelatedAccountIds.length === 0 && q.admin !== 'true') {
             return {
                 content: [],
@@ -194,11 +197,11 @@ export class ReportService {
             q.size || 10,
             q.page || 0,
             { periodLabel: 'desc' },
-            [],
+            ["query", "query.account"],
             {
                 queryId: q.queryId,
                 ...((q.includeArchived === 'true') || q.includeArchived === true ? {} : { archived: false }),
-                ...((userRelatedAccountIds.length > 0) ? { accountId: In(userRelatedAccountIds) } : {}),
+                ...((userRelatedAccountIds.length > 0) ? { "query": { ownerAccountId: In(userRelatedAccountIds) }, reportType: allowedGroup } : {}),
             },
         ).then(result => result.map(r => this.reportMapper.toDto(r)));
     }

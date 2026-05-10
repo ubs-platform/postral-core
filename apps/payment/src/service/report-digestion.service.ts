@@ -11,6 +11,7 @@ import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
+import { exec } from 'child_process';
 
 @Injectable()
 export class ReportDigestionService {
@@ -61,7 +62,7 @@ export class ReportDigestionService {
             reportNew.queryId = query.id;
             reportNew.periodLabel = periodLabel;
             reportNew.currency = currency;
-            reportNew.accountId = query.ownerAccountId!;
+            // reportNew.accountId = query.ownerAccountId!;
             reportNew.reportType = query.reportType;
             return await this.reportRepo.save(reportNew);
         } catch (err: any) {
@@ -147,7 +148,10 @@ export class ReportDigestionService {
         report.netTaxAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
         report.netSaleAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
         report.netRevenue = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
-        const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId: report.accountId, expenseKey: REPORT_TOTAL } });
+        if (report.query == null) {
+            exec(`kdialog --msgbox "Dikkat! Raporun sorgusu bulunamadı. ReportId: ${report.id}"`);
+        }
+        const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId: report.query?.ownerAccountId, expenseKey: REPORT_TOTAL } });
         report.totalExpense = totalExpense?.expenseAmount || 0;
         report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);
         report.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.totalExpense || 0);

@@ -24,6 +24,9 @@ export class ReportMapper {
         dto.totalExpense = entity.totalExpense;
         dto.netRevenueWithoutExpense = entity.netRevenueWithoutExpense;
         dto.reportType = entity.reportType;
+        dto.accountId = entity.query?.ownerAccountId;
+        dto.accountName = entity.query?.account?.name;
+        // dto.ownerAccountName = entity.query.ownerAccountId
         return dto;
     }
 

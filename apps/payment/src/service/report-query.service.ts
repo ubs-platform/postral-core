@@ -47,13 +47,17 @@ export class ReportQueryCrudService extends BaseCrudService<
     }
 
     async searchParams(s?: Partial<ReportQuerySearchDTO>, _u?: UserAuthBackendDTO): Promise<any> {
-        if (!(_u && (_u?.roles.includes('admin') || _u?.roles.includes('postral-admin'))) && s?.admin === "true") {
+        if (!(_u && (_u?.roles.includes('ADMIN') || _u?.roles.includes('POSTRAL-ADMIN'))) && s?.admin === "true") {
             throw new UnauthorizedException('Only admins can search with admin=true');
         }
         const where: any = {}
         if (_u && s?.admin !== "true") {
             const accountIds = await this.authUtil.fetchUserAccountIds(_u?.id);
             where.ownerAccountId = accountIds.length > 0 ? In(accountIds) : null; // if user has no accounts, set to null to return empty result
+            where.reportType = "SELLER"; // non-admin users can only see SELLER report queries
+        } else if (s?.admin === "true") {
+            // Admin için queryler platform ile ilgili olanlar gelsin
+            where.reportType = In(["PLATFORM_SELLER", "PLATFORM_FLOW", "PLATFORM"]); // admin users can see all report queries
         }
         return where;
     }

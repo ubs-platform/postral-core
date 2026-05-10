@@ -10,13 +10,13 @@ export class Item {
     name!: string;
 
     @Column()
-    entityGroup!: string;
+    entityGroup?: string;
 
     @Column()
-    entityName!: string;
+    entityName?: string;
 
     @Column()
-    entityId!: string;
+    entityId?: string;
 
     @Column()
     unit!: string;
