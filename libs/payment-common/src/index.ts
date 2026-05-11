@@ -34,3 +34,4 @@ export * from "./dto/base-report.dto"
 export * from './dto/report-expense.dto';
 export * from './dto/admin-settings.dto';
 export * from './dto/webhook-config.dto';
+export * from './dto/payment-channel-config.dto';

@@ -75,6 +75,9 @@ import { UblGeneratorService } from './service/ubl-generator.service';
 import { WebhookConfigService } from './service/webhook-config.service';
 import { WebhookDispatchService } from './service/webhook-dispatch.service';
 import { WebhookConfigController } from './controller/webhook-config.controller';
+import { PaymentChannelConfigService } from './service/payment-channel-config.service';
+import { PaymentChannelConfigMapper } from './mapper/payment-channel-config.mapper';
+import { PaymentChannelConfigController } from './controller/payment-channel-config.controller';
 
 import { connection } from 'mongoose';
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
@@ -153,6 +156,8 @@ import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-ent
         UblGeneratorService,
         WebhookConfigService,
         WebhookDispatchService,
+        PaymentChannelConfigService,
+        PaymentChannelConfigMapper,
     ],
     controllers: [
         PaymentController,
@@ -175,6 +180,7 @@ import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-ent
         AdminSettingsController,
         AdminOperationsController,
         WebhookConfigController,
+        PaymentChannelConfigController,
     ],
 })
 export class PaymentModule { }

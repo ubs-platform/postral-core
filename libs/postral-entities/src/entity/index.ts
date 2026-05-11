@@ -26,6 +26,9 @@ import { AdminSettings } from './admin-settings.entity';
 import { DummyEcommerceOperation } from './dummy-ecommerce-operation.entity';
 import { WebhookConfig } from './webhook-config.entity';
 import { WebhookEventLog } from './webhook-event-log.entity';
+import { PaymentChannelConfig } from './payment-channel-config.entity';
+
+export { PaymentChannelConfig };
 
 export const PaymentsEntities = [
     PostralPaymentItem,
@@ -56,6 +59,7 @@ export const PaymentsEntities = [
     DummyEcommerceOperation,
     WebhookConfig,
     WebhookEventLog,
+    PaymentChannelConfig,
 ];
 
 export {
