@@ -15,10 +15,13 @@ export class PaymentChannelConfigService {
         private readonly mapper: PaymentChannelConfigMapper,
     ) {}
 
-    async fetchAll(searchReq?: SearchRequest, excludeDevOnly = false): Promise<SearchResult<PaymentChannelConfigDTO>> {
+    async fetchAll(searchReq?: SearchRequest & {channelId?:string}, excludeDevOnly = false): Promise<SearchResult<PaymentChannelConfigDTO>> {
         const filter: Record<string, any> = {};
         if (excludeDevOnly) {
             filter['devOnly'] = false;
+        }
+        if (searchReq?.channelId) {
+            filter.channelId = searchReq.channelId;
         }
         const search = await TypeormSearchUtil.modelSearch(
             this.repo,

@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -18,12 +19,14 @@ import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { filter } from 'rxjs';
+import { PaymentChannelConfigService } from '../service/payment-channel-config.service';
 @Controller('payment')
 export class PaymentController {
     constructor(
         private ps: PaymentService,
         private as: AccountService,
-    ) {}
+        private paymentChannelConfigService: PaymentChannelConfigService
+    ) { }
 
     @Post()
     public async initialize(@Body() body: PaymentInitDTO) {
@@ -36,6 +39,11 @@ export class PaymentController {
         @Param() { id }: { id: string },
         @Body() captureInfo: PaymentCaptureInfoDTO,
     ) {
+        const isProduction = process.env.NODE_ENV === 'production';
+        const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 1, size: 2 }, isProduction)
+        if (!paymentChList.content) {
+            throw new BadRequestException("No payment channel found")
+        }
         return await this.ps.startPaymentOperation(id, captureInfo);
         //   return await this.ps.generateTransactions(id, captureInfo);
     }
