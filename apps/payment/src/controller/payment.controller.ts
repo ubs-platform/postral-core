@@ -39,12 +39,18 @@ export class PaymentController {
         @Param() { id }: { id: string },
         @Body() captureInfo: PaymentCaptureInfoDTO,
     ) {
-        const isProduction = process.env.NODE_ENV === 'production';
-        const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 1, size: 2 }, isProduction)
-        if (!paymentChList.content) {
-            throw new BadRequestException("No payment channel found")
+        try {
+            const isProduction = process.env.NODE_ENV === 'production';
+            const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 1, size: 2 }, isProduction)
+            if (!paymentChList.content) {
+                throw new BadRequestException("No payment channel found")
+            }
+            return await this.ps.startPaymentOperation(id, captureInfo);
+        } catch (error) {
+            console.error(`Error starting payment operation for payment ${id}:`, error);
+            throw new BadRequestException(`Failed to start payment operation`);
         }
-        return await this.ps.startPaymentOperation(id, captureInfo);
+
         //   return await this.ps.generateTransactions(id, captureInfo);
     }
 

@@ -1,1 +1,2 @@
-docker compose exec -T mariadb mariadb < postral.sql
+docker compose exec -T mariadb mariadb --database postral_core -e "DROP DATABASE IF EXISTS postral_core; CREATE DATABASE postral_core;"
+docker compose exec -T mariadb mariadb --database postral_core < postral.sql
