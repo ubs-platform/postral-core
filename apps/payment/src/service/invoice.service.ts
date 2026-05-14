@@ -66,7 +66,7 @@ export class InvoiceService {
         const invoiceCount = invoices.length;
         const hasFinalizedInvoice = invoices.some((inv) => inv.finalized);
 
-        this.kfk.emit('POSTRAL_INVOICE_UPDATED', {
+        this.kfk.emit('postral/invoice-updated', {
             sellerPaymentOrderId,
             invoiceCount,
             hasFinalizedInvoice,

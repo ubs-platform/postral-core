@@ -5,10 +5,11 @@ import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-
 import { lastValueFrom } from 'rxjs';
 @Injectable()
 export class EventSenderService {
+
     /**
      *
      */
-    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) {}
+    constructor(@Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka) { }
 
     async onPaymentInitialized(pd: PaymentDTO) {
         await this.kfk.emit('POSTRAL_PAYMENT_INITIALIZED', pd);
@@ -68,6 +69,10 @@ export class EventSenderService {
         paymentOperationId: string,
     ): Promise<PaymentChannelStatusDTO> {
         return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/refund`, paymentOperationId));
+    }
+
+    sendDigestionQueueInsertionEvent(paymentId: string): void {
+        this.kfk.emit('postral/report-digestion-queue-insertion', { paymentId });
     }
 
 }

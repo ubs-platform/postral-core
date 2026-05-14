@@ -12,11 +12,13 @@ import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 import { exec } from 'child_process';
+import { EventSenderService } from './event-management.service';
 
 @Injectable()
 export class ReportDigestionService {
 
     private readonly logger = new Logger(ReportDigestionService.name);
+    private reportsFetchInflight = new Map<string, Promise<Report>>();
 
     constructor(
         @InjectRepository(Report)
@@ -35,6 +37,7 @@ export class ReportDigestionService {
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
         private readonly admSettings: AdminSettingsService,
+        private readonly eventSenderService: EventSenderService
     ) { }
 
 
@@ -51,27 +54,45 @@ export class ReportDigestionService {
         periodLabel: string,
         currency: string,
     ): Promise<Report> {
+        const cacheKey = `${query.id}_${periodLabel}_${currency}`;
+        if (this.reportsFetchInflight.has(cacheKey)) {
+            return this.reportsFetchInflight.get(cacheKey)!;
+        }
+
         const where = { queryId: query.id, periodLabel, currency, archived: false };
         const existing = await this.reportRepo.findOne({ where });
         if (existing) return existing;
         if (query.ownerAccountId == null) {
             throw new Error(`Query ${query.id} has no ownerAccountId, cannot create report`);
         }
+        const reportPromise = (async () => {
+            try {
+                const reportNew = new Report();
+                reportNew.queryId = query.id;
+                reportNew.periodLabel = periodLabel;
+                reportNew.currency = currency;
+                // reportNew.accountId = query.ownerAccountId!;
+                reportNew.reportType = query.reportType;
+                return await this.reportRepo.save(reportNew);
+            } catch (err: any) {
+                // Race condition: başka bir instance aynı anda insert etmiş olabilir.
+                // Unique constraint ihlali durumunda tekrar fetch edip döndürüyoruz.
+                const reFetched = await this.reportRepo.findOne({ where });
+                if (reFetched) return reFetched;
+                throw err;
+            }
+        })();
+
+        this.reportsFetchInflight.set(cacheKey, reportPromise);
         try {
-            const reportNew = new Report();
-            reportNew.queryId = query.id;
-            reportNew.periodLabel = periodLabel;
-            reportNew.currency = currency;
-            // reportNew.accountId = query.ownerAccountId!;
-            reportNew.reportType = query.reportType;
-            return await this.reportRepo.save(reportNew);
-        } catch (err: any) {
-            // Race condition: başka bir instance aynı anda insert etmiş olabilir.
-            // Unique constraint ihlali durumunda tekrar fetch edip döndürüyoruz.
-            const reFetched = await this.reportRepo.findOne({ where });
-            if (reFetched) return reFetched;
-            throw err;
+            return await reportPromise;
+        } finally {
+            this.reportsFetchInflight.delete(cacheKey);
         }
+    }
+
+    insertPaymentToReportDigestionQueue(payment: PaymentFullDTO) {
+        this.eventSenderService.sendDigestionQueueInsertionEvent(payment.id);
     }
 
 
@@ -84,34 +105,34 @@ export class ReportDigestionService {
     // 3. findOrCreate the Report bucket.
     // 4. Enqueues the payment for digestion.
     // ─────────────────────────────────────────────────────────────
-    async insertPaymentToReportDigestionQueue(payment: PaymentFullDTO): Promise<void> {
-        const queries = await this.findMatchingQueries(payment);
-        if (queries.length === 0) return;
+    async insertPaymentToReportDigestionQueueCameFromEvent(payment: PaymentFullDTO): Promise < void> {
+            const queries = await this.findMatchingQueries(payment);
+            if(queries.length === 0) return;
 
-        for (const query of queries) {
-            const periodLabel = this.buildPeriodLabel(
-                query.dateGrouping,
-                new Date(payment.createdAt as string),
-            );
-            const report = await this.findOrCreateByQuery(query, periodLabel, payment.currency);
-            // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
-            await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
+            for(const query of queries) {
+                const periodLabel = this.buildPeriodLabel(
+                    query.dateGrouping,
+                    new Date(payment.createdAt as string),
+                );
+                const report = await this.findOrCreateByQuery(query, periodLabel, payment.currency);
+                // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
+                await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
+            }
+
+
+            // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
         }
 
-
-        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
-    }
-
     async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
-        await this.reportPaymentRelationRepo.save({
-            reportId,
-            paymentId,
-            digestionStatus: 'WAITING',
-            accountId,
-        });
+            await this.reportPaymentRelationRepo.save({
+                reportId,
+                paymentId,
+                digestionStatus: 'WAITING',
+                accountId,
+            });
 
-        this.logger.debug(`Digested payment ${paymentId} into report ${reportId}`);
-    }
+            this.logger.debug(`Digested payment ${paymentId} into report ${reportId}`);
+        }
 
     private async digestPayment(report: Report, payment: PaymentFullDTO) {
         // Taze veri: döngüde paylaşılan stale instance yerine DB'den güncel satırı çekiyoruz.
@@ -565,7 +586,7 @@ export class ReportDigestionService {
 
             ],
         });
-        
+
         const sellerAccountNamesMap = new Map(payment.items.map(i => [i.sellerAccountId, i.sellerAccountName]));
         const sellerAccountIds = new Set(sellerAccountNamesMap.keys());
         // const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));

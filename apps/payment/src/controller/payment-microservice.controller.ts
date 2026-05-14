@@ -14,6 +14,7 @@ import {
 } from '@tk-postral/payment-common/util/consts';
 import { lastValueFrom } from 'rxjs';
 import { exec } from 'child_process';
+import { ReportDigestionService } from '../service/report-digestion.service';
 
 @Controller('payment-microservice')
 export class PaymentMicroserviceController {
@@ -23,14 +24,16 @@ export class PaymentMicroserviceController {
         private paymentTransactionService: SellerPaymentOrderService,
         private userService: UserService,
         private entityOwnershipService: EntityOwnershipService,
-    ) {}
+        private paymentService: PaymentService,
+        private reportDigestionService: ReportDigestionService,
+    ) { }
 
     @EventPattern('postral/payment-operation-status-updated')
     public async handlePaymentOperationStatusUpdated(operationId: string) {
         return await this.ps.handlePaymentOperationStatusUpdated(operationId);
     }
 
-    @EventPattern('POSTRAL_INVOICE_UPDATED')
+    @EventPattern('postral/invoice-updated')
     public async handleInvoiceUpdated(data: {
         sellerPaymentOrderId: string;
         invoiceCount: number;
@@ -41,5 +44,11 @@ export class PaymentMicroserviceController {
             data.invoiceCount,
             data.hasFinalizedInvoice,
         );
+    }
+
+    @EventPattern('postral/report-digestion-queue-insertion')
+    public async handleReportDigestionQueueInsertion({paymentId}: {paymentId: string}) {
+        const paymentFullDTO = await this.paymentService.findPaymentById(paymentId, true);
+        return await this.reportDigestionService.insertPaymentToReportDigestionQueueCameFromEvent(paymentFullDTO);
     }
 }

@@ -341,7 +341,7 @@ export class PaymentService {
             );
             await this.postPaymentOperation(payment);
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
-            await this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+            this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
             // Alıcı hesabına webhook bildirim gönder
             const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
             for (const accountId of accountIds) {
@@ -407,7 +407,7 @@ export class PaymentService {
 
         if (payment.includeInReportDigestion) {
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
-            await this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+            this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
             const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
             for (const accountId of accountIds) {
                 if (accountId) {
