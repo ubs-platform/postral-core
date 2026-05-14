@@ -89,6 +89,7 @@ export class ReportDigestionService {
         } finally {
             this.reportsFetchInflight.delete(cacheKey);
         }
+
     }
 
     insertPaymentToReportDigestionQueue(payment: PaymentFullDTO) {
@@ -105,34 +106,34 @@ export class ReportDigestionService {
     // 3. findOrCreate the Report bucket.
     // 4. Enqueues the payment for digestion.
     // ─────────────────────────────────────────────────────────────
-    async insertPaymentToReportDigestionQueueCameFromEvent(payment: PaymentFullDTO): Promise < void> {
-            const queries = await this.findMatchingQueries(payment);
-            if(queries.length === 0) return;
+    async insertPaymentToReportDigestionQueueCameFromEvent(payment: PaymentFullDTO): Promise<void> {
+        const queries = await this.findMatchingQueries(payment);
+        if (queries.length === 0) return;
 
-            for(const query of queries) {
-                const periodLabel = this.buildPeriodLabel(
-                    query.dateGrouping,
-                    new Date(payment.createdAt as string),
-                );
-                const report = await this.findOrCreateByQuery(query, periodLabel, payment.currency);
-                // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
-                await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
-            }
-
-
-            // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
+        for (const query of queries) {
+            const periodLabel = this.buildPeriodLabel(
+                query.dateGrouping,
+                new Date(payment.createdAt as string),
+            );
+            const report = await this.findOrCreateByQuery(query, periodLabel, payment.currency);
+            // Mikro işlem yapmak çok daha iyi ama fazla hesaplarda bunu sürdürebilir miyim bilmiyorum. Race condition sorunları için farklı bir şey düşüneceğim ama mutlaka.
+            await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
         }
+
+
+        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
+    }
 
     async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
-            await this.reportPaymentRelationRepo.save({
-                reportId,
-                paymentId,
-                digestionStatus: 'WAITING',
-                accountId,
-            });
+        await this.reportPaymentRelationRepo.save({
+            reportId,
+            paymentId,
+            digestionStatus: 'WAITING',
+            accountId,
+        });
 
-            this.logger.debug(`Digested payment ${paymentId} into report ${reportId}`);
-        }
+        this.logger.debug(`Digested payment ${paymentId} into report ${reportId}`);
+    }
 
     private async digestPayment(report: Report, payment: PaymentFullDTO) {
         // Taze veri: döngüde paylaşılan stale instance yerine DB'den güncel satırı çekiyoruz.
