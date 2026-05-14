@@ -79,7 +79,7 @@ export class ItemCrudService extends BaseCrudService<
                 ['OWNER', 'EDITOR', 'VIEWER'],
                 {
                     userId: u!.id,
-                    ownershipGroupId: s?.entityOwnershipGroupId,
+                    // ownershipGroupId: s?.entityOwnershipGroupId,
                 },
             );
         }
