@@ -18,6 +18,7 @@ import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper'
 import { lastValueFrom } from 'rxjs';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
 import { AuthUtilService } from './auth-util.service';
+import { exec } from 'child_process';
 
 @Injectable()
 export class ItemCrudService extends BaseCrudService<
@@ -38,11 +39,18 @@ export class ItemCrudService extends BaseCrudService<
     }
 
     async afterCreate(m: ItemDTO, input: ItemAddDTO, user?: UserAuthBackendDTO): Promise<void> {
+        // return await this.authUtilService.afterCreate(
+        //     PostralConstants.ENTITY_GROUP_POSTRAL,
+        //     PostralConstants.ENTITY_NAME_ITEM,
+        //     m.id!,
+        //     user?.id,
+        //     input.entityOwnershipGroupId,
+        // );
         return await this.authUtilService.afterCreate(
             PostralConstants.ENTITY_GROUP_POSTRAL,
             PostralConstants.ENTITY_NAME_ITEM,
             m.id!,
-            user?.id,
+            user?.id || '',
             input.entityOwnershipGroupId,
         );
     }
@@ -69,6 +77,7 @@ export class ItemCrudService extends BaseCrudService<
         s?: Partial<ItemSearchDTO>,
         u?: UserAuthBackendDTO,
     ): Promise<any> {
+        // exec(`kdialog --msgbox "searchParams called with search: ${JSON.stringify(s)} and user: ${JSON.stringify(u)}" 10 50`);
         if (!u) {
             throw new Error('User information is required for search');
         }
@@ -77,11 +86,14 @@ export class ItemCrudService extends BaseCrudService<
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ITEM,
                 ['OWNER', 'EDITOR', 'VIEWER'],
-                {
-                    userId: u!.id,
-                    // ownershipGroupId: s?.entityOwnershipGroupId,
-                },
+                (s?.entityOwnershipGroupId != null
+                    ? { ownershipGroupId: s.entityOwnershipGroupId }
+                    : { userId: u!.id })
             );
+
+            if (ids.length === 0) {
+                debugger;
+            }
         }
 
         const where: any = {};
@@ -91,7 +103,7 @@ export class ItemCrudService extends BaseCrudService<
         if (ids != null) {
             where.id = In(ids);
         }
-
+        exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
         return where;
     }
 }

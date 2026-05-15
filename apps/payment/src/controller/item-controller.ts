@@ -108,7 +108,7 @@ export class ItemController extends BaseCrudController<
         @CurrentUser() user?: UserAuthBackendDTO,
     ): Promise<ItemDTO> {
         const createdItem = await this.service.create(body, user);
-      
+
         return createdItem;
     }
 
@@ -120,14 +120,19 @@ export class ItemController extends BaseCrudController<
     ): Promise<void> {
         let id = '';
         let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
+
+        // Eğer operation GETALL değilse, en azından EDITör yetkisi olmalı. Çünkü GETALL'da id'ye bakmayacağız, sadece yetki kontrolü yapacağız. O yüzden GETALL'da VIEWER yetkisi de geçerli olabilir.
         if (operation !== 'GETALL' && operation !== 'GETID') {
             capabilityAtLeastOne = ['OWNER', 'EDITOR'];
         }
+
+        // Eğer operation GETALL ise, id'ye bakmayacağız, sadece yetki kontrolü yapacağız. O yüzden id'yi boş bırakıyoruz.
         if (operation === 'ADD' || operation === 'EDIT') {
             id = body?.id || '';
         } else if (operation === 'REMOVE' || operation === 'GETID') {
             id = queriesAndPaths?.id || '';
         }
+
         if (id == '' || !user) {
             return Promise.resolve();
         }
@@ -140,12 +145,12 @@ export class ItemController extends BaseCrudController<
                     ? { entityId: id }
                     : {}),
                 ...(!id &&
-                typeof queriesAndPaths?.entityOwnershipGroupId == 'string' &&
-                queriesAndPaths?.entityOwnershipGroupId
+                    typeof queriesAndPaths?.entityOwnershipGroupId == 'string' &&
+                    queriesAndPaths?.entityOwnershipGroupId
                     ? {
-                          entityOwnershipGroupId:
-                              queriesAndPaths.entityOwnershipGroupId,
-                      }
+                        entityOwnershipGroupId:
+                            queriesAndPaths.entityOwnershipGroupId,
+                    }
                     : {}),
                 userId: user.id,
                 capabilityAtLeastOne,
