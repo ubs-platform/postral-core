@@ -170,9 +170,9 @@ export class ReportDigestionService {
         report.netTaxAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleTaxAmount || 0, report.totalRefundTaxAmount || 0);
         report.netSaleAmount = AmountCalculationUtil.minusNumberValues(report.totalSaleAmount || 0, report.totalRefundAmount || 0);
         report.netRevenue = AmountCalculationUtil.minusNumberValues(report.netSaleAmount || 0, report.netTaxAmount || 0);
-        if (report.query == null) {
-            exec(`kdialog --msgbox "Dikkat! Raporun sorgusu bulunamadı. ReportId: ${report.id}"`);
-        }
+        // if (report.query == null) {
+        //     exec(`kdialog --msgbox "Dikkat! Raporun sorgusu bulunamadı. ReportId: ${report.id}"`);
+        // }
         const totalExpense = await this.reportExpenseRepo.findOne({ where: { reportId: report.id, accountId: report.query?.ownerAccountId, expenseKey: REPORT_TOTAL } });
         report.totalExpense = totalExpense?.expenseAmount || 0;
         report.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(report.netRevenue || 0, report.totalExpense || 0);

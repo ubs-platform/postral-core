@@ -103,7 +103,7 @@ export class ItemCrudService extends BaseCrudService<
         if (ids != null) {
             where.id = In(ids);
         }
-        exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
+        // exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
         return where;
     }
 }
