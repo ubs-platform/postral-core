@@ -113,15 +113,18 @@ export class InvoiceController {
     @Get('')
     async fetchAll(
         @Query() q: InvoiceSearchPaginationDTO,
+        @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<InvoiceDTO[]> {
-        return await this.invoiceService.findAll(q);
+        return await this.invoiceService.findAll(q,user);
     }
 
     @Get('_search')
+    @UseGuards(JwtAuthGuard)
     async search(
         @Query() q: InvoiceSearchPaginationDTO,
+        @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<SearchResult<InvoiceDTO>> {
-        return await this.invoiceService.search(q);
+        return await this.invoiceService.search(q, user);
     }
 
 

@@ -5,7 +5,7 @@ import {
     Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
 import { Invoice } from '@tk-postral/postral-entities';
 import { InvoiceMapper } from '../mapper/invoice.mapper';
@@ -28,6 +28,7 @@ import { lastValueFrom } from 'rxjs';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { WebhookDispatchService } from './webhook-dispatch.service';
+import { AuthUtilService } from './auth-util.service';
 
 @Injectable()
 export class InvoiceService {
@@ -38,6 +39,7 @@ export class InvoiceService {
         @Inject('MICROSERVICE_CLIENT') private kfk: ClientKafka,
         private readonly eoService: EntityOwnershipService,
         private readonly webhookDispatchService: WebhookDispatchService,
+        private readonly authUtilService: AuthUtilService,
     ) { }
 
     async assertSellerIsOwner(user: UserAuthBackendDTO, accountId: string) {
@@ -198,8 +200,14 @@ export class InvoiceService {
         }
     }
 
-    async findAll(search: InvoiceSearchDTO): Promise<InvoiceDTO[]> {
-        const where = await this.whereClause(search);
+    /**
+     * 
+     * @param search 
+     * @param user Kullanıcının erişebileceği faturaları filtrelemek için opsiyonel user parametresi ekledik. Eğer user sağlanırsa, kullanıcının erişebileceği hesaplara göre filtreleme yapılır. Eğer sağlanmazsa, tüm faturalar döndürülür (admin gibi durumlar için).
+     * @returns 
+     */
+    async findAll(search: InvoiceSearchDTO, user?: UserAuthBackendDTO): Promise<InvoiceDTO[]> {
+        const where = await this.whereClause(search, user);
         const invoices = await this.invoiceRepo.find({
             where,
             order: { createdAt: 'DESC' },
@@ -210,8 +218,9 @@ export class InvoiceService {
 
     async search(
         search: InvoiceSearchPaginationDTO,
+        user?: UserAuthBackendDTO,
     ): Promise<SearchResult<InvoiceDTO>> {
-        const where = await this.whereClause(search);
+        const where = await this.whereClause(search, user);
         const sortKey = search.sortBy || 'createdAt';
         const sortOrder = search.sortRotation || 'desc';
         return (
@@ -231,8 +240,30 @@ export class InvoiceService {
         ).map((p) => this.invoiceMapper.toDto(p));
     }
 
-    async whereClause(search: InvoiceSearchDTO): Promise<any> {
+    async whereClause(search: InvoiceSearchDTO, user?: UserAuthBackendDTO): Promise<any> {
+        const orClauses: any[] = [{}];
         const where: any = {};
+        const accountIds: string[] = [];
+
+        if (user) {
+            const sellerAccountIds = await this.authUtilService.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR']);
+
+            accountIds.push(...sellerAccountIds);
+            if (accountIds.length === 0) {
+                // Kullanıcının erişebileceği hiçbir hesap yoksa, boş result döndürelim.
+                return { id: null }; // Hiçbir kayda uymayacak bir koşul ekliyoruz.
+            }
+            orClauses.splice(0, 1, {
+                sellerInvoiceAccount: {
+                    realAccountId: In(accountIds),
+                }
+            }, {
+                customerAccount: {
+                    realAccountId: In(accountIds),
+                }
+            });
+
+        }
         if (search.finalized !== undefined) {
             where.finalized =
                 search.finalized === 'true' || search.finalized === true
@@ -249,11 +280,7 @@ export class InvoiceService {
         if (search.invoiceNumber) {
             where.invoiceNumber = search.invoiceNumber;
         }
-        // if (search.status) {
-        //     where.status = search.status;
-        // }
-
-        return where;
+        return orClauses.map((clause) => ({ ...clause, ...where }));
     }
 
     finalize(id: string, user: UserAuthBackendDTO): InvoiceDTO | PromiseLike<InvoiceDTO> {
