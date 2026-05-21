@@ -38,23 +38,6 @@ export class ItemCrudService extends BaseCrudService<
         super(new TypeormRepositoryWrap<Item, string>(repo));
     }
 
-    async afterCreate(m: ItemDTO, input: ItemAddDTO, user?: UserAuthBackendDTO): Promise<void> {
-        // return await this.authUtilService.afterCreate(
-        //     PostralConstants.ENTITY_GROUP_POSTRAL,
-        //     PostralConstants.ENTITY_NAME_ITEM,
-        //     m.id!,
-        //     user?.id,
-        //     input.entityOwnershipGroupId,
-        // );
-        return await this.authUtilService.afterCreate(
-            PostralConstants.ENTITY_GROUP_POSTRAL,
-            PostralConstants.ENTITY_NAME_ITEM,
-            m.id!,
-            user?.id || '',
-            input.entityOwnershipGroupId,
-        );
-    }
-
     getIdFieldNameFromInput(i: ItemDTO): string {
         return i.id!;
     }
@@ -84,16 +67,14 @@ export class ItemCrudService extends BaseCrudService<
         let ids: Optional<string[]> = null;
         if (s?.showOnlyUserOwned === 'true') {
             ids = await this.authUtilService.searchOwnedIds(
-                PostralConstants.ENTITY_NAME_ITEM,
+                PostralConstants.ENTITY_NAME_ACCOUNT,
                 ['OWNER', 'EDITOR', 'VIEWER'],
                 (s?.entityOwnershipGroupId != null
                     ? { ownershipGroupId: s.entityOwnershipGroupId }
                     : { userId: u!.id })
             );
 
-            if (ids.length === 0) {
-                debugger;
-            }
+
         }
 
         const where: any = {};
@@ -101,7 +82,7 @@ export class ItemCrudService extends BaseCrudService<
             where.name = Like('%' + s.name + '%');
         }
         if (ids != null) {
-            where.id = In(ids);
+            where.sellerAccountId = In(ids);
         }
         // exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
         return where;

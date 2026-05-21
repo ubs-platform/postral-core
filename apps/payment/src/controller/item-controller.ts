@@ -30,6 +30,7 @@ import { Optional } from '@ubs-platform/crud-base-common/utils';
 
 import { ItemCrudService } from '../service/item-crud.service';
 import { ItemPriceService } from '../service/item-price.service';
+import { AuthUtilService } from '../service/auth-util.service';
 
 @Controller('item')
 @CrudControllerConfig({ authorization: { ALL: { needsAuthenticated: true } } })
@@ -44,6 +45,7 @@ export class ItemController extends BaseCrudController<
         protected readonly service: ItemCrudService,
         protected readonly eoClient: EntityOwnershipService,
         protected readonly pricesService: ItemPriceService,
+        protected readonly authutil: AuthUtilService,
     ) {
         super(service);
     }
@@ -118,74 +120,22 @@ export class ItemController extends BaseCrudController<
         queriesAndPaths: Optional<{ [key: string]: any }>,
         body: Optional<ItemDTO | ItemEditDTO | ItemAddDTO>,
     ): Promise<void> {
-        let id = '';
-        let capabilityAtLeastOne = ['OWNER', 'EDITOR', 'VIEWER'];
-
-        // Eğer operation GETALL değilse, en azından EDITör yetkisi olmalı. Çünkü GETALL'da id'ye bakmayacağız, sadece yetki kontrolü yapacağız. O yüzden GETALL'da VIEWER yetkisi de geçerli olabilir.
-        if (operation !== 'GETALL' && operation !== 'GETID') {
-            capabilityAtLeastOne = ['OWNER', 'EDITOR'];
-        }
-
-        // Eğer operation GETALL ise, id'ye bakmayacağız, sadece yetki kontrolü yapacağız. O yüzden id'yi boş bırakıyoruz.
-        if (operation === 'ADD' || operation === 'EDIT') {
-            id = body?.id || '';
-        } else if (operation === 'REMOVE' || operation === 'GETID') {
-            id = queriesAndPaths?.id || '';
-        }
-
-        if (id == '' || !user) {
-            return Promise.resolve();
-        }
-
-        const res = await lastValueFrom(
-            this.eoClient.hasOwnership({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ITEM,
-                ...((typeof id == 'string' && id) || id != null
-                    ? { entityId: id }
-                    : {}),
-                ...(!id &&
-                    typeof queriesAndPaths?.entityOwnershipGroupId == 'string' &&
-                    queriesAndPaths?.entityOwnershipGroupId
-                    ? {
-                        entityOwnershipGroupId:
-                            queriesAndPaths.entityOwnershipGroupId,
-                    }
-                    : {}),
-                userId: user.id,
-                capabilityAtLeastOne,
-            }),
+        const accountId = queriesAndPaths?.accountId || body?.sellerAccountId;
+        // ITEM yerine ACCOUNT kontrolü yapılacak, çünkü çok fazla item olduğu zaman ownership kontrolü aşırı zorlaşacak.
+        return await this.authutil.checkUserEntityOwnership(
+            operation,
+            user,
+            queriesAndPaths,
+            { id: accountId },
+            PostralConstants.ENTITY_NAME_ACCOUNT,
+            'tax',
         );
-        if (!res) {
-            throw new UnauthorizedException(
-                `User does not have ownership for account ${id}`,
-            );
-        }
     }
 
     async manipulateSearch(
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<ItemSearchDTO>,
     ) {
-        // Eğer kullanıcı admin değilse ve admin=true ile arama yapmaya çalışıyorsa hata fırlat
-        // if (!queriesAndPaths) {
-        //     queriesAndPaths = {};
-        // }
-        // const isUserAdmin = user?.roles?.includes('ADMIN');
-        // const isAdminSearchMode = queriesAndPaths?.admin === 'true';
-        // exec(
-        //     `kdialog --msgbox "isUserAdmin: ${isUserAdmin}, isAdminSearchMode: ${isAdminSearchMode}"`,
-        // );
-        // if (!isUserAdmin && isAdminSearchMode) {
-        //     throw new UnauthorizedException(
-        //         'Only admins can search with admin=true',
-        //     );
-        // }
-
-        // Eğer kullanıcı admin değilse ve entityOwnershipGroupId verilmemişse, kendi userId'sini ekle
-        // if (!isAdminSearchMode && !queriesAndPaths?.entityOwnershipGroupId) {
-        //     queriesAndPaths.ownerUserId = user?.id;
-        // }
 
         return queriesAndPaths;
     }

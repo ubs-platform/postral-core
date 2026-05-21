@@ -72,6 +72,8 @@ export class ItemEditDTO {
     itemTaxId!: string;
 
     itemClass?: string;
+    
+    sellerAccountId!: string;
 
     // taxPercent: number;
 
