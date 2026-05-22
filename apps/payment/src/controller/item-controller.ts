@@ -116,7 +116,7 @@ export class ItemController extends BaseCrudController<
         // }
         if (operation === "ADD" || operation === "EDIT") {
             const accountId = body?.sellerAccountId;
-            if (accountId == null) {
+            if (!accountId ) {
                 throw new UnauthorizedException('Account ID is required for ownership check');
             }
             return await this.authutil.checkUserEntityOwnership(
