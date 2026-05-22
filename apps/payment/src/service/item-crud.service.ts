@@ -64,8 +64,9 @@ export class ItemCrudService extends BaseCrudService<
         if (!u) {
             throw new Error('User information is required for search');
         }
-        let ids: Optional<string[]> = null;
+        let ids: string[] | null = null;
         if (s?.showOnlyUserOwned === 'true') {
+            
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ACCOUNT,
                 ['OWNER', 'EDITOR', 'VIEWER'],

@@ -103,33 +103,49 @@ export class ItemController extends BaseCrudController<
         return createdPrice;
     }
 
-    @Post('')
-    @UseGuards(JwtAuthGuard)
-    async add(
-        @Body() body: ItemAddDTO,
-        @CurrentUser() user?: UserAuthBackendDTO,
-    ): Promise<ItemDTO> {
-        const createdItem = await this.service.create(body, user);
-
-        return createdItem;
-    }
-
     async checkUser(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
         user: Optional<UserAuthBackendDTO>,
         queriesAndPaths: Optional<{ [key: string]: any }>,
         body: Optional<ItemDTO | ItemEditDTO | ItemAddDTO>,
     ): Promise<void> {
-        const accountId = queriesAndPaths?.accountId || body?.sellerAccountId;
+
         // ITEM yerine ACCOUNT kontrolü yapılacak, çünkü çok fazla item olduğu zaman ownership kontrolü aşırı zorlaşacak.
-        return await this.authutil.checkUserEntityOwnership(
-            operation,
-            user,
-            queriesAndPaths,
-            { id: accountId },
-            PostralConstants.ENTITY_NAME_ACCOUNT,
-            'tax',
-        );
+        // if (!accountId) {
+        //     throw new UnauthorizedException('Account ID is required for ownership check');
+        // }
+        if (operation === "ADD" || operation === "EDIT") {
+            const accountId = body?.sellerAccountId;
+            if (accountId == null) {
+                throw new UnauthorizedException('Account ID is required for ownership check');
+            }
+            return await this.authutil.checkUserEntityOwnership(
+                operation,
+                user,
+                queriesAndPaths,
+                { id: accountId },
+                PostralConstants.ENTITY_NAME_ACCOUNT,
+                'Account',
+            );
+        }
+
+        if (operation === "REMOVE" || operation === "GETID") {
+            const item = await this.service.fetchOne(queriesAndPaths?.id, user!);
+            // exec("kdialog --msgbox \"checkUser called with item : " + JSON.stringify(item) + "\"");
+            const accountId = item?.sellerAccountId;
+            // if (accountId == null) {
+            //     throw new UnauthorizedException('Account ID is required for ownership check');
+            // }
+            // Patlamamızın nedeni queriesAndPaths'teki idyi alması... Buraya da refactor gerkeiyor ama üşeniyorum şu an...
+            return await this.authutil.checkUserEntityOwnership(
+                operation,
+                user,
+                { id: accountId },
+                { id: accountId },
+                PostralConstants.ENTITY_NAME_ACCOUNT,
+                'Account',
+            );
+        }
     }
 
     async manipulateSearch(

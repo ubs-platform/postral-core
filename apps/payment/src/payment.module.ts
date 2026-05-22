@@ -81,6 +81,7 @@ import { PaymentChannelConfigController } from './controller/payment-channel-con
 
 import { connection } from 'mongoose';
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
+import { CacheManagerModule } from "@ubs-platform/cache-manager";
 
 @Module({
     imports: [
@@ -106,8 +107,12 @@ import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-ent
             },
         ]),
         BackendJwtUtilsModule,
+        CacheManagerModule
     ],
-    exports: [TypeOrmModule],
+    exports: [TypeOrmModule,
+        CacheManagerModule
+
+    ],
     providers: [
         AccountService,
         AccountMapper,
