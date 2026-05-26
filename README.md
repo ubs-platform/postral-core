@@ -1,6 +1,6 @@
 # Postral Mona
 
-> We are actively improving this project. If you encounter an issue, please report it.
+> We are actively developing this project. If you encounter an issue, please report it.
 
 ## Synopsis
 
