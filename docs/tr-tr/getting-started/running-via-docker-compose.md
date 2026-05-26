@@ -1,11 +1,18 @@
-# Docker compose kullanarak paketleri çalıştırmak
-infrastructure klasörü altında [docker-compose-full.yml](../../../infrastructure/docker-compose-full.yml) dosyasıyla erişebilirsiniz
+# Docker compose ile çalıştırma
+
+Bu depoda kullanılabilir compose dosyası:
+
+- [infrastructure/docker-compose.yml](../../../infrastructure/docker-compose.yml)
+
+Çalıştırmak için:
 
 ```
-    cd infrastructure
-    docker compose -f docker-compose-full.yml up -d
+cd infrastructure
+docker compose up -d
 ```
 
 ## Önemli notlar
 
-- Dosyadaki sürüm ile güncel sürüm ile farklı olabilir. Bu durumda `hcangunduz/ubs-mona-files:5.0.5-beta` gibi satırlarda `5.0.5-beta` yazan yerlerde package json'da yer alan "version" ile `iksir.childrenVersionTag` kısımlarına bakabilirsiniz. eğer childrenVersionTag boş, latest ya da stable ise boş kalacaktır ve tag sadece `version` olacaktır. Aksi halde tag: "version-childrenVersionTag" olacaktır
+- Bu compose dosyası şu anda daha çok altyapı bağımlılıklarını (ör. MariaDB) ayağa kaldırır; tüm UBS Mona platform stack'ini içermez.
+- Kullanıcı/dosya/bildirim tarafındaki ihtiyaçlar için Postral, dış servis olarak UBS Mona servislerine bağımlıdır.
+- Tam lokal kurulum için Postral servislerini bu depodan, bağımlı UBS Mona servislerini ise `users-mona-mr` deposundan başlatmanız gerekir.

@@ -1,11 +1,18 @@
-# Running packages using docker compose
-You can use the [docker-compose-full.yml](../../../infrastructure/docker-compose-full.yml) under the infrastructure folder to get all docker images of this repository
+# Running via docker compose
+
+The repository currently includes a compose file at:
+
+- [infrastructure/docker-compose.yml](../../../infrastructure/docker-compose.yml)
+
+Use it with:
 
 ```
 cd infrastructure
-docker compose -f docker-compose-full.yml up -d
+docker compose up -d
 ```
 
 ## Important notes
 
-- The version in the file may be different from the current version. In this case, in lines like `hcangunduz/ubs-mona-files:5.0.5-beta`, where `5.0.5-beta` is written, you can look at the "version" and `iksir.childrenVersionTag` sections in the package json. If childrenVersionTag is empty, latest or stable, it will remain empty and the tag will be just `version`. Otherwise, the tag will be: "version-childrenVersionTag"
+- This compose setup currently focuses on infrastructure dependencies (for example MariaDB), not the full UBS Mona platform stack.
+- Postral application flows that require users/files/notify capabilities still depend on external UBS Mona services.
+- If you need a full local stack, start Postral services here and start dependent UBS Mona services from the `users-mona-mr` project.

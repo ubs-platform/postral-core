@@ -1,24 +1,31 @@
-# Kaynak kodları kullanarak çalıştırmak
+# Kaynak kod ile çalıştırma
 
-Bir uygulamayı çalıştırmak için bunu çalıştırabilirsiniz
-
-```
-npm run start <app ismi>
-```
-
-Uygulama isimleri "apps" klasörü altındaki klasörlere bakabilirsiniz. Şu anki en temel uygulamalar şunlardır
-
-- **Users** - Kullanıcı'nın üye olup giriş yapmasını sağlar, rolleri ve entity sahipliklerini tutar ve yönetir.  Kafka, TCP ve Rest API kullanır. 
-
-- **Files** - Dosya servisi, rest api yardımı ile upload yapar ve TCP haberleşmesi ile dosya validasyonu sağlanır.
-
-- **Notify** - Email için gerekli şablonları tutar ve bu şablonlardan email hazırlayarak gönderir. Kafka ve Rest API kullanır. 
-
-Bu uygulamaları herbiri ayrı terminalde şu şekilde çalıştırılabilir:
+Bu depodaki uygulamaları aşağıdaki komutla çalıştırabilirsiniz:
 
 ```
-    npm run start users
-    npm run start files
-    npm run start notify
-    npm run start ...
+npm run start <app-ismi>
 ```
+
+Postral tarafında aktif uygulamalar:
+
+- **payment**: ödeme yaşam döngüsü, ödeme kanal operasyonları, fatura, raporlama ve webhook akışları
+- **testo**: Postral akışlarında kullanılan yardımcı/entegrasyon uygulaması
+
+Örnek:
+
+```
+npm run start payment
+npm run start testo
+```
+
+## UBS Mona platform bağımlılıkları
+
+Postral, kullanıcı ve dosya tarafındaki bazı yetenekler için UBS Mona platform servislerine bağlıdır.
+
+Lokal geliştirme sırasında (genelde `users-mona-mr` deposundan) aşağıdaki servislerin erişilebilir olması gerekir:
+
+- **users servisi**: kimlik doğrulama, JWT doğrulama, roller, sahiplik bağlamı
+- **files servisi**: upload ve fatura/dosya akışlarında kullanılan dosya altyapısı
+- **notify servisi** (opsiyonel ama önerilir): event/notification senaryoları
+
+Bu servisler olmadan kullanıcı bağlamı, rol kontrolü, sahiplik kontrolü veya dosya/upload ile ilişkili endpointlerde hata alabilirsiniz.

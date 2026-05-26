@@ -1,31 +1,41 @@
-# UBS Mona Projesi
+# Postral Mona Dokümantasyonu (TR)
 
-> ⚠️⚠️ Prodüksiyon için uygun değildir - Sorumluluk size aittir ⚠️⚠️
-
-> Diğer UBS Mona depoları buraya taşınacak. Taşınmadan sonra diğer git depoları arşiv olarak saklanacaktır
+> ⚠️⚠️ Prodüksiyon için uygun değildir - sorumluluk size aittir ⚠️⚠️
 
 ## Sinopsis
 
-UBS Mona, az kodla backend geliştirmeyi hedefleyen NestJS çevresinde gelişen, daha çok MongoDB kullanan bir rest API çatısıdır. İçerisinde Kullanıcı Giriş/Çıkış işlemleri, sosyalleşme (Yorum yapma), bildirim gibi çok temel işlevler içerir. Mona ismi "MOngo, Nest, Angular" isimlerinin birleşmesiyle meydana geliyor
+Postral Mona, başlangıçta UBS Mona kod tabanından türetilmiş olsa da zamanla ödeme odaklı ayrı bir backend projesine dönüşmüştür.
 
-## İçerikler:
+Bu depodaki ana uygulamalar:
 
-### Başlatma
+- `payment`: ödeme başlatma, ödeme kanal operasyonları, fatura yönetimi, raporlama, webhook entegrasyonları.
+- `testo`: Postral akışlarında kullanılan entegrasyon ve istemci yardımcı uygulaması.
+
+## Platform bağımlılığı (UBS Mona)
+
+Postral aşağıdaki yatay yeteneklerde UBS Mona platformuna bağlı çalışır:
+
+- kimlik doğrulama ve yetkilendirme (JWT + roller)
+- kullanıcı/hesap sahiplik bağlamı
+- dosya ve upload ile ilgili akışlar
+
+Özetle Postral ödeme domainini yönetirken, kullanıcı ve dosya altyapısının önemli kısmı UBS Mona servislerinden gelir.
+
+## İçerikler
+
+### Başlangıç
+
 - [Temel gereksinimler](./getting-started/base-requirements.md)
-- [Kodları kullanarak ayağa kaldırma](./getting-started/running-on-source-code.md)
-- [Docker imajlarıyla ve compose kullanarak ayağa kaldırma](./getting-started/running-via-docker-compose.md)
+- [Kaynak kod ile çalıştırma](./getting-started/running-on-source-code.md)
+- [Docker compose ile çalıştırma](./getting-started/running-via-docker-compose.md)
 
-### API Arayüzleri
+### REST API
 
-En kısa sürede eklemeye çalışacağım ancak söz veremiyorum
+- [REST API indeks](./rest-api/index.md)
 
 ### Bakım
 
 - [Uygulama oluşturma](./maintaining/1%20-%20creating%20app.md)
 - [Uygulamayı çalıştırma](./maintaining/2%20-%20run%20app.md)
 - [Kütüphane oluşturma](./maintaining/3%20-%20creating%20library.md)
-- [Kütüphaneyi build yapıp NPM registrysine gönderme](./maintaining/4%20-%20build%20library.md)
-
-- Bu arada eğer bir hata görürseniz "Issues" sekmesinden bir kayıt açabilirsiniz, ya da geliştirmeleriniz varsa Pull Request çekinmeden gönderebilirsiniz
-    - Issue'larda lütfen detaylı bilgi verin ve başlıkta sorunun özetini yazın
-    - Bu konuda katı olmak istemem ancak Issue ve PR'larda Türkçe yerine İngilizce kullanmanız daha hoş olacaktır 🙏.
+- [Kütüphaneyi build alıp NPM registry'ye gönderme](./maintaining/4%20-%20build%20library.md)

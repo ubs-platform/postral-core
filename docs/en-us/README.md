@@ -1,34 +1,41 @@
-# UBS Mona Project
+# Postral Mona Documentation (EN)
 
-> ⚠️⚠️ Not suitable for production - Responsibility belongs to you ⚠️⚠️
-
-> Other UBS Mona repositories will be moved here. Other git repositories will be stored as archives after the move
+> ⚠️⚠️ Not suitable for production - use at your own risk ⚠️⚠️
 
 ## Synopsis
 
-UBS Mona is a rest API framework developed around NestJS, which aims to develop backend with little code, and uses mostly MongoDB. It includes very basic functions such as User Login/Logout, socialization (commenting), notifications. The name Mona is formed by combining the names "MOngo, Nest, Angular"
+Postral Mona started as a fork/derivative of UBS Mona, but now it is a separate payment-oriented backend project.
 
-## Contents:
+Main runtime apps in this repository:
 
-### Getting started
+- `payment`: payment initialization, payment channel operations, invoice management, reporting, webhook integrations.
+- `testo`: integration and client utility app used by Postral workflows.
 
-### Startup
+## Platform dependency (UBS Mona)
+
+Postral is still integrated with UBS Mona platform capabilities for:
+
+- authentication and authorization (JWT + roles)
+- user/account ownership context
+- file and upload related workflows
+
+This means Postral handles payment domain logic while UBS Mona services remain the source for shared user/files infrastructure.
+
+## Contents
+
+### Getting Started
+
 - [Base requirements](./getting-started/base-requirements.md)
-- [Run applications with using source codes](./getting-started/running-on-source-code.md)
-- [Run applications with docker](./getting-started/running-via-docker-compose.md)
+- [Run with source code](./getting-started/running-on-source-code.md)
+- [Run with docker compose](./getting-started/running-via-docker-compose.md)
 
+### REST API
 
-### API Interfaces
-
-I will try to add it as soon as possible but I can't promise
+- [REST API index](./rest-api/index.md)
 
 ### Maintenance
 
 - [Creating the application](./maintaining/1%20-%20creating%20app.md)
 - [Running the application](./maintaining/2%20-%20run%20app.md)
 - [Creating the library](./maintaining/3%20-%20creating%20library.md)
-- [Building the library and sending it to the NPM registry](./maintaining/4%20-%20build%20library.md)
-
-- By the way, if you see an error, you can open a report from the "Issues" tab, or If you have any improvements, you can send a Pull Request without hesitation
-- Please provide detailed information in Issues and write a summary of the problem in the title
-- I don't want to be strict on this issue, but it would be more pleasant if you used English instead of Turkish in Issues and PRs 🙏.
+- [Building the library and publishing to NPM registry](./maintaining/4%20-%20build%20library.md)

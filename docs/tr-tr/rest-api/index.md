@@ -3,4 +3,5 @@
 | Uygulama | Dosya |
 |----------|-------|
 | payment | [payment.md](./payment.md) |
-| testo | [testo.md](./testo.md) |
+
+`testo` uygulaması için REST API dokümanı henüz eklenmemiştir.

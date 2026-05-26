@@ -1,24 +1,31 @@
-# Runing with source codes
+# Running with source code
 
-You can run following command to run an application
-
-```
-npm run start <app name>
-```
-
-You can look at the folders under the "apps" folder for application names. The most basic applications at the moment are as follows
-
-- **Users** - Allows the user to become a member and log in, keeps and manages roles and entity ownerships. Uses Kafka, TCP and Rest API.
-
-- **Files** - File service uploads with the help of Rest API and provides file validation with TCP communication.
-
-- **Notify** - Keeps the necessary templates for email and prepares emails from these templates and sends them. Uses Kafka and Rest API.
-
-Each of these applications can be run in a separate terminal as follows:
+You can run applications in this repository with:
 
 ```
-npm run start users
-npm run start files
-npm run start notify
-npm run start ...
+npm run start <app-name>
 ```
+
+Current Postral apps are:
+
+- **payment**: core payment domain API (payment lifecycle, channel operations, invoices, reports, webhooks)
+- **testo**: utility/integration app used by Postral workflows
+
+Example:
+
+```
+npm run start payment
+npm run start testo
+```
+
+## External dependencies from UBS Mona platform
+
+Postral still depends on shared UBS Mona platform services for user and file related capabilities.
+
+For local development, make sure required external services are available (typically from the `users-mona-mr` workspace):
+
+- **users service**: authentication, JWT validation, roles, ownership context
+- **files service**: upload and file-related infrastructure used by invoice/file flows
+- **notify service** (optional but recommended): notification/event related flows
+
+Without these services, endpoints that rely on user context, role checks, ownership checks, or file/upload workflows may fail.

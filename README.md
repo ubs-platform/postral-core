@@ -1,12 +1,26 @@
-# UBS Mona
+# Postral Mona
 
-> ⚠️⚠️ Not Ready For Production - Use at your own risk ⚠️⚠️
-
-> Other UBS Mona repos about to be migrated here. After the migration, other repositories will be archived
+> ⚠️⚠️ Not ready for production - use at your own risk ⚠️⚠️
 
 ## Synopsis
 
-UBS Mona is a rest API framework developed around NestJS, which aims to develop low code backend, and mostly uses MongoDB. It includes very basic functions such as User Login/Logout, socialization (commenting), notification. The name Mona is formed by combining the names "MOngo, Nest, Angular"
+Postral Mona was initially derived from the UBS Mona codebase, but it has evolved into a payment-focused backend project.
+
+The current repository primarily includes:
+
+- `payment` app: payment lifecycle, channel operations, reporting, invoice workflows, webhook dispatching.
+- `testo` app: lightweight integration/client-side utility app used in Postral workflows.
+- shared libs: `payment-common`, `postral-entities`, and `common-utils`.
+
+## Platform dependency (UBS Mona)
+
+Postral still depends on UBS Mona platform services for cross-cutting capabilities:
+
+- user identity and authorization (JWT, roles, ownership)
+- account and ownership context
+- file and upload related flows used by invoice/file scenarios
+
+In short: Postral provides payment domain logic, while UBS Mona platform services continue to provide core user/files infrastructure.
 
 ## Detailed documentations
 
