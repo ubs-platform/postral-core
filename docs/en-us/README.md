@@ -1,6 +1,6 @@
 # Postral Mona Documentation (EN)
 
-> ⚠️⚠️ Not suitable for production - use at your own risk ⚠️⚠️
+> We are actively improving this project. If you encounter an issue, please report it.
 
 ## Synopsis
 
@@ -9,7 +9,7 @@ Postral Mona started as a fork/derivative of UBS Mona, but now it is a separate 
 Main runtime apps in this repository:
 
 - `payment`: payment initialization, payment channel operations, invoice management, reporting, webhook integrations.
-- `testo`: integration and client utility app used by Postral workflows.
+- `testo`: flow testing app for Postral. It is still under active development and not fully ready yet.
 
 ## Platform dependency (UBS Mona)
 
@@ -32,6 +32,13 @@ This means Postral handles payment domain logic while UBS Mona services remain t
 ### REST API
 
 - [REST API index](./rest-api/index.md)
+
+### UBS Mona Docs (Related)
+
+- Repository: https://github.com/ubs-platform/ubs-mona-mr
+- English docs entry: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/en-us/README.md
+- Turkish docs entry: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/tr-tr/README.md
+- Turkish REST API index: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/tr-tr/rest-api/index.md
 
 ### Maintenance
 

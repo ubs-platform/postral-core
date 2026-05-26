@@ -16,3 +16,4 @@ docker compose up -d
 - Bu compose dosyası şu anda daha çok altyapı bağımlılıklarını (ör. MariaDB) ayağa kaldırır; tüm UBS Mona platform stack'ini içermez.
 - Kullanıcı/dosya/bildirim tarafındaki ihtiyaçlar için Postral, dış servis olarak UBS Mona servislerine bağımlıdır.
 - Tam lokal kurulum için Postral servislerini bu depodan, bağımlı UBS Mona servislerini ise `users-mona-mr` deposundan başlatmanız gerekir.
+- Eğer `postralmona` ve `users-mona-mr` aynı bilgisayardaysa, Postral servislerini bu depodan, users/files/notify servislerini de doğrudan yerel `users-mona-mr` çalışma alanınızdan başlatabilirsiniz.

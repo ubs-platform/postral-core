@@ -9,7 +9,7 @@ npm run start <app-ismi>
 Postral tarafında aktif uygulamalar:
 
 - **payment**: ödeme yaşam döngüsü, ödeme kanal operasyonları, fatura, raporlama ve webhook akışları
-- **testo**: Postral akışlarında kullanılan yardımcı/entegrasyon uygulaması
+- **testo**: Postral akışlarını test eden uygulama; hala geliştiriliyor ve henüz tamamen hazır değil
 
 Örnek:
 

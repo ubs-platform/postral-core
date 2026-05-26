@@ -1,6 +1,6 @@
 # Postral Mona Dokümantasyonu (TR)
 
-> ⚠️⚠️ Prodüksiyon için uygun değildir - sorumluluk size aittir ⚠️⚠️
+> Bu projeyi geliştirmeye devam ediyoruz. Bir hata ile karşılaşırsanız lütfen bildiriniz.
 
 ## Sinopsis
 
@@ -9,7 +9,7 @@ Postral Mona, başlangıçta UBS Mona kod tabanından türetilmiş olsa da zaman
 Bu depodaki ana uygulamalar:
 
 - `payment`: ödeme başlatma, ödeme kanal operasyonları, fatura yönetimi, raporlama, webhook entegrasyonları.
-- `testo`: Postral akışlarında kullanılan entegrasyon ve istemci yardımcı uygulaması.
+- `testo`: Postral içindeki akışları test eden uygulamadır. Hala üzerinde çalışıyoruz ve henüz tamamen hazır değildir.
 
 ## Platform bağımlılığı (UBS Mona)
 
@@ -32,6 +32,13 @@ Postral aşağıdaki yatay yeteneklerde UBS Mona platformuna bağlı çalışır
 ### REST API
 
 - [REST API indeks](./rest-api/index.md)
+
+### UBS Mona Dokümanları (İlişkili)
+
+- Repository: https://github.com/ubs-platform/ubs-mona-mr
+- İngilizce doküman girişi: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/en-us/README.md
+- Türkçe doküman girişi: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/tr-tr/README.md
+- Türkçe REST API index: https://github.com/ubs-platform/ubs-mona-mr/blob/master/docs/tr-tr/rest-api/index.md
 
 ### Bakım
 

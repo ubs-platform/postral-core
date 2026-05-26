@@ -9,7 +9,7 @@ npm run start <app-name>
 Current Postral apps are:
 
 - **payment**: core payment domain API (payment lifecycle, channel operations, invoices, reports, webhooks)
-- **testo**: utility/integration app used by Postral workflows
+- **testo**: flow testing app for Postral; still under active development and not fully ready yet
 
 Example:
 
