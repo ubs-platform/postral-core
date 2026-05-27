@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ItemPrice } from '@tk-postral/postral-entities';
 import { ItemPriceDTO } from '@tk-postral/payment-common';
+import * as BigJs from 'big.js';
 
 @Injectable()
 export class ItemPriceMapper {
@@ -40,7 +41,7 @@ export class ItemPriceMapper {
         // entity.id = dto.id;
         entity.itemId = dto.itemId;
         entity.variation = dto.variation;
-        entity.itemPrice = dto.itemPrice;
+        entity.itemPrice = new BigJs.Big(dto.itemPrice);
         // entity.taxPercent = dto.taxPercent;
         entity.region = dto.region;
         entity.currency = dto.currency;

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { exec } from 'child_process';
+import * as BigJs from 'big.js';
 
 @Injectable()
 export class PaymentItemMapper {
@@ -14,12 +15,12 @@ export class PaymentItemMapper {
         pi.itemId = dto.itemId;
         pi.name = dto.name;
         pi.quantity = dto.quantity;
-        pi.unitAmount = dto.unitAmount;
-        pi.originalUnitAmount = dto.originalUnitAmount;
-        pi.totalAmount = dto.totalAmount;
-        pi.taxPercent = dto.taxPercent;
-        pi.taxAmount = dto.taxAmount;
-        pi.unTaxAmount = dto.unTaxAmount;
+        pi.unitAmount = new BigJs.Big(dto.unitAmount || 0);
+        pi.originalUnitAmount = new BigJs.Big(dto.originalUnitAmount || 0);
+        pi.totalAmount = new BigJs.Big(dto.totalAmount || 0);
+        pi.taxPercent = new BigJs.Big(dto.taxPercent || 0);
+        pi.taxAmount = new BigJs.Big(dto.taxAmount || 0);
+        pi.unTaxAmount = new BigJs.Big(dto.unTaxAmount || 0);
         pi.variation = dto.variation;
         pi.entityGroup = dto.entityGroup;
         pi.entityId = dto.entityId;
@@ -28,8 +29,8 @@ export class PaymentItemMapper {
         // pi.sellerAccountName = dto.sellerAccountName;
         pi.itemClass = dto.itemClass || "";
         pi.unit = dto.unit;
-        pi.appComissionAmount = dto.appComissionAmount || 0;
-        pi.appComissionPercent = dto.appComissionPercent || 0;
+        pi.appComissionAmount = new BigJs.Big(dto.appComissionAmount || 0);
+        pi.appComissionPercent = new BigJs.Big(dto.appComissionPercent || 0);
         return pi;
     }
 

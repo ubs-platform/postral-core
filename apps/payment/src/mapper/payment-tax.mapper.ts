@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentItemDto, TaxDTO } from '@tk-postral/payment-common';
 import { PostralPaymentItem, PostralPaymentTax } from '@tk-postral/postral-entities';
+import * as BigJs from 'big.js';
 
 @Injectable()
 export class PaymentTaxMapper {
     toEntity(dto: TaxDTO): PostralPaymentTax {
         const ppt = new PostralPaymentTax();
-        ppt.fullAmount = dto.fullAmount;
-        ppt.percent = dto.percent;
-        ppt.taxAmount = dto.taxAmount;
-        ppt.untaxAmount = dto.untaxAmount;
+        ppt.fullAmount = new BigJs.Big(dto.fullAmount || 0);
+        ppt.percent = new BigJs.Big(dto.percent || 0);
+        ppt.taxAmount = new BigJs.Big(dto.taxAmount || 0);
+        ppt.untaxAmount = new BigJs.Big(dto.untaxAmount || 0);
         return ppt;
     }
 

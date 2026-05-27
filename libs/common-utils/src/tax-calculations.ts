@@ -3,6 +3,7 @@ import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from './array-to-object';
 import { TypeAssertionUtil } from './type-assertion';
 import { AmountCalculationUtil, NumberLike } from './amount-calculations';
+import * as BigJs from 'big.js';
 
 export class TaxCalculationUtil {
     static calculateUntaxedPrice(fullAmount: NumberLike, taxAmount: NumberLike) {
@@ -53,7 +54,7 @@ export class TaxCalculationUtil {
         percent?: NumberLike | null,
         taxAmount?: NumberLike | null,
     ) {
-        let untaxAmount = 0;
+        let untaxAmount: NumberLike = new BigJs.Big(0);
         if (percent == null && taxAmount == null) {
             throw new BadRequestException(
                 'There is no enough information. Please provide fullAmount and (taxAmount or percent)',
@@ -89,8 +90,8 @@ export class TaxCalculationUtil {
     }
 
     static mergeTaxes(taxes: TaxDTO[]) {
-        let fullTotal = 0,
-            taxTotal = 0;
+        let fullTotal: NumberLike = new BigJs.Big(0),
+            taxTotal: NumberLike = new BigJs.Big(0);
         for (let index = 0; index < taxes.length; index++) {
             const tax = taxes[index];
             fullTotal = AmountCalculationUtil.addNumberValues(

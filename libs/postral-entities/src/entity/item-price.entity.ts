@@ -5,7 +5,7 @@ import {
 } from 'typeorm';
 import { ItemPriceDefaults } from '@tk-postral/payment-common';
 import { BigintDbField, MoneyDbField } from './base';
-import Big = require('big.js');
+import * as BigJs from 'big.js';
 
 @Entity()
 export class ItemPrice {
@@ -19,7 +19,7 @@ export class ItemPrice {
     variation!: string;
 
     @Column(MoneyDbField)
-    itemPrice: number | Big = 0;
+    itemPrice: number | BigJs.Big = 0;
 
     // @Column({ default: 0, type: 'float' })
     // taxPercent: number;

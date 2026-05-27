@@ -89,12 +89,9 @@ export class BillingService {
     ) {
         const reports = await this.findUnbilledReports('PLATFORM_SELLER', sellerAccountId, currency);
         if (reports.length === 0) return;
-
-        const totalCommission = reports.reduce(
-            (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netSaleAmount || 0),
-            0,
-        );
-        if (totalCommission <= 0) {
+        console.info("Net Sale Amt", reports.map(r => r.netSaleAmount.toFixed(4) || 0))
+        const totalCommission = AmountCalculationUtil.addNumberValues(...reports.map(r => r.netSaleAmount || 0));
+        if (totalCommission.lte(0)) {
             this.logger.log(`Commission billing skipped for seller ${sellerAccountId} (${currency}): total is ${totalCommission}`);
             return;
         }
