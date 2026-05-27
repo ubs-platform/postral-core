@@ -2,11 +2,10 @@ import { BadRequestException } from '@nestjs/common';
 import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from './array-to-object';
 import { TypeAssertionUtil } from './type-assertion';
-import { AmountCalculationUtil } from './amount-calculations';
-import * as BigJs from 'big.js';
+import { AmountCalculationUtil, NumberLike } from './amount-calculations';
 
 export class TaxCalculationUtil {
-    static calculateUntaxedPrice(fullAmount: number | BigJs.Big, taxAmount: number | BigJs.Big) {
+    static calculateUntaxedPrice(fullAmount: NumberLike, taxAmount: NumberLike) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -18,7 +17,7 @@ export class TaxCalculationUtil {
         return AmountCalculationUtil.minusNumberValues(fullAmount, taxAmount);
     }
 
-    static calculatePercent(fullAmount: number | BigJs.Big, taxAmount: number | BigJs.Big) {
+    static calculatePercent(fullAmount: NumberLike, taxAmount: NumberLike) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -35,7 +34,7 @@ export class TaxCalculationUtil {
         );
     }
 
-    static calculateTaxAmount(fullAmount: number | BigJs.Big, percent: number | BigJs.Big) {
+    static calculateTaxAmount(fullAmount: NumberLike, percent: NumberLike) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -50,9 +49,9 @@ export class TaxCalculationUtil {
 
     static generateTaxDto(
         taxName: string,
-        fullAmount: number | BigJs.Big,
-        percent?: number | BigJs.Big | null,
-        taxAmount?: number | BigJs.Big | null,
+        fullAmount: NumberLike,
+        percent?: NumberLike | null,
+        taxAmount?: NumberLike | null,
     ) {
         let untaxAmount = 0;
         if (percent == null && taxAmount == null) {
