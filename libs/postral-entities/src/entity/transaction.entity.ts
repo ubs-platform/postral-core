@@ -19,6 +19,7 @@ import {
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
 import { MoneyDbField } from './base';
+import Big = require('big.js');
 
 @Entity()
 @Unique(['paymentId', "targetAccountId"])
@@ -27,13 +28,13 @@ export class SellerPaymentOrder extends BaseEntity {
     id!: string;
 
     @Column(MoneyDbField)
-    amount: number = 0;
+    amount: number | Big = 0;
 
     @Column(MoneyDbField)
-    taxAmount: number = 0;
+    taxAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    untaxedAmount: number = 0;
+    untaxedAmount: number | Big = 0;
 
     @Column()
     currency!: string;

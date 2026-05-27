@@ -3,9 +3,10 @@ import { TaxDTO } from '@tk-postral/payment-common';
 import { ArrayToObjectUtil } from './array-to-object';
 import { TypeAssertionUtil } from './type-assertion';
 import { AmountCalculationUtil } from './amount-calculations';
+import * as BigJs from 'big.js';
 
 export class TaxCalculationUtil {
-    static calculateUntaxedPrice(fullAmount: number, taxAmount: number) {
+    static calculateUntaxedPrice(fullAmount: number | BigJs.Big, taxAmount: number | BigJs.Big) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -17,7 +18,7 @@ export class TaxCalculationUtil {
         return AmountCalculationUtil.minusNumberValues(fullAmount, taxAmount);
     }
 
-    static calculatePercent(fullAmount: number, taxAmount: number) {
+    static calculatePercent(fullAmount: number | BigJs.Big, taxAmount: number | BigJs.Big) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -34,7 +35,7 @@ export class TaxCalculationUtil {
         );
     }
 
-    static calculateTaxAmount(fullAmount: number, percent: number) {
+    static calculateTaxAmount(fullAmount: number | BigJs.Big, percent: number | BigJs.Big) {
         TypeAssertionUtil.assertIsNumber(
             fullAmount,
             'Full amount must be a number',
@@ -49,9 +50,9 @@ export class TaxCalculationUtil {
 
     static generateTaxDto(
         taxName: string,
-        fullAmount: number,
-        percent?: number | null,
-        taxAmount?: number | null,
+        fullAmount: number | BigJs.Big,
+        percent?: number | BigJs.Big | null,
+        taxAmount?: number | BigJs.Big | null,
     ) {
         let untaxAmount = 0;
         if (percent == null && taxAmount == null) {

@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 't
 import { Payment } from './payment.entity';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import Big = require('big.js');
 
 @Entity()
 export class PostralPaymentItem {
@@ -27,25 +28,25 @@ export class PostralPaymentItem {
     name!: string;
 
      @Column(MoneyDbField)
-    quantity: number = 0;
+    quantity: number | Big = 0;
 
     @Column(MoneyDbField)
-    totalAmount: number = 0;
+    totalAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    originalUnitAmount: number = 0;
+    originalUnitAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    unitAmount: number = 0;
+    unitAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    taxPercent: number = 0;
+    taxPercent: number | Big = 0;
 
     @Column(MoneyDbField)
-    taxAmount: number = 0;
+    taxAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    unTaxAmount: number = 0;
+    unTaxAmount: number | Big = 0;
 
     @ManyToOne(() => Payment, (a) => a.items, {
         onDelete: 'CASCADE',
@@ -70,7 +71,7 @@ export class PostralPaymentItem {
     refunded: boolean = false;
 
     @Column(MoneyDbField)
-    refundCount: number = 0;
+    refundCount: number | Big = 0;
 
     @Column({ nullable: true })
     refundPaymentId?: string;
@@ -87,16 +88,16 @@ export class PostralPaymentItem {
     itemClass: string = "";
 
     @Column(MoneyDbField)
-    appComissionAmount: number = 0;
+    appComissionAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    appComissionPercent: number = 0;
+    appComissionPercent: number | Big = 0;
 
     @Column(MoneyDbField)
-    paymentServiceFeeAmount: number = 0;
+    paymentServiceFeeAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    paymentServiceFeePercent: number = 0;
+    paymentServiceFeePercent: number | Big = 0;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt!: Date;

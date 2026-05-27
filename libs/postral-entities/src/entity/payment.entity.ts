@@ -14,6 +14,7 @@ import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import Big = require('big.js');
 
 @Entity()
 export class Payment {
@@ -27,10 +28,10 @@ export class Payment {
     type!: 'PURCHASE' | 'REFUND';
 
     @Column(MoneyDbField)
-    totalAmount!: number;
+    totalAmount!: number | Big;
 
     @Column(MoneyDbField)
-    taxAmount!: number;
+    taxAmount!: number | Big;
     /**
      * Euro (€ or EUR), US Dollars($ or USD), Turkish Lira (₺ or TRY), etc...
      */

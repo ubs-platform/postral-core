@@ -12,6 +12,7 @@ import { ReportQuery } from './report-query.entity';
 import { BaseReport, ReportType } from '@tk-postral/payment-common';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import Big = require('big.js');
 
 /**
  * One Report row = one aggregated period bucket for a ReportQuery.
@@ -35,10 +36,10 @@ export class Report implements BaseReport {
 
 
     @Column(MoneyDbField)
-    totalSaleAmountWithoutExpense: number = 0;
+    totalSaleAmountWithoutExpense: number | Big = 0;
 
     @Column(MoneyDbField)
-    totalExpenseAmount: number = 0;
+    totalExpenseAmount: number | Big = 0;
 
 
     /**
@@ -67,32 +68,32 @@ export class Report implements BaseReport {
 
     // Toplam satın alma
     @Column(MoneyDbField)
-    totalSaleAmount = 0;
+    totalSaleAmount: number | Big = 0;
 
     // Toplam iade
     @Column(MoneyDbField)
-    totalRefundAmount = 0;
+    totalRefundAmount: number | Big = 0;
 
     // Toplam satın alma vergisi
     @Column(MoneyDbField)
-    totalSaleTaxAmount = 0;
+    totalSaleTaxAmount: number | Big = 0;
 
     // Toplam iade vergisi
     @Column(MoneyDbField)
-    totalRefundTaxAmount = 0;
+    totalRefundTaxAmount: number | Big = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
     @Column(MoneyDbField)
-    netTaxAmount = 0;
+    netTaxAmount: number | Big = 0;
 
 
     // Net satın alma (satın alma - iade)
     @Column(MoneyDbField)
-    netSaleAmount = 0;
+    netSaleAmount: number | Big = 0;
 
     // Net gelir (net satın alma - net vergi)
     @Column(MoneyDbField)
-    netRevenue = 0;
+    netRevenue: number | Big = 0;
 
     @Column({ length: 255, nullable: true })
     lastDigestedPaymentId?: string;
@@ -105,14 +106,14 @@ export class Report implements BaseReport {
     billedAt?: Date;
 
     @Column(MoneyDbField)
-    totalExpense = 0;
+    totalExpense: number | Big = 0;
 
     // Vergisiz net hakediş: netRevenue - masraflar
     @Column(MoneyDbField)
-    netRevenueWithoutExpense = 0;
+    netRevenueWithoutExpense: number | Big = 0;
 
     // Vergili net hakediş: netSaleAmount - masraflar.
     // Satıcıya hakediş ödemesinde bu değer kullanılır çünkü vergisini satıcı öder.
     @Column(MoneyDbField)
-    netRevenueWithoutExpenseTaxed = 0;
+    netRevenueWithoutExpenseTaxed: number | Big = 0;
 }

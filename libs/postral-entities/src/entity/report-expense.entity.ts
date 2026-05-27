@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { MoneyDbField } from "./base";
+import Big = require('big.js');
 
 @Entity("report_expense")
 @Unique(["reportId", "accountId","expenseKey"])
@@ -26,7 +27,7 @@ export class ReportExpense {
     expenseKey!: string;
 
     @Column(MoneyDbField)
-    expenseAmount: number = 0;
+    expenseAmount: number | Big = 0;
 
     @Column({ type: "varchar", nullable: true })
     itemClass?: string;

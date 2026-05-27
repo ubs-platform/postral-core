@@ -4,6 +4,7 @@ import {
     PaymentStatus,
 } from '@tk-postral/payment-common';
 import { MoneyDbField } from './base';
+import Big = require('big.js');
 
 @Entity()
 export class PaymentChannelOperation {
@@ -20,7 +21,7 @@ export class PaymentChannelOperation {
     redirectUrl: string = '';
 
     @Column(MoneyDbField)
-    amount: number = 0;
+    amount: number | Big = 0;
 
     // hata verirse manuel kontrollere geçebiliriz...
     @Column({ type: 'varchar', nullable: false })
@@ -39,7 +40,7 @@ export class PaymentChannelOperation {
     updatedAt: Date = new Date();
 
     @Column(MoneyDbField)
-    providerFee: number = 0;
+    providerFee: number | Big = 0;
 
     /**
      * Provider fee'nin kimin tarafından ödeneceği bilgisini tutar. 

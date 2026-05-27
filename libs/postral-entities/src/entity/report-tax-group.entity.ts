@@ -1,6 +1,7 @@
 import { BaseReport } from "@tk-postral/payment-common";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { BigintDbField, MoneyDbField } from "./base";
+import Big = require('big.js');
 
 /**
  * Vergi oranlarına göre gruplanmış rapor verisi. Bir Report'un birden fazla ReportTaxGroup'u olabilir.
@@ -33,37 +34,37 @@ export class ReportTaxGroup implements BaseReport {
 
 
     @Column(MoneyDbField)
-    totalSaleAmountWithoutExpense: number = 0;
+    totalSaleAmountWithoutExpense: number | Big = 0;
 
     @Column(MoneyDbField)
-    totalExpenseAmount: number = 0;
+    totalExpenseAmount: number | Big = 0;
 
     // Toplam satın alma
     @Column(MoneyDbField)
-    totalSaleAmount: number = 0;
+    totalSaleAmount: number | Big = 0;
 
     // Toplam iade
     @Column(MoneyDbField)
-    totalRefundAmount: number = 0;
+    totalRefundAmount: number | Big = 0;
 
     // Toplam satın alma vergisi
     @Column(MoneyDbField)
-    totalSaleTaxAmount: number = 0;
+    totalSaleTaxAmount: number | Big = 0;
 
     // Toplam iade vergisi
     @Column(MoneyDbField)
-    totalRefundTaxAmount: number = 0;
+    totalRefundTaxAmount: number | Big = 0;
 
     // Net vergi (satın alma vergisi - iade vergisi)
     @Column(MoneyDbField)
-    netTaxAmount: number = 0;
+    netTaxAmount: number | Big = 0;
 
 
     // Net satın alma (satın alma - iade)
     @Column(MoneyDbField)
-    netSaleAmount: number = 0;
+    netSaleAmount: number | Big = 0;
 
     // Net gelir (net satın alma - net vergi)
     @Column(MoneyDbField)
-    netRevenue: number = 0;
+    netRevenue: number | Big = 0;
 }

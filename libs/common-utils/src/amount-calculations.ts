@@ -1,8 +1,10 @@
 import { TypeAssertionUtil } from "./type-assertion";
 import * as BigJs from "big.js";
+// Nambır nambır altmış yedii
+export type NumberLike = number | BigJs.Big;
 export class AmountCalculationUtil {
 
-    static addNumberValues(...values: number[]): number {
+    static addNumberValues(...values: Array<NumberLike>): BigJs.Big {
         let total = new BigJs(0);
         for (let i = 0; i < values.length; i++) {
             let value = values[i];
@@ -13,12 +15,12 @@ export class AmountCalculationUtil {
             );
             total = total.plus(value);
         }
-        return Number(total);
+        return total;
     }
 
-    static minusNumberValues(initialValue: number, ...values: number[]): number {
+    static minusNumberValues(initialValue: NumberLike, ...values: Array<NumberLike>): BigJs.Big {
         TypeAssertionUtil.assertIsNumber(
-            initialValue,
+            Number(initialValue),
             'Initial value must be a number',
         );
         let val = new BigJs(initialValue);
@@ -31,11 +33,11 @@ export class AmountCalculationUtil {
             );
             val = val.minus(value);
         }
-        return Number(val);
+        return val;
 
     }
 
-    static multiplyNumberValues(...values: number[]): number {
+    static multiplyNumberValues(...values: Array<NumberLike>): BigJs.Big {
         let startValue = new BigJs(1);
         for (let i = 0; i < values.length; i++) {
             let multiplierItem = values[i];
@@ -46,42 +48,49 @@ export class AmountCalculationUtil {
             );
             startValue = startValue.times(multiplierItem);
         }
-        return Number(startValue);
+        return startValue;
     }
 
     
 
 
-    static divideNumberValues(initialValue: number, ...values: number[]): number {
-        if (initialValue === 0) {
-            return 0; // If the initial value is zero, return zero to avoid division by zero
+    static divideNumberValues(initialValue: NumberLike, ...values: Array<NumberLike>): BigJs.Big {
+        if (new BigJs(initialValue).eq(0)) {
+            return new BigJs(0); // If the initial value is zero, return zero to avoid division by zero
         }
 
         TypeAssertionUtil.assertIsNumber(
-            initialValue,
+            Number(initialValue),
             'Initial value must be a number',
         );
 
         const divisor = this.multiplyNumberValues(...values);
-        if (divisor === 0) {
+        if (divisor.eq(0)) {
             throw new Error('Division by zero is not allowed');
         }
-        return new BigJs(initialValue).div(divisor).toNumber();
+        return new BigJs(initialValue).div(divisor);
 
     }
 
-    static calculateComissionAmountByPercent(amount: number, percent: number): number {
-        amount = Number(amount);
-        percent = Number(percent);
+    static calculateComissionAmountByPercent(amount: NumberLike, percent: NumberLike): BigJs.Big {
         TypeAssertionUtil.assertIsNumber(
-            amount,
+            Number(amount),
             'Amount must be a number',
         );
         TypeAssertionUtil.assertIsNumber(
-            percent,
+            Number(percent),
             'Percent must be a number',
         );
         return this.divideNumberValues(this.multiplyNumberValues(amount, percent), 100);
+    }
+
+    static toFixedNumber(value: NumberLike, decimalPlaces: number = 2): number {
+        TypeAssertionUtil.assertIsNumber(
+            Number(value),
+            'Value must be a number',
+        );
+        const bigValue = new BigJs(value);
+        return parseFloat(bigValue.toFixed(decimalPlaces));
     }
 
 }

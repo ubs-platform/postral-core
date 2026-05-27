@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { RefundRequest } from './refund-request.entity';
 import { MoneyDbField } from './base';
+import Big = require('big.js');
 
 @Entity()
 export class RefundRequestItem extends BaseEntity {
@@ -28,33 +29,33 @@ export class RefundRequestItem extends BaseEntity {
     realItemId!: string;
 
     @Column(MoneyDbField)
-    refundCount: number = 0;
+    refundCount: number | Big = 0;
 
     @Column({ nullable: true })
     itemName?: string;
 
     @Column(MoneyDbField)
-    unitAmount?: number = 0;
+    unitAmount?: number | Big = 0;
 
     @Column(MoneyDbField)
-    unitAmountWithoutTax?: number = 0;
+    unitAmountWithoutTax?: number | Big = 0;
 
     @Column(MoneyDbField)
-    refundAmount: number = 0;
+    refundAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    refundAmountWithoutTax: number = 0;
+    refundAmountWithoutTax: number | Big = 0;
 
     @Column(MoneyDbField)
-    refundTaxAmount?: number = 0;
+    refundTaxAmount?: number | Big = 0;
     
     @Column()
     itemClass: string = "";
 
     @Column(MoneyDbField)
-    appComissionAmount: number = 0;
+    appComissionAmount: number | Big = 0;
 
     @Column(MoneyDbField)
-    appComissionPercent: number = 0;
+    appComissionPercent: number | Big = 0;
 
 }

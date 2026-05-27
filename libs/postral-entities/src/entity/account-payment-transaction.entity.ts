@@ -8,6 +8,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MoneyDbField } from './base';
+import Big = require('big.js');
 
 @Entity()
 export class AccountPaymentTransaction {
@@ -37,10 +38,10 @@ export class AccountPaymentTransaction {
     status!: PaymentStatus;
 
     @Column(MoneyDbField)
-    amount: number = 0;
+    amount: number | Big = 0;
 
     @Column(MoneyDbField)
-    taxAmount: number = 0;
+    taxAmount: number | Big = 0;
 
     @Column({ type: "datetime", default: () => "CURRENT_TIMESTAMP" })
     creationDate: Date = new Date();

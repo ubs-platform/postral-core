@@ -135,6 +135,7 @@ export class BillingService {
             (sum, r) => AmountCalculationUtil.addNumberValues(sum, r.netRevenueWithoutExpenseTaxed || 0),
             0,
         );
+        debugger;
         if (totalEarnings <= 0) {
             this.logger.log(`Earnings billing skipped for seller ${sellerAccountId} (${currency}): total is ${totalEarnings}`);
             return;
