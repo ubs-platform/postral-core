@@ -33,6 +33,10 @@ This means Postral handles payment domain logic while UBS Mona services remain t
 
 - [REST API index](./rest-api/index.md)
 
+### Messaging (MQ / Engine5)
+
+- [Engine5 events and requests](./messaging/engine5-events-and-requests.md)
+
 ### UBS Mona Docs (Related)
 
 - Repository: https://github.com/ubs-platform/ubs-mona-mr
