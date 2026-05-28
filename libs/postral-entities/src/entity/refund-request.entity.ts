@@ -59,6 +59,8 @@ export class RefundRequest extends BaseEntity {
     @Column({nullable: true})
     requestedToPaymentAccountId?: string;
 
+    @Column({ nullable: true })
+    currency?: string;
 
 
     /**
