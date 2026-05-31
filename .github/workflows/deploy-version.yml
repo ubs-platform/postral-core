@@ -52,7 +52,7 @@ jobs:
           fi
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --force
 
       # xr zaten bunu yapıyor
       - name: Update version in package.json
