@@ -59,7 +59,8 @@ export class RefundRequest extends BaseEntity {
     @Column({nullable: true})
     requestedToPaymentAccountId?: string;
 
-
+    @Column({ nullable: true })
+    currency?: string;
 
     /**
      * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.

@@ -42,4 +42,5 @@ export class RefundRequestDTO {
  * Payment Account Id. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek account bilgisi için Payment Account servisine sorgu atılması gerekebilir.
  */
     requestedToPaymentAccountId?: string;
+    currency?: string;
 }

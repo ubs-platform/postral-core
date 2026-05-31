@@ -227,6 +227,7 @@ export class RefundService {
         request.requestedByPaymentAccountId = payment.customerAccountId;
         request.requestedToPaymentAccountId = firstItem.sellerAccountId;
         request.status = 'PENDING';
+        request.currency = payment.currency;
         request.items = this.buildRefundRequestItems(payment, dto.items);
         return request;
     }
@@ -359,6 +360,7 @@ export class RefundService {
             requestedToPaymentAccountId: entity.requestedToPaymentAccountId,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
+            currency: entity.currency,
             items:
                 entity.items?.map((i) => ({
                     id: i.id,
