@@ -2,22 +2,22 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import {
-    FastifyAdapter,
     NestFastifyApplication,
+    FastifyAdapter,
 } from '@nestjs/platform-fastify';
 import fastifyMultipart from '@fastify/multipart';
 import { PaymentModule } from './payment.module';
 
 async function bootstrap() {
     const adapter = new FastifyAdapter();
-    adapter.register(fastifyMultipart);
+    // adapter.register(fastifyMultipart);
     const app = await NestFactory.create<NestFastifyApplication>(
         PaymentModule,
         adapter,
     );
     const globalPrefix = 'api';
     app.connectMicroservice(
-        MicroserviceSetupUtil.setupServer(''),
+        MicroserviceSetupUtil.setupServer('tetakent-postral-payment'),
     );
     app.setGlobalPrefix(globalPrefix);
     const port = process.env.PORT || 3000;
