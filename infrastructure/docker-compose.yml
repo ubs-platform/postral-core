@@ -1,20 +1,92 @@
-# version: '3.5'
-
 services:
-    mariadb:
-        image: mariadb
-        environment:
-            # MYSQL_ROOT_PASSWORD: <your_root_password_here>
-            MYSQL_USER: postral
-            MYSQL_PASSWORD: postral
-            MARIADB_DATABASE: postral_epos
-            MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: true
-        ports:
-            - '3306:3306'
-        volumes:
-            - './init.sql:/docker-entrypoint-initdb.d/1.sql'
+  postral-core-api:
+    image: hcangunduz/tk-postral-payment:${POSTRAL_CORE_API_VERSION-1.0.2-beta}
+    # build:
+    #   context: https://github.com/ubs-platform/postral-core.git#master
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - "APP_NAME=payment"
+    ports:
+      - "3767:3767"
+    environment:
+      - NX_MICROSERVICE_TYPE=ENGINE5
+      - E5_HOST=engine5
+      - E5_PORT=3535
+      - U_USERS_PW_RESET_URL=/password-reset/resolve/:id?from=ubs
+      - U_USERS_REGISTERED_USER_VALIDATING_URL=/login?activationKey=:key
+      - U_USERS_MONA_INTERNAL_COM_PORT=13001
+      - U_USERS_MONA_INTERNAL_COM_HOST=localhost
+      - PORT=3767
+      - POSTRAL_INSTANCE_ID=payment_local
+      - POSTRAL_DB_DRIVER=mariadb
+      - POSTRAL_DB_HOST=mariadb
+      - POSTRAL_DB_PORT=3306
+      - POSTRAL_DB_USER=root
+      - POSTRAL_DB_PASSWORD=
+      - POSTRAL_DB_NAME=postral_core
+      - POSTRAL_DB_SSL=false
+      - NX_MONGO_PASSWORD=admin
+      - NX_SECRET_JWT=23ac43b5e6f2a12
+      - NX_SECRET_PW=secret
+      
+  engine5:
+    image: hcangunduz/engine5:${ENGINE5_VERSION-0.0.12-alpha}
+    ports:
+      - 3535:3535
+    environment:
+      - E5_PORT=3535
+      - ENABLE_TLS=false
+      - REQUIRE_AUTH=false
 
-    # engine5:
-    #     image: hcangunduz/engine5:0.0.9-alpha
-    #     ports:
-    #         - 3535:3535
+  ubs-dev-monolith:
+    image: hcangunduz/ubs-mona-dev-monolith:${UBS_VERSION-6.8.0}
+    ports:
+      - 3000:3000
+    environment:
+      - NX_MICROSERVICE_TYPE=ENGINE5
+      - E5_HOST=engine5
+      - E5_PORT=3535
+      - NX_MONGO_URL=my-mongodb:27017
+      - NX_MONGO_USERNAME=admin
+      - NX_MONGO_PASSWORD=admin
+      - NX_SECRET_JWT=23ac43b5e6f2a12
+      - NX_SECRET_PW=secret
+      - U_USERS_PW_RESET_URL=/password-reset/resolve/:id?from=ubs
+      - U_USERS_REGISTERED_USER_VALIDATING_URL=/login?activationKey=:key
+      - UBS_MAIN_PROCESS=true
+      - UBS_MAIN_PROCESS_COUNT=3
+      - NX_MONGO_DBNAME=dev_monolith
+      - PORT=3000
+      - UNOTIFY_DEFAULT_LANGUAGE=en-us
+      - UNOTIFY_MAIL_FROM=info@tester.tetakent.com
+      - UNOTIFY_MAIL_SERVER_HOST=localhost
+      - UNOTIFY_MAIL_SERVER_PORT=25
+      - UNOTIFY_MAIL_CERT_IGNORE_SSL=true
+
+
+  my-mongodb:
+    image: mongo:${MONGO_VERSION-latest}
+    container_name: my-mongodb
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_DATABASE=test
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    volumes:
+      - ./mongo-entrypoint:/docker-entrypoint-initdb.d
+      - ./mongo-data:/data/db
+
+  mariadb:
+      image: mariadb:${MARIA_DB_VERSION-latest}
+      environment:
+          # MYSQL_ROOT_PASSWORD: <your_root_password_here>
+          - MYSQL_USER=postral
+          - MYSQL_PASSWORD=postral
+          - MARIADB_DATABASE=postral_core_tester
+          - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true
+      ports:
+          - '3306:3306'
+      volumes:
+          - './init.sql:/docker-entrypoint-initdb.d/1.sql'
+          - './mariadb-data:/var/lib/mysql'
