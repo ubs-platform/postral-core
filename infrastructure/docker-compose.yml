@@ -1,4 +1,13 @@
 services:
+  postral-core-web:
+    image: hcangunduz/tk-postral-core-frontend:${POSTRAL_CORE_WEB_VERSION-1.0.2-beta}
+    ports:
+      - "8080:80"
+    volumes:
+      - ./config/postral-ui.conf:/etc/nginx/nginx.conf:ro
+
+    # build:
+    #   context:
   postral-core-api:
     image: hcangunduz/tk-postral-payment:${POSTRAL_CORE_API_VERSION-1.0.2-beta}
     # build:
@@ -83,7 +92,7 @@ services:
           # MYSQL_ROOT_PASSWORD: <your_root_password_here>
           - MYSQL_USER=postral
           - MYSQL_PASSWORD=postral
-          - MARIADB_DATABASE=postral_core_tester
+          - MARIADB_DATABASE=postral_core
           - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true
       ports:
           - '3306:3306'
