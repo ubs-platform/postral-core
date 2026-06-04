@@ -13,14 +13,14 @@ export class AdminSettingsController {
         
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(["admin", "postral-admin"])
+    @Roles(["admin", "POSTRAL-ADMIN"])
     async getAdminSettings() {
         return await this.adminSettingsService.getAdminSettings();
     }
 
     @Put()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(["admin", "postral-admin"])
+    @Roles(["admin", "POSTRAL-ADMIN"])
     async updateAdminSettings(@Body() settings: Partial<AdminSettings>) {
         return await this.adminSettingsService.upsertAdminSettings(settings);
     }

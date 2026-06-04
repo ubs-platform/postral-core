@@ -6,7 +6,7 @@ import { BillingService } from "../service/billing.service";
 
 @Controller("admin-operations")
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(["admin", "postral-admin"])
+@Roles(["admin", "POSTRAL-ADMIN"])
 export class AdminOperationsController {
     constructor(
         private admOps: AdminOperationsService,
