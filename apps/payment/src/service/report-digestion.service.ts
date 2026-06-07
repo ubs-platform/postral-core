@@ -433,19 +433,20 @@ export class ReportDigestionService {
         platformReport.netSaleAmount = AmountCalculationUtil.minusNumberValues(platformReport.totalSaleAmount || 0, platformReport.totalRefundAmount || 0);
         platformReport.netRevenue = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.netTaxAmount || 0);
 
-        const totalComission = AmountCalculationUtil.minusNumberValues(currentComissionTotal, refundComissionTotal);
+        // Masrafları platform-seller raporunda göstermeyeceğim... Çünkü sadece o günün komisyonunu almak için zaten ve altta ekstra masraf kafa karıştırıcı oluyor. Ödeme kanalı hizmeti için satıcı bize fatura keserken ya da satıcıya iletirken ayarlanabilir.... 
+        // const totalComission = AmountCalculationUtil.minusNumberValues(currentComissionTotal, refundComissionTotal);
 
-        let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
-        totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
-        await this.reportExpenseRepo.save(totalComissionExpenseReport);
+        // let totalComissionExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, PLATFORM_COMISSION_TOTAL, payment.currency);
+        // totalComissionExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(totalComissionExpenseReport.expenseAmount, totalComission);
+        // await this.reportExpenseRepo.save(totalComissionExpenseReport);
 
-        let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
-        reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
-        await this.reportExpenseRepo.save(reportTotalExpenseReport);
+        // let reportTotalExpenseReport = await this.fetchOrCreateReportExpense(platformReport.id, platformReport.query.ownerAccountId!, REPORT_TOTAL, payment.currency);
+        // reportTotalExpenseReport.expenseAmount = AmountCalculationUtil.addNumberValues(reportTotalExpenseReport.expenseAmount, totalComission);
+        // await this.reportExpenseRepo.save(reportTotalExpenseReport);
 
         // netRevenueWithoutExpense ve netRevenueWithoutExpenseTaxed alanlarını güncel totalExpense ile hesapla.
         // digestPayment ile aynı mantık; platformReport için de güncellenmesi gerekiyor.
-        platformReport.totalExpense = reportTotalExpenseReport.expenseAmount;
+        // platformReport.totalExpense = reportTotalExpenseReport.expenseAmount;
         platformReport.netRevenueWithoutExpense = AmountCalculationUtil.minusNumberValues(platformReport.netRevenue || 0, platformReport.totalExpense || 0);
         platformReport.netRevenueWithoutExpenseTaxed = AmountCalculationUtil.minusNumberValues(platformReport.netSaleAmount || 0, platformReport.totalExpense || 0);
 
@@ -534,9 +535,10 @@ export class ReportDigestionService {
                 await this.digestPayment(freshReport, payment);
                 await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
             }
-
-            if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
+            if (flag && freshReport.reportType === "PLATFORM") {
                 await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+            }
+            if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
 
                 await this.digestComissionIncomeForReport(freshReport,
                     payment,
@@ -577,12 +579,12 @@ export class ReportDigestionService {
                 {
                     currency: payment.currency,
                     ownerAccountId: In([...itemSellerAccountIds]),
-                    reportType: 'SELLER',
+                    reportType: In(['SELLER', 'PLATFORM_SELLER']),
                 },
                 // Platformun komisyondan geliri ve ödeme hizmeti sağlayıcı ücretinden gelen giderleri raporlamak istediğim için PLATFORM ve PLATFORM_FLOW raporları da payment ile eşleşiyor olacak. PLATFORM raporunda sadece toplam komisyon gelirini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum, PLATFORM_FLOW raporunda ise her bir ödeme için ayrı ayrı komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum.
                 {
                     currency: payment.currency,
-                    reportType: In(['PLATFORM', "PLATFORM_SELLER", "PLATFORM_FLOW"]),
+                    reportType: In(['PLATFORM', "PLATFORM_FLOW"]),
                 },
 
             ],
