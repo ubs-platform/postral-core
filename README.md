@@ -27,6 +27,39 @@ In short: Postral provides payment domain logic, while UBS Mona platform service
 - [English US 🇺🇸](./docs/en-us/README.md)
 - [Turkish 🇹🇷](./docs/tr-tr/README.md)
 
+## Quick Install
+
+### Linux / macOS / WSL (bash)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ubs-platform/postral-core/master/install.sh | bash
+```
+
+This downloads `docker-compose.yml`, nginx config, and init SQL into `~/.bin/tetakent/postral`, then you can start the stack:
+
+```bash
+cd ~/.bin/tetakent/postral
+docker compose up -d
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/ubs-platform/postral-core/master/install.ps1 | iex
+```
+
+> If your execution policy blocks remote scripts, run:
+> ```powershell
+> powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/ubs-platform/postral-core/master/install.ps1 | iex"
+> ```
+
+Files are installed to `%USERPROFILE%\.bin\tetakent\postral`. Start the stack with:
+
+```powershell
+cd "$env:USERPROFILE\.bin\tetakent\postral"
+docker compose up -d
+```
+
 ## Related UBS Mona documentation
 
 - Repository: https://github.com/ubs-platform/ubs-mona-mr
