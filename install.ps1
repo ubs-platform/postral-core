@@ -89,7 +89,9 @@ foreach ($file in $Files) {
   Write-Host "  Downloading $file ..."
   Invoke-WebRequest -Uri "$RawBaseUrl/$file" -OutFile $target -UseBasicParsing
 }
-
+# Download stock.env as .env (version pins)
+Write-Host "  Downloading infrastructure/stock.env -> .env ..."
+Invoke-WebRequest -Uri "$RawBaseUrl/infrastructure/stock.env" -OutFile (Join-Path $InstallDir ".env") -UseBasicParsing
 Write-Host ""
 Write-Host "Done! Postral Core installed to: $InstallDir"
 Write-Host ""

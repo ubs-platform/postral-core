@@ -65,6 +65,10 @@ for file in "${FILES[@]}"; do
   curl -fsSL "${RAW_BASE_URL}/${file}" -o "${target}"
 done
 
+# Download stock.env as .env (version pins)
+echo "  Downloading infrastructure/stock.env -> .env ..."
+curl -fsSL "${RAW_BASE_URL}/infrastructure/stock.env" -o "${INSTALL_DIR}/.env"
+
 echo ""
 echo "Done! Postral Core installed to: ${INSTALL_DIR}"
 echo ""
