@@ -27,7 +27,7 @@ export class PaymentChannelConfigController {
         @Query() searchReq: SearchRequest,
         @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<SearchResult<PaymentChannelConfigDTO>> {
-        const isProduction = user?.roles.includes("ADMIN") || user?.roles.includes("POSTRAL-ADMIN") || process.env.NODE_ENV === 'production';
+        const isProduction = process.env.NODE_ENV === 'production';
         return this.service.fetchAll(searchReq, isProduction);
     }
 
