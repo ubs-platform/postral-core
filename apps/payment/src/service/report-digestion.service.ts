@@ -19,6 +19,7 @@ export class ReportDigestionService {
 
     private readonly logger = new Logger(ReportDigestionService.name);
     private reportsFetchInflight = new Map<string, Promise<Report>>();
+    checkingRelations: any;
 
     constructor(
         @InjectRepository(Report)
@@ -120,8 +121,11 @@ export class ReportDigestionService {
             await this.insertPaymentToReportDigestionSingle(report.id, payment.id, query.ownerAccountId!);
         }
 
-
-        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak...
+        // arkaplanda 
+        this.checkRelations().then(() => {
+            console.log("Rapor ilişkileri çalıştırıldı ve bitti.");
+        });
+        // TODO: Komisyon geliri, masraflar için ayrıca rapor açılacak... Edit: Yaptımmmm
     }
 
     async insertPaymentToReportDigestionSingle(reportId: string, paymentId: string, accountId: string) {
@@ -479,84 +483,97 @@ export class ReportDigestionService {
     // ─────────────────────────────────────────────────────────────
     @Cron('0 */1 * * * *') // Her 1 dakikada bir çalışır
     async checkRelations() {
-        // DigestionID ile birden fazla instance varsa aynı raporu işlemesinler diye kontrol yapıyorum. 
-        // DigestionId'ye sahip olan raporları işleyecek instance'ı seçiyorum, diğerlerini bekletiyorum. 
-        // DigestionId'li raporları işleyecek instance'ı seçerken de zaten digestionId'si olan raporları dikkate almıyorum, 
-        // böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
-        const digestionId = Date.now() + '_' + randomUUID();
+        if (this.checkingRelations) {
+            this.logger.debug(`Rapor fetch işlemi devam ediyor, checkRelations atlanıyor. Inflight fetch count: ${this.reportsFetchInflight.size}`);
+            return;
+        }
+        this.checkingRelations = true;
+        try {
+            // DigestionID ile birden fazla instance varsa aynı raporu işlemesinler diye kontrol yapıyorum. 
+            // DigestionId'ye sahip olan raporları işleyecek instance'ı seçiyorum, diğerlerini bekletiyorum. 
+            // DigestionId'li raporları işleyecek instance'ı seçerken de zaten digestionId'si olan raporları dikkate almıyorum, 
+            // böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
+            const digestionId = Date.now() + '_' + randomUUID();
 
-        // DIGESTING (zaten işlenenleri) alıyorum ve bir sonraki query'de onlara dokunmuyorum. Çünkü birden fazla instance aynı raporu işleyebilir, bu da hesaplama hatalarına neden olacak.
-        const alreadyWorkingReports = (
-            await this.reportPaymentRelationRepo
-                .createQueryBuilder('relation')
-                .select('relation.reportId')
-                .distinctOn(['relation.reportId'])
-                .where('relation.digestionStatus = :status', { status: 'DIGESTING' })
-                .getMany()
-        ).map(r => r.reportId);
+            // DIGESTING (zaten işlenenleri) alıyorum ve bir sonraki query'de onlara dokunmuyorum. Çünkü birden fazla instance aynı raporu işleyebilir, bu da hesaplama hatalarına neden olacak.
+            const alreadyWorkingReports = (
+                await this.reportPaymentRelationRepo
+                    .createQueryBuilder('relation')
+                    .select('relation.reportId')
+                    .distinctOn(['relation.reportId'])
+                    .where('relation.digestionStatus = :status', { status: 'DIGESTING' })
+                    .getMany()
+            ).map(r => r.reportId);
 
-        // WAITING durumundaki raporları DIGESTING yapıyorum. 
-        // Böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
-        await this.reportPaymentRelationRepo.update(
-            {
-                digestionStatus: 'WAITING',
-                // Boş array olunca hata veriyor... Eğer arkada zaten çalışan yoksa hepsini dahil edebiliriz...
-                ...(alreadyWorkingReports.length > 0 ? { reportId: Not(In(alreadyWorkingReports)) } : {}),
-            },
-            {
-                digestionStatus: 'DIGESTING',
-                digestionId: digestionId,
-                digestionStartedAt: new Date(),
-            },
-        );
+            // WAITING durumundaki raporları DIGESTING yapıyorum. 
+            // Böylece aynı raporu birden fazla instance'ın işlemesini engelliyorum.
+            await this.reportPaymentRelationRepo.update(
+                {
+                    digestionStatus: 'WAITING',
+                    // Boş array olunca hata veriyor... Eğer arkada zaten çalışan yoksa hepsini dahil edebiliriz...
+                    ...(alreadyWorkingReports.length > 0 ? { reportId: Not(In(alreadyWorkingReports)) } : {}),
+                },
+                {
+                    digestionStatus: 'DIGESTING',
+                    digestionId: digestionId,
+                    digestionStartedAt: new Date(),
+                },
+            );
 
-        const relationsWaiting = await this.reportPaymentRelationRepo.find({
-            where: { digestionId, digestionStatus: 'DIGESTING' },
-            loadEagerRelations: true,
-        });
-        if (relationsWaiting.length === 0) return;
+            const relationsWaiting = await this.reportPaymentRelationRepo.find({
+                where: { digestionId, digestionStatus: 'DIGESTING' },
+                loadEagerRelations: true,
+            });
+            if (relationsWaiting.length === 0) return;
 
-        for (const relation of relationsWaiting) {
-            const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
-            const freshReport = await this.reportRepo.findOne({ where: { id: relation.reportId }, relations: ['query'] });
-            if (!freshReport) {
-                this.logger.warn(`Report ${relation.reportId} bulunamadı, atlanıyor`);
-                continue;
+            for (const relation of relationsWaiting) {
+                const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
+                const freshReport = await this.reportRepo.findOne({ where: { id: relation.reportId }, relations: ['query'] });
+                if (!freshReport) {
+                    this.logger.warn(`Report ${relation.reportId} bulunamadı, atlanıyor`);
+                    continue;
+                }
+                const accountId = freshReport.query?.ownerAccountId;
+                if (!accountId) {
+                    this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
+                    continue;
+                }
+                let flag = payment.includeInReportDigestion
+                if (flag && freshReport.reportType === "SELLER") {
+                    await this.updateExpensesForReport(freshReport.id, payment, accountId);
+                    await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
+                    await this.digestPayment(freshReport, payment);
+                    await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+                }
+                if (flag && freshReport.reportType === "PLATFORM") {
+                    await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+                }
+                if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
+
+                    await this.digestComissionIncomeForReport(freshReport,
+                        payment,
+                        freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
+
+                }
+
+                if (flag && freshReport.reportType === "PLATFORM_FLOW") {
+                    await this.updateExpensesForReport(freshReport.id, payment, accountId, null);
+                    await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+                    await this.digestPlatformFlowReport(freshReport, payment);
+                    await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
+                }
+
+                relation.digestionStatus = 'COMPLETED';
+                relation.digestionId = '';
+                relation.digestionCompletedAt = new Date();
+                await this.reportPaymentRelationRepo.save(relation);
             }
-            const accountId = freshReport.query?.ownerAccountId;
-            if (!accountId) {
-                this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
-                continue;
-            }
-            let flag = payment.includeInReportDigestion
-            if (flag && freshReport.reportType === "SELLER") {
-                await this.updateExpensesForReport(freshReport.id, payment, accountId);
-                await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
-                await this.digestPayment(freshReport, payment);
-                await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
-            }
-            if (flag && freshReport.reportType === "PLATFORM") {
-                await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
-            }
-            if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
-
-                await this.digestComissionIncomeForReport(freshReport,
-                    payment,
-                    freshReport.reportType === "PLATFORM_SELLER" ? accountId : undefined);
-
-            }
-
-            if (flag && freshReport.reportType === "PLATFORM_FLOW") {
-                await this.updateExpensesForReport(freshReport.id, payment, accountId, null);
-                await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
-                await this.digestPlatformFlowReport(freshReport, payment);
-                await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
-            }
-
-            relation.digestionStatus = 'COMPLETED';
-            relation.digestionId = '';
-            relation.digestionCompletedAt = new Date();
-            await this.reportPaymentRelationRepo.save(relation);
+        }
+        catch (err) {
+            this.logger.error(`Rapor ilişkileri kontrol edilirken hata oluştu: ${err instanceof Error ? err.stack : JSON.stringify(err)}`);
+        }
+        finally {
+            this.checkingRelations = false;
         }
     }
 
