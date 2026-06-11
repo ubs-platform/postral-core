@@ -75,7 +75,7 @@ services:
     ports:
       - 27017:27017
     environment:
-      - MONGO_INITDB_DATABASE=test # Optional...
+      - MONGO_INITDB_DATABASE=${POSTRAL_DB_NAME-postral_core} # Optional...
       - MONGO_INITDB_ROOT_USERNAME=${NX_MONGO_USERNAME-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${NX_MONGO_PASSWORD-admin}
     volumes:
@@ -88,7 +88,7 @@ services:
           # MYSQL_ROOT_PASSWORD: <your_root_password_here>
           - MYSQL_USER=postral
           - MYSQL_PASSWORD=postral
-          - MARIADB_DATABASE=postral_core
+          - MARIADB_DATABASE=${POSTRAL_DB_NAME-postral_core}
           - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true
       ports:
           - '3306:3306'
