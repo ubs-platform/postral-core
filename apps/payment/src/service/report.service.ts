@@ -175,7 +175,8 @@ export class ReportService {
         let allowedGroup: string | FindOperator<any> = In(["PLATFORM_SELLER", "PLATFORM_FLOW", "PLATFORM"]);
         if (q.admin !== 'true' && user) {
             userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
-            allowedGroup = In(["SELLER", "PLATFORM_SELLER"]); // Satıcılar da ödeyeceği komisyonu görmesi daha doğru olacak... Onun dışında kendisini ilgilendiern direkt raporları görecek. Yani SELLER
+            // allowedGroup = In(["SELLER", "PLATFORM_SELLER"]); // Satıcılar da ödeyeceği komisyonu görmesi daha doğru olacak... Onun dışında kendisini ilgilendiern direkt raporları görecek. Yani SELLER
+            allowedGroup = In(["SELLER"]); // Rapor içinde masraflarda komisyonunu görüyor. Bu komisyon raporları platformun yani bizim işimizi kolaylaştıracak
             // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim
         }
 
