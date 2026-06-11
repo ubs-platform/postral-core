@@ -6,78 +6,67 @@ services:
     volumes:
       - ./config/postral-ui.conf:/etc/nginx/nginx.conf:ro
 
-    # build:
-    #   context:
   postral-core-api:
     image: hcangunduz/tk-postral-payment:${POSTRAL_CORE_API_VERSION-1.0.2-beta}
-    # build:
-    #   context: https://github.com/ubs-platform/postral-core.git#master
-    #   dockerfile: Dockerfile
-    #   args:
-    #     - "APP_NAME=payment"
     ports:
-      - "3767:3767"
+      - "${PORT-3767}:${PORT-3767}"
     environment:
-      - NX_MICROSERVICE_TYPE=ENGINE5
-      - E5_HOST=engine5
-      - E5_PORT=3535
-      - U_USERS_PW_RESET_URL=/password-reset/resolve/:id?from=ubs
-      - U_USERS_REGISTERED_USER_VALIDATING_URL=/login?activationKey=:key
-      - U_USERS_MONA_INTERNAL_COM_PORT=13001
-      - U_USERS_MONA_INTERNAL_COM_HOST=localhost
-      - PORT=3767
+      - NX_MICROSERVICE_TYPE=${NX_MICROSERVICE_TYPE-ENGINE5}
+      - E5_HOST=${E5_HOST-engine5}
+      - E5_PORT=${E5_PORT-3535}
+      - PORT=${PORT-3767}
       - POSTRAL_INSTANCE_ID=payment_local
       - POSTRAL_DB_DRIVER=mariadb
-      - POSTRAL_DB_HOST=mariadb
-      - POSTRAL_DB_PORT=3306
-      - POSTRAL_DB_USER=root
-      - POSTRAL_DB_PASSWORD=
-      - POSTRAL_DB_NAME=postral_core
-      - POSTRAL_DB_SSL=false
-      - NX_MONGO_PASSWORD=admin
-      - NX_SECRET_JWT=23ac43b5e6f2a12
-      - NX_SECRET_PW=secret
+      - POSTRAL_DB_HOST=${POSTRAL_DB_HOST-mariadb}
+      - POSTRAL_DB_PORT=${POSTRAL_DB_PORT-3306}
+      - POSTRAL_DB_USER=${POSTRAL_DB_USER-root}
+      - POSTRAL_DB_PASSWORD=${POSTRAL_DB_PASSWORD-}
+      - POSTRAL_DB_NAME=${POSTRAL_DB_NAME-postral_core}
+      - POSTRAL_DB_SSL=${POSTRAL_DB_SSL-false}
+      - NX_MONGO_PASSWORD=${NX_MONGO_PASSWORD-admin}
+      - NX_SECRET_JWT=${NX_SECRET_JWT-23ac43b5e6f2a12}
+      - NX_SECRET_PW=${NX_SECRET_PW-secret}
       
   engine5:
     image: hcangunduz/engine5:${ENGINE5_VERSION-0.0.12-alpha}
     ports:
       - 3535:3535
     environment:
-      - E5_PORT=3535
-      - ENABLE_TLS=false
-      - REQUIRE_AUTH=false
+      - E5_PORT=${E5_PORT-3535}
+      - ENABLE_TLS=${ENABLE_TLS-false}
+      - REQUIRE_AUTH=${REQUIRE_AUTH-false}
 
   ubs-dev-monolith:
     image: hcangunduz/ubs-mona-dev-monolith:${UBS_VERSION-6.8.0}
     ports:
-      - 3000:3000
+      - ${UBS_PORT-3000}:${UBS_PORT-3000}
     environment:
-      - NX_MICROSERVICE_TYPE=ENGINE5
-      - E5_HOST=engine5
-      - E5_PORT=3535
-      - NX_MONGO_URL=my-mongodb:27017
-      - NX_MONGO_USERNAME=admin
-      - NX_MONGO_PASSWORD=admin
-      - NX_SECRET_JWT=23ac43b5e6f2a12
-      - NX_SECRET_PW=secret
-      - U_USERS_PW_RESET_URL=/password-reset/resolve/:id?from=ubs
-      - U_USERS_REGISTERED_USER_VALIDATING_URL=/login?activationKey=:key
+      - NX_MICROSERVICE_TYPE=${NX_MICROSERVICE_TYPE-ENGINE5}
+      - E5_HOST=${E5_HOST-engine5}
+      - E5_PORT=${E5_PORT-3535}
+      - NX_MONGO_URL=${NX_MONGO_URL-mongodb://my-mongodb:27017}
+      - NX_MONGO_USERNAME=${NX_MONGO_USERNAME-admin}
+      - NX_MONGO_PASSWORD=${NX_MONGO_PASSWORD-admin}
+      - NX_SECRET_JWT=${NX_SECRET_JWT-23ac43b5e6f2a12}
+      - NX_SECRET_PW=${NX_SECRET_PW-secret}
+      - U_USERS_PW_RESET_URL=${U_USERS_PW_RESET_URL-/password-reset/resolve/:id?from=ubs}
+      - U_USERS_REGISTERED_USER_VALIDATING_URL=${U_USERS_REGISTERED_USER_VALIDATING_URL-/login?activationKey=:key}
       # Default admin user for development purposes. If not set, admin will be "kyle" with password "kyle".
-      - UBS_USERS_INITIAL_USERNAME=admin
-      - UBS_USERS_INITIAL_PW=admin
-      - UBS_USERS_INITIAL_EMAIL=admin@localhost
-      - UBS_USERS_INITIAL_NAME=Admin
-      - UBS_USERS_INITIAL_SURNAME=Tetakent
+      - UBS_USERS_INITIAL_USERNAME=${UBS_USERS_INITIAL_USERNAME-admin}
+      - UBS_USERS_INITIAL_PW=${UBS_USERS_INITIAL_PW-admin}
+      - UBS_USERS_INITIAL_EMAIL=${UBS_USERS_INITIAL_EMAIL-admin@localhost}
+      - UBS_USERS_INITIAL_NAME=${UBS_USERS_INITIAL_NAME-Admin}
+      - UBS_USERS_INITIAL_SURNAME=${UBS_USERS_INITIAL_SURNAME-Tetakent}
       # Process count with main proxy. It can be set for better performance. But we don't recommend at first start. You can set it after you make sure that everything is working. If you set it at the beginning, you may encounter some issues. So we recommend to set it after you make sure that everything is working.
       # - UBS_MAIN_PROCESS=true
       # - UBS_MAIN_PROCESS_COUNT=3
-      - NX_MONGO_DBNAME=dev_monolith
-      - PORT=3000
-      - UNOTIFY_DEFAULT_LANGUAGE=en-us
-      - UNOTIFY_MAIL_FROM=info@tester.tetakent.com
-      - UNOTIFY_MAIL_SERVER_HOST=localhost
-      - UNOTIFY_MAIL_SERVER_PORT=25
-      - UNOTIFY_MAIL_CERT_IGNORE_SSL=true
+      - NX_MONGO_DBNAME=${NX_MONGO_DBNAME-dev_monolith}
+      - PORT=${PORT-3000}
+      - UNOTIFY_DEFAULT_LANGUAGE=${UNOTIFY_DEFAULT_LANGUAGE-en-us}
+      - UNOTIFY_MAIL_FROM=${UNOTIFY_MAIL_FROM-info@tester.tetakent.com}
+      - UNOTIFY_MAIL_SERVER_HOST=${UNOTIFY_MAIL_SERVER_HOST-localhost}
+      - UNOTIFY_MAIL_SERVER_PORT=${UNOTIFY_MAIL_SERVER_PORT-25}
+      - UNOTIFY_MAIL_CERT_IGNORE_SSL=${UNOTIFY_MAIL_CERT_IGNORE_SSL-true}
 
 
   my-mongodb:
@@ -86,9 +75,9 @@ services:
     ports:
       - 27017:27017
     environment:
-      - MONGO_INITDB_DATABASE=test
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=admin
+      - MONGO_INITDB_DATABASE=test # Optional...
+      - MONGO_INITDB_ROOT_USERNAME=${NX_MONGO_USERNAME-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${NX_MONGO_PASSWORD-admin}
     volumes:
       - ./mongo-entrypoint:/docker-entrypoint-initdb.d
       - ./mongo-data:/data/db
