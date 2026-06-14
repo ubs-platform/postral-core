@@ -8,7 +8,7 @@ REPO_OWNER="ubs-platform"
 REPO_NAME="postral-core"
 BRANCH="master"
 RAW_BASE_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}"
-INSTALL_DIR="${HOME}/.bin/tetakent/postral"
+INSTALL_DIR="${HOME}/.local/bin/tetakent/postral"
 
 # Files to download (paths relative to repo root)
 FILES=(
