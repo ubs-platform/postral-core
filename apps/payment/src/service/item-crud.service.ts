@@ -85,6 +85,16 @@ export class ItemCrudService extends BaseCrudService<
         if (ids != null) {
             where.sellerAccountId = In(ids);
         }
+        if (s?.entityGroup) {
+            where.entityGroup = s.entityGroup;
+        }
+        if (s?.entityName) {
+            where.entityName = s.entityName;
+        }
+        if (s?.entityId) {
+            where.entityId = s.entityId;
+        }
+        // exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
         // exec(`kdialog --msgbox "Generated where clause: ${JSON.stringify(where)}" 10 50`);
         return where;
     }
