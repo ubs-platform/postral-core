@@ -342,6 +342,7 @@ export class PaymentService {
             await this.postPaymentOperation(payment);
             const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
             this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+            this.eventSenderService.sendPaymentCompletedEvent(fullDto);
             // Alıcı hesabına webhook bildirim gönder
             const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
             for (const accountId of accountIds) {
