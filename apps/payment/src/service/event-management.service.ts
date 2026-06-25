@@ -75,4 +75,8 @@ export class EventSenderService {
         this.kfk.emit('postral/report-digestion-queue-insertion', { paymentId });
     }
 
+    sendPaymentCompletedEvent(paymentFullDTO: PaymentFullDTO): void {
+        this.kfk.emit('postral/payment-completed', paymentFullDTO);
+    }
+
 }
