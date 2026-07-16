@@ -41,9 +41,21 @@ export class PaymentController {
     ) {
         try {
             const isProduction = process.env.NODE_ENV === 'production';
-            const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 1, size: 2 }, isProduction)
-            if (!paymentChList.content) {
+            const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 0, size: 2 }, isProduction)
+            if (!paymentChList.content?.length) {
                 throw new BadRequestException("No payment channel found")
+            }
+            const paymentCh = paymentChList.content[0]
+            if (!paymentCh.enabled) {
+                throw new BadRequestException("Payment channel is not enabled")
+            }
+            if (paymentCh.devOnly && isProduction) {
+                throw new BadRequestException("Payment channel is not available in production")
+            }
+            if (!paymentCh.allowMultipleOperations) {
+                if (await this.ps.hasOngoingPaymentOperations(id)) {
+                    throw new BadRequestException("There are ongoing payment operations");
+                }
             }
             return await this.ps.startPaymentOperation(id, captureInfo);
         } catch (error) {

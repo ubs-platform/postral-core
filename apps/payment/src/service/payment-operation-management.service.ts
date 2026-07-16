@@ -22,6 +22,7 @@ import { AdminSettingsService } from './admin-settings.service';
 @Injectable()
 export class PaymentOperationManagementService {
 
+
     /**
      *
      */
@@ -189,7 +190,7 @@ export class PaymentOperationManagementService {
 
 
     private async checkAndUpdateOperationStatusesRaw(
-        paymentOperations: PaymentChannelOperation[], 
+        paymentOperations: PaymentChannelOperation[],
     ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
@@ -281,5 +282,44 @@ export class PaymentOperationManagementService {
             paymentOperation.status = 'COMPLETED';
             await this.paymentChannelOperationRepo.save(paymentOperation);
         }
+    }
+
+
+    /**
+     * İşlemde olan ödeme operasyonlarını kontrol eder. Eğer aynı ödeme için birden fazla işlem yapılmasına izin verilmiyorsa, bu method ile mevcut işlemler kontrol edilir ve kullanıcıya bilgi verilir. Bu, özellikle kullanıcıların aynı anda birden fazla ödeme başlatmasını önlemek için önemlidir.
+     * @param paymentId Kontrol edilecek ödeme ID'si.
+     * @returns OngoingPaymentOperationsResult: İşlemde olan operasyonlar ve durum bilgisi.
+     * 
+     * Bu method, ödeme operasyonlarının durumunu kontrol etmek için kullanılabilir ve kullanıcı deneyimini iyileştirmek için önemlidir.
+     * 
+     * Not: Bu method, ödeme operasyonlarının durumunu kontrol etmek için kullanılabilir, ancak ödeme işlemlerinin tamamlanması veya iptal edilmesi gibi işlemleri gerçekleştirmez. Bu işlemler için ilgili servisler kullanılmalıdır.
+     * 
+     * @returns {Promise<{ ongoing: boolean; message: string; operations?: PaymentChannelOperation[] }>} İşlemde olan operasyonlar ve durum bilgisi.
+     * 
+     * @throws {Error} Eğer ödeme operasyonları kontrol edilirken bir hata oluşursa, hata fırlatılır.
+     * 
+     * @example
+     * const result = await paymentOperationManagementService.checkOngoingPaymentOperations(paymentId);
+     * if (result.ongoing) {
+     *     console.log(result.message);
+     *     // İşlemde olan operasyonlarla ilgili ek işlemler yapılabilir.
+     * } else {
+     *     console.log(result.message);
+     *     // İşlem başlatılabilir.
+     * }
+     */
+    async hasOngoingPaymentOperations(paymentId: string): Promise<boolean> {
+
+        const operations = await this.paymentChannelOperationRepo.count({
+            where: [
+                { paymentId: paymentId, status: "READY" },
+                { paymentId: paymentId, status: "WAITING" },
+                { paymentId: paymentId, status: "COMPLETED" },
+            ],
+        });
+        if (operations > 0) {
+            return true;
+        }
+        return false;
     }
 }

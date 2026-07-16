@@ -13,6 +13,12 @@ export class PaymentChannelConfigDTO {
     /** true ise bu kanal sadece dev ortamında görünür */
     devOnly: boolean = false;
 
+    /** Eğer bu kanalda bir işlem devam ediyorsa başka işleme izin verilip verilmemesini ayarlar. 
+     * Eğer ödeme kanalı yeni bir id üretiyorsa, bu kapalı kalması önemlidir. 
+     * Aksi halde müşteriler birden fazla kez kesinti yapılabilir.
+     *   */
+    allowMultipleOperations: boolean = false;
+
     description?: string | null;
 
     createdAt?: Date;

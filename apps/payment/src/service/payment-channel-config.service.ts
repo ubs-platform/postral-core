@@ -31,6 +31,7 @@ export class PaymentChannelConfigService {
             [],
             filter,
         );
+
         return search.map((e) => this.mapper.toDto(e));
     }
 

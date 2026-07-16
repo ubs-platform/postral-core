@@ -272,6 +272,11 @@ export class PaymentService {
         }
     }
 
+
+    async hasOngoingPaymentOperations(paymentId: string): Promise<boolean> {
+        return await this.paymentOperationManagementService.hasOngoingPaymentOperations(paymentId);
+    }
+
     async startPaymentOperation(
         id: string,
         captureInfo: PaymentCaptureInfoDTO,

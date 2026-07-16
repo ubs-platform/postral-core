@@ -21,6 +21,14 @@ export class PaymentChannelConfig {
     @Column({ type: 'boolean', default: false })
     devOnly: boolean = false;
 
+    /** Eğer bu kanalda bir işlem devam ediyorsa başka işleme izin verilip verilmemesini ayarlar. 
+     * Eğer ödeme kanalı yeni bir id üretiyorsa, bu kapalı kalması önemlidir. 
+     * Aksi halde müşteriler birden fazla kez kesinti yapılabilir.
+     *   */
+    @Column({ type: 'boolean', default: false })
+    allowMultipleOperations: boolean = false;
+
+
     @Column({ type: 'varchar', nullable: true })
     description: string | null = null;
 

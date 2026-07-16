@@ -14,6 +14,7 @@ export class PaymentChannelConfigMapper {
             description: entity.description,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
+            allowMultipleOperations: entity.allowMultipleOperations,
         };
     }
 
@@ -22,6 +23,7 @@ export class PaymentChannelConfigMapper {
         entity.name = dto.name;
         entity.enabled = dto.enabled ?? true;
         entity.devOnly = dto.devOnly ?? false;
+        entity.allowMultipleOperations = dto.allowMultipleOperations ?? false;
         entity.description = dto.description ?? null;
         return entity;
     }
