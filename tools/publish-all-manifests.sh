@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#skip "testo" app for now, because it is not ready for release yet
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 for APP_DIR in apps/*/; do
     APP=$(basename "$APP_DIR")
@@ -11,6 +11,6 @@ for APP_DIR in apps/*/; do
         continue
     fi
 
-    echo "Releasing $APP"
-    $(dirname ${BASH_SOURCE[0]})/release-app.sh $APP
+    echo "Publishing manifest for $APP"
+    "$SCRIPT_DIR/publish-app-manifest.sh" "$APP"
 done
