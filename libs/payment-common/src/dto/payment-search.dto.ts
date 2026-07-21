@@ -21,6 +21,7 @@ export interface PaymentSearchFlatDTO  {
      * Örneğin, bir satıcı kendi hesaplarına ait ödemeleri görmelidir, müşteri ise sadece kendi yaptığı ödemeleri görmelidir.
      */
     searchSide?: 'USER' | "ADMIN";
+    activeSessionId?: string;
 }
 
 export interface PaymentSearchPaginationFlatDTO extends PaymentSearchFlatDTO, SearchRequest {

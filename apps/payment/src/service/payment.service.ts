@@ -29,6 +29,7 @@ import { AccountPaymentTransactionService } from './account-payment-transaction.
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { WebhookDispatchService } from './webhook-dispatch.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PaymentService {
@@ -197,7 +198,49 @@ export class PaymentService {
         return paymentDtoFinal;
     }
 
+    private async generateActiveSessionId(): Promise<string> {
+        // Generate a random uuid
+        let uuid = "";
+        do {
+            const candidateUUID = uuidv4();
+            const existing = await this.paymentrepo.findOne({
+                where: [
+                    { activeSessionId: candidateUUID, paymentStatus: "INITIATED" },
+                    { activeSessionId: candidateUUID, paymentStatus: "WAITING" }
+                ]
+            });
+            if (!existing) {
+                uuid = candidateUUID;
+            }
+        } while (!uuid);
+
+        return uuid;
+    }
+
     private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
+        let activeSessionId: string | undefined = pdto.activeSessionId, 
+            generateActiveSessionId: boolean = pdto.generateActiveSessionId || false;
+
+        if (generateActiveSessionId) {
+            activeSessionId = await this.generateActiveSessionId();
+        } else if (activeSessionId) {
+            // Check if the activeSessionId is already in use for another payment that is not completed or failed
+            const existing = await this.paymentrepo.findOne({
+                where: [
+                    { activeSessionId: pdto.activeSessionId, paymentStatus: "INITIATED" },
+                    { activeSessionId: pdto.activeSessionId, paymentStatus: "WAITING" }
+                ]
+            });
+            if (existing) {
+                throw new BadRequestException('Active session ID is already in use for another payment');
+            }
+        }
+        /**
+         * else {
+         *  // Bağımsız bir payment başlatılıyor. Bu durumda activeSessionId null olabilir ve bu payment ile ilişkilendirilmiş bir oturum yoktur.
+         * }
+         */
+        
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount = await this.accountService.fetchOne(customerAccountId);
         if (pdto.type === "REFUND" && !pdto.refundRequestId) {
@@ -236,6 +279,7 @@ export class PaymentService {
         p.taxAmount = taxTotal;
         p.items = items;
         p.customerAccountId = customerAccountId;
+        p.activeSessionId = activeSessionId;
         // p.customerAccountName = customerAccount.name;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
