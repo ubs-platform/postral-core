@@ -430,6 +430,9 @@ export class PaymentService {
                 // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
                 payment.paymentStatus = 'FAILED';
                 payment.errorStatus = "EXPIRED";
+
+                // Diğer WAITING payment operasyonlarını iptal et. (cancelPaymentOperationsByPaymentId)
+                await this.paymentOperationManagementService.cancelPaymentOperationsByPaymentId(id);
             }
 
             payment = await this.paymentrepo.save(payment);
