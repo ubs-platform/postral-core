@@ -30,8 +30,6 @@ export interface PaymentDTO {
     includeInReportDigestion?: boolean;
     openPayment?: boolean;
     activeSessionId?: string;
-    generateActiveSessionId?: boolean;
-}
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     items: PaymentItemDto[];
