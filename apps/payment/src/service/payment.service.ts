@@ -29,10 +29,14 @@ import { AccountPaymentTransactionService } from './account-payment-transaction.
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { WebhookDispatchService } from './webhook-dispatch.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PaymentService {
     paymentStream = new Subject<PaymentDTO>();
+
+    // Default olarak 15 dakikadır uzun süredir bekleyen ödemeler FAILED olarak işaretlenir. BU süre env ile değiştirilebilir. (ms cinsinden)
+    private readonly PAYMENT_EXPIRE_MS = parseInt(process.env["PAYMENT_EXPIRE_MS"] || "") || 15 * 60 * 1000;
 
     constructor(
         @InjectRepository(Payment)
@@ -197,7 +201,49 @@ export class PaymentService {
         return paymentDtoFinal;
     }
 
+    private async generateActiveSessionId(): Promise<string> {
+        // Generate a random uuid
+        let uuid = "";
+        do {
+            const candidateUUID = uuidv4();
+            const existing = await this.paymentrepo.findOne({
+                where: [
+                    { activeSessionId: candidateUUID, paymentStatus: "INITIATED" },
+                    { activeSessionId: candidateUUID, paymentStatus: "WAITING" }
+                ]
+            });
+            if (!existing) {
+                uuid = candidateUUID;
+            }
+        } while (!uuid);
+
+        return uuid;
+    }
+
     private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
+        let activeSessionId: string | undefined = pdto.activeSessionId,
+            generateActiveSessionId: boolean = pdto.generateActiveSessionId || false;
+
+        if (generateActiveSessionId) {
+            activeSessionId = await this.generateActiveSessionId();
+        } else if (activeSessionId) {
+            // Check if the activeSessionId is already in use for another payment that is not completed or failed
+            const existing = await this.paymentrepo.findOne({
+                where: [
+                    { activeSessionId: pdto.activeSessionId, paymentStatus: "INITIATED" },
+                    { activeSessionId: pdto.activeSessionId, paymentStatus: "WAITING" }
+                ]
+            });
+            if (existing) {
+                throw new BadRequestException('Active session ID is already in use for another payment');
+            }
+        }
+        /**
+         * else {
+         *  // Bağımsız bir payment başlatılıyor. Bu durumda activeSessionId null olabilir ve bu payment ile ilişkilendirilmiş bir oturum yoktur.
+         * }
+         */
+
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount = await this.accountService.fetchOne(customerAccountId);
         if (pdto.type === "REFUND" && !pdto.refundRequestId) {
@@ -236,6 +282,8 @@ export class PaymentService {
         p.taxAmount = taxTotal;
         p.items = items;
         p.customerAccountId = customerAccountId;
+        p.activeSessionId = activeSessionId;
+        p.failOnPaymentChannelFailure = pdto.failOnPaymentChannelFailure ?? false;
         // p.customerAccountName = customerAccount.name;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
@@ -335,12 +383,11 @@ export class PaymentService {
             payment.paymentStatus = 'COMPLETED';
         }
 
-        payment = await this.paymentrepo.save(payment);
-        const dto = this.paymentMapper.toDto(payment);
-        this.paymentStream.next(dto);
+
 
         if (payment.paymentStatus === 'COMPLETED') {
             // Ödeme tamamlandıysa, yetkilendirilmiş ödemeleri tetikle
+            payment = await this.paymentrepo.save(payment);
             await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
                 id,
             );
@@ -361,8 +408,40 @@ export class PaymentService {
                     });
                 }
             }
+        } else {
+            /**
+             * Eğer fail olan ödeme varsa
+             * - failOnPaymentChannelFailure = true ise payment FAILED olur
+             * - failOnPaymentChannelFailure = false ise payment INITIATED olur
+             * Eğer fail olan ödeme yoksa, ya da yukarıdaki sebepten dolayı 
+             * ödeme INITIATED ve ya WAITING ise, ve PAYMENT_EXPIRE_MS süre 
+             * boyunca beklediyse, payment FAILED olur ve 
+             * errorStatus = EXPIRED olur.
+             */
+            const hasFailedOperations = await this.paymentOperationManagementService.hasFailedPaymentOperations(id);
+            if (hasFailedOperations && payment.failOnPaymentChannelFailure) {
+                payment.paymentStatus = 'FAILED';
+            } else if (!(await this.paymentOperationManagementService.hasOngoingPaymentOperations(id))) {
+                // aktif bir operasyon yoksa, payment INITIATED olur. (WAITING ise zaten bekliyor demektir)
+                payment.paymentStatus = "INITIATED";
+            }
+
+            // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
+            if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+                // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
+                payment.paymentStatus = 'FAILED';
+                payment.errorStatus = "EXPIRED";
+
+                // Diğer WAITING payment operasyonlarını iptal et. (cancelPaymentOperationsByPaymentId)
+                await this.paymentOperationManagementService.cancelPaymentOperationsByPaymentId(id);
+            }
+
+            payment = await this.paymentrepo.save(payment);
+
         }
 
+        const dto = this.paymentMapper.toDto(payment);
+        this.paymentStream.next(dto);
         return dto;
     }
 

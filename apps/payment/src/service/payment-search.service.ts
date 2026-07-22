@@ -150,6 +150,11 @@ export class PaymentSearchService {
                 paymentChannelId: In(modelSearch.paymentChannelIds.split(',')),
             });
         }
+        if (modelSearch.activeSessionId) {
+            Object.assign(where, {
+                activeSessionId: modelSearch.activeSessionId,
+            });
+        }
         if (modelSearch.dateFrom && modelSearch.dateTo) {
             Object.assign(where, {
                 createdAt: Between(modelSearch.dateFrom, modelSearch.dateTo),

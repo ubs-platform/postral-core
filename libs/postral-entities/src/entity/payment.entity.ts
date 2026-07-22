@@ -107,6 +107,19 @@ export class Payment {
     @Column({ default: false })
     openPayment: boolean = false;
 
+    /**
+     * Aktif oturum idsi, eğer bir payment başlatıldıysa ve henüz tamamlanmadıysa, bu payment ile ilişkilendirilmiş oturumun idsi burada tutulur. Bu sayede bir kullanıcı aynı anda birden fazla ödeme başlatamaz.
+     */
+    @Column({ nullable: true })
+    activeSessionId?: string;
+
+    /**
+     * Eğer bir ödeme kanalı başarısız olursa, payment hemen failed ya da initiated durumuna düşmesini ayarlamak için bu alan kullanılır. Ödeme kanalı başarısız olursa, paymentService bu alanı true yapar ve paymentStatus'ü failed yapar. Eğer false ise, paymentStatus initiated olarak kalır ve kullanıcıya tekrar ödeme kanalı seçme şansı verilir.
+     * 
+     */
+    @Column({ default: false })
+    failOnPaymentChannelFailure: boolean = false;
+
     get customerAccountName(): string {
         return this.customerAccount ? this.customerAccount.name : '';
     }

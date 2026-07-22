@@ -31,6 +31,7 @@ export class PaymentMapper {
             updatedAt: saved.updatedAt,
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
+            activeSessionId: saved.activeSessionId,
         };
     }
 
@@ -53,6 +54,7 @@ export class PaymentMapper {
             taxes: this.paymentTaxMapper.toDto(saved.taxes),
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
+            activeSessionId: saved.activeSessionId,
         };
     }
 }

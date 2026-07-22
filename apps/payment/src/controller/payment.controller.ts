@@ -52,10 +52,8 @@ export class PaymentController {
             if (paymentCh.devOnly && isProduction) {
                 throw new BadRequestException("Payment channel is not available in production")
             }
-            if (!paymentCh.allowMultipleOperations) {
-                if (await this.ps.hasOngoingPaymentOperations(id)) {
-                    throw new BadRequestException("There are ongoing payment operations");
-                }
+            if (await this.ps.hasOngoingPaymentOperations(id)) {
+                throw new BadRequestException("There are ongoing payment operations");
             }
             return await this.ps.startPaymentOperation(id, captureInfo);
         } catch (error) {
