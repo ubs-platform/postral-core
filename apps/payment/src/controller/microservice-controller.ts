@@ -8,7 +8,7 @@ export class MicroserviceController {
     @EventPattern("insert-user-capability")
     async handleExampleEvent(data: any) {
         console.info(data)
-        exec(`kdialog --msgbox "Received event with data: ${JSON.stringify(data)}"`);
+        // exec(`kdialog --msgbox "Received event with data: ${JSON.stringify(data)}"`);
     }
     // Controller methods would go here
 }
