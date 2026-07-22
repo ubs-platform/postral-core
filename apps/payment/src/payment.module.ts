@@ -78,6 +78,9 @@ import { WebhookConfigController } from './controller/webhook-config.controller'
 import { PaymentChannelConfigService } from './service/payment-channel-config.service';
 import { PaymentChannelConfigMapper } from './mapper/payment-channel-config.mapper';
 import { PaymentChannelConfigController } from './controller/payment-channel-config.controller';
+import { ExternalPlatformService } from './service/external-platform.service';
+import { ExternalPlatformMapper } from './mapper/external-platform.mapper';
+import { ExternalPlatformController } from './controller/external-platform.controller';
 
 import { connection } from 'mongoose';
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
@@ -163,6 +166,8 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         WebhookDispatchService,
         PaymentChannelConfigService,
         PaymentChannelConfigMapper,
+        ExternalPlatformService,
+        ExternalPlatformMapper,
     ],
     controllers: [
         PaymentController,
@@ -186,6 +191,7 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         AdminOperationsController,
         WebhookConfigController,
         PaymentChannelConfigController,
+        ExternalPlatformController,
     ],
 })
 export class PaymentModule { }

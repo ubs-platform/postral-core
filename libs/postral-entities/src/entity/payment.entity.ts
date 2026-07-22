@@ -14,6 +14,7 @@ import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
 export class Payment {
@@ -106,6 +107,18 @@ export class Payment {
     // Açık fatura: ödeme tamamlanmaz ancak güven ilişkisiyle tamamlanmış sayılır. Satıcı onayıyla kapatılır.
     @Column({ default: false })
     openPayment: boolean = false;
+
+    // Harici satış platformu (Hepsiburada, Trendyol vb.). Boş ise Postral üzerinden yapılan normal satıştır.
+    @Column({ nullable: true })
+    externalPlatformId?: string;
+
+    @ManyToOne(() => ExternalPlatform, { nullable: true })
+    @JoinColumn({ name: 'externalPlatformId' })
+    externalPlatform?: ExternalPlatform;
+
+    // Harici platformdaki sipariş kimliği (dış referans)
+    @Column({ nullable: true })
+    externalPlatformOrderId?: string;
 
     get customerAccountName(): string {
         return this.customerAccount ? this.customerAccount.name : '';

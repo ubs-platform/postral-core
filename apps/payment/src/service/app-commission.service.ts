@@ -16,21 +16,35 @@ export class AppComissionService {
     ) { }
 
 
-    async fetchOneForCalculation(sellerAccountId: string, itemClass: string) {
+    async fetchOneForCalculation(sellerAccountId: string, itemClass: string, externalPlatformId?: string) {
+        // Sağlanan boyutların hem spesifik hem de "genel" (null/boş) kombinasyonlarını üretiyoruz.
+        // En spesifik tanım bias DESC ile ilk sırada gelir.
+        const externalPlatformOptions = externalPlatformId
+            ? [externalPlatformId, IsNull()]
+            : [IsNull()];
+        const sellerOptions = sellerAccountId
+            ? [sellerAccountId, IsNull()]
+            : [IsNull()];
+        const itemClassOptions = itemClass ? [itemClass, ""] : [""];
+
+        const where: any[] = [];
+        for (const ep of externalPlatformOptions) {
+            for (const sa of sellerOptions) {
+                for (const ic of itemClassOptions) {
+                    where.push({ externalPlatformId: ep, sellerAccountId: sa, itemClass: ic });
+                }
+            }
+        }
+
         let entity = await this.appComissionRepo.findOne({
-            where: [
-                { itemClass, sellerAccountId },
-                { itemClass, sellerAccountId: IsNull() },
-                { itemClass: "", sellerAccountId },
-                { itemClass: "", sellerAccountId: IsNull() },
-            ],
+            where,
             order: {
                 bias: 'DESC', // Öncelik sırasına göre sonuçları sıralayoruz, böylece en spesifik tanım ilk sırada olur
             },
-            relations: ['sellerAccount'],
+            relations: ['sellerAccount', 'externalPlatform'],
         });
         if (!entity) {
-            console.warn(`No commission definition found for sellerAccountId: ${sellerAccountId}, itemClass: ${itemClass}. Returning with default 0`);
+            console.warn(`No commission definition found for sellerAccountId: ${sellerAccountId}, itemClass: ${itemClass}, externalPlatformId: ${externalPlatformId}. Returning with default 0`);
             return { ...new AppComissionDTO(), "_warning": "No commission definition found. Returning with default 0" }; // Default olarak sıfır komisyon dönebiliriz
         }
         return this.appComissionMapper.toDto(entity);
@@ -44,7 +58,7 @@ export class AppComissionService {
             searchReq?.size || 10,
             searchReq?.page || 0,
             { bias: "asc" }, // Sıralama, önce itemClass'e göre, sonra sellerAccountId'ye göre olsun
-            ["sellerAccount"], // İlişkiler (relations) eklenebilir, eğer ihtiyaç varsa
+            ["sellerAccount", "externalPlatform"], // İlişkiler (relations) eklenebilir, eğer ihtiyaç varsa
             {}
         ));
 

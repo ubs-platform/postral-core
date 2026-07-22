@@ -4,7 +4,7 @@ import { Payment, PostralPaymentItem } from '@tk-postral/postral-entities';
 import { Repository } from 'typeorm';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '@tk-postral/common-utils';
+import { TaxCalculationUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDto,
@@ -13,6 +13,7 @@ import {
     TaxDTO,
     PaymentFullDTO,
     SellerPaymentOrderDTO,
+    CreateExternalPlatformPaymentDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { TransactionMapper } from '../mapper/transaction.mapper';
@@ -29,6 +30,9 @@ import { AccountPaymentTransactionService } from './account-payment-transaction.
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { WebhookDispatchService } from './webhook-dispatch.service';
+import { AdminSettingsService } from './admin-settings.service';
+import { AppComissionService } from './app-commission.service';
+import { ExternalPlatformService } from './external-platform.service';
 
 @Injectable()
 export class PaymentService {
@@ -50,6 +54,9 @@ export class PaymentService {
         private transactionMapper: TransactionMapper,
         private paymentCommonService: PaymentCommonService,
         private webhookDispatchService: WebhookDispatchService,
+        private adminSettingsService: AdminSettingsService,
+        private appComissionService: AppComissionService,
+        private externalPlatformService: ExternalPlatformService,
     ) { }
 
     async onModuleInit() {
@@ -344,26 +351,32 @@ export class PaymentService {
             await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
                 id,
             );
-            await this.postPaymentOperation(payment);
-            const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
-            this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
-            this.eventSenderService.sendPaymentCompletedEvent(fullDto);
-            // Alıcı hesabına webhook bildirim gönder
-            const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
-            for (const accountId of accountIds) {
-                if (accountId) {
-                    this.webhookDispatchService.send(accountId, 'PAYMENT_COMPLETED', {
-                        paymentId: payment.id,
-                        accountId: accountId,
-                    }).catch((err) => {
-                        //TODO: Webhook'ları hem logla hem de başarısızları etiketleyerek sakla. Payloadlar ayrı entity olacak ve cronla tekrar gönderilmeye çalışılacak.
-                        console.error('Webhook dispatch error (PAYMENT_COMPLETED):', err)
-                    });
-                }
-            }
+            await this.onPaymentCompleted(payment);
         }
 
         return dto;
+    }
+
+    // Ödeme COMPLETED olduğunda çalışacak ortak yan etkiler: seller order/transaction üretimi,
+    // rapor digestion kuyruğuna ekleme, tamamlandı eventi ve ilgili hesaplara webhook bildirimi.
+    private async onPaymentCompleted(payment: Payment) {
+        await this.postPaymentOperation(payment);
+        const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
+        this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
+        this.eventSenderService.sendPaymentCompletedEvent(fullDto);
+        // Alıcı hesabına webhook bildirim gönder
+        const accountIds = new Set<Optional<string>>([payment.customerAccountId, ...fullDto.items.map(i => i.sellerAccountId)]);
+        for (const accountId of accountIds) {
+            if (accountId) {
+                this.webhookDispatchService.send(accountId, 'PAYMENT_COMPLETED', {
+                    paymentId: payment.id,
+                    accountId: accountId,
+                }).catch((err) => {
+                    //TODO: Webhook'ları hem logla hem de başarısızları etiketleyerek sakla. Payloadlar ayrı entity olacak ve cronla tekrar gönderilmeye çalışılacak.
+                    console.error('Webhook dispatch error (PAYMENT_COMPLETED):', err)
+                });
+            }
+        }
     }
 
     async handlePaymentOperationStatusUpdated(operationId: string) {
@@ -488,6 +501,103 @@ export class PaymentService {
         await this.generateSellerPaymentOrders(saved);
         // await this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(saved));
         return saved;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Harici platform (Hepsiburada, Trendyol, Amazon, Google Play vb.) satışını
+    // Postral'a kaydeder. Para harici platformda tahsil edildiği için kanal operasyonu
+    // yoktur; ödeme doğrudan COMPLETED olarak kaydedilir ve komisyon/rapor/webhook
+    // yan etkileri tetiklenir.
+    // ─────────────────────────────────────────────────────────────
+    public async createExternalPlatformPayment(dto: CreateExternalPlatformPaymentDTO): Promise<PaymentDTO> {
+        if (!dto.items || dto.items.length === 0) {
+            throw new BadRequestException('External platform payment must contain at least one item');
+        }
+
+        const customerAccount = await this.accountService.fetchOne(dto.customerAccountId);
+        if (!customerAccount) {
+            throw new NotFoundException('Customer account not found for external platform payment');
+        }
+
+        const externalPlatform = await this.externalPlatformService.fetchOne(dto.externalPlatformId);
+        if (!externalPlatform) {
+            throw new NotFoundException('External platform not found');
+        }
+
+        const admSettings = await this.adminSettingsService.getAdminSettings();
+
+        const items: PostralPaymentItem[] = [];
+        const taxesFromItems: TaxDTO[] = [];
+        let totalAmt = 0;
+        let taxTotal = 0;
+
+        for (const inputItem of dto.items) {
+            const itemClass = inputItem.itemClass || '';
+            const comission = await this.appComissionService.fetchOneForCalculation(
+                inputItem.sellerAccountId,
+                itemClass,
+                dto.externalPlatformId,
+            );
+
+            const item = new PostralPaymentItem();
+            item.itemId = inputItem.itemId || '';
+            item.name = inputItem.name;
+            item.quantity = inputItem.quantity;
+            item.unitAmount = inputItem.unitAmount;
+            item.originalUnitAmount = inputItem.unitAmount;
+            item.totalAmount = AmountCalculationUtil.multiplyNumberValues(
+                inputItem.unitAmount,
+                inputItem.quantity,
+            );
+            item.taxPercent = inputItem.taxRate;
+
+            const taxDto = TaxCalculationUtil.generateTaxDto(
+                `${externalPlatform.name} - ${inputItem.taxRate}`,
+                item.totalAmount,
+                inputItem.taxRate,
+            );
+            item.taxAmount = taxDto.taxAmount!;
+            item.unTaxAmount = taxDto.untaxAmount!;
+            item.sellerAccountId = inputItem.sellerAccountId;
+            item.variation = inputItem.variation || '';
+            item.itemClass = itemClass;
+            item.entityGroup = '';
+            item.entityName = '';
+            item.entityId = '';
+            item.unit = inputItem.unit || 'ITEM';
+            item.appComissionPercent = comission.percent;
+            item.appComissionAmount = AmountCalculationUtil.calculateComissionAmountByPercent(
+                admSettings.comissionsCalculatedFromNet ? item.unTaxAmount : item.totalAmount,
+                comission.percent,
+            );
+
+            totalAmt = AmountCalculationUtil.addNumberValues(totalAmt, item.totalAmount);
+            taxTotal = AmountCalculationUtil.addNumberValues(taxTotal, item.taxAmount);
+            taxesFromItems.push(taxDto);
+            items.push(item);
+        }
+
+        const payment = new Payment();
+        payment.type = 'PURCHASE';
+        payment.currency = dto.currency;
+        payment.totalAmount = totalAmt;
+        payment.taxAmount = taxTotal;
+        payment.items = items;
+        payment.customerAccountId = dto.customerAccountId;
+        payment.externalPlatformId = dto.externalPlatformId;
+        payment.externalPlatformOrderId = dto.externalPlatformOrderId;
+        // Para harici platformda tahsil edildiği için ödeme doğrudan tamamlanmış sayılır.
+        payment.paymentStatus = 'COMPLETED';
+        payment.openPayment = false;
+        payment.includeInReportDigestion = true;
+        payment.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
+
+        const saved = await this.paymentrepo.save(payment);
+        await this.onPaymentCompleted(saved);
+
+        const dtoFinal = this.paymentMapper.toDto(saved);
+        this.paymentStream.next(dtoFinal);
+        return dtoFinal;
     }
 
 }

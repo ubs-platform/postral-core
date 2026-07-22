@@ -31,6 +31,8 @@ export class PaymentMapper {
             updatedAt: saved.updatedAt,
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
+            externalPlatformId: saved.externalPlatformId,
+            externalPlatformOrderId: saved.externalPlatformOrderId,
         };
     }
 
@@ -53,6 +55,8 @@ export class PaymentMapper {
             taxes: this.paymentTaxMapper.toDto(saved.taxes),
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
+            externalPlatformId: saved.externalPlatformId,
+            externalPlatformOrderId: saved.externalPlatformOrderId,
         };
     }
 }

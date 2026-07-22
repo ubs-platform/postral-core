@@ -2,9 +2,10 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique }
 import { Payment } from './payment.entity';
 import { Account } from './account.entity';
 import { BigintDbField } from './base';
+import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
-@Unique(['sellerAccountId', 'itemClass'])
+@Unique(['sellerAccountId', 'itemClass', 'externalPlatformId'])
 export class AppComission {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -22,6 +23,14 @@ export class AppComission {
     /* Ürün sınıfı için farklı komisyon oranı girilebilir. Null ise default komisyon oranı geçerli olur. */
     @Column({nullable: true})
     itemClass?: string;
+
+    /* Harici platform için farklı komisyon oranı girilebilir. Null ise platformdan bağımsız (Postral) tanımdır. */
+    @Column({nullable: true})
+    externalPlatformId?: string;
+
+    @ManyToOne(() => ExternalPlatform, { nullable: true })
+    @JoinColumn({ name: 'externalPlatformId' })
+    externalPlatform?: ExternalPlatform;
 
     // 100 üzerinden yüzde olarak komisyon oranı
     @Column({type: 'float'})

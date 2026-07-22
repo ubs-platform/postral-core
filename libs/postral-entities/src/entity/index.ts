@@ -27,6 +27,7 @@ import { DummyEcommerceOperation } from './dummy-ecommerce-operation.entity';
 import { WebhookConfig } from './webhook-config.entity';
 import { WebhookEventLog } from './webhook-event-log.entity';
 import { PaymentChannelConfig } from './payment-channel-config.entity';
+import { ExternalPlatform } from './external-platform.entity';
 
 export { PaymentChannelConfig };
 
@@ -60,6 +61,7 @@ export const PaymentsEntities = [
     WebhookConfig,
     WebhookEventLog,
     PaymentChannelConfig,
+    ExternalPlatform,
 ];
 
 export {
@@ -92,6 +94,7 @@ export {
     DummyEcommerceOperation,
     WebhookConfig,
     WebhookEventLog,
+    ExternalPlatform,
 }
 
 // export * from './payment-item.entity';

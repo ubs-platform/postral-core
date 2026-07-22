@@ -29,6 +29,8 @@ export interface PaymentDTO {
     updatedAt?: Date | string;
     includeInReportDigestion?: boolean;
     openPayment?: boolean;
+    externalPlatformId?: string;
+    externalPlatformOrderId?: string;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {

@@ -14,9 +14,14 @@ export class AppComissionDTO {
     /* Ürün sınıfı için farklı komisyon oranı girilebilir. Null ise default komisyon oranı geçerli olur. */
     itemClass?: string;
 
+    /* Harici platform için farklı komisyon oranı girilebilir. Null ise platformdan bağımsız (Postral) tanımdır. */
+    externalPlatformId?: string;
+
+    externalPlatformName?: string; // Ekstra bilgi olarak harici platform adını da dönebiliriz.
+
     percent: number = 0;
 
-    bias: number = 0; // Sıralamada defaultun son gelmesi için eklenen durumdur. 0: default, 1: sellerAccountId, 2: itemClass, 3: sellerAccountId + itemClass
+    bias: number = 0; // Sıralamada en spesifik tanımın öne gelmesi için bitmask: externalPlatformId(4) + sellerAccountId(2) + itemClass(1), +1 ile 1..8.
 
     createdAt?: Date;
 

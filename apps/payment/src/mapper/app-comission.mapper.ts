@@ -20,6 +20,8 @@ export class AppComissionMapper {
             itemClass: ac.itemClass,
             sellerAccountId: ac.sellerAccountId,
             sellerAccountName: ac.sellerAccount?.name,
+            externalPlatformId: ac.externalPlatformId,
+            externalPlatformName: ac.externalPlatform?.name,
             bias: ac.bias,
             percent: ac.percent,
             createdAt: ac.createdAt,
@@ -31,19 +33,17 @@ export class AppComissionMapper {
         entity: AppComission,
         dto: AppComissionDTO,
     ): AppComission {
-        let bias = 0; 
-        if (dto.sellerAccountId && dto.itemClass) {
-            bias = 4; // En spesifik tanım
-        } else if (dto.sellerAccountId && !dto.itemClass) {
-            bias = 3; // Satıcıya özel, ürün sınıfı genel
-        } else if (!dto.sellerAccountId && dto.itemClass) {
-            bias = 2; // Satıcı genel, ürün sınıfına özel
-        } else {
-            bias = 1; // En genel tanım
-        }
-            
+        // En spesifik tanımın öne gelmesi için bitmask tabanlı bias:
+        // externalPlatformId(4) > sellerAccountId(2) > itemClass(1), +1 ile 1..8 aralığı.
+        const bias =
+            1 +
+            (dto.externalPlatformId ? 4 : 0) +
+            (dto.sellerAccountId ? 2 : 0) +
+            (dto.itemClass ? 1 : 0);
+
         entity.sellerAccountId = dto.sellerAccountId;
         entity.itemClass = dto.itemClass || "";
+        entity.externalPlatformId = dto.externalPlatformId;
         entity.percent = dto.percent || 0;
         entity.bias = bias;
         return entity;
