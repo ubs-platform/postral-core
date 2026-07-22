@@ -283,6 +283,7 @@ export class PaymentService {
         p.items = items;
         p.customerAccountId = customerAccountId;
         p.activeSessionId = activeSessionId;
+        p.failOnPaymentChannelFailure = pdto.failOnPaymentChannelFailure ?? false;
         // p.customerAccountName = customerAccount.name;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
