@@ -35,6 +35,9 @@ import { v4 as uuidv4 } from 'uuid';
 export class PaymentService {
     paymentStream = new Subject<PaymentDTO>();
 
+    // Default olarak 15 dakikadır uzun süredir bekleyen ödemeler FAILED olarak işaretlenir. BU süre env ile değiştirilebilir. (ms cinsinden)
+    private readonly PAYMENT_EXPIRE_MS = parseInt(process.env["PAYMENT_EXPIRE_MS"] || "") || 15 * 60 * 1000;
+
     constructor(
         @InjectRepository(Payment)
         private readonly paymentrepo: Repository<Payment>,
@@ -218,7 +221,7 @@ export class PaymentService {
     }
 
     private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
-        let activeSessionId: string | undefined = pdto.activeSessionId, 
+        let activeSessionId: string | undefined = pdto.activeSessionId,
             generateActiveSessionId: boolean = pdto.generateActiveSessionId || false;
 
         if (generateActiveSessionId) {
@@ -240,7 +243,7 @@ export class PaymentService {
          *  // Bağımsız bir payment başlatılıyor. Bu durumda activeSessionId null olabilir ve bu payment ile ilişkilendirilmiş bir oturum yoktur.
          * }
          */
-        
+
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount = await this.accountService.fetchOne(customerAccountId);
         if (pdto.type === "REFUND" && !pdto.refundRequestId) {
@@ -379,12 +382,11 @@ export class PaymentService {
             payment.paymentStatus = 'COMPLETED';
         }
 
-        payment = await this.paymentrepo.save(payment);
-        const dto = this.paymentMapper.toDto(payment);
-        this.paymentStream.next(dto);
+
 
         if (payment.paymentStatus === 'COMPLETED') {
             // Ödeme tamamlandıysa, yetkilendirilmiş ödemeleri tetikle
+            payment = await this.paymentrepo.save(payment);
             await this.paymentOperationManagementService.firePaymentOperationsByPaymentId(
                 id,
             );
@@ -405,8 +407,37 @@ export class PaymentService {
                     });
                 }
             }
+        } else {
+            /**
+             * Eğer fail olan ödeme varsa
+             * - failOnPaymentChannelFailure = true ise payment FAILED olur
+             * - failOnPaymentChannelFailure = false ise payment INITIATED olur
+             * Eğer fail olan ödeme yoksa, ya da yukarıdaki sebepten dolayı 
+             * ödeme INITIATED ve ya WAITING ise, ve PAYMENT_EXPIRE_MS süre 
+             * boyunca beklediyse, payment FAILED olur ve 
+             * errorStatus = EXPIRED olur.
+             */
+            const hasFailedOperations = await this.paymentOperationManagementService.hasFailedPaymentOperations(id);
+            if (hasFailedOperations && payment.failOnPaymentChannelFailure) {
+                payment.paymentStatus = 'FAILED';
+            } else if (!(await this.paymentOperationManagementService.hasOngoingPaymentOperations(id))) {
+                // aktif bir operasyon yoksa, payment INITIATED olur. (WAITING ise zaten bekliyor demektir)
+                payment.paymentStatus = "INITIATED";
+            }
+
+            // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
+            if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+                // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
+                payment.paymentStatus = 'FAILED';
+                payment.errorStatus = "EXPIRED";
+            }
+
+            payment = await this.paymentrepo.save(payment);
+
         }
 
+        const dto = this.paymentMapper.toDto(payment);
+        this.paymentStream.next(dto);
         return dto;
     }
 
