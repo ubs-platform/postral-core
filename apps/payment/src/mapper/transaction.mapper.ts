@@ -20,6 +20,8 @@ export class TransactionMapper {
         transaction.paymentId = payment.id;
         transaction.sourceAccountId = payment.customerAccountId!;
         transaction.targetAccountId = paymentItem.sellerAccountId!;
+        transaction.billingAccountId = payment.billingAccountId ?? payment.customerAccountId!;
+        transaction.billingAddressId = payment.billingAddressId;
         transaction.paymentStatus = payment.paymentStatus;
         transaction.transactionType = payment.type === 'PURCHASE' ? 'CREDIT_TO_SELLER' : 'DEBIT_FROM_SELLER';
         transaction.openPayment = payment.openPayment;
@@ -46,6 +48,8 @@ export class TransactionMapper {
             sourceAccountName: saved.sourceAccount?.name,
             targetAccountId: saved.targetAccountId,
             targetAccountName: saved.targetAccount?.name,
+            billingAccountId: saved.billingAccountId,
+            billingAddressId: saved.billingAddressId,
             untaxedAmount: saved.untaxedAmount,
             invoiceCount: saved.invoiceCount,
             hasFinalizedInvoice: saved.hasFinalizedInvoice,

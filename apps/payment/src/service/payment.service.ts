@@ -247,6 +247,10 @@ export class PaymentService {
         p.items = items;
         p.customerAccountId = customerAccountId;
         // p.customerAccountName = customerAccount.name;
+        // Faturalama referansları: billingAccount müşteri hesabıyla aynı; billingAddress verilmemişse
+        // müşterinin defaultAddress'i satış anında sabitlenir.
+        p.billingAccountId = customerAccountId;
+        p.billingAddressId = pdto.billingAddressId ?? customerAccount.defaultAddressId;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
@@ -599,6 +603,8 @@ export class PaymentService {
         payment.taxAmount = taxTotal;
         payment.items = items;
         payment.customerAccountId = customerAccount.id;
+        payment.billingAccountId = customerAccount.id;
+        payment.billingAddressId = billingAddress.id;
         payment.externalPlatformId = dto.externalPlatformId;
         payment.externalPlatformOrderId = dto.externalPlatformOrderId;
         // Para harici platformda tahsil edildiği için ödeme doğrudan tamamlanmış sayılır.

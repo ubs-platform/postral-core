@@ -18,6 +18,7 @@ import {
     SellerPaymentOrderType,
 } from '@tk-postral/payment-common';
 import { Account } from './account.entity';
+import { Address } from './address.entity';
 import { MoneyDbField } from './base';
 
 @Entity()
@@ -58,6 +59,24 @@ export class SellerPaymentOrder extends BaseEntity {
     @ManyToOne(() => Account, { eager: true })
     @JoinColumn({ name: 'sourceAccountId' })
     sourceAccount?: Account;
+
+    // Müşteri (source) tarafı için faturalama referansları. Fatura snapshot'ı satış anında
+    // sabitlenen bu adresten alınır; yoksa sourceAccount.defaultAddress'e düşülür.
+    @Column({ nullable: true })
+    billingAccountId?: string;
+
+    // Todo: Account => InvoiceAccount ilişkisi kurup, burayı InvoiceAccountId olarak değiştirebiliriz. Şimdilik billingAccountId olarak bıraktım.
+    @ManyToOne(() => Account, { eager: false, nullable: true })
+    @JoinColumn({ name: 'billingAccountId' })
+    billingAccount?: Account;
+
+    @Column({ nullable: true })
+    billingAddressId?: string;
+
+    // TODO: Address => InvoiceAddress ilişkisi kurup, burayı InvoiceAddressId olarak değiştirebiliriz. Şimdilik billingAddressId olarak bıraktım
+    @ManyToOne(() => Address, { eager: false, nullable: true })
+    @JoinColumn({ name: 'billingAddressId' })
+    billingAddress?: Address;
 
     @Column({ type: 'varchar' })
     paymentStatus!: PaymentStatus;

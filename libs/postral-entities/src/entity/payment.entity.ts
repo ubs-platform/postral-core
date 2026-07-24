@@ -14,6 +14,7 @@ import { RefundRequest } from './refund-request.entity';
 import { ReportPaymentRelation } from './report-payment-relation.entity';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import { Address } from './address.entity';
 import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
@@ -54,6 +55,23 @@ export class Payment {
     @ManyToOne(() => Account, { eager: true, nullable: true })
     @JoinColumn({ name: 'customerAccountId' })
     customerAccount?: Account;
+
+    // Faturalama hesabı ve adresi: satış anında sabitlenen referanslar. Fatura kesilirken
+    // snapshot bunlardan alınır (hesabın değişebilen defaultAddress'i yerine). billingAccount
+    // şimdilik customerAccount ile aynı hesabı gösterir; billingAddress satış anındaki adrestir.
+    @Column({ nullable: true })
+    billingAccountId?: string;
+
+    @ManyToOne(() => Account, { eager: false, nullable: true })
+    @JoinColumn({ name: 'billingAccountId' })
+    billingAccount?: Account;
+
+    @Column({ nullable: true })
+    billingAddressId?: string;
+
+    @ManyToOne(() => Address, { eager: false, nullable: true })
+    @JoinColumn({ name: 'billingAddressId' })
+    billingAddress?: Address;
 
     // @Column({ nullable: true })
     // customerAccountName!: string;

@@ -72,7 +72,11 @@ export class InvoiceMapper {
         if (!transaction.sourceAccount || !transaction.targetAccount) {
             throw new Error('Transaction accounts not found for id: ' + sellerPaymentOrderId);
         }
-        if (!transaction.sourceAccount.defaultAddress || !transaction.targetAccount.defaultAddress) {
+        // Müşteri (source) tarafı için faturalama adresi tercih edilir; yoksa hesabın defaultAddress'i.
+        // Satıcı (target) tarafı her zaman kendi defaultAddress'ini kullanır.
+        const customerBillingAccount = transaction.billingAccount ?? transaction.sourceAccount;
+        const customerBillingAddress = transaction.billingAddress ?? transaction.sourceAccount.defaultAddress;
+        if (!customerBillingAddress || !transaction.targetAccount.defaultAddress) {
             throw new Error('Transaction account addresses not found for id: ' + sellerPaymentOrderId);
         }
         const entity = new Invoice();
@@ -84,12 +88,12 @@ export class InvoiceMapper {
         entity.finalized = false;
         entity.notes = '';
         // İade durumlarında transaction.transactionType source ve target hesapların yer değiştirebilir ama satıcının müşteri olarak gözükmesi istenmez, bu yüzden transactionType kontrolü yapılmaz
-        const customer = transaction.sourceAccount, seller = transaction.targetAccount;
-        
+        const seller = transaction.targetAccount;
+
         entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
-        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(customer!);
+        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(customerBillingAccount!);
         entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
-        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customer!.defaultAddress!);
+        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customerBillingAddress!);
 
         return entity;
     }

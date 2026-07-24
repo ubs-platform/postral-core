@@ -14,6 +14,8 @@ export class SellerPaymentOrderDTO {
     targetAccountName?: string;
     sourceAccountId: string;
     sourceAccountName?: string;
+    billingAccountId?: string;
+    billingAddressId?: string;
     paymentStatus: PaymentStatus;
     errorStatus?: PaymentErrorStatus;
     operationNote: string;

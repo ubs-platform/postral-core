@@ -22,6 +22,9 @@ export interface PaymentInitDTO {
 
     customerAccountId: string;
 
+    // Faturalama adresi (opsiyonel). Verilmezse müşteri hesabının defaultAddress'i kullanılır.
+    billingAddressId?: string;
+
     refundRequestId?: string; // Only for REFUND type
 }
 
