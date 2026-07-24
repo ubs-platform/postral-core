@@ -22,7 +22,8 @@ import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-in
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { filter } from 'rxjs';
 import { PaymentChannelConfigService } from '../service/payment-channel-config.service';
-import { JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
+import { JwtAuthGuard, CurrentUser } from '@ubs-platform/users-microservice-helper';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 @Controller('payment')
 export class PaymentController {
     constructor(
@@ -42,8 +43,9 @@ export class PaymentController {
     @UseGuards(JwtAuthGuard)
     public async createExternalPlatformPayment(
         @Body() body: CreateExternalPlatformPaymentDTO,
+        @CurrentUser() user: UserAuthBackendDTO,
     ): Promise<PaymentDTO> {
-        return await this.ps.createExternalPlatformPayment(body);
+        return await this.ps.createExternalPlatformPayment(body, user);
     }
 
     @Post('/:id/operation/start')

@@ -5,17 +5,26 @@ import {
     ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
+    Unique,
 } from 'typeorm';
 import { Payment } from './payment.entity';
 import { Address } from './address.entity';
+import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
+@Unique(['externalPlatformId', 'externalPlatformAccountId'])
 export class Account {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
     @Column()
     name: string;
+
+    /**
+     * Telefon numarası (diğer PII gibi şifreli saklanır).
+     */
+    @Column({ nullable: true })
+    phone?: string;
 
     /**
      * Eğer kişiselse TCKN, şirketse Vergi numarası
@@ -54,4 +63,18 @@ export class Account {
 
     @Column({ nullable: true })
     taxOffice?: string;
+
+    // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
+    // externalPlatformId null olabilir; unique kısıt yalnızca dolu çiftlerde işler
+    // (MariaDB çoklu NULL'a izin verir, normal Postral hesapları kısıtlanmaz).
+    @Column({ nullable: true })
+    externalPlatformId?: string;
+
+    @ManyToOne(() => ExternalPlatform, { eager: false, nullable: true })
+    @JoinColumn({ name: 'externalPlatformId' })
+    externalPlatform?: ExternalPlatform;
+
+    // Harici platformdaki müşteri kimliği (o platform içindeki hesap id'si).
+    @Column({ nullable: true })
+    externalPlatformAccountId?: string;
 }

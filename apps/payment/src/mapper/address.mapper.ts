@@ -50,6 +50,8 @@ export class AddressMapper {
             cityCode: this.cryptionUtil.decryptWithConfig(ac.cityCode, "USE_DEFAULT") || "",
             countrySubentityCode: this.cryptionUtil.decryptWithConfig(ac.countrySubentityCode, "USE_DEFAULT") || "",
             department: this.cryptionUtil.decryptWithConfig(ac.department, "USE_DEFAULT") || "",
+            externalPlatformId: ac.externalPlatformId,
+            externalPlatformAddressId: ac.externalPlatformAddressId,
         };
     }
 
@@ -82,6 +84,8 @@ export class AddressMapper {
         entity.cityCode = this.cryptionUtil.encryptWithConfig(dto.cityCode, "USE_DEFAULT") || "";
         entity.countrySubentityCode = this.cryptionUtil.encryptWithConfig(dto.countrySubentityCode, "USE_DEFAULT") || "";
         entity.department = this.cryptionUtil.encryptWithConfig(dto.department, "USE_DEFAULT") || "";
+        entity.externalPlatformId = dto.externalPlatformId;
+        entity.externalPlatformAddressId = dto.externalPlatformAddressId;
         return entity;
     }
 }

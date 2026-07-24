@@ -1,6 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
+@Unique(['externalPlatformId', 'externalPlatformAddressId'])
 export class Address {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -108,6 +110,19 @@ export class Address {
     /** Zaman dilimi (örn: "Europe/Istanbul") */
     @Column({ nullable: true })
     timezone?: string;
+
+    // Harici platform (Hepsiburada, Trendyol vb.) adres eşlemesi için.
+    // externalPlatformId null olabilir; unique kısıt yalnızca dolu çiftlerde işler.
+    @Column({ nullable: true })
+    externalPlatformId?: string;
+
+    @ManyToOne(() => ExternalPlatform, { eager: false, nullable: true })
+    @JoinColumn({ name: 'externalPlatformId' })
+    externalPlatform?: ExternalPlatform;
+
+    // Harici platformdaki adres kimliği.
+    @Column({ nullable: true })
+    externalPlatformAddressId?: string;
 
     
 }

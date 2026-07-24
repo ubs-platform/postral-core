@@ -199,19 +199,76 @@ export class AccountService extends BaseCrudService<
         return this.accountMapper.toDtoList(accounts);
     }
 
-    // Yüklendiği zaman şifrelenmeyen veriler şifrelensin. Bütün accountlar gelsin şifrelenmeyenleri çözmeye çalışsın eğer çözemezse hata verirse şifreleyip kaydetsin. Böylece zamanla bütün veriler şifrelenmiş olur.
-    // async encryptSensitiveData() {
-    //     const accounts = await this.repo.find();
-    //     for (const account of accounts) {
-    //         try {
-    //             await this.accountMapper.toDto(account);
-    //         } catch (e) {
-    //             // exec(`kdialog --msgbox "Encrypting sensitive data for account ${account.id} due to error: ${e.message}"`);
-    //             const resolvedWithRedacted = await this.accountMapper.toDto(account);
-    //             resolvedWithRedacted.legalIdentity = account.legalIdentity;
-    //             this.accountMapper.updateEntity(account, resolvedWithRedacted);
-    //             await this.repo.save(account);
-    //         }
-    //     }
-    // }
+    // ─────────────────────────────────────────────────────────────
+    // Harici platform ödemesi için hesap çözümleme (bul-yoksa-oluştur).
+    // ─────────────────────────────────────────────────────────────
+
+    // Harici platform müşteri kimliğiyle eşleşen hesabı bulur.
+    async findByExternalPlatformAccount(
+        externalPlatformId?: string,
+        externalPlatformAccountId?: string,
+    ): Promise<Account | null> {
+        if (!externalPlatformId || !externalPlatformAccountId) {
+            return null;
+        }
+        return this.repo.findOne({
+            where: { externalPlatformId, externalPlatformAccountId },
+        });
+    }
+
+    // Kimlik alanlarıyla (name + legalIdentity + type + phone) eşleşen hesabı bulur.
+    // Şifreli alanlar deterministik olduğundan DTO mapper üzerinden entity'ye çevrilir
+    // ve ortaya çıkan (şifreli ya da düz) değerlerle eşitlik sorgusu yapılır.
+    async findByIdentityMatch(dto: AccountDTO): Promise<Account | null> {
+        const probe = await this.accountMapper.updateEntity(new Account(), dto);
+        const where: any = {
+            name: probe.name,
+            type: probe.type,
+            deactivated: false,
+        };
+        if (dto.legalIdentity) {
+            where.legalIdentity = probe.legalIdentity;
+        }
+        if (dto.phone) {
+            where.phone = probe.phone;
+        }
+        return this.repo.findOne({ where });
+    }
+
+    // Harici platform ödemesi için müşteri hesabını çözer; bulunamazsa oluşturup
+    // çağıran kullanıcının (satıcının) sahipliğine bağlar. Entity döner.
+    async resolveOrCreateForExternalPlatform(
+        dto: AccountDTO,
+        externalPlatformId: string,
+        user?: UserAuthBackendDTO,
+    ): Promise<Account> {
+        const byExternal = await this.findByExternalPlatformAccount(
+            externalPlatformId,
+            dto.externalPlatformAccountId,
+        );
+        if (byExternal) {
+            return byExternal;
+        }
+
+        const byIdentity = await this.findByIdentityMatch(dto);
+        if (byIdentity) {
+            return byIdentity;
+        }
+
+        const created = await this.create(
+            { ...dto, externalPlatformId },
+            user,
+        );
+        const entity = await this.repo.findOne({ where: { id: created.id } });
+        if (!entity) {
+            throw new Error('Failed to create customer account for external platform payment');
+        }
+        return entity;
+    }
+
+    // Hesabın varsayılan adresini günceller (faturalama adresini defaultAddress yapmak için).
+    async updateDefaultAddress(accountId: string, addressId: string): Promise<void> {
+        await this.repo.update(accountId, { defaultAddressId: addressId });
+        this.invalidateSelfCache();
+    }
 }

@@ -83,6 +83,10 @@ export class AccountAddressDto {
 
     /** Zaman dilimi (örn: "Europe/Istanbul") */
     timezone?: string;
+
+    // Harici platform (Hepsiburada, Trendyol vb.) adres eşlemesi için.
+    externalPlatformId?: string;
+    externalPlatformAddressId?: string;
 }
 
 export class AddressSearchParamsDTO implements InternalSearchDTO {

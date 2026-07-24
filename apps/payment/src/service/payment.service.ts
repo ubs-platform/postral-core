@@ -33,6 +33,8 @@ import { WebhookDispatchService } from './webhook-dispatch.service';
 import { AdminSettingsService } from './admin-settings.service';
 import { AppComissionService } from './app-commission.service';
 import { ExternalPlatformService } from './external-platform.service';
+import { AddressService } from './address.service';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 
 @Injectable()
 export class PaymentService {
@@ -57,6 +59,7 @@ export class PaymentService {
         private adminSettingsService: AdminSettingsService,
         private appComissionService: AppComissionService,
         private externalPlatformService: ExternalPlatformService,
+        private addressService: AddressService,
     ) { }
 
     async onModuleInit() {
@@ -509,19 +512,31 @@ export class PaymentService {
     // yoktur; ödeme doğrudan COMPLETED olarak kaydedilir ve komisyon/rapor/webhook
     // yan etkileri tetiklenir.
     // ─────────────────────────────────────────────────────────────
-    public async createExternalPlatformPayment(dto: CreateExternalPlatformPaymentDTO): Promise<PaymentDTO> {
+    public async createExternalPlatformPayment(dto: CreateExternalPlatformPaymentDTO, user?: UserAuthBackendDTO): Promise<PaymentDTO> {
         if (!dto.items || dto.items.length === 0) {
             throw new BadRequestException('External platform payment must contain at least one item');
-        }
-
-        const customerAccount = await this.accountService.fetchOne(dto.customerAccountId);
-        if (!customerAccount) {
-            throw new NotFoundException('Customer account not found for external platform payment');
         }
 
         const externalPlatform = await this.externalPlatformService.fetchOne(dto.externalPlatformId);
         if (!externalPlatform) {
             throw new NotFoundException('External platform not found');
+        }
+
+        // Müşteri hesabı ve faturalama adresi düz metin DTO olarak alınır: önce harici
+        // platform kimliğiyle, yoksa kimlik/alan bazlı eşleştirilir; bulunamazsa oluşturulur.
+        const customerAccount = await this.accountService.resolveOrCreateForExternalPlatform(
+            dto.customerAccount,
+            dto.externalPlatformId,
+            user,
+        );
+        const billingAddress = await this.addressService.resolveOrCreateForExternalPlatform(
+            dto.billingAddress,
+            dto.externalPlatformId,
+            user,
+        );
+        // Çözülen faturalama adresi müşteri hesabının varsayılan adresi yapılır.
+        if (customerAccount.defaultAddressId !== billingAddress.id) {
+            await this.accountService.updateDefaultAddress(customerAccount.id, billingAddress.id);
         }
 
         const admSettings = await this.adminSettingsService.getAdminSettings();
@@ -583,7 +598,7 @@ export class PaymentService {
         payment.totalAmount = totalAmt;
         payment.taxAmount = taxTotal;
         payment.items = items;
-        payment.customerAccountId = dto.customerAccountId;
+        payment.customerAccountId = customerAccount.id;
         payment.externalPlatformId = dto.externalPlatformId;
         payment.externalPlatformOrderId = dto.externalPlatformOrderId;
         // Para harici platformda tahsil edildiği için ödeme doğrudan tamamlanmış sayılır.

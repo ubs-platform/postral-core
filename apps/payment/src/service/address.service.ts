@@ -91,4 +91,66 @@ export class AddressService extends BaseCrudService<
 
         return where;
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Harici platform ödemesi için adres çözümleme (bul-yoksa-oluştur).
+    // ─────────────────────────────────────────────────────────────
+
+    // Harici platform adres kimliğiyle eşleşen adresi bulur.
+    async findByExternalPlatformAddress(
+        externalPlatformId?: string,
+        externalPlatformAddressId?: string,
+    ): Promise<Address | null> {
+        if (!externalPlatformId || !externalPlatformAddressId) {
+            return null;
+        }
+        return this.repo.findOne({
+            where: { externalPlatformId, externalPlatformAddressId },
+        });
+    }
+
+    // Alan bazlı (cityName + district + streetName) eşleşen adresi bulur.
+    // Şifreli alanlar deterministik olduğundan DTO mapper üzerinden entity'ye çevrilir.
+    async findByFieldMatch(dto: AccountAddressDto): Promise<Address | null> {
+        const probe = await this.addressMapper.updateEntity(new Address(), dto);
+        const where: any = {
+            cityName: probe.cityName,
+            streetName: probe.streetName,
+        };
+        if (dto.district) {
+            where.district = probe.district;
+        }
+        return this.repo.findOne({ where });
+    }
+
+    // Harici platform ödemesi için faturalama adresini çözer; bulunamazsa oluşturup
+    // çağıran kullanıcının (satıcının) sahipliğine bağlar. Entity döner.
+    async resolveOrCreateForExternalPlatform(
+        dto: AccountAddressDto,
+        externalPlatformId: string,
+        user?: UserAuthBackendDTO,
+    ): Promise<Address> {
+        const byExternal = await this.findByExternalPlatformAddress(
+            externalPlatformId,
+            dto.externalPlatformAddressId,
+        );
+        if (byExternal) {
+            return byExternal;
+        }
+
+        const byField = await this.findByFieldMatch(dto);
+        if (byField) {
+            return byField;
+        }
+
+        const created = await this.create(
+            { ...dto, externalPlatformId },
+            user,
+        );
+        const entity = await this.repo.findOne({ where: { id: created.id } });
+        if (!entity) {
+            throw new Error('Failed to create billing address for external platform payment');
+        }
+        return entity;
+    }
 }

@@ -3,6 +3,9 @@
  * kaydedilmesi için kullanılan girdi DTO'su. Para harici platformda tahsil edildiği
  * için kanal operasyonu çalışmaz; ödeme yalnızca komisyon/fatura/rapor için kaydedilir.
  */
+import { AccountDTO } from './account.dto';
+import { AccountAddressDto } from './address.dto';
+
 export interface ExternalPlatformPaymentItemInputDTO {
     // Postral ürün kimliği (opsiyonel — harici katalog farklı olabilir)
     itemId?: string;
@@ -37,20 +40,20 @@ export interface CreateExternalPlatformPaymentDTO {
     currency: string;
 
     /**
-     * Bizim sistemde eğer müşteri yoksa yeni oluşturulup kaydedilebilir,
-     * Belki bilgileri ve adresi buradan alınabilir. Ama şimdilik sadece id ile eşleşen müşteri hesabı kullanılacak.
-     * Bu yüzden müşteri hesabı id'si zorunlu tutuluyor.
-     * Eğer müşteri hesabı yoksa, önce müşteri hesabı oluşturulup id'si buraya verilebilir.
-     * (Müşteri hesabı oluşturma işlemi Postral API'de mevcut)
-     * 
-     * NOT: Müşteri hesabı oluşturma işlemi Postral API'de mevcut. Eğer müşteri hesabı yoksa, önce müşteri hesabı oluşturulup id'si buraya verilebilir.
-     * (Müşteri hesabı oluşturma işlemi Postral API'de mevcut)
-     * 
-     * NOT: Müşteri hesabı oluşturma işlemi Postral API'de mevcut. Eğer müşteri hesabı yoksa, önce müşteri hesabı oluşturulup id'si buraya verilebilir.
-     * (Müşteri hesabı oluşturma işlemi Postral API'de mevcut)
-     * 
+     * Müşteri hesabı düz metin (şifrelenmemiş) DTO olarak alınır. Servis, hesabı önce
+     * (externalPlatformId + externalPlatformAccountId) ile, yoksa kimlik alanlarıyla
+     * (name + legalIdentity + type + phone) eşleştirir. Bulunamazsa oluşturur.
+     * DTO alınmasının sebebi: PII alanları deterministik olarak şifreli tutulduğundan
+     * eşleşme, DTO mapper üzerinden entity'ye çevrilip aynı temsile göre yapılır.
      */
-    customerAccountId: string;
+    customerAccount: AccountDTO;
+
+    /**
+     * Faturalama adresi düz metin DTO. (externalPlatformId + externalPlatformAddressId)
+     * ile, yoksa (cityName + district + streetName) ile eşleştirilir; bulunamazsa
+     * oluşturulur ve çözülen adres müşteri hesabının defaultAddress'i yapılır.
+     */
+    billingAddress: AccountAddressDto;
 
     items: ExternalPlatformPaymentItemInputDTO[];
 }

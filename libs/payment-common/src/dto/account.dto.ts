@@ -5,6 +5,8 @@ export class AccountDTO {
 
     name: string;
 
+    phone?: string;
+
     legalIdentity: string;
 
     type: 'INDIVIDUAL' | 'COMMERCIAL';
@@ -19,6 +21,10 @@ export class AccountDTO {
     bankIban?: string;
     bankBic?: string;
     bankSwift?: string;
+
+    // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
+    externalPlatformId?: string;
+    externalPlatformAccountId?: string;
 }
 
 export class AccountSearchParamsDTO implements InternalSearchDTO {

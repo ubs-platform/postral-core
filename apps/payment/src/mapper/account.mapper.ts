@@ -27,12 +27,15 @@ export class AccountMapper {
             id: ac.id,
             legalIdentity: this.cryptionUtil.decryptWithConfig(ac.legalIdentity, "USE_DEFAULT") || "",
             name: ac.name,
+            phone: this.cryptionUtil.decryptWithConfig(ac.phone, "USE_DEFAULT") || "",
             type: ac.type,
             defaultAddressId: ac.defaultAddressId,
             bankName: ac.bankName,
             bankIban: this.cryptionUtil.decryptWithConfig(ac.bankIban, "USE_DEFAULT") || "",
             bankBic: this.cryptionUtil.decryptWithConfig(ac.bankBic, "USE_DEFAULT") || "",
             taxOffice: this.cryptionUtil.decryptWithConfig(ac.taxOffice, "USE_DEFAULT") || "",
+            externalPlatformId: ac.externalPlatformId,
+            externalPlatformAccountId: ac.externalPlatformAccountId,
         };
     }
 
@@ -41,12 +44,15 @@ export class AccountMapper {
         // Hassas alanlar şifrelenerek güncellenir; diğer alanlar doğrudan atanır.
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || "";
         entity.name = dto.name;
+        entity.phone = this.cryptionUtil.encryptWithConfig(dto.phone, "USE_DEFAULT") || "";
         entity.type = dto.type;
         entity.defaultAddressId = dto.defaultAddressId;
         entity.bankName = dto.bankName;
         entity.bankIban = this.cryptionUtil.encryptWithConfig(dto.bankIban, "USE_DEFAULT") || "";
         entity.bankBic = this.cryptionUtil.encryptWithConfig(dto.bankBic, "USE_DEFAULT") || "";
         entity.taxOffice = this.cryptionUtil.encryptWithConfig(dto.taxOffice, "USE_DEFAULT") || "";
+        entity.externalPlatformId = dto.externalPlatformId;
+        entity.externalPlatformAccountId = dto.externalPlatformAccountId;
         return entity;
     }
 }
