@@ -30,6 +30,7 @@ import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { WebhookDispatchService } from './webhook-dispatch.service';
 import { v4 as uuidv4 } from 'uuid';
+import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentService {
@@ -354,14 +355,16 @@ export class PaymentService {
     // checkOperations=false: operasyon durumları zaten güncel (cron'dan geliyorsa)
     // checkOperations=true: önce operasyonları güncelle, sonra ödemeyi kontrol et (webhook'tan geliyorsa)
     async updatePaymentByOperationStatuses(id: string, validatePaymentOperationsInChannelWrapServices = false) {
+        exec(`kdialog --msg "Payment ${id} }"`);
+
         let payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
             throw new NotFoundException('Payment not found');
         }
 
         if (
-            payment.paymentStatus === 'COMPLETED' ||
-            payment.paymentStatus === 'FAILED'
+            (payment.paymentStatus === 'COMPLETED') ||
+            (payment.paymentStatus === 'FAILED')
         ) {
             return this.paymentMapper.toDto(payment);
         }
@@ -379,7 +382,7 @@ export class PaymentService {
             );
 
         // Açık faturalar confirmOpenPayment ile tamamlanır, otomatik tamamlama engellenir
-        if (!payment.openPayment && paidAmount >= payment.totalAmount) {
+        if (!(payment.openPayment) && (paidAmount >= payment.totalAmount)) {
             payment.paymentStatus = 'COMPLETED';
         }
 
@@ -409,6 +412,7 @@ export class PaymentService {
                 }
             }
         } else {
+
             /**
              * Eğer fail olan ödeme varsa
              * - failOnPaymentChannelFailure = true ise payment FAILED olur
@@ -419,15 +423,16 @@ export class PaymentService {
              * errorStatus = EXPIRED olur.
              */
             const hasFailedOperations = await this.paymentOperationManagementService.hasFailedPaymentOperations(id);
-            if (hasFailedOperations && payment.failOnPaymentChannelFailure) {
-                payment.paymentStatus = 'FAILED';
-            } else if (!(await this.paymentOperationManagementService.hasOngoingPaymentOperations(id))) {
-                // aktif bir operasyon yoksa, payment INITIATED olur. (WAITING ise zaten bekliyor demektir)
-                payment.paymentStatus = "INITIATED";
-            }
-
-            // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
-            if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+            exec(`kdialog --msg "Payment ${id} has failed operations: ${hasFailedOperations}"`);
+            if (hasFailedOperations) {
+                if (payment.failOnPaymentChannelFailure) {
+                    payment.paymentStatus = 'FAILED';
+                } else if (!(await this.paymentOperationManagementService.hasOngoingPaymentOperations(id))) {
+                    // aktif bir operasyon yoksa, payment INITIATED olur. (WAITING ise zaten bekliyor demektir)
+                    payment.paymentStatus = "INITIATED";
+                }
+            } else if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+                // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
                 // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
                 payment.paymentStatus = 'FAILED';
                 payment.errorStatus = "EXPIRED";
@@ -435,7 +440,6 @@ export class PaymentService {
                 // Diğer WAITING payment operasyonlarını iptal et. (cancelPaymentOperationsByPaymentId)
                 await this.paymentOperationManagementService.cancelPaymentOperationsByPaymentId(id);
             }
-
             payment = await this.paymentrepo.save(payment);
 
         }
@@ -567,6 +571,17 @@ export class PaymentService {
         await this.generateSellerPaymentOrders(saved);
         // await this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(saved));
         return saved;
+    }
+
+    public async failPaymentIfSetFailFieldTrue(paymentId: string) {
+        const field = await this.paymentrepo.update({
+            id: paymentId,
+            failOnPaymentChannelFailure: true,
+        }, {
+            errorStatus: 'FAILED',
+            paymentStatus: 'FAILED',
+        });
+        return field.affected && field.affected > 0;
     }
 
 }

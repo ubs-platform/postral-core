@@ -32,6 +32,7 @@ export class PaymentMapper {
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
             activeSessionId: saved.activeSessionId,
+            failOnPaymentChannelFailure: saved.failOnPaymentChannelFailure,
         };
     }
 
@@ -55,6 +56,7 @@ export class PaymentMapper {
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
             activeSessionId: saved.activeSessionId,
+            failOnPaymentChannelFailure: saved.failOnPaymentChannelFailure,
         };
     }
 }

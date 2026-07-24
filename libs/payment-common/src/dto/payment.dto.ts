@@ -30,6 +30,7 @@ export interface PaymentDTO {
     includeInReportDigestion?: boolean;
     openPayment?: boolean;
     activeSessionId?: string;
+    failOnPaymentChannelFailure?: boolean;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
