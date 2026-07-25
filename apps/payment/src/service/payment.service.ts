@@ -355,7 +355,6 @@ export class PaymentService {
     // checkOperations=false: operasyon durumları zaten güncel (cron'dan geliyorsa)
     // checkOperations=true: önce operasyonları güncelle, sonra ödemeyi kontrol et (webhook'tan geliyorsa)
     async updatePaymentByOperationStatuses(id: string, validatePaymentOperationsInChannelWrapServices = false) {
-        exec(`kdialog --msg "Payment ${id} }"`);
 
         let payment = await this.findPaymentByIdRaw(id);
         if (!payment) {
@@ -423,7 +422,7 @@ export class PaymentService {
              * errorStatus = EXPIRED olur.
              */
             const hasFailedOperations = await this.paymentOperationManagementService.hasFailedPaymentOperations(id);
-            exec(`kdialog --msg "Payment ${id} has failed operations: ${hasFailedOperations}"`);
+            // exec(`kdialog --msgbox "Payment ${id} has failed operations: ${hasFailedOperations}"`);
             if (hasFailedOperations) {
                 if (payment.failOnPaymentChannelFailure) {
                     payment.paymentStatus = 'FAILED';
