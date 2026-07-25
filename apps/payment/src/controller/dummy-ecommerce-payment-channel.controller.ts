@@ -144,7 +144,7 @@ export class DummyEcommercePaymentChannelController {
                         window.location.href = '${operationId}' + '/status/COMPLETED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                     function refusePayment() {
-                        window.location.href = '${operationId}' + '/status/EXPIRED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
+                        window.location.href = '${operationId}' + '/status/FAILED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                 </script>
             </body>
