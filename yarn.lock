@@ -1954,50 +1954,50 @@
     "@typescript-eslint/types" "8.26.1"
     eslint-visitor-keys "^4.2.0"
 
-"@ubs-platform/cache-manager@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/cache-manager/-/cache-manager-6.11.0.tgz#b594fa2572ac1f36f5ca388c18208055b9c37fdc"
-  integrity sha512-iPDX4cknH0c1ThgEujR9/ALYQSpDVbyI47+Gn+tnTujOtCWJ1poeEMR7jk/G3Be+KHeQJGIJxSXcCzIE6pY3vw==
+"@ubs-platform/cache-manager@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/cache-manager/-/cache-manager-6.11.1.tgz#74ca8ba5322b4fb0de3bd8d70f1ad0e8b17b9488"
+  integrity sha512-m/AWMP/AjGeqkKOc+fMWWuAyo0i8UCGodVUvoNQsx03MtTsJBhpKVPvnYNw61KHeKM1Yj6gYPdN32P4FVVwwzg==
 
-"@ubs-platform/crud-base-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/crud-base-common/-/crud-base-common-6.11.0.tgz#a8025767a88c5c3266289b27299a3d3fe1c9178e"
-  integrity sha512-vuO8ds2IDU7ND53Wt24l5/Xmdp2OGDoxsgm8V27K5ODj54TNOErkLNgdZvGzOyKi04lhVLtrMQmeuUZC6BiJNA==
+"@ubs-platform/crud-base-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/crud-base-common/-/crud-base-common-6.11.1.tgz#f2b8c19ebcb56a3818eb2afc7edb6798707b7e7c"
+  integrity sha512-jm01D+U+JP4+v3EXf+uk2y1iG08tHiQ4PS5AlNznabXfNWtbW1Awdql3O94Lm0fCl8A/t8Dts19Zl6yP0kk4NA==
 
-"@ubs-platform/crud-base@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/crud-base/-/crud-base-6.11.0.tgz#b4d51288183b43eacb2e53cf5cdf1675b8442ba9"
-  integrity sha512-lH4Dw9nMdQxgPga3T2pKQ8TCmeknT/Ly3bi4wHmVW/mGuBZSHcSWanpfMb5Vmc7g6cSjeMim0oCzSZOwjCrthw==
+"@ubs-platform/crud-base@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/crud-base/-/crud-base-6.11.1.tgz#ed7ac58aa03645e54d02f70d8be1bc6c452e9a56"
+  integrity sha512-bQXWYcdWhL+S3HuP3KySAROWsunOK9l/lvNuBPAHAhcL5jRiR+LZ0khXF7UEybP7SpZfnfOB/1L5ympbNYWVMQ==
 
-"@ubs-platform/dynamic-queue@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/dynamic-queue/-/dynamic-queue-6.11.0.tgz#d61b31778e90bcdffcecfc223bf0bf01eb49747d"
-  integrity sha512-aOQ/9Z/pnDXQf/V+cwcJW53saR7o3KYWMMc4OpNfAizUdohWlNKPaxWS6mxxa1irXLeKt34gK5mxOOuwQuuwUg==
+"@ubs-platform/dynamic-queue@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/dynamic-queue/-/dynamic-queue-6.11.1.tgz#e8a283854553aa64401294fc7a4ba96af66b7247"
+  integrity sha512-9wQ0yneeYJtoNEPmeRq0nOrF/8qwogZXqtgADDJCyq8cZgMKevan2pdv8ou79srk7Q+oa6w3SaeqaJMduQbFCw==
 
-"@ubs-platform/feedback-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/feedback-common/-/feedback-common-6.11.0.tgz#7a127876b8d4ea66efed155d5d489d083b8a89c4"
-  integrity sha512-K+zQVATAAyWly2pvv6P3LEo30y6/nxDyDwVti1X3yR3zuOGEV6lNEuEe6F0F881hoi9SR7n3EInNkLmvkGSQnA==
+"@ubs-platform/feedback-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/feedback-common/-/feedback-common-6.11.1.tgz#882f1b05f0e2e756cdb36fc333c740585ab25b72"
+  integrity sha512-dwReyw8YHCN3zL0kvNv1rl5YQaayrVnClXQHVT3TW78JHbJboUifUjROsm7yTCmCzMgCYiSBlUK/u0mk5a7Odw==
 
-"@ubs-platform/microservice-setup-util@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/microservice-setup-util/-/microservice-setup-util-6.11.0.tgz#d3addbc7aedbebc9446699e85ca9d10b805bb6a9"
-  integrity sha512-vB7ZcgLqu4WFjtUC/GMuMk7caPzpyotnluxILOZbGsi4lkVFEPyCpPgKV5WsLZJREbAbEdq4jV0zdyUjnXSYeQ==
+"@ubs-platform/microservice-setup-util@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/microservice-setup-util/-/microservice-setup-util-6.11.1.tgz#f97c0e8ce6d1bf546abd28228f8306a204ad79d0"
+  integrity sha512-JDlvsoYL5UobcBdhDJtI68g+uA+w5ys642yvQgrWl2icFc8pydjibu8pxAhyklZ84YrrbTSzgByBAMBF9yR7Xw==
 
-"@ubs-platform/notify-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/notify-common/-/notify-common-6.11.0.tgz#3bc23c8c14eea5f895f4b25e3e7230f28ddc3339"
-  integrity sha512-tKxRAbawSWltttdpCaTOPn6b2RWDDKQtVYSAbtRKB5wZg2ERLHxCc2Gi2LMGgU6D3GCAbZwcB8skAzGhmtjvkA==
+"@ubs-platform/notify-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/notify-common/-/notify-common-6.11.1.tgz#b2b53b277c7e36c30e325578f24ca80b7639598e"
+  integrity sha512-3d2i+n9E/BCfFkJIyOTnCtdLE4yQAoxj5vvFFpicTIyHMZcEYr2jDn/KgNcy0l3PQYWySyvQUkOE9Nl2YKPNzg==
 
-"@ubs-platform/social-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/social-common/-/social-common-6.11.0.tgz#78e63a8f7ceeafe0c5ecb17967d32632e9d9332b"
-  integrity sha512-4ijl5XSq8BU6FtC+oBEBn5nsVjHdguu/lnp8X1cUTlS32cspwxcpY1nLxqUQ0FRn6m6YppsHMOXP1E2OagM1Rg==
+"@ubs-platform/social-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/social-common/-/social-common-6.11.1.tgz#575f6d4ab1912f101b425adb15476628bd4ae26e"
+  integrity sha512-c5NaqALvsyEZwCADc/D5R9oKLsXaclz4sPWJJsZ258HQmbOUrKfL8dHT0qJJLE6Jcg0IPnFCuLD3psCKCeLVVw==
 
-"@ubs-platform/superlama-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/superlama-common/-/superlama-common-6.11.0.tgz#29fc4dcfae2077140a468b162093f60e0e2380c3"
-  integrity sha512-uIFf+wKnO+5rq0Wzr6rYL4jPINy6S80Z5Ck8CcKVGnXJlkfmigjHcN8QqMrh2GKSV+fBbQgTVmZvv3AlatfkeA==
+"@ubs-platform/superlama-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/superlama-common/-/superlama-common-6.11.1.tgz#2b7d1074362a763ff42257eeef33f386a84497e7"
+  integrity sha512-8u2FCvH1d+Yx7qPLK+wmFlvYm+uo++pHASSlw8W2NUGWocJIYjOEGIu8l8+vrznhsBXKYMYG7Q4XBqYMBn9/nw==
 
 "@ubs-platform/translator-core@^1.0.9":
   version "1.0.9"
@@ -2013,10 +2013,10 @@
   dependencies:
     tslib "^2.3.0"
 
-"@ubs-platform/users-common@^6.11.0":
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/@ubs-platform/users-common/-/users-common-6.11.0.tgz#98266219245e7daf7a2caba501e97a9996d683ff"
-  integrity sha512-p/X/NIvaG8IxrJSvMUUzlA2V/wVL3ugQlHOOG5ChHxynZLayNF8d4nHiM7x4b9q6mnDq+q3m8PjPiNDluMZIdA==
+"@ubs-platform/users-common@^6.11.1":
+  version "6.11.1"
+  resolved "https://registry.yarnpkg.com/@ubs-platform/users-common/-/users-common-6.11.1.tgz#44c3963c47018ef44c9856ba97f8b3d95839c779"
+  integrity sha512-Y3nOH5R4ht3sbcGh+avfMFhu3ElOidnQ/xGA8a8kRwTpZzpOmglF7uDAlqvUGnp3fwoMXkpg6qjK2JE9TdwJ3w==
 
 "@ubs-platform/users-microservice-helper@^6.11.0":
   version "6.11.0"
