@@ -28,7 +28,7 @@ services:
       - NX_SECRET_PW=${NX_SECRET_PW-secret}
       
   engine5:
-    image: hcangunduz/engine5:${ENGINE5_VERSION-0.0.12-alpha}
+    image: hcangunduz/engine5:${ENGINE5_VERSION-0.0.16-alpha}
     ports:
       - 3535:3535
     environment:
