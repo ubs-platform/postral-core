@@ -1761,7 +1761,7 @@
     "@typescript-eslint/types" "8.26.1"
     eslint-visitor-keys "^4.2.0"
 
-"@ubs-platform/async-mutex@6.11.2":
+"@ubs-platform/async-mutex@^6.11.2", "@ubs-platform/async-mutex@6.11.2":
   version "6.11.2"
   resolved "https://registry.npmjs.org/@ubs-platform/async-mutex/-/async-mutex-6.11.2.tgz"
   integrity sha512-PkgWExHyIZAkwKTP0ZPc2cDLV0gpAAoUU5uDoeGgOS0I53Ld9Zlu7rVYqEdzboWLlP1ph4NesbDAtuE6kkR/vA==
