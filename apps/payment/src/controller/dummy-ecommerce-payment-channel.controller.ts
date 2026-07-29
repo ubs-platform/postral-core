@@ -130,21 +130,29 @@ export class DummyEcommercePaymentChannelController {
         @Query('redirectUrl') redirectUrlBackToApp: string,
         @Res() fastifyReply: FastifyReply,
     ) {
-        fastifyReply.type('html').send(
+        // JSON.stringify ile JS context'e güvenli şekilde gömülüyor (XSS önlemi)
+        const safeOperationId = JSON.stringify(operationId);
+        const safeRedirectUrl = JSON.stringify(redirectUrlBackToApp || '');
+        const displayOperationId = operationId
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        fastifyReply.header('Content-Type', 'text/html; charset=utf-8').send(
             `<html>
             <body>
                 <h1>Dummy Ecommerce Payment Page</h1>
-                <p>Operation ID: ${operationId}</p>
+                <p>Operation ID: ${displayOperationId}</p>
                 <p>This is a simulated payment page. In a real scenario, the user would complete the payment here.</p>
                 <button onclick="completePayment()">Complete Payment</button>
                 <button onclick="refusePayment()">Refuse Payment</button>
                 <script>
-                    const redirectUrlBackToApp = '${redirectUrlBackToApp}';
+                    const redirectUrlBackToApp = ${safeRedirectUrl};
                     function completePayment() {
-                        window.location.href = '${operationId}' + '/status/COMPLETED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
+                        window.location.href = ${safeOperationId} + '/status/COMPLETED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                     function refusePayment() {
-                        window.location.href = '${operationId}' + '/status/FAILED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
+                        window.location.href = ${safeOperationId} + '/status/FAILED?redirectUrl=' + encodeURIComponent(redirectUrlBackToApp || "");
                     }
                 </script>
             </body>
