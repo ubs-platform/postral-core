@@ -103,7 +103,7 @@ if (!ubsEntry) {
     throw new Error('No @ubs-platform/* dependency found in package.json');
 }
 
-const ubsVersion = deps[ubsEntry].replace(/^[\^~]/, '');
+const ubsVersion = deps[ubsEntry].replace(/^[\\^~]/, '');
 
 const envPath = 'infrastructure/stock.env';
 let envContent = fs.readFileSync(envPath, 'utf8');
