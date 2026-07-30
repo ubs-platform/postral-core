@@ -6,7 +6,7 @@ FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS build
 WORKDIR /app
 COPY package.docker.json ./package.json
 COPY package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
+RUN --mount=type=cache,target=/root/.npm,id=npm-build \
     npm ci --legacy-peer-deps --no-audit --no-fund
 COPY . .
 ARG APP_NAME
@@ -20,7 +20,8 @@ FROM ${NODE_IMAGE} AS runtime-deps
 WORKDIR /app
 COPY package.docker.json ./package.json
 COPY package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm \
+ARG TARGETPLATFORM
+RUN --mount=type=cache,target=/root/.npm,id=npm-runtime-${TARGETPLATFORM} \
     npm ci --omit=dev --legacy-peer-deps --no-audit --no-fund && \
     npm cache clean --force
 
