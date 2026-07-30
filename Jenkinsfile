@@ -9,6 +9,7 @@ pipeline {
     parameters {
         string(name: 'VERSION', defaultValue: '', description: 'Version number (for example 1.0.0). Leave empty to derive from a v* branch.')
         string(name: 'VERSION_TAG', defaultValue: '', description: 'Optional version tag to write into package.json.')
+        booleanParam(name: 'SKIP_LIB_PUBLISH', defaultValue: false, description: 'Skip the Publish libraries stage (useful when re-releasing the same version).')
     }
 
     stages {
@@ -63,6 +64,9 @@ NODE
         }
 
         stage('Publish libraries') {
+            when {
+                expression { return !params.SKIP_LIB_PUBLISH }
+            }
             steps {
                 withCredentials([string(credentialsId: 'npm-token', variable: 'NODE_AUTH_TOKEN')]) {
                     sh 'npm run xr publish-libs'
