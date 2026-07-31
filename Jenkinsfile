@@ -10,6 +10,7 @@ pipeline {
         string(name: 'VERSION', defaultValue: '', description: 'Version number (for example 1.0.0). Leave empty to derive from a v* branch.')
         string(name: 'VERSION_TAG', defaultValue: '', description: 'Optional version tag to write into package.json.')
         booleanParam(name: 'SKIP_LIB_PUBLISH', defaultValue: false, description: 'Skip the Publish libraries stage (useful when re-releasing the same version).')
+        string(name: 'FRONTEND_VERSION', defaultValue: '', description: 'Optional frontend (lotus-web) version to write into stock.env as POSTRAL_CORE_WEB_VERSION. Leave empty to keep it unchanged.')
     }
 
     variable {
@@ -38,6 +39,7 @@ pipeline {
                     }
 
                     env.RELEASE_VERSION_TAG = params.VERSION_TAG?.trim()
+                    env.FRONTEND_VERSION = params.FRONTEND_VERSION?.trim()
                 }
             }
         }
@@ -61,7 +63,7 @@ if (process.env.RELEASE_VERSION_TAG) {
     packageJson.childrenVersionTag = process.env.RELEASE_VERSION_TAG;
 }
 
-fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\\n');
 NODE
                 '''
             }
@@ -89,6 +91,46 @@ NODE
         stage('Release all apps') {
             steps {
                 sh './tools/release-all-apps.sh'
+            }
+        }
+
+        stage('Update stock.env versions') {
+            steps {
+                sh '''
+node <<'NODE'
+const fs = require('fs');
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const deps = Object.assign({}, packageJson.dependencies, packageJson.devDependencies);
+const ubsEntry = Object.keys(deps).find((k) => k.startsWith('@ubs-platform/'));
+
+if (!ubsEntry) {
+    throw new Error('No @ubs-platform/* dependency found in package.json');
+}
+
+const ubsVersion = deps[ubsEntry].replace(/^[\\^~]/, '');
+
+const envPath = 'infrastructure/stock.env';
+let envContent = fs.readFileSync(envPath, 'utf8');
+
+function setEnvValue(content, key, value) {
+    const re = new RegExp('^' + key + '=.*$', 'm');
+    if (!re.test(content)) {
+        throw new Error(`Key ${key} not found in stock.env`);
+    }
+    return content.replace(re, `${key}=${value}`);
+}
+
+envContent = setEnvValue(envContent, 'UBS_VERSION', ubsVersion);
+envContent = setEnvValue(envContent, 'POSTRAL_CORE_API_VERSION', process.env.RELEASE_VERSION);
+
+const frontendVersion = (process.env.FRONTEND_VERSION || '').trim();
+if (frontendVersion) {
+    envContent = setEnvValue(envContent, 'POSTRAL_CORE_WEB_VERSION', frontendVersion);
+}
+
+fs.writeFileSync(envPath, envContent);
+NODE
+                '''
             }
         }
 
