@@ -165,11 +165,12 @@ NODE
                 }
             }
         }
+    }
 
         // stage if failed, send notification to telegram
-        post {
-            failure {
-                withCredentials([
+    post {
+        failure {
+            withCredentials([
                     string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_BOT_TOKEN'),
                     string(credentialsId: 'telegram-chat-id', variable: 'TELEGRAM_CHAT_ID')
                     ]) {
@@ -185,5 +186,4 @@ NODE
                     }
             }
         }
-    }
 }
