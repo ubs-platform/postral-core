@@ -13,7 +13,7 @@ pipeline {
         string(name: 'FRONTEND_VERSION', defaultValue: '', description: 'Optional frontend (lotus-web) version to write into stock.env as POSTRAL_CORE_WEB_VERSION. Leave empty to keep it unchanged.')
     }
 
-    variable {
+    environment {
         APPLICATION_NAME = 'Tetakent Postral Core'
     }
 
