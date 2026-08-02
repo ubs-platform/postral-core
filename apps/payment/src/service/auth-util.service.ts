@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { exec } from 'child_process';
 
@@ -29,11 +29,23 @@ export class AuthUtilService {
 
     private resolveCapabilities(
         operation: 'ADD' | 'EDIT' | 'REMOVE' | 'GETALL' | 'GETID',
-    ): string[] {
+    ): number[][] {
         if (operation === 'GETALL' || operation === 'GETID') {
-            return ['OWNER', 'EDITOR', 'VIEWER'];
+            return [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]];
         }
-        return ['OWNER', 'EDITOR'];
+        const editorCapsByOperation: number[] = [];
+        switch (operation) {
+            case 'ADD':
+                editorCapsByOperation.push(Capability.ADD);
+                break;
+            case 'EDIT':
+                editorCapsByOperation.push(Capability.EDIT);
+                break;
+            case 'REMOVE':
+                editorCapsByOperation.push(Capability.DELETE);
+                break;
+        }
+        return [[Capability.OWNER], editorCapsByOperation];
     }
 
     async checkUserEntityOwnership(
@@ -50,7 +62,7 @@ export class AuthUtilService {
             return Promise.resolve();
         }
 
-        const capabilityAtLeastOne = this.resolveCapabilities(operation);
+        const requestedCapabilities = this.resolveCapabilities(operation);
 
         const hasOwnership = await lastValueFrom(
             this.eo.hasOwnership({
@@ -68,7 +80,7 @@ export class AuthUtilService {
                       }
                     : {}),
                 userId: user.id,
-                capabilityAtLeastOne,
+                requestedCapabilities,
             }),
         );
 
@@ -110,20 +122,20 @@ export class AuthUtilService {
         return manipulatedQueries;
     }
 
-    async fetchUserAccountIds(userId: string, capabilityAtLeastOne: string[] = ['OWNER', 'EDITOR', 'VIEWER']): Promise<string[]> {
+    async fetchUserAccountIds(userId: string, requestedCapabilities: number[][] = [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]]): Promise<string[]> {
         return await lastValueFrom(
             this.eo.searchOwnershipEntityIdsByUser({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
                 userId,
-                capabilityAtLeastOne,
+                requestedCapabilities,
             }),
         );
     }
 
     async searchOwnedIds(
         entityName: string,
-        capabilityAtLeastOne: string[] = ['OWNER', 'EDITOR', 'VIEWER'],
+        requestedCapabilities: number[][] = [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
         {
             userId,
             ownershipGroupId,
@@ -132,7 +144,7 @@ export class AuthUtilService {
         if (!userId && !ownershipGroupId) {
             throw new Error('userId veya ownershipGroupId sağlanmalıdır');
         }
-        if (capabilityAtLeastOne.length === 0) {
+        if (requestedCapabilities.length === 0) {
             throw new Error('En az bir yetenek sağlanmalıdır');
         }
 
@@ -142,7 +154,7 @@ export class AuthUtilService {
                 entityName,
                 userId,
                 entityOwnershipGroupId: ownershipGroupId,
-                capabilityAtLeastOne,
+                requestedCapabilities,
             }),
         );
     }
@@ -164,7 +176,10 @@ export class AuthUtilService {
             overriderRoles: ['ADMIN'],
             ...(!entityOwnershipGroupId
                 ? {
-                      userCapabilities: [{ userId, capability: 'OWNER' }],
+                      userCapabilities: [{ userId, 
+                        capabilities: [Capability.OWNER],   
+                        capability: 'OWNER' 
+                    }],
                   }
                 : { userCapabilities: [] }),
             ...(entityOwnershipGroupId

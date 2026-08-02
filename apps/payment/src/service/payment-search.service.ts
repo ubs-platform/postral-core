@@ -17,7 +17,7 @@ import {
 } from '@tk-postral/payment-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { AccountMapper } from '../mapper/account.mapper';
@@ -85,9 +85,9 @@ export class PaymentSearchService {
             // Kullanıcının yetkili olduğu hesapları getir
             const authorizedAccountIds =
                 await this.authUtilService.fetchUserAccountIds(user!.id, [
-                    'OWNER',
-                    'EDITOR',
-                    'VIEWER',
+                    [Capability.OWNER],
+                    [Capability.EDIT],
+                    [Capability.VIEW],
                 ]);
 
             if (
@@ -197,9 +197,9 @@ export class PaymentSearchService {
         }
         const relatedAccountIds =
             await this.authUtilService.fetchUserAccountIds(user!.id, [
-                'OWNER',
-                'EDITOR',
-                'VIEWER',
+                [Capability.OWNER],
+                [Capability.EDIT],
+                [Capability.VIEW],
             ]);
         // exec(`kdialog --msgbox "User related account ids: ${JSON.stringify(relatedAccountIds)}"`);
         return await this.accountService.fetchFromRelatedTransactions(

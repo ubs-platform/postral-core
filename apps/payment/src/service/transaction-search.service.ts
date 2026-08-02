@@ -19,7 +19,7 @@ import {
 } from '@tk-postral/payment-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { AccountMapper } from '../mapper/account.mapper';
@@ -178,7 +178,8 @@ export class SellerPaymentOrderSearchService {
             this.eoService.searchOwnershipEntityIdsByUser({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                // capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                requestedCapabilities: [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
                 userId: user.id,
             })
         );

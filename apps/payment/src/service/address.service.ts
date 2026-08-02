@@ -6,7 +6,7 @@ import { ArrayContains, In, Like, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
@@ -72,7 +72,7 @@ export class AddressService extends BaseCrudService<
         if (s?.admin !== 'true') {
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ADDRESS,
-                ['OWNER', 'EDITOR', 'VIEWER'],
+                [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
                 (s?.entityOwnershipGroupId != null
                         ? { ownershipGroupId: s.entityOwnershipGroupId }
                         : { userId: u!.id })

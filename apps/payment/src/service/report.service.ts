@@ -8,7 +8,7 @@ import { ReportDTO, ReportFullDTO, ReportSearchPaginationDTO } from '@tk-postral
 import { PaymentCommonService } from './payment-common.service';
 import { ReportReconstructionDTO } from '@tk-postral/payment-common/dto';
 import { ReportMapper } from '../mapper/report-mapper';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { AuthUtilService } from './auth-util.service';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { ReportDigestionService } from './report-digestion.service';
@@ -174,7 +174,7 @@ export class ReportService {
         let userRelatedAccountIds: string[] = [];
         let allowedGroup: string | FindOperator<any> = In(["PLATFORM_SELLER", "PLATFORM_FLOW", "PLATFORM"]);
         if (q.admin !== 'true' && user) {
-            userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR', 'VIEWER']);
+            userRelatedAccountIds = await this.authUtil.fetchUserAccountIds(user.id, [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]]);
             // allowedGroup = In(["SELLER", "PLATFORM_SELLER"]); // Satıcılar da ödeyeceği komisyonu görmesi daha doğru olacak... Onun dışında kendisini ilgilendiern direkt raporları görecek. Yani SELLER
             allowedGroup = In(["SELLER"]); // Rapor içinde masraflarda komisyonunu görüyor. Bu komisyon raporları platformun yani bizim işimizi kolaylaştıracak
             // Eğer accountId yoksa ve admin değilse, boş sonuç döndürelim

@@ -16,7 +16,7 @@ import {
     RefundRequestSearchDTO,RefundRequestStatus
 } from '@tk-postral/payment-common';
 import { PostralConstants } from '../util/consts';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EventSenderService } from './event-management.service';
 import { RawSearchResult } from '@ubs-platform/crud-base-common';
 import { TypeormSearchUtil } from './base/typeorm-search-util';
@@ -289,7 +289,7 @@ export class RefundService {
     ): Promise<void> {
         const ownedSellerIds = await this.authUtilService.searchOwnedIds(
             PostralConstants.ENTITY_NAME_ACCOUNT,
-            ['OWNER', 'EDITOR'],
+            [[Capability.OWNER], [Capability.EDIT]],
             { userId: user.id },
         );
 
@@ -391,7 +391,7 @@ export class RefundService {
         if (searchParams.mode != 'ADMIN') {
             const ids = await this.authUtilService.fetchUserAccountIds(
                 user.id,
-                ['OWNER', 'EDITOR', 'VIEWER'],
+                [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
             )
             orClauses.push({ requestedByPaymentAccountId: In(ids) });
             orClauses.push({ requestedToPaymentAccountId: In(ids) });

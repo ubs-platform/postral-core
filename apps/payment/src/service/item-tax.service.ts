@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AddressSearchParamsDTO, ItemTaxDTO, ItemTaxSearchDTO } from '@tk-postral/payment-common';
+import { Capability } from '@ubs-platform/users-common';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { ItemTaxEntity } from '@tk-postral/postral-entities';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
@@ -89,8 +90,8 @@ export class ItemTaxService extends BaseCrudService<
                 this.eoService.searchOwnershipEntityIdsByUser({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                     entityName: PostralConstants.ENTITY_NAME_TAX,
-
-                    capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                    requestedCapabilities: [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
+                    // capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
                     ...(s?.entityOwnershipGroupId != null
                         ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
                         : { userId: u!.id }),
