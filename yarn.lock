@@ -1761,55 +1761,55 @@
     "@typescript-eslint/types" "8.26.1"
     eslint-visitor-keys "^4.2.0"
 
-"@ubs-platform/async-mutex@^6.11.4", "@ubs-platform/async-mutex@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/async-mutex/-/async-mutex-6.11.4.tgz"
-  integrity sha512-mB9Ym1IMqXvQ0kg3APoHQZVeH6hvlkVN/ktWfSP1hDHjAwJ/zOeELAFzYZk1igzNh/1C+dsEG0Xr71giL9IX9A==
+"@ubs-platform/async-mutex@^7.1.0", "@ubs-platform/async-mutex@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/async-mutex/-/async-mutex-7.1.0.tgz"
+  integrity sha512-fI8NGbZmcnddsv2begTzW/SIT6HvTJ8ZTqy0CttGijrqdTsVlEHnmFgyIQLukYEwHt1REF9hipaVlxcJ43uilA==
 
-"@ubs-platform/cache-manager@^6.11.4", "@ubs-platform/cache-manager@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/cache-manager/-/cache-manager-6.11.4.tgz"
-  integrity sha512-A4fUKlWSnCC/H9t6Bc3ooM3gs0Ph5He9gL8JxVBXPL8LnaZM8NGA0oRn8ZrOHJF6a20mDE/+h8pJ7fC5BTW4IQ==
+"@ubs-platform/cache-manager@^7.1.0", "@ubs-platform/cache-manager@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/cache-manager/-/cache-manager-7.1.0.tgz"
+  integrity sha512-539vKK4ZSLvUKi/zygxnD41K/G6S5JOXB6EoGHiTZwYmHSJ8umI2xcYB9iX672yyZcoru9+8GFOwIW230jjIwQ==
 
-"@ubs-platform/crud-base-common@^6.11.4", "@ubs-platform/crud-base-common@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/crud-base-common/-/crud-base-common-6.11.4.tgz"
-  integrity sha512-0EQNHNth0AUaNNmMCs0kqBlzQgVdCxkz5xDVz515JWGvCEc9q/4DZoz0wyYmPrxH/BNL0ryaOrwC3DT7reo7zA==
+"@ubs-platform/crud-base-common@^7.1.0", "@ubs-platform/crud-base-common@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/crud-base-common/-/crud-base-common-7.1.0.tgz"
+  integrity sha512-u+JgefeJ1mJuK8TWXZPGUDxikj/xpJsc+684NtsWItkInK2p0mNhgOslyWqw9PuXht+tSoj8v3dF227zhCdzzQ==
 
-"@ubs-platform/crud-base@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/crud-base/-/crud-base-6.11.4.tgz"
-  integrity sha512-a5z4CvVd8Vmig+Jj/CiccbfFNiyvcGSQLHEfdEQ4SRUejVguw2ZcqSWuRrv6lFYqcooRkv+dTf515XnvQdPJzA==
+"@ubs-platform/crud-base@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/crud-base/-/crud-base-7.1.0.tgz"
+  integrity sha512-XlkhX1z08WlQnMGbsyuLOuCt5TFS1I4+8hOAVpojDRN8iVExEqiwruUAtMrPkkj+M+ULZiWHob/yq2vXSs/F9A==
 
-"@ubs-platform/dynamic-queue@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/dynamic-queue/-/dynamic-queue-6.11.4.tgz"
-  integrity sha512-XaxTXlGCFQSoxhz38EtGHdGw0kQ+hiSNpvk+7VS4YluWlUiiKOA2BS0yb9ZluPzNXlj8CmnECkQQsnvicvPnfA==
+"@ubs-platform/dynamic-queue@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/dynamic-queue/-/dynamic-queue-7.1.0.tgz"
+  integrity sha512-RWH/020/BNrgS5sSE/Cc4JbvSvITdEIxn5Mv7ya5kkB8GmFT2STCZTmRheHjWPek1/pCKuqH3VYuMv2AkMXp5A==
 
-"@ubs-platform/feedback-common@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/feedback-common/-/feedback-common-6.11.4.tgz"
-  integrity sha512-CucimKc7KLS/Z6l2EFf5pOW3aWOk0Q3EUEfL7Hvr4fO0Vw+TCg8KoKbU06zmBfyAVzf0yn9hxj724CQV4OxfdQ==
+"@ubs-platform/feedback-common@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/feedback-common/-/feedback-common-7.1.0.tgz"
+  integrity sha512-v3taXOomUgvABljkuXbznQKCI70ornb2jo9CZ27pa8t5h8LrSHCqXkmNGM0guAKfLAMRxrkwXg9hZ4iJZmTGgQ==
 
-"@ubs-platform/microservice-setup-util@^6.11.4", "@ubs-platform/microservice-setup-util@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/microservice-setup-util/-/microservice-setup-util-6.11.4.tgz"
-  integrity sha512-lPcDKo+I5cqHx2CVcVJNL4LlVktuCT3tYaIortojqQZGYk25t1jkwGZeUq6O1OO4cr0lPCfIUEbMBeaKhXhv7Q==
+"@ubs-platform/microservice-setup-util@^7.1.0", "@ubs-platform/microservice-setup-util@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/microservice-setup-util/-/microservice-setup-util-7.1.0.tgz"
+  integrity sha512-ZpM2XvIqshwgrIHNvKr+tNJtKQAAJUJwP3P4VmuC2T3YvScASQqd8PEFFhMODadGzGquQHrOcuJjkH50wz0v/A==
 
-"@ubs-platform/notify-common@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/notify-common/-/notify-common-6.11.4.tgz"
-  integrity sha512-6E4BVbrcj09k0mQme+W9+b4Of9pyu0CYq9Pc6HyKE9twJt+Bpk4PZf8+P5dyY1/nkzFOUhyJsM6EAP/Zl5PEkw==
+"@ubs-platform/notify-common@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/notify-common/-/notify-common-7.1.0.tgz"
+  integrity sha512-JRyiEeEg+WgzoFg76mxWX6Cq+amLnRFK+0FcSVkpfof8yohLKkIjmavE7ysIM4IT7zCp5qDfusBN8daHiXhthA==
 
-"@ubs-platform/social-common@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/social-common/-/social-common-6.11.4.tgz"
-  integrity sha512-sN9GkwTDWn9SWXyEBUlU7IMkOPcG/KclxFJ+dsz4LxYEwA78e7bj7JWYPmRbULGO6QMPh6b+VEHBPweDHy66Bw==
+"@ubs-platform/social-common@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/social-common/-/social-common-7.1.0.tgz"
+  integrity sha512-ZpZ3vNdBawz1DsAch3yShXgOu0yabuAkX3aGZeB+uKWvCn7BVOJ8zvM1yLhvCOSHpzr0FdKEV6QCzm7lky64jg==
 
-"@ubs-platform/superlama-common@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/superlama-common/-/superlama-common-6.11.4.tgz"
-  integrity sha512-SI27/Y9fMkzUdcrJ76fjb0d3ssPTG0Va7lvdRsi8K9cZXP3lQ4zxjsKSiJd2CzFOHlsz0gGTdZ/To5v0jKaP9g==
+"@ubs-platform/superlama-common@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/superlama-common/-/superlama-common-7.1.0.tgz"
+  integrity sha512-2/ojJXkqqVoC6YdxbHQDDj2hqoZj4QbCmwBle9SD90w2JkPHuTPWOsHv4W6uz2oRyhJndws0on48QYNlwkwItA==
 
 "@ubs-platform/translator-core@^1.0.9":
   version "1.0.9"
@@ -1825,20 +1825,20 @@
   dependencies:
     tslib "^2.3.0"
 
-"@ubs-platform/users-common@^6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/users-common/-/users-common-6.11.4.tgz"
-  integrity sha512-BERlGSUhYGhDAcgzRVc4g3Je1nh9syRIZY66XkuS7BdydV4cZB3Y5ru3srl0zEhjLgmGfVtXQm/s9ezuGWQO7Q==
+"@ubs-platform/users-common@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/users-common/-/users-common-7.1.0.tgz"
+  integrity sha512-WcjrPZBe0CyuIg6qk+40TDFFOa8qMYUl2Qi377o7DoWsRQJcHELAlYfwFng3oXmo2W6KNeZCwuh+HQDz7MbxiQ==
 
-"@ubs-platform/users-microservice-helper@^6.11.4", "@ubs-platform/users-microservice-helper@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/users-microservice-helper/-/users-microservice-helper-6.11.4.tgz"
-  integrity sha512-DNCpWrXGkXaG5YuxzhEUTLRtO6T4sfQxqbxLUzLpyK5zeycGJEUpafRoxjrNi/rfKuie7ANJ2S3sDeiLkBykvw==
+"@ubs-platform/users-microservice-helper@^7.1.0", "@ubs-platform/users-microservice-helper@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/users-microservice-helper/-/users-microservice-helper-7.1.0.tgz"
+  integrity sha512-Q46iXAuzXrga8GstSbseE9CzAvu80W1XAyA6/n1QxTsKwIaerEi2007cezJJFfyJy62V2U7Ldz0e8TMpAMZ/3A==
 
-"@ubs-platform/users-roles@^6.11.4", "@ubs-platform/users-roles@6.11.4":
-  version "6.11.4"
-  resolved "https://registry.npmjs.org/@ubs-platform/users-roles/-/users-roles-6.11.4.tgz"
-  integrity sha512-Qp0ywk82lKaOt685bYmBsr5lTnRwpJSe5/ltd/JOKQrzi4nE06GIoJWmpKhmq47DPfLeKV5UVLorDH6HGuyKrg==
+"@ubs-platform/users-roles@^7.1.0", "@ubs-platform/users-roles@7.1.0":
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/@ubs-platform/users-roles/-/users-roles-7.1.0.tgz"
+  integrity sha512-tNpWzZcs2qPC4h99UPwPxgmWtDFf5hm5fTnhULBcu9jkHJLrYMmlDAYfAMyx+eZzscq9rNEKJbJD7XHTRPGC0w==
 
 "@webassemblyjs/ast@^1.14.1", "@webassemblyjs/ast@1.14.1":
   version "1.14.1"
