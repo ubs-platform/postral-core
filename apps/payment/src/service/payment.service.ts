@@ -704,4 +704,17 @@ export class PaymentService {
         return dtoFinal;
     }
 
+
+    public async failPaymentIfSetFailFieldTrue(paymentId: string) {
+        const field = await this.paymentrepo.update({
+            id: paymentId,
+            failOnPaymentChannelFailure: true,
+        }, {
+            errorStatus: 'FAILED',
+            paymentStatus: 'FAILED',
+        });
+        return field.affected && field.affected > 0;
+    }
+
+
 }

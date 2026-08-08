@@ -5,8 +5,9 @@ import { BigintDbField } from './base';
 import { ExternalPlatform } from './external-platform.entity';
 
 @Entity()
-@Unique(['sellerAccountId', 'itemClass', 'externalPlatformId'])
+@Unique('UQ_app_comission_seller_item_platform', ['sellerAccountId', 'itemClass', 'externalPlatformId'])
 export class AppComission {
+    
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 

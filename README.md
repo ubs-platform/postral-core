@@ -1,10 +1,10 @@
-# Postral Mona
+# Postral Core
 
 > We are actively developing this project. If you encounter an issue, please report it.
 
 ## Synopsis
 
-Postral Mona was initially derived from the UBS Mona codebase, but it has evolved into a payment-focused backend project.
+Postral Core was initially derived from the UBS Mona codebase, but it has evolved into a payment-focused backend project.
 
 The current repository primarily includes:
 

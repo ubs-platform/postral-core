@@ -1,10 +1,10 @@
-# Postral Mona Documentation (EN)
+# Postral Core Documentation (EN)
 
 > We are actively developing this project. If you encounter an issue, please report it.
 
 ## Synopsis
 
-Postral Mona started as a fork/derivative of UBS Mona, but now it is a separate payment-oriented backend project.
+Postral Core started as a fork/derivative of UBS Mona, but now it is a separate payment-oriented backend project.
 
 Main runtime apps in this repository:
 

@@ -1,10 +1,10 @@
-# Postral Mona Dokümantasyonu (TR)
+# Postral Core Dokümantasyonu (TR)
 
 > Bu projeyi geliştirmeye devam ediyoruz. Bir hata ile karşılaşırsanız lütfen bildiriniz.
 
 ## Sinopsis
 
-Postral Mona, başlangıçta UBS Mona kod tabanından türetilmiş olsa da zamanla ödeme odaklı ayrı bir backend projesine dönüşmüştür.
+Postral Core, başlangıçta UBS Mona kod tabanından türetilmiş olsa da zamanla ödeme odaklı ayrı bir backend projesine dönüşmüştür.
 
 Bu depodaki ana uygulamalar:
 

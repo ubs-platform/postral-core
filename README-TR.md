@@ -1,10 +1,10 @@
-# Postral Mona
+# Postral Core
 
 > Proje aktif geliştirme aşamasındadır. Bir sorunla karşılaşırsanız lütfen bildirin.
 
 ## Özet
 
-Postral Mona, başlangıçta UBS Mona kod tabanından türetilmiş olup zamanla ödeme odaklı bir backend projesine dönüşmüştür.
+Postral Core, başlangıçta UBS Mona kod tabanından türetilmiş olup zamanla ödeme odaklı bir backend projesine dönüşmüştür.
 
 Mevcut depo şunları içerir:
 
