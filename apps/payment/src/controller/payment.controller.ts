@@ -24,6 +24,7 @@ import { filter } from 'rxjs';
 import { PaymentChannelConfigService } from '../service/payment-channel-config.service';
 import { JwtAuthGuard, CurrentUser } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { exec } from 'child_process';
 @Controller('payment')
 export class PaymentController {
     constructor(
@@ -53,35 +54,44 @@ export class PaymentController {
         @Param() { id }: { id: string },
         @Body() captureInfo: PaymentCaptureInfoDTO,
     ) {
+        let error: any = null;
         try {
             const isProduction = process.env.NODE_ENV === 'production';
             const paymentChList = await this.paymentChannelConfigService.fetchAll({ channelId: captureInfo.paymentChannelId, page: 0, size: 2 }, isProduction)
             if (!paymentChList.content?.length) {
-                throw new BadRequestException("No payment channel found")
+                error = new BadRequestException("No payment channel found");
             }
             const paymentCh = paymentChList.content[0]
             if (!paymentCh.enabled) {
-                throw new BadRequestException("Payment channel is not enabled")
+                error = new BadRequestException("Payment channel is not enabled");
             }
             if (paymentCh.devOnly && isProduction) {
-                throw new BadRequestException("Payment channel is not available in production")
+                error = new BadRequestException("Payment channel is not available in production");
             }
-            if (!paymentCh.allowMultipleOperations) {
-                if (await this.ps.hasOngoingPaymentOperations(id)) {
-                    throw new BadRequestException("There are ongoing payment operations");
-                }
+            if (await this.ps.hasOngoingPaymentOperations(id)) {
+                error = new BadRequestException("There are ongoing payment operations");
             }
+            if (error) {
+                await this.ps.failPaymentIfSetFailFieldTrue(id);
+                throw error;
+            }
+
             return await this.ps.startPaymentOperation(id, captureInfo);
         } catch (error) {
             console.error(`Error starting payment operation for payment ${id}:`, error);
+            try {
+                await this.ps.failPaymentIfSetFailFieldTrue(id);
+            } catch (failError) {
+                console.error(`Error failing payment ${id} after failed operation start:`, failError);
+            }
             throw new BadRequestException(`Failed to start payment operation`);
         }
-
         //   return await this.ps.generateTransactions(id, captureInfo);
     }
 
     @Post('/:id/operation/check')
     public async checkOperation(@Param() { id }: { id: string }) {
+        // exec(`kdialog --msg "Checking payment operation for payment ${id}"`);
         return await this.ps.updatePaymentByOperationStatuses(id);
         //   return await this.ps.generateTransactions(id, captureInfo);
     }

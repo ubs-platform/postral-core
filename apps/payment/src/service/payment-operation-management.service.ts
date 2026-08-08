@@ -322,4 +322,15 @@ export class PaymentOperationManagementService {
         }
         return false;
     }
+
+
+    async hasFailedPaymentOperations(paymentId: string): Promise<boolean> {
+        
+        const operations = await this.paymentChannelOperationRepo.count({
+            where: [
+                { paymentId: paymentId, status: "FAILED" },
+            ],
+        });
+        return operations > 0;
+    }
 }

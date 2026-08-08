@@ -35,6 +35,8 @@ export class PaymentMapper {
             openPayment: saved.openPayment,
             externalPlatformId: saved.externalPlatformId,
             externalPlatformOrderId: saved.externalPlatformOrderId,
+            activeSessionId: saved.activeSessionId,
+            failOnPaymentChannelFailure: saved.failOnPaymentChannelFailure,
         };
     }
 
@@ -61,6 +63,8 @@ export class PaymentMapper {
             openPayment: saved.openPayment,
             externalPlatformId: saved.externalPlatformId,
             externalPlatformOrderId: saved.externalPlatformOrderId,
+            activeSessionId: saved.activeSessionId,
+            failOnPaymentChannelFailure: saved.failOnPaymentChannelFailure,
         };
     }
 }

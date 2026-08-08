@@ -10,7 +10,7 @@ import {
 import { Account, Item } from '@tk-postral/postral-entities';
 import { ItemMapper } from '../mapper/item.mapper';
 import { ItemPriceService } from './item-price.service';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { PostralConstants } from '../util/consts';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
@@ -66,10 +66,10 @@ export class ItemCrudService extends BaseCrudService<
         }
         let ids: string[] | null = null;
         if (s?.showOnlyUserOwned === 'true') {
-            
+
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ACCOUNT,
-                ['OWNER', 'EDITOR', 'VIEWER'],
+                [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
                 (s?.entityOwnershipGroupId != null
                     ? { ownershipGroupId: s.entityOwnershipGroupId }
                     : { userId: u!.id })

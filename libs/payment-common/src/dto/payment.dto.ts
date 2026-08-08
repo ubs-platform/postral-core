@@ -33,6 +33,8 @@ export interface PaymentDTO {
     openPayment?: boolean;
     externalPlatformId?: string;
     externalPlatformOrderId?: string;
+    activeSessionId?: string;
+    failOnPaymentChannelFailure?: boolean;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {

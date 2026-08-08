@@ -26,7 +26,7 @@ import { TypeormSearchUtil } from './base/typeorm-search-util';
 import { PostralConstants } from '../util/consts';
 import { lastValueFrom } from 'rxjs';
 import { EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { WebhookDispatchService } from './webhook-dispatch.service';
 import { AuthUtilService } from './auth-util.service';
 
@@ -47,7 +47,8 @@ export class InvoiceService {
             this.eoService.hasOwnership({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
                 entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                capabilityAtLeastOne: ['OWNER', 'EDITOR'],
+                // capabilityAtLeastOne: ['OWNER', 'EDITOR'],
+                requestedCapabilities: [[Capability.OWNER], [Capability.EDIT]],
                 userId: user.id,
                 entityId: accountId,
             })
@@ -246,7 +247,7 @@ export class InvoiceService {
         const accountIds: string[] = [];
 
         if (user) {
-            const sellerAccountIds = await this.authUtilService.fetchUserAccountIds(user.id, ['OWNER', 'EDITOR']);
+            const sellerAccountIds = await this.authUtilService.fetchUserAccountIds(user.id, [[Capability.OWNER], [Capability.EDIT]]);
 
             accountIds.push(...sellerAccountIds);
             if (accountIds.length === 0) {
