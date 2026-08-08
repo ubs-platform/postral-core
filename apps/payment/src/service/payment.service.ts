@@ -296,9 +296,6 @@ export class PaymentService {
         p.activeSessionId = activeSessionId;
         p.failOnPaymentChannelFailure = pdto.failOnPaymentChannelFailure ?? false;
         // p.customerAccountName = customerAccount.name;
-        // Faturalama referansları: billingAccount müşteri hesabıyla aynı; billingAddress verilmemişse
-        // müşterinin defaultAddress'i satış anında sabitlenir.
-        p.billingAccountId = customerAccountId;
         p.billingAddressId = pdto.billingAddressId ?? customerAccount.defaultAddressId;
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
@@ -686,7 +683,6 @@ export class PaymentService {
         payment.taxAmount = taxTotal;
         payment.items = items;
         payment.customerAccountId = customerAccount.id;
-        payment.billingAccountId = customerAccount.id;
         payment.billingAddressId = billingAddress.id;
         payment.externalPlatformId = dto.externalPlatformId;
         payment.externalPlatformOrderId = dto.externalPlatformOrderId;

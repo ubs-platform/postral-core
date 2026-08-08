@@ -15,7 +15,6 @@ export interface PaymentDTO {
     taxAmount: number;
     customerAccountId: string;
     customerAccountName?: string;
-    billingAccountId?: string;
     billingAddressId?: string;
     paymentChannelId: string;
     paymentChannelOperationId?: string;

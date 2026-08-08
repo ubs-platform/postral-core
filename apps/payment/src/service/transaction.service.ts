@@ -46,7 +46,6 @@ export class SellerPaymentOrderService {
         entity.paymentId = dto.paymentId;
         entity.targetAccountId = dto.targetAccountId;
         entity.sourceAccountId = dto.sourceAccountId;
-        entity.billingAccountId = dto.billingAccountId;
         entity.billingAddressId = dto.billingAddressId;
         entity.paymentStatus = dto.paymentStatus;
         entity.errorStatus = dto.errorStatus;
@@ -115,7 +114,6 @@ export class SellerPaymentOrderService {
                         paymentId: object.paymentId,
                         sourceAccountId: object.sourceAccountId,
                         targetAccountId: object.targetAccountId,
-                        billingAccountId: object.billingAccountId,
                         billingAddressId: object.billingAddressId,
                         paymentStatus: object.paymentStatus,
                         errorStatus: object.errorStatus,

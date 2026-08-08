@@ -60,20 +60,10 @@ export class SellerPaymentOrder extends BaseEntity {
     @JoinColumn({ name: 'sourceAccountId' })
     sourceAccount?: Account;
 
-    // Müşteri (source) tarafı için faturalama referansları. Fatura snapshot'ı satış anında
-    // sabitlenen bu adresten alınır; yoksa sourceAccount.defaultAddress'e düşülür.
-    @Column({ nullable: true })
-    billingAccountId?: string;
-
-    // Todo: Account => InvoiceAccount ilişkisi kurup, burayı InvoiceAccountId olarak değiştirebiliriz. Şimdilik billingAccountId olarak bıraktım.
-    @ManyToOne(() => Account, { eager: false, nullable: true })
-    @JoinColumn({ name: 'billingAccountId' })
-    billingAccount?: Account;
-
+    // Satış anındaki faturalama adresi; sourceAccount.defaultAddress'ten bağımsız kalır.
     @Column({ nullable: true })
     billingAddressId?: string;
 
-    // TODO: Address => InvoiceAddress ilişkisi kurup, burayı InvoiceAddressId olarak değiştirebiliriz. Şimdilik billingAddressId olarak bıraktım
     @ManyToOne(() => Address, { eager: false, nullable: true })
     @JoinColumn({ name: 'billingAddressId' })
     billingAddress?: Address;

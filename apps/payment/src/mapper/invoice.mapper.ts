@@ -72,9 +72,7 @@ export class InvoiceMapper {
         if (!transaction.sourceAccount || !transaction.targetAccount) {
             throw new Error('Transaction accounts not found for id: ' + sellerPaymentOrderId);
         }
-        // Müşteri (source) tarafı için faturalama adresi tercih edilir; yoksa hesabın defaultAddress'i.
-        // Satıcı (target) tarafı her zaman kendi defaultAddress'ini kullanır.
-        const customerBillingAccount = transaction.billingAccount ?? transaction.sourceAccount;
+        // Faturalama adresi: billingAddress varsa onu kullan, yoksa sourceAccount.defaultAddress'e dön.
         const customerBillingAddress = transaction.billingAddress ?? transaction.sourceAccount.defaultAddress;
         if (!customerBillingAddress || !transaction.targetAccount.defaultAddress) {
             throw new Error('Transaction account addresses not found for id: ' + sellerPaymentOrderId);
@@ -91,7 +89,7 @@ export class InvoiceMapper {
         const seller = transaction.targetAccount;
 
         entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
-        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(customerBillingAccount!);
+        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.sourceAccount!);
         entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
         entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customerBillingAddress!);
 

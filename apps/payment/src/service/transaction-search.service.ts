@@ -189,7 +189,7 @@ export class SellerPaymentOrderSearchService {
     public async fetchByIdWithRelationsInternal(id: string) {
         const transaction = await this.transactionRepo.findOne({
             where: { id },
-            relations: ['sourceAccount', 'targetAccount', "sourceAccount.defaultAddress", "targetAccount.defaultAddress", "billingAccount", "billingAddress"],
+            relations: ['sourceAccount', 'targetAccount', "sourceAccount.defaultAddress", "targetAccount.defaultAddress", "billingAddress"],
         });
         if (!transaction) {
             throw new Error('Transaction not found');

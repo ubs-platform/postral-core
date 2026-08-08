@@ -56,16 +56,7 @@ export class Payment {
     @JoinColumn({ name: 'customerAccountId' })
     customerAccount?: Account;
 
-    // Faturalama hesabı ve adresi: satış anında sabitlenen referanslar. Fatura kesilirken
-    // snapshot bunlardan alınır (hesabın değişebilen defaultAddress'i yerine). billingAccount
-    // şimdilik customerAccount ile aynı hesabı gösterir; billingAddress satış anındaki adrestir.
-    @Column({ nullable: true })
-    billingAccountId?: string;
-
-    @ManyToOne(() => Account, { eager: false, nullable: true })
-    @JoinColumn({ name: 'billingAccountId' })
-    billingAccount?: Account;
-
+    // Satış anındaki faturalama adresi; müşterinin sonradan değiştirdiği defaultAddress'ten bağımsız kalır.
     @Column({ nullable: true })
     billingAddressId?: string;
 
