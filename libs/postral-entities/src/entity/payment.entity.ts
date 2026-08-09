@@ -16,6 +16,8 @@ import { MoneyDbField } from './base';
 import { Account } from './account.entity';
 import { Address } from './address.entity';
 import { ExternalPlatform } from './external-platform.entity';
+import { SnapshotAccount } from './snapshot-account.entity';
+import { SnapshotAddress } from './snapshot-address.entity';
 
 @Entity()
 export class Payment {
@@ -56,6 +58,14 @@ export class Payment {
     @JoinColumn({ name: 'customerAccountId' })
     customerAccount?: Account;
 
+    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
+    @JoinColumn()
+    customerSnapshotAccount?: SnapshotAccount;
+
+    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
+    @JoinColumn()
+    customerSnapshotAddress?: SnapshotAddress;
+
     // Satış anındaki faturalama adresi; müşterinin sonradan değiştirdiği defaultAddress'ten bağımsız kalır.
     @Column({ nullable: true })
     billingAddressId?: string;
@@ -64,8 +74,6 @@ export class Payment {
     @JoinColumn({ name: 'billingAddressId' })
     billingAddress?: Address;
 
-    // @Column({ nullable: true })
-    // customerAccountName!: string;
 
     @Column({ type: 'varchar' })
     paymentStatus!: PaymentStatus;

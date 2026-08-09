@@ -9,9 +9,9 @@ import {
     OneToOne,
 } from 'typeorm';
 import { Payment } from './payment.entity';
-import { SellerPaymentOrder } from './transaction.entity';
-import { InvoiceAddress } from './invoice-address.entity';
-import { InvoiceAccount } from './invoice-account.entity';
+import { SellerPaymentOrder } from './seller-payment-order.entity';
+import { SnapshotAddress } from './snapshot-address.entity';
+import { SnapshotAccount } from './snapshot-account.entity';
 
 @Entity()
 export class Invoice {
@@ -23,41 +23,41 @@ export class Invoice {
 
     @ManyToOne(() => Payment, { nullable: true, eager: false })
     @JoinColumn({ name: 'paymentId' })
-    payment: Payment;
+    payment!: Payment;
 
     @Column({ nullable: true })
-    sellerPaymentOrderId: string;
+    sellerPaymentOrderId!: string;
 
     @ManyToOne(() => SellerPaymentOrder, { nullable: true, eager: false })
     @JoinColumn({ name: 'sellerPaymentOrderId' })
-    sellerPaymentOrder: SellerPaymentOrder;
+    sellerPaymentOrder!: SellerPaymentOrder;
 
-    @OneToOne(() => InvoiceAddress, { cascade: true, eager: true })
+    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
-    customerInvoiceAddress?: InvoiceAddress;
+    customerInvoiceAddress?: SnapshotAddress;
 
-    @OneToOne(() => InvoiceAccount, { cascade: true, eager: true })
+    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
     @JoinColumn()
-    customerAccount?: InvoiceAccount;
+    customerAccount?: SnapshotAccount;
 
-    @OneToOne(() => InvoiceAccount, { cascade: true, eager: true })
+    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
     @JoinColumn()
-    sellerInvoiceAccount?: InvoiceAccount;
+    sellerInvoiceAccount?: SnapshotAccount;
 
-    @OneToOne(() => InvoiceAddress, { cascade: true, eager: true })
+    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
-    sellerInvoiceAddress?: InvoiceAddress;
+    sellerInvoiceAddress?: SnapshotAddress;
 
     // Dosyayı file servisi ile tutabilirim o nedenle sadece müşteri bilgilerini tutuyorum
 
     @Column({ length: 100, nullable: true })
-    invoiceNumber: string;
+    invoiceNumber!: string;
 
     /**
      * Fatura tarihi
      */
     @Column({ type: 'date', nullable: true })
-    invoiceDate: Date;
+    invoiceDate!: Date;
 
     // Zaten finalized olan onaylanmıştır. Onaylanmamış olanlar ise sadece yüklenmiş durumdadır. Onaylanmamış faturaların tekrar onaylanması veya reddedilmesi mümkün değildir.
     /**

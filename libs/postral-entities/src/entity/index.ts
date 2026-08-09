@@ -6,13 +6,13 @@ import { Item } from './item.entity';
 import { PostralPaymentItem } from './payment-item.entity';
 import { PostralPaymentTax } from './payment-tax.entity';
 import { Payment } from './payment.entity';
-import { SellerPaymentOrder } from './transaction.entity';
+import { SellerPaymentOrder } from './seller-payment-order.entity';
 import { Address } from './address.entity';
 import { ItemTaxEntity, ItemTaxVariation } from './item-tax.entity';
 import { PaymentChannelOperation } from './payment-channel-operation.entity';
 import { Invoice } from './invoice.entity';
-import { InvoiceAddress } from './invoice-address.entity';
-import { InvoiceAccount } from './invoice-account.entity';
+import { SnapshotAddress } from './snapshot-address.entity';
+import { SnapshotAccount } from './snapshot-account.entity';
 import { PostralPaymentEvent } from './payment-event.entity';
 import { RefundRequest } from './refund-request.entity';
 import { RefundRequestItem } from './refund-request-item.entity';
@@ -45,8 +45,8 @@ export const PaymentsEntities = [
     ItemTaxVariation,
     PaymentChannelOperation,
     Invoice,
-    InvoiceAddress,
-    InvoiceAccount,
+    SnapshotAddress,
+    SnapshotAccount,
     PostralPaymentEvent,
     RefundRequest,
     RefundRequestItem,
@@ -78,8 +78,8 @@ export {
     ItemTaxVariation,
     PaymentChannelOperation,
     Invoice,
-    InvoiceAddress,
-    InvoiceAccount,
+    SnapshotAddress as InvoiceAddress,
+    SnapshotAccount as InvoiceAccount,
     PostralPaymentEvent,
     RefundRequest,
     RefundRequestItem,

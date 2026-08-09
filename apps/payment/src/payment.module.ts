@@ -22,7 +22,7 @@ import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
 import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
-import { SellerPaymentOrderService } from './service/transaction.service';
+import { SellerPaymentOrderService } from './service/seller-payment-order.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
 import { AccountNewController } from './controller/account-controller';
 import { AddressController } from './controller/address-controller';

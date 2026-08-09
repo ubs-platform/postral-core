@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
-import { SellerPaymentOrderService } from '../service/transaction.service';
+import { SellerPaymentOrderService } from '../service/seller-payment-order.service';
 import { SellerPaymentOrderSearchService } from '../service/transaction-search.service';
 import {
     EntityOwnershipService,

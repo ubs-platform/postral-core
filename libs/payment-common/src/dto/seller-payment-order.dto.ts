@@ -5,23 +5,23 @@ import { SellerPaymentOrderType, } from '../type/transaction-type';
 
 export class SellerPaymentOrderDTO {
     id?: string;
-    amount: number;
-    taxAmount: number;
-    untaxedAmount: number;
-    currency: string;
-    paymentId: string;
-    targetAccountId: string;
+    amount!: number;
+    taxAmount!: number;
+    untaxedAmount!: number;
+    currency!: string;
+    paymentId!: string;
+    targetAccountId!: string;
     targetAccountName?: string;
-    sourceAccountId: string;
+    sourceAccountId!: string;
     sourceAccountName?: string;
     billingAddressId?: string;
-    paymentStatus: PaymentStatus;
+    paymentStatus!: PaymentStatus;
     errorStatus?: PaymentErrorStatus;
-    operationNote: string;
-    transactionType: SellerPaymentOrderType;
-    createdAt: string | Date;
-    updatedAt: string | Date;
-    lastOperationDate: string | Date;
+    operationNote!: string;
+    transactionType!: SellerPaymentOrderType;
+    createdAt!: string | Date;
+    updatedAt!: string | Date;
+    lastOperationDate!: string | Date;
     description?: string;
     invoiceCount?: number;
     hasFinalizedInvoice?: boolean;
@@ -39,15 +39,15 @@ export class PaymentSellerOrderSearchDTO {
     currency?: string;
     dateFrom?: string;
     dateTo?: string;
-    admin: 'true' | 'false';
+    admin: 'true' | 'false' = "false";
     // searchSide?: 'CUSTOMER' | 'SELLER' | "ADMIN";
 }
 
 export class PaymentSellerOrderSearchPaginationDTO extends PaymentSellerOrderSearchDTO {
-    page: number;
-    size: number;
-    sortBy: string;
-    sortRotation: 'asc' | 'desc';
+    page: number = 0;
+    size: number = 10;
+    sortBy: string = 'createdAt';
+    sortRotation: 'asc' | 'desc' = 'asc';
 }
 
 /**

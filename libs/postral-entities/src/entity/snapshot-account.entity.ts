@@ -2,7 +2,7 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Payment } from './payment.entity';
 
 @Entity()
-export class InvoiceAccount {
+export class SnapshotAccount {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 

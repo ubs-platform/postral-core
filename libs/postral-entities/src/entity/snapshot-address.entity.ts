@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
-export class InvoiceAddress {
+export class SnapshotAddress {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
