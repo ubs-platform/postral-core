@@ -1,7 +1,9 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Payment } from './payment.entity';
 import { MoneyDbField } from './base';
 import { Account } from './account.entity';
+import { SnapshotAccount } from './snapshot-account.entity';
+import { SnapshotAddress } from './snapshot-address.entity';
 
 @Entity()
 export class PostralPaymentItem {
@@ -26,7 +28,7 @@ export class PostralPaymentItem {
     @Column()
     name!: string;
 
-     @Column(MoneyDbField)
+    @Column(MoneyDbField)
     quantity: number = 0;
 
     @Column(MoneyDbField)
@@ -58,6 +60,14 @@ export class PostralPaymentItem {
     @ManyToOne(() => Account, { eager: true, nullable: true })
     @JoinColumn({ name: 'sellerAccountId' })
     sellerAccount?: Account;
+
+    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
+    @JoinColumn()
+    sellerSnapshotAccount?: SnapshotAccount;
+
+    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
+    @JoinColumn()
+    sellerSnapshotAddress?: SnapshotAddress;
 
     get sellerAccountName(): string {
         return this.sellerAccount ? this.sellerAccount.name : '';

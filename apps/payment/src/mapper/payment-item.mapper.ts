@@ -2,9 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PaymentItemDto } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { exec } from 'child_process';
+import { InvoiceAddressMapper } from './invoice-address.mapper';
 
 @Injectable()
 export class PaymentItemMapper {
+
+    constructor() { }
+
     toEntity(dto: PaymentItemDto): PostralPaymentItem {
         // if (dto.appComissionAmount == 0) {
         //     exec(`kdialog --msgbox "PaymentItemMapper toEntity appComissionAmount is 0 for itemId: ${dto.itemId}, name: ${dto.name}"`);

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InvoiceAddressDto } from '@tk-postral/payment-common';
 import { InvoiceAddress, Address } from '@tk-postral/postral-entities';
+import { AccountAddressDto } from '@tk-postral/payment-common';
 import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()
@@ -8,7 +9,7 @@ export class InvoiceAddressMapper {
 
     constructor(private cryptionUtil: CryptionUtil) { }
 
-    toEntityFromAccountAddress(acad: Address): InvoiceAddress {
+    toEntityFromAccountAddress(acad: Address | AccountAddressDto): InvoiceAddress {
         // Şifrelenmiş alanlar zaten şifreli geliyor, o yüzden direkt atama yapabiliriz
         const entity = new InvoiceAddress();
         entity.name = acad.name;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InvoiceAccountDTO } from '@tk-postral/payment-common';
+import { AccountDTO, InvoiceAccountDTO } from '@tk-postral/payment-common';
 import { InvoiceAccount, Account } from '@tk-postral/postral-entities';
 import { CryptionUtil } from '../util/cryption-util';
 
@@ -11,7 +11,7 @@ export class InvoiceAccountMapper {
     constructor(private cryptionUtil: CryptionUtil) {
         
     }
-    toEntityFromNormalAccount(account: Account): InvoiceAccount {
+    toEntityFromNormalAccount(account: Account | AccountDTO): InvoiceAccount {
         const entity = new InvoiceAccount();
         entity.name = account.name;
         // zaten şifreli geliyor...

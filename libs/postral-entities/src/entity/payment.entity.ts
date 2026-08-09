@@ -54,6 +54,14 @@ export class Payment {
     @Column({ nullable: true })
     customerAccountId?: string;
 
+    // Satış anındaki faturalama adresi; müşterinin sonradan değiştirdiği defaultAddress'ten bağımsız kalır.
+    @Column({ nullable: true })
+    billingAddressId?: string;
+
+    @ManyToOne(() => Address, { eager: false, nullable: true })
+    @JoinColumn({ name: 'billingAddressId' })
+    billingAddress?: Address;
+
     @ManyToOne(() => Account, { eager: true, nullable: true })
     @JoinColumn({ name: 'customerAccountId' })
     customerAccount?: Account;
@@ -65,14 +73,6 @@ export class Payment {
     @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
     customerSnapshotAddress?: SnapshotAddress;
-
-    // Satış anındaki faturalama adresi; müşterinin sonradan değiştirdiği defaultAddress'ten bağımsız kalır.
-    @Column({ nullable: true })
-    billingAddressId?: string;
-
-    @ManyToOne(() => Address, { eager: false, nullable: true })
-    @JoinColumn({ name: 'billingAddressId' })
-    billingAddress?: Address;
 
 
     @Column({ type: 'varchar' })

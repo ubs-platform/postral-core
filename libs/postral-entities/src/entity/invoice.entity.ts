@@ -16,17 +16,17 @@ import { SnapshotAccount } from './snapshot-account.entity';
 @Entity()
 export class Invoice {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ nullable: true })
-    paymentId: string;
+    paymentId?: string;
 
     @ManyToOne(() => Payment, { nullable: true, eager: false })
     @JoinColumn({ name: 'paymentId' })
     payment!: Payment;
 
     @Column({ nullable: true })
-    sellerPaymentOrderId!: string;
+    sellerPaymentOrderId?: string;
 
     @ManyToOne(() => SellerPaymentOrder, { nullable: true, eager: false })
     @JoinColumn({ name: 'sellerPaymentOrderId' })
@@ -40,13 +40,19 @@ export class Invoice {
     @JoinColumn()
     customerAccount?: SnapshotAccount;
 
-    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
-    @JoinColumn()
-    sellerInvoiceAccount?: SnapshotAccount;
+    @Column({ nullable: true })
+    sellerSnapshotAccountId?: string;
 
-    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
-    @JoinColumn()
-    sellerInvoiceAddress?: SnapshotAddress;
+    @Column({ nullable: true })
+    sellerSnapshotAddressId?: string;
+
+    @OneToOne(() => SnapshotAccount, { eager: true })
+    @JoinColumn({ name: 'sellerSnapshotAccountId' })
+    sellerSnapshotAccount?: SnapshotAccount;
+
+    @OneToOne(() => SnapshotAddress, { eager: true })
+    @JoinColumn({ name: 'sellerSnapshotAddressId' })
+    sellerSnapshotAddress?: SnapshotAddress;
 
     // Dosyayı file servisi ile tutabilirim o nedenle sadece müşteri bilgilerini tutuyorum
 

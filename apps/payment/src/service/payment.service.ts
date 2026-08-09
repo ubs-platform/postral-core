@@ -14,6 +14,7 @@ import {
     PaymentFullDTO,
     SellerPaymentOrderDTO,
     CreateExternalPlatformPaymentDTO,
+    AccountDTO,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { TransactionMapper } from '../mapper/transaction.mapper';
@@ -37,6 +38,8 @@ import { AddressService } from './address.service';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
+import { InvoiceAccountMapper } from '../mapper/invoice-account.mapper';
+import { InvoiceAddressMapper } from '../mapper/invoice-address.mapper';
 
 @Injectable()
 export class PaymentService {
@@ -65,6 +68,9 @@ export class PaymentService {
         private appComissionService: AppComissionService,
         private externalPlatformService: ExternalPlatformService,
         private addressService: AddressService,
+        private invoiceAccountMapper: InvoiceAccountMapper,
+        private invoiceAddressMapper: InvoiceAddressMapper
+
     ) { }
 
     async onModuleInit() {
@@ -257,15 +263,15 @@ export class PaymentService {
 
         const customerAccountId = pdto.customerAccountId; // TOOD: Auth'd user id gelmeli...
         const customerAccount = await this.accountService.fetchOne(customerAccountId);
-        if (pdto.type === "REFUND" && !pdto.refundRequestId) {
-            throw new BadRequestException('Refund request ID is required for REFUND type');
-        }
+
         if (!customerAccount) {
             throw new NotFoundException(
                 'Customer account not found for payment init'
             );
         }
-
+        if (pdto.type === "REFUND" && !pdto.refundRequestId) {
+            throw new BadRequestException('Refund request ID is required for REFUND type');
+        }
         if (pdto.saleMode === undefined || pdto.saleMode.trim() === '') {
             pdto.saleMode = 'DEFAULT';
         }
@@ -286,22 +292,58 @@ export class PaymentService {
 
         items = calculationResult.items.map((ci) => this.paymentItemMapper.toEntity(ci));
 
+        for (const item of items) {
+            if (!item.sellerAccountId) {
+                throw new BadRequestException(`Seller account ID is required for item ${item.itemId}`);
+            }
+            const itemSellerAccount = await this.accountService.fetchOne(item.sellerAccountId);
+            if (!itemSellerAccount) {
+                throw new NotFoundException(`Seller account not found for item ${item.itemId}`);
+            }
+            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
+            if (!itemSellerAccount.defaultAddressId) {
+                throw new BadRequestException(`Seller account ${item.sellerAccountId} does not have a default address`);
+            }
+            const sellerDefaultAddress = await this.addressService.fetchOne(itemSellerAccount.defaultAddressId);
+            item.sellerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(sellerDefaultAddress);
+        }
+
         const p = new Payment();
+        
         p.type = pdto.type;
         p.currency = pdto.currency;
         p.totalAmount = totalAmt;
         p.taxAmount = taxTotal;
         p.items = items;
         p.customerAccountId = customerAccountId;
+        await this.applyAccountSnapshot(customerAccount, p);
         p.activeSessionId = activeSessionId;
         p.failOnPaymentChannelFailure = pdto.failOnPaymentChannelFailure ?? false;
         // p.customerAccountName = customerAccount.name;
         p.billingAddressId = pdto.billingAddressId ?? customerAccount.defaultAddressId;
+        await this.applyAddressSnapshot(p);
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
         p.includeInReportDigestion = true;
         return p;
+    }
+
+    private async applyAddressSnapshot(p: Payment) {
+        if (!p.billingAddressId) {
+            throw new BadRequestException('Valid billing address ID is required for payment init');
+        }
+        const address = await this.addressService.fetchOne(p.billingAddressId); // Faturalama adresi var mı kontrol et
+        if (!address) {
+            throw new NotFoundException('Billing address not found');
+        }
+
+        p.customerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(address);
+    }
+
+    private async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
+        const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount);
+        p.customerSnapshotAccount = accountSnapshot;
     }
 
     async cancelPayment(id: string) {
