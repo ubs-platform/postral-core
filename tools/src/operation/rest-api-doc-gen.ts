@@ -10,9 +10,7 @@ export class RestApiDocGen {
         const mainPath = process.cwd();
         console.info('Project directory: ' + mainPath);
         const byProject = await ControllerScanner.scanAllControllers(mainPath);
-        if (Object.entries(byProject).length == 0) {
-            exec(`kdialog --msgbox 'ByProject içi dolu gelmiyor...'`)
-        }
+
         Object.entries(byProject).forEach(([key, ac]) => {
             console.info(key, ac)
             ac.forEach((c) => {

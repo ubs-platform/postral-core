@@ -140,7 +140,6 @@ export class SellerPaymentOrderService {
                         sellerSnapshotAddressId: object.sellerSnapshotAddressId,
                     } as SellerPaymentOrderDTO;
                 }
-                debugger;
                 const ptdto = mappingObject[key] as SellerPaymentOrderDTO;
                 ptdto.amount += object.amount;
                 ptdto.taxAmount += object.taxAmount;

@@ -30,7 +30,6 @@ export class TransactionMapper {
         transaction.sellerSnapshotAddressId = paymentItem.sellerSnapshotAddressId;
         transaction.customerSnapshotAccountId = payment.customerSnapshotAccountId;
         transaction.customerSnapshotAddressId = payment.customerSnapshotAddressId;
-        exec(`kdialog --msgbox "sellerSnapshotAccountId: ${transaction.sellerSnapshotAccountId} customerSnapshotAccountId: ${transaction.customerSnapshotAccountId} sellerSnapshotAddressId: ${transaction.sellerSnapshotAddressId} customerSnapshotAddressId: ${transaction.customerSnapshotAddressId} "   `);
         return transaction;
     }
 
