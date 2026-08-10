@@ -15,6 +15,7 @@ import {
     SellerPaymentOrderDTO,
     CreateExternalPlatformPaymentDTO,
     AccountDTO,
+    AccountAddressDto,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { TransactionMapper } from '../mapper/transaction.mapper';
@@ -40,8 +41,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { InvoiceAccountMapper } from '../mapper/invoice-account.mapper';
 import { InvoiceAddressMapper } from '../mapper/invoice-address.mapper';
-import { SnapshotAccount } from '@tk-postral/postral-entities/entity/snapshot-account.entity';
-import { SnapshotAddress } from '@tk-postral/postral-entities/entity/snapshot-address.entity';
 
 @Injectable()
 export class PaymentService {
@@ -758,39 +757,39 @@ export class PaymentService {
 
 
     private async applyItemSellerSnapshots(items: PostralPaymentItem[]) {
-        const snapshotAddressMapByRealId = new Map<string, SnapshotAddress>();
-        const snapshotAccountMapByRealId = new Map<string, SnapshotAccount>();
         const realAccountMapByRealId = new Map<string, AccountDTO>();
+        const realAddressMapByAccountId = new Map<string, AccountAddressDto>();
         for (const item of items) {
             if (!item.sellerAccountId) {
                 throw new BadRequestException(`Seller account ID is required for item ${item.itemId}`);
             }
-            if (!snapshotAccountMapByRealId.has(item.sellerAccountId)) {
+
+            if (!realAccountMapByRealId.has(item.sellerAccountId)) {
                 const itemSellerAccount = await this.accountService.fetchOne(item.sellerAccountId);
                 if (!itemSellerAccount) {
                     throw new NotFoundException(`Seller account not found for item ${item.itemId}`);
                 }
                 realAccountMapByRealId.set(item.sellerAccountId, itemSellerAccount);
-                const snapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
-                snapshotAccountMapByRealId.set(item.sellerAccountId, snapshotAccount);
             }
 
-            const itemSellerAccount = snapshotAccountMapByRealId.get(item.sellerAccountId);
-            item.sellerSnapshotAccount = itemSellerAccount;
+            const itemSellerAccount = realAccountMapByRealId.get(item.sellerAccountId)!;
+            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
 
-            if (!realAccountMapByRealId.has(item.sellerAccountId) || !realAccountMapByRealId.get(item.sellerAccountId)!.defaultAddressId) {
+            if (!itemSellerAccount.defaultAddressId) {
                 throw new BadRequestException(`Seller account ${item.sellerAccountId} does not have a default address`);
             }
-            if (snapshotAddressMapByRealId.has(item.sellerAccountId)) {
-                item.sellerSnapshotAddress = snapshotAddressMapByRealId.get(item.sellerAccountId);
-                continue;
+
+            if (!realAddressMapByAccountId.has(item.sellerAccountId)) {
+                const sellerDefaultAddress = await this.addressService.fetchOne(itemSellerAccount.defaultAddressId);
+                if (!sellerDefaultAddress) {
+                    throw new NotFoundException(`Seller default address not found for item ${item.itemId}`);
+                }
+                realAddressMapByAccountId.set(item.sellerAccountId, sellerDefaultAddress);
             }
-            const sellerDefaultAddressId = realAccountMapByRealId.get(item.sellerAccountId)!.defaultAddressId!;
-            
-            const sellerDefaultAddress = await this.addressService.fetchOne(sellerDefaultAddressId);
+
+            const sellerDefaultAddress = realAddressMapByAccountId.get(item.sellerAccountId)!;
             const sellerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(sellerDefaultAddress);
             item.sellerSnapshotAddress = sellerSnapshotAddress;
-            snapshotAddressMapByRealId.set(item.sellerAccountId, sellerSnapshotAddress);
         }
     }
 }
