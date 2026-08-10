@@ -4,13 +4,15 @@ import { PaymentDTO, PaymentItemDTO } from '@tk-postral/payment-common';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { exec } from 'child_process';
+import { InvoiceAddressMapper } from './invoice-address.mapper';
+import { InvoiceAccountMapper } from './invoice-account.mapper';
 
 @Injectable()
 export class TransactionMapper {
     /**
      *
      */
-    constructor() {}
+    constructor(private snapshotAddressMapper: InvoiceAddressMapper, private snapshotAccountMapper: InvoiceAccountMapper) { }
 
     fromPaymentItem(paymentItem: PaymentItemDTO, payment: Payment): SellerPaymentOrderDTO {
         const transaction = new SellerPaymentOrderDTO();
@@ -24,10 +26,15 @@ export class TransactionMapper {
         transaction.paymentStatus = payment.paymentStatus;
         transaction.transactionType = payment.type === 'PURCHASE' ? 'CREDIT_TO_SELLER' : 'DEBIT_FROM_SELLER';
         transaction.openPayment = payment.openPayment;
+        transaction.sellerSnapshotAccountId = paymentItem.sellerSnapshotAccountId;
+        transaction.sellerSnapshotAddressId = paymentItem.sellerSnapshotAddressId;
+        transaction.customerSnapshotAccountId = payment.customerSnapshotAccountId;
+        transaction.customerSnapshotAddressId = payment.customerSnapshotAddressId;
+        exec(`kdialog --msgbox "sellerSnapshotAccountId: ${transaction.sellerSnapshotAccountId} customerSnapshotAccountId: ${transaction.customerSnapshotAccountId} sellerSnapshotAddressId: ${transaction.sellerSnapshotAddressId} customerSnapshotAddressId: ${transaction.customerSnapshotAddressId} "   `);
         return transaction;
     }
 
-    toDto(saved: SellerPaymentOrder): PaymentTransactionDTO {
+    toDto(saved: SellerPaymentOrder, full = false): SellerPaymentOrderDTO {
         // exec('kdialog --msgbox "toDto called with id: ' + saved.id + "  Accountlar: " + saved.sourceAccount?.name + " -> " + saved.targetAccount?.name + '" 10 50');
         return {
             amount: saved.amount,
@@ -52,6 +59,14 @@ export class TransactionMapper {
             invoiceCount: saved.invoiceCount,
             hasFinalizedInvoice: saved.hasFinalizedInvoice,
             openPayment: saved.openPayment,
+            sellerSnapshotAccountId: saved.sellerSnapshotAccountId,
+            customerSnapshotAccountId: saved.customerSnapshotAccountId,
+            sellerSnapshotAddressId: saved.sellerSnapshotAddressId,
+            customerSnapshotAddressId: saved.customerSnapshotAddressId,
+            sellerSnapshotAccount: (full && saved.sellerSnapshotAccount) ? this.snapshotAccountMapper.toDto(saved.sellerSnapshotAccount) : undefined,
+            customerSnapshotAccount: (full && saved.customerSnapshotAccount) ? this.snapshotAccountMapper.toDto(saved.customerSnapshotAccount) : undefined,
+            customerSnapshotAddress: (full && saved.customerSnapshotAddress) ? this.snapshotAddressMapper.toDto(saved.customerSnapshotAddress) : undefined,
+            sellerSnapshotAddress: (full && saved.sellerSnapshotAddress) ? this.snapshotAddressMapper.toDto(saved.sellerSnapshotAddress) : undefined,
         };
     }
 }

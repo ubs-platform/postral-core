@@ -12,9 +12,27 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "command": "npm run start payment",
+            "command": "npm run start payment -- --debug",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Postral Payment (start:debug)",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "start:debug",
+                "--",
+                "payment"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "autoAttachChildProcesses": true,
+            "skipFiles": [
+                "<node_internals>/**"
             ]
         }
     ]

@@ -1,5 +1,7 @@
 import { PaymentErrorStatus, PaymentStatus } from '../type/status';
 import { SellerPaymentOrderType, } from '../type/transaction-type';
+import { SnapshotAccountDTO } from './invoice-account.dto';
+import { SnapshotAddressDTO } from './invoice-address.dto';
 
 
 
@@ -26,6 +28,14 @@ export class SellerPaymentOrderDTO {
     invoiceCount?: number;
     hasFinalizedInvoice?: boolean;
     openPayment?: boolean;
+    sellerSnapshotAccountId?: string;
+    sellerSnapshotAddressId?: string;
+    customerSnapshotAccountId?: string;
+    customerSnapshotAddressId?: string;
+    sellerSnapshotAccount?: SnapshotAccountDTO;
+    sellerSnapshotAddress?: SnapshotAddressDTO;
+    customerSnapshotAccount?: SnapshotAccountDTO;
+    customerSnapshotAddress?: SnapshotAddressDTO;
 }
 
 export class PaymentSellerOrderSearchDTO {

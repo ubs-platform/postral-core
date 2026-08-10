@@ -9,13 +9,14 @@ import {
 
 import { ArrayToObjectUtil, TaxCalculationUtil } from '@tk-postral/common-utils';
 import { SellerPaymentOrder } from '@tk-postral/postral-entities';
+import { exec } from 'child_process';
 
 @Injectable()
 export class SellerPaymentOrderService {
     constructor(
         @InjectRepository(SellerPaymentOrder)
         private transactionRepository: Repository<SellerPaymentOrder>,
-    ) {}
+    ) { }
 
     toDto(entity: SellerPaymentOrder): SellerPaymentOrderDTO {
         const dto = new SellerPaymentOrderDTO();
@@ -28,6 +29,10 @@ export class SellerPaymentOrderService {
         dto.paymentStatus = entity.paymentStatus;
         dto.untaxedAmount = entity.untaxedAmount;
         dto.taxAmount = entity.taxAmount;
+        dto.sellerSnapshotAccountId = entity.sellerSnapshotAccountId;
+        dto.sellerSnapshotAddressId = entity.sellerSnapshotAddressId;
+        dto.customerSnapshotAccountId = entity.customerSnapshotAccountId;
+        dto.customerSnapshotAddressId = entity.customerSnapshotAddressId;
         return dto;
     }
 
@@ -52,6 +57,10 @@ export class SellerPaymentOrderService {
         entity.sellerOrderType = dto.transactionType;
         entity.operationNote = dto.operationNote;
         entity.openPayment = dto.openPayment ?? false;
+        entity.sellerSnapshotAccountId = dto.sellerSnapshotAccountId;
+        entity.sellerSnapshotAddressId = dto.sellerSnapshotAddressId;
+        entity.customerSnapshotAccountId = dto.customerSnapshotAccountId;
+        entity.customerSnapshotAddressId = dto.customerSnapshotAddressId;
         return entity;
     }
 
@@ -74,10 +83,16 @@ export class SellerPaymentOrderService {
             existing.updatedAt = new Date();
             existing.errorStatus = tr.errorStatus;
             existing.operationNote = tr.operationNote;
+            existing.sellerSnapshotAccountId = tr.sellerSnapshotAccountId;
+            existing.sellerSnapshotAddressId = tr.sellerSnapshotAddressId;
+            existing.customerSnapshotAccountId = tr.customerSnapshotAccountId;
+            existing.customerSnapshotAddressId = tr.customerSnapshotAddressId;
+            // exec(`kdialog --msgbox "sellerSnapshotAccountId: ${existing.sellerSnapshotAccountId} customerSnapshotAccountId: ${existing.customerSnapshotAccountId} sellerSnapshotAddressId: ${existing.sellerSnapshotAddressId} customerSnapshotAddressId: ${existing.customerSnapshotAddressId} "   `);
+
             await this.transactionRepository.save(existing);
             return this.toDto(existing);
         }
-        
+
         const entity = this.fromDto(tr);
         await this.transactionRepository.save(entity);
         // Save to DB logic here (omitted for brevity)
@@ -119,8 +134,13 @@ export class SellerPaymentOrderService {
                         errorStatus: object.errorStatus,
                         operationNote: object.operationNote,
                         transactionType: object.transactionType,
+                        customerSnapshotAccountId: object.customerSnapshotAccountId,
+                        customerSnapshotAddressId: object.customerSnapshotAddressId,
+                        sellerSnapshotAccountId: object.sellerSnapshotAccountId,
+                        sellerSnapshotAddressId: object.sellerSnapshotAddressId,
                     } as SellerPaymentOrderDTO;
                 }
+                debugger;
                 const ptdto = mappingObject[key] as SellerPaymentOrderDTO;
                 ptdto.amount += object.amount;
                 ptdto.taxAmount += object.taxAmount;
@@ -130,7 +150,7 @@ export class SellerPaymentOrderService {
         const values = Object.values(transactionGrouped).flat().flat();
         const savedTransactions: SellerPaymentOrderDTO[] = [];
         for (const tr of values) {
-            const savedSellerPaymentOrder =  await this.addTransaction(tr as SellerPaymentOrderDTO);
+            const savedSellerPaymentOrder = await this.addTransaction(tr as SellerPaymentOrderDTO);
             savedTransactions.push(savedSellerPaymentOrder);
         }
         return savedTransactions;

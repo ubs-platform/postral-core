@@ -30,7 +30,7 @@ export class SnapshotAddress {
 
     /** Sokak/Cadde adı */
     @Column()
-    streetName: string;
+    streetName!: string;
 
     /** Ek sokak bilgisi */
     @Column({ nullable: true })
@@ -42,15 +42,15 @@ export class SnapshotAddress {
 
     /** İlçe adı */
     @Column()
-    citySubdivisionName: string;
+    citySubdivisionName!: string;
 
     /** Şehir/İl adı */
     @Column()
-    cityName: string;
+    cityName!: string;
 
     /** Posta kodu */
     @Column()
-    postalZone: string;
+    postalZone!: string;
 
     /** Bölge/Region (örn: "Marmara") */
     @Column({ nullable: true })
@@ -62,7 +62,7 @@ export class SnapshotAddress {
 
     /** Ülke adı */
     @Column()
-    country: string;
+    country!: string;
 
     /** Ülke alt bölümü (örn: eyalet, il) */
     @Column({ nullable: true })

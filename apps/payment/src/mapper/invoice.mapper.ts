@@ -25,8 +25,8 @@ export class InvoiceMapper {
     toDto(entity: Invoice): InvoiceDTO {
         const dto: InvoiceDTO = {
             id: entity.id,
-            paymentId: entity.paymentId,
-            sellerPaymentOrderId: entity.sellerPaymentOrderId,
+            paymentId: entity.paymentId!,
+            sellerPaymentOrderId: entity.sellerPaymentOrderId!,
             invoiceNumber: entity.invoiceNumber,
             invoiceDate: entity.invoiceDate,
             status: "",
@@ -37,24 +37,24 @@ export class InvoiceMapper {
             finalized: entity.finalized
         };
 
-        if (entity.sellerInvoiceAddress) {
+        if (entity.sellerSnapshotAddress) {
             dto.sellerInvoiceAddress = this.invoiceAddressMapper.toDto(
-                entity.sellerInvoiceAddress,
+                entity.sellerSnapshotAddress,
             );
         }
-        if (entity.sellerInvoiceAccount) {
+        if (entity.sellerSnapshotAccount) {
             dto.sellerInvoiceAccount = this.invoiceAccountMapper.toDto(
-                entity.sellerInvoiceAccount,
+                entity.sellerSnapshotAccount,
             );
         }
-        if (entity.customerInvoiceAddress) {
+        if (entity.customerSnapshotAddress) {
             dto.customerInvoiceAddress = this.invoiceAddressMapper.toDto(
-                entity.customerInvoiceAddress,
+                entity.customerSnapshotAddress,
             );
         }
-        if (entity.customerAccount) {
+        if (entity.customerSnapshotAccount) {
             dto.customerAccount = this.invoiceAccountMapper.toDto(
-                entity.customerAccount,
+                entity.customerSnapshotAccount,
             );
         }
 
@@ -86,12 +86,16 @@ export class InvoiceMapper {
         entity.finalized = false;
         entity.notes = '';
         // İade durumlarında transaction.transactionType source ve target hesapların yer değiştirebilir ama satıcının müşteri olarak gözükmesi istenmez, bu yüzden transactionType kontrolü yapılmaz
-        const seller = transaction.targetAccount;
 
-        entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
-        entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.sourceAccount!);
-        entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
-        entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customerBillingAddress!);
+        entity.sellerSnapshotAccountId = transaction.sellerSnapshotAccountId;
+        entity.sellerSnapshotAddressId = transaction.sellerSnapshotAddressId;
+        entity.customerSnapshotAccountId = transaction.customerSnapshotAccountId;
+        entity.customerSnapshotAddressId = transaction.customerSnapshotAddressId;
+        // entity.sellerSnapshotAccountId = transaction.sourceAccountId
+        // entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(seller!);
+        // entity.customerAccount = this.invoiceAccountMapper.toEntityFromNormalAccount(transaction.sourceAccount!);
+        // entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(seller!.defaultAddress!);
+        // entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntityFromAccountAddress(customerBillingAddress!);
 
         return entity;
     }
@@ -105,26 +109,6 @@ export class InvoiceMapper {
         entity.uploadedByUserId = dto.uploadedByUserId || '';
         entity.notes = dto.notes || '';
         entity.finalized = false;
-        if (dto.sellerInvoiceAddress) {
-            entity.sellerInvoiceAddress = this.invoiceAddressMapper.toEntity(
-                dto.sellerInvoiceAddress,
-            );
-        }
-        if (dto.sellerInvoiceAccount) {
-            entity.sellerInvoiceAccount = this.invoiceAccountMapper.toEntity(
-                dto.sellerInvoiceAccount,
-            );
-        }
-        if (dto.customerInvoiceAddress) {
-            entity.customerInvoiceAddress = this.invoiceAddressMapper.toEntity(
-                dto.customerInvoiceAddress,
-            );
-        }
-        if (dto.customerAccount) {
-            entity.customerAccount = this.invoiceAccountMapper.toEntity(
-                dto.customerAccount,
-            );
-        }
         // entity.status = 'UPLOADED';
         return entity;
     }

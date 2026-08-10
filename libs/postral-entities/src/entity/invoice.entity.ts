@@ -32,13 +32,21 @@ export class Invoice {
     @JoinColumn({ name: 'sellerPaymentOrderId' })
     sellerPaymentOrder!: SellerPaymentOrder;
 
+
+
+    @Column({ nullable: true })
+    customerSnapshotAddressId?: string;
+    
     @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
-    customerInvoiceAddress?: SnapshotAddress;
+    customerSnapshotAddress?: SnapshotAddress;
 
-    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
-    @JoinColumn()
-    customerAccount?: SnapshotAccount;
+    @Column({ nullable: true })
+    customerSnapshotAccountId?: string;
+
+    @OneToOne(() => SnapshotAccount, {  eager: true })
+    @JoinColumn({ name: "customerSnapshotAccountId" })
+    customerSnapshotAccount?: SnapshotAccount;
 
     @Column({ nullable: true })
     sellerSnapshotAccountId?: string;

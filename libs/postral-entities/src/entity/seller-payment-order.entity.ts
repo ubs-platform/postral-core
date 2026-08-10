@@ -20,6 +20,8 @@ import {
 import { Account } from './account.entity';
 import { Address } from './address.entity';
 import { MoneyDbField } from './base';
+import { SnapshotAddress } from './snapshot-address.entity';
+import { SnapshotAccount } from './snapshot-account.entity';
 
 @Entity()
 @Unique(['paymentId', "targetAccountId"])
@@ -84,6 +86,9 @@ export class SellerPaymentOrder extends BaseEntity {
     @Column({ type: 'boolean', default: false })
     openPayment: boolean = false;
 
+
+
+
     // faturalar için burası kullanılabilir
     // invoiceId: string;
 
@@ -128,4 +133,34 @@ export class SellerPaymentOrder extends BaseEntity {
     description: string = '';
 
     // Additional fields can be added as needed
+
+    @Column({ nullable: true })
+    customerSnapshotAddressId?: string;
+
+    @OneToOne(() => SnapshotAddress, { eager: true })
+    @JoinColumn({ name: "customerSnapshotAddressId" })
+    customerSnapshotAddress?: SnapshotAddress;
+
+    @Column({ nullable: true })
+    customerSnapshotAccountId?: string;
+
+    @OneToOne(() => SnapshotAccount, { eager: true })
+    @JoinColumn({ name: "customerSnapshotAccountId" })
+    customerSnapshotAccount?: SnapshotAccount;
+
+
+    @Column({ nullable: true })
+    sellerSnapshotAddressId?: string;
+
+    @OneToOne(() => SnapshotAddress, { eager: true })
+    @JoinColumn({ name: "sellerSnapshotAddressId" })
+    sellerSnapshotAddress?: SnapshotAddress;
+
+    @Column({ nullable: true })
+    sellerSnapshotAccountId?: string;
+
+    @OneToOne(() => SnapshotAccount, { eager: true })
+    @JoinColumn({ name: "sellerSnapshotAccountId" })
+    sellerSnapshotAccount?: SnapshotAccount;
+
 }
