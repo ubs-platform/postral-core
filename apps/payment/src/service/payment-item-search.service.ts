@@ -4,7 +4,7 @@ import {
     Repository,
 } from 'typeorm';
 import {
-    PaymentItemDto,
+    PaymentItemDTO,
     PaymentItemSearchDTO,
 } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '@tk-postral/postral-entities';
@@ -21,7 +21,7 @@ export class PaymentItemSearchService {
 
     async findItemsByCriteria(
         criteria: PaymentItemSearchDTO,
-    ): Promise<PaymentItemDto[]> {
+    ): Promise<PaymentItemDTO[]> {
         const where: any = {};
         if (criteria.id) {
             where.id = criteria.id;

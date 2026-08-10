@@ -1,5 +1,5 @@
 import { PaymentItemInputDto } from "./payment-item-input.dto";
-import { PaymentItemDto } from "./payment-item.dto";
+import { PaymentItemDTO } from "./payment-item.dto";
 import { TaxDTO } from "./tax.dto";
 
 export class ItemListCalculationInputDto {
@@ -15,7 +15,7 @@ export class ItemListCalculationDto {
     /**
      *
      */
-    constructor(public items: PaymentItemDto[], public totalAmount: number, public totalTaxAmount: number, public taxes: TaxDTO[]) {
+    constructor(public items: PaymentItemDTO[], public totalAmount: number, public totalTaxAmount: number, public taxes: TaxDTO[]) {
 
     }
 }

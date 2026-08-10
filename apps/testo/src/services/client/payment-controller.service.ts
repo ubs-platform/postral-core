@@ -4,7 +4,7 @@
  * Feel free to feedback any issues to https://github.com/ubs-platform/ubs-mona-mr
  * Generated on: 2026-05-09T10:40:29.248Z
  */
-import { PaymentInitDTO, PaymentDTO, PaymentCaptureInfoDTO, PaymentChannelStatusDTO, PaymentFullDTO, PaymentItemDto, TaxDTO } from '@tk-postral/payment-common';
+import { PaymentInitDTO, PaymentDTO, PaymentCaptureInfoDTO, PaymentChannelStatusDTO, PaymentFullDTO, PaymentItemDTO, TaxDTO } from '@tk-postral/payment-common';
 
 
 import { Injectable } from '@nestjs/common';
@@ -54,9 +54,9 @@ export class PaymentControllerService {
   }
 
 
-  async fetchItems(id: string): Promise<PaymentItemDto[]> {
+  async fetchItems(id: string): Promise<PaymentItemDTO[]> {
     let urlAltered = this.interceptUrl("api/payment/:id/item").replace(':id', id + '');
-    return firstValueFrom(this.http.get<PaymentItemDto[]>(urlAltered).pipe(map(r => r.data)));
+    return firstValueFrom(this.http.get<PaymentItemDTO[]>(urlAltered).pipe(map(r => r.data)));
   }
 
 

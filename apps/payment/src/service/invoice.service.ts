@@ -94,7 +94,7 @@ export class InvoiceService {
             await this.emitInvoiceUpdatedEvent(saved.sellerPaymentOrderId);
         }
 
-        const sellerAccountId = saved.sellerInvoiceAccount?.realAccountId;
+        const sellerAccountId = saved.sellerSnapshotAccount?.realAccountId;
         if (sellerAccountId) {
             this.webhookDispatchService.send(sellerAccountId, 'INVOICE_UPLOADED', {
                 invoiceId: saved.id,
@@ -177,7 +177,7 @@ export class InvoiceService {
             throw new BadRequestException('Invoice id must be provided');
         }
         const invoice = await this.invoiceRepo.findOne({ where: { id } });
-        await this.assertSellerIsOwner(user, invoice?.sellerInvoiceAccount?.realAccountId!);
+        await this.assertSellerIsOwner(user, invoice?.sellerSnapshotAccount?.realAccountId!);
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
@@ -233,8 +233,8 @@ export class InvoiceService {
                 [
                     'customerInvoiceAddress',
                     'customerAccount',
-                    'sellerInvoiceAddress',
-                    'sellerInvoiceAccount',
+                    'sellerSnapshotAddress',
+                    'sellerSnapshotAccount',
                 ],
                 where,
             )
@@ -255,7 +255,7 @@ export class InvoiceService {
                 return { id: null }; // Hiçbir kayda uymayacak bir koşul ekliyoruz.
             }
             orClauses.splice(0, 1, {
-                sellerInvoiceAccount: {
+                sellerSnapshotAccount: {
                     realAccountId: In(accountIds),
                 }
             }, {
@@ -306,7 +306,7 @@ export class InvoiceService {
 
                 await this.assertSellerIsOwner(
                     user,
-                    invoice.sellerInvoiceAccount?.realAccountId!,
+                    invoice.sellerSnapshotAccount?.realAccountId!,
                 );
 
                 // Faturayı finalize et
@@ -321,7 +321,7 @@ export class InvoiceService {
                     this.emitInvoiceUpdatedEvent(updatedInvoice.sellerPaymentOrderId);
                 }
 
-                const sellerAccountId = invoice.sellerInvoiceAccount?.realAccountId;
+                const sellerAccountId = invoice.sellerSnapshotAccount?.realAccountId;
                 if (sellerAccountId) {
                     this.webhookDispatchService.send(sellerAccountId, 'INVOICE_FINALIZED', {
                         invoiceId: updatedInvoice.id,

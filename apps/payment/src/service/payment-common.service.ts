@@ -26,7 +26,7 @@ export class PaymentCommonService {
     ): Promise<Optional<Payment>> {
         return await this.paymentrepo.findOne({
             where: { id },
-            relations: full ? ['items', 'taxes'] : [],
+            relations: full ? ['items', 'taxes', 'customerSnapshotAccount', 'customerSnapshotAddress', 'items.sellerAccount', 'items.sellerSnapshotAccount', 'items.sellerSnapshotAddress'] : [],
         });
     }
 

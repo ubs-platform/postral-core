@@ -1,6 +1,6 @@
 import { SearchRequest } from '@ubs-platform/crud-base-common';
-import { InvoiceAddressDto } from './invoice-address.dto';
-import { InvoiceAccountDTO } from './invoice-account.dto';
+import { SnapshotAddressDTO } from './invoice-address.dto';
+import { SnapshotAccountDTO } from './invoice-account.dto';
 
 export interface InvoiceDTO {
     id: string;
@@ -13,10 +13,10 @@ export interface InvoiceDTO {
     notes?: string;
     createdAt: Date;
     updatedAt: Date;
-    sellerInvoiceAddress?: InvoiceAddressDto;
-    sellerInvoiceAccount?: InvoiceAccountDTO;
-    customerInvoiceAddress?: InvoiceAddressDto;
-    customerAccount?: InvoiceAccountDTO;
+    sellerInvoiceAddress?: SnapshotAddressDTO;
+    sellerInvoiceAccount?: SnapshotAccountDTO;
+    customerInvoiceAddress?: SnapshotAddressDTO;
+    customerAccount?: SnapshotAccountDTO;
     finalized: boolean;
 }
 
@@ -31,10 +31,10 @@ export interface InvoiceCreateDTO {
     invoiceDate?: Date;
     uploadedByUserId?: string;
     notes?: string;
-    sellerInvoiceAddress?: InvoiceAddressDto;
-    sellerInvoiceAccount?: InvoiceAccountDTO;
-    customerInvoiceAddress?: InvoiceAddressDto;
-    customerAccount?: InvoiceAccountDTO;
+    sellerInvoiceAddress?: SnapshotAddressDTO;
+    sellerInvoiceAccount?: SnapshotAccountDTO;
+    customerInvoiceAddress?: SnapshotAddressDTO;
+    customerAccount?: SnapshotAccountDTO;
 }
 
 export interface InvoiceUpdateDTO {

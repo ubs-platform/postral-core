@@ -7,7 +7,7 @@ import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { TaxCalculationUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
 import { EventSenderService } from './event-management.service';
 import {
-    PaymentItemDto,
+    PaymentItemDTO,
     PaymentInitDTO,
     PaymentDTO,
     TaxDTO,
@@ -84,7 +84,7 @@ export class PaymentService {
         return this.paymentrepo.find();
     }
 
-    async findItems(id: string): Promise<PaymentItemDto[]> {
+    async findItems(id: string): Promise<PaymentItemDTO[]> {
         const ac = await this.paymentrepo.find({
             relations: { items: true },
             where: { id: id },
@@ -145,7 +145,7 @@ export class PaymentService {
             customerAccountId: originalPayment.customerAccountId,
             refundRequestId: refundRequest.id,
             items: refundRequest.items.map((item) => {
-                const pi = new PaymentItemDto({
+                const pi = new PaymentItemDTO({
                     itemId: item.realItemId,
                     variation: item.variation,
                     quantity: item.refundCount,
@@ -190,7 +190,7 @@ export class PaymentService {
 
     async generateSellerPaymentOrders(paymentReal: Payment) {
 
-        let items: PaymentItemDto[] = [];
+        let items: PaymentItemDTO[] = [];
         if (paymentReal.items?.length > 0) {
             items = this.paymentItemMapper.toDto(paymentReal.items);
         } else {
@@ -292,59 +292,32 @@ export class PaymentService {
 
         items = calculationResult.items.map((ci) => this.paymentItemMapper.toEntity(ci));
 
-        for (const item of items) {
-            if (!item.sellerAccountId) {
-                throw new BadRequestException(`Seller account ID is required for item ${item.itemId}`);
-            }
-            const itemSellerAccount = await this.accountService.fetchOne(item.sellerAccountId);
-            if (!itemSellerAccount) {
-                throw new NotFoundException(`Seller account not found for item ${item.itemId}`);
-            }
-            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
-            if (!itemSellerAccount.defaultAddressId) {
-                throw new BadRequestException(`Seller account ${item.sellerAccountId} does not have a default address`);
-            }
-            const sellerDefaultAddress = await this.addressService.fetchOne(itemSellerAccount.defaultAddressId);
-            item.sellerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(sellerDefaultAddress);
-        }
 
         const p = new Payment();
-        
+
         p.type = pdto.type;
         p.currency = pdto.currency;
         p.totalAmount = totalAmt;
         p.taxAmount = taxTotal;
         p.items = items;
         p.customerAccountId = customerAccountId;
-        await this.applyAccountSnapshot(customerAccount, p);
+
         p.activeSessionId = activeSessionId;
         p.failOnPaymentChannelFailure = pdto.failOnPaymentChannelFailure ?? false;
         // p.customerAccountName = customerAccount.name;
         p.billingAddressId = pdto.billingAddressId ?? customerAccount.defaultAddressId;
-        await this.applyAddressSnapshot(p);
         p.refundRequestId = pdto.refundRequestId;
         p.paymentStatus = 'INITIATED';
         p.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
         p.includeInReportDigestion = true;
+
+        await this.applyItemSellerSnapshots(p.items);
+        await this.applyAccountSnapshot(customerAccount, p);
+        await this.applyAddressSnapshot(p);
         return p;
     }
 
-    private async applyAddressSnapshot(p: Payment) {
-        if (!p.billingAddressId) {
-            throw new BadRequestException('Valid billing address ID is required for payment init');
-        }
-        const address = await this.addressService.fetchOne(p.billingAddressId); // Faturalama adresi var mı kontrol et
-        if (!address) {
-            throw new NotFoundException('Billing address not found');
-        }
 
-        p.customerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(address);
-    }
-
-    private async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
-        const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount);
-        p.customerSnapshotAccount = accountSnapshot;
-    }
 
     async cancelPayment(id: string) {
         let payment = await this.findPaymentByIdRaw(id);
@@ -623,6 +596,11 @@ export class PaymentService {
         payment.includeInReportDigestion = false;
         payment.items = [item];
         payment.taxes = [];
+        // Snapshotların oluşturulması için customerAccount ve billingAddress alınır
+        const customerAccount = await this.accountService.fetchOne(customerAccountId);
+        await this.applyItemSellerSnapshots(payment.items);
+        await this.applyAccountSnapshot(customerAccount, payment);
+        await this.applyAddressSnapshot(payment);
 
         const saved = await this.paymentrepo.save(payment);
         // await this.generateAccountPaymentTransactions(saved.id);
@@ -733,6 +711,10 @@ export class PaymentService {
         payment.openPayment = false;
         payment.includeInReportDigestion = true;
         payment.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
+        
+        await this.applyItemSellerSnapshots(payment.items);
+        await this.applyAccountSnapshot(customerAccount, payment);
+        await this.applyAddressSnapshot(payment);
 
         const saved = await this.paymentrepo.save(payment);
         await this.onPaymentCompleted(saved);
@@ -755,4 +737,39 @@ export class PaymentService {
     }
 
 
+    private async applyAddressSnapshot(p: Payment) {
+        if (!p.billingAddressId) {
+            throw new BadRequestException('Valid billing address ID is required for payment init');
+        }
+        const address = await this.addressService.fetchOne(p.billingAddressId); // Faturalama adresi var mı kontrol et
+        if (!address) {
+            throw new NotFoundException('Billing address not found');
+        }
+
+        p.customerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(address);
+    }
+
+    private async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
+        const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount);
+        p.customerSnapshotAccount = accountSnapshot;
+    }
+
+
+    private async applyItemSellerSnapshots(items: PostralPaymentItem[]) {
+        for (const item of items) {
+            if (!item.sellerAccountId) {
+                throw new BadRequestException(`Seller account ID is required for item ${item.itemId}`);
+            }
+            const itemSellerAccount = await this.accountService.fetchOne(item.sellerAccountId);
+            if (!itemSellerAccount) {
+                throw new NotFoundException(`Seller account not found for item ${item.itemId}`);
+            }
+            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
+            if (!itemSellerAccount.defaultAddressId) {
+                throw new BadRequestException(`Seller account ${item.sellerAccountId} does not have a default address`);
+            }
+            const sellerDefaultAddress = await this.addressService.fetchOne(itemSellerAccount.defaultAddressId);
+            item.sellerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(sellerDefaultAddress);
+        }
+    }
 }

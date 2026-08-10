@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Payment, SellerPaymentOrder } from '@tk-postral/postral-entities';
-import { PaymentDTO, PaymentItemDto } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentItemDTO } from '@tk-postral/payment-common';
 import { PaymentTransactionDTO } from '@tk-postral/payment-common';
 import { SellerPaymentOrderDTO } from '@tk-postral/payment-common';
 import { exec } from 'child_process';
@@ -12,7 +12,7 @@ export class TransactionMapper {
      */
     constructor() {}
 
-    fromPaymentItem(paymentItem: PaymentItemDto, payment: Payment): SellerPaymentOrderDTO {
+    fromPaymentItem(paymentItem: PaymentItemDTO, payment: Payment): SellerPaymentOrderDTO {
         const transaction = new SellerPaymentOrderDTO();
         transaction.amount = paymentItem.totalAmount;
         transaction.taxAmount = paymentItem.taxAmount;

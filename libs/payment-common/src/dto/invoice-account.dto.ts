@@ -1,11 +1,11 @@
-export class InvoiceAccountDTO {
-    id: string;
+export class SnapshotAccountDTO {
+    id!: string;
 
-    name: string;
+    name!: string;
 
-    legalIdentity: string;
+    legalIdentity!: string;
 
-    type: 'INDIVIDUAL' | 'COMMERCIAL';
+    type!: 'INDIVIDUAL' | 'COMMERCIAL';
 
     realAccountId?: string;
 

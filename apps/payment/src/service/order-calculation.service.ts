@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ItemService } from './item.service';
 import {
-    PaymentItemDto,
+    PaymentItemDTO,
     PaymentItemInputDto,
 } from '@tk-postral/payment-common';
 import {
@@ -35,7 +35,7 @@ export class OrderCalculationService {
     ): Promise<ItemListCalculationDto> {
         let totalAmt = 0,
             taxTotal = 0;
-        const items: PaymentItemDto[] = [];
+        const items: PaymentItemDTO[] = [];
         const taxesFromItems: TaxDTO[] = [];
         for (
             let itemIndex = 0;

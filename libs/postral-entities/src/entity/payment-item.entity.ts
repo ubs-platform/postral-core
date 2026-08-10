@@ -61,12 +61,18 @@ export class PostralPaymentItem {
     @JoinColumn({ name: 'sellerAccountId' })
     sellerAccount?: Account;
 
+    @Column({ nullable: true })
+    sellerSnapshotAccountId?: string;
+
     @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
-    @JoinColumn()
+    @JoinColumn({ name: 'sellerSnapshotAccountId' })
     sellerSnapshotAccount?: SnapshotAccount;
+    
+    @Column({ nullable: true })
+    sellerSnapshotAddressId?: string;
 
     @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
-    @JoinColumn()
+    @JoinColumn({ name: 'sellerSnapshotAddressId' })
     sellerSnapshotAddress?: SnapshotAddress;
 
     get sellerAccountName(): string {

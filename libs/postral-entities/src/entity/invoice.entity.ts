@@ -77,20 +77,20 @@ export class Invoice {
      * Faturayı yükleyen kullanıcı ID
      */
     @Column({ nullable: true })
-    uploadedByUserId: string;
+    uploadedByUserId?: string;
 
     /**
      * Ek notlar
      */
     @Column({ type: 'text', nullable: true })
-    notes: string;
+    notes?: string;
 
     @Column({ type: "bool", default: false })
-    finalized: boolean;
+    finalized: boolean = false;
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt!: Date;
 
     @UpdateDateColumn()
-    updatedAt: Date;
+    updatedAt!: Date;
 }

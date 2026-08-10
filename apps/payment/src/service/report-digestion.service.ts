@@ -9,7 +9,7 @@ import { Cron } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
 import { AppComissionService } from './app-commission.service';
 import { SellerPaymentOrderSearchService } from './transaction-search.service';
-import { PaymentItemDto } from '@tk-postral/payment-common';
+import { PaymentItemDTO } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 import { exec } from 'child_process';
 import { EventSenderService } from './event-management.service';
@@ -198,7 +198,7 @@ export class ReportDigestionService {
         return await this.reportCalculationByPaymentItems(report, payment.type, paymentItems, accountId);
     }
 
-    private async reportCalculationByPaymentItems(report: BaseReport, paymentType: string, paymentItems: PaymentItemDto[], accountId: string | null) {
+    private async reportCalculationByPaymentItems(report: BaseReport, paymentType: string, paymentItems: PaymentItemDTO[], accountId: string | null) {
 
         for (const item of paymentItems) {
             if (accountId !== null && item.sellerAccountId !== accountId) continue;
@@ -344,7 +344,7 @@ export class ReportDigestionService {
     }
 
     private async updateTaxGroupReportByPaymentAndAccountId(mainReportId: string, payment: PaymentFullDTO, accountId: string | null) {
-        const paymentItemsPerTaxGroup: { [taxGroup: string]: PaymentItemDto[] } = {};
+        const paymentItemsPerTaxGroup: { [taxGroup: string]: PaymentItemDTO[] } = {};
         for (let index = 0; index < payment.items.length; index++) {
             // Payment itemleri dolaşarak tax percentleri almam gerekiyor çünkü paymentta diğer satıcılarla ilgili bilgi olabilir...
             const item = payment.items[index];

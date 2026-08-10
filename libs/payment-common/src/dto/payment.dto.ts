@@ -1,6 +1,8 @@
 import { PaymentErrorStatus, PaymentStatus } from '../type/status';
 import { PaymentCaptureInfoDTO } from './capture-info.dto';
-import { PaymentItemDto } from './payment-item.dto';
+import { SnapshotAccountDTO } from './invoice-account.dto';
+import { SnapshotAddressDTO } from './invoice-address.dto';
+import { PaymentItemDTO } from './payment-item.dto';
 import { TaxDTO } from './tax.dto';
 
 export interface PaymentDTO {
@@ -34,15 +36,22 @@ export interface PaymentDTO {
     externalPlatformOrderId?: string;
     activeSessionId?: string;
     failOnPaymentChannelFailure?: boolean;
+    customerSnapshotAccountId?: string;
+    customerSnapshotAddressId?: string;
 }
 
 export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
-    items: PaymentItemDto[];
+    items: PaymentItemDTO[];
     taxes: TaxDTO[];
+    customerSnapshotAccount?: SnapshotAccountDTO;
+    customerSnapshotAddress?: SnapshotAddressDTO;
     captureInfo: PaymentCaptureInfoDTO;
 }
 
 export interface PaymentFullDTO extends PaymentDTO {
-    items: PaymentItemDto[];
+    items: PaymentItemDTO[];
     taxes: TaxDTO[];
+    customerSnapshotAccount?: SnapshotAccountDTO;
+    customerSnapshotAddress?: SnapshotAddressDTO;
+
 }

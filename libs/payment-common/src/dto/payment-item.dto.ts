@@ -1,4 +1,7 @@
-export interface PaymentItemDto {
+import { SnapshotAccountDTO } from "./invoice-account.dto";
+import { SnapshotAddressDTO } from "./invoice-address.dto";
+
+export interface PaymentItemDTO {
     id: string;
     itemId: string;
     name: string;
@@ -20,10 +23,14 @@ export interface PaymentItemDto {
     itemClass?: string;
     appComissionPercent: number;
     appComissionAmount: number;
+    sellerSnapshotAccountId?: string;
+    sellerSnapshotAddressId?: string;
+    sellerSnapshotAccount?: SnapshotAccountDTO 
+    sellerSnapshotAddress?: SnapshotAddressDTO 
 }
 
-export class PaymentItemDto implements PaymentItemDto {
-    constructor(partial: Partial<PaymentItemDto>) {
+export class PaymentItemDTO implements PaymentItemDTO {
+    constructor(partial: Partial<PaymentItemDTO>) {
         Object.assign(this, partial);
     }
 }

@@ -3,6 +3,8 @@ import { Payment } from '@tk-postral/postral-entities';
 import { PaymentDTO, PaymentFullDTO } from '@tk-postral/payment-common';
 import { PaymentItemMapper } from './payment-item.mapper';
 import { PaymentTaxMapper } from './payment-tax.mapper';
+import { InvoiceAddressMapper } from './invoice-address.mapper';
+import { InvoiceAccountMapper } from './invoice-account.mapper';
 
 @Injectable()
 export class PaymentMapper {
@@ -10,7 +12,11 @@ export class PaymentMapper {
     /**
      *
      */
-    constructor(private paymentTaxMapper: PaymentTaxMapper, private paymentItemMapper: PaymentItemMapper) {
+    constructor(
+        private paymentTaxMapper: PaymentTaxMapper,
+        private paymentItemMapper: PaymentItemMapper,
+        private snapshotAddressMapper: InvoiceAddressMapper,
+        private snapshotAccountMapper: InvoiceAccountMapper) {
 
     }
 
@@ -57,6 +63,10 @@ export class PaymentMapper {
             updatedAt: saved.updatedAt,
             items: this.paymentItemMapper.toDto(saved.items),
             taxes: this.paymentTaxMapper.toDto(saved.taxes),
+            customerSnapshotAccountId: saved.customerSnapshotAccountId,
+            customerSnapshotAddressId: saved.customerSnapshotAddressId,
+            customerSnapshotAccount: saved.customerSnapshotAccount ? this.snapshotAccountMapper.toDto(saved.customerSnapshotAccount) : undefined,
+            customerSnapshotAddress: saved.customerSnapshotAddress ? this.snapshotAddressMapper.toDto(saved.customerSnapshotAddress) : undefined,
             includeInReportDigestion: saved.includeInReportDigestion,
             openPayment: saved.openPayment,
             externalPlatformId: saved.externalPlatformId,

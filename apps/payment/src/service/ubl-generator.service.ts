@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { create } from 'xmlbuilder2';
 import {
     InvoiceDTO,
-    InvoiceAddressDto,
-    InvoiceAccountDTO,
-    PaymentItemDto,
+    SnapshotAddressDTO,
+    SnapshotAccountDTO,
+    PaymentItemDTO,
 } from '@tk-postral/payment-common';
 import { PaymentItemSearchService } from './payment-item-search.service';
 import { AmountCalculationUtil } from '@tk-postral/common-utils';
@@ -16,7 +16,7 @@ export class UblGeneratorService {
     ) {}
 
     async generateUblXml(invoice: InvoiceDTO): Promise<string> {
-        let items: PaymentItemDto[] = [];
+        let items: PaymentItemDTO[] = [];
         if (invoice.paymentId && invoice.sellerInvoiceAccount?.realAccountId) {
             items = await this.paymentItemSearchService.findItemsByCriteria({
                 paymentId: invoice.paymentId,
@@ -165,8 +165,8 @@ export class UblGeneratorService {
 
     private buildParty(
         partyEle: ReturnType<ReturnType<typeof create>['ele']>,
-        account?: InvoiceAccountDTO | null,
-        address?: InvoiceAddressDto | null,
+        account?: SnapshotAccountDTO | null,
+        address?: SnapshotAddressDTO | null,
     ): void {
         if (account?.name) {
             partyEle.ele('cac:PartyName').ele('cbc:Name').txt(account.name);
@@ -221,7 +221,7 @@ export class UblGeneratorService {
     }
 
     private groupByTaxPercent(
-        items: PaymentItemDto[],
+        items: PaymentItemDTO[],
     ): Record<string, { taxableAmount: number; taxAmount: number }> {
         const groups: Record<
             string,

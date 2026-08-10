@@ -1,7 +1,7 @@
-export class InvoiceAddressDto {
+export class SnapshotAddressDTO {
     id?: string;
 
-    name: string;
+    name!: string;
 
     entityOwnershipGroupId?: string;
 
@@ -25,7 +25,7 @@ export class InvoiceAddressDto {
     blockName?: string;
 
     /** Sokak/Cadde adı */
-    streetName: string;
+    streetName!: string;
 
     /** Ek sokak bilgisi */
     additionalStreetName?: string;
@@ -34,13 +34,13 @@ export class InvoiceAddressDto {
     district?: string;
 
     /** İlçe adı */
-    citySubdivisionName: string;
+    citySubdivisionName!: string;
 
     /** Şehir/İl adı */
-    cityName: string;
+    cityName!: string;
 
     /** Posta kodu */
-    postalZone: string;
+    postalZone!: string;
 
     /** Bölge/Region (örn: "Marmara") */
     region?: string;
@@ -49,7 +49,7 @@ export class InvoiceAddressDto {
     postbox?: string;
 
     /** Ülke adı */
-    country: string;
+    country!: string;
 
     /** Ülke alt bölümü (örn: eyalet, il) */
     countrySubentity?: string;

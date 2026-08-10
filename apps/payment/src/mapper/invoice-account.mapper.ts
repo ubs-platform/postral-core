@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AccountDTO, InvoiceAccountDTO } from '@tk-postral/payment-common';
+import { AccountDTO, SnapshotAccountDTO } from '@tk-postral/payment-common';
 import { InvoiceAccount, Account } from '@tk-postral/postral-entities';
 import { CryptionUtil } from '../util/cryption-util';
 
@@ -25,7 +25,7 @@ export class InvoiceAccountMapper {
         return entity;
     }
 
-    toDto(entity: InvoiceAccount): InvoiceAccountDTO {
+    toDto(entity: InvoiceAccount): SnapshotAccountDTO {
         return {
             id: entity.id,
             name: entity.name,
@@ -40,7 +40,7 @@ export class InvoiceAccountMapper {
         };
     }
 
-    toEntity(dto: InvoiceAccountDTO): InvoiceAccount {
+    toEntity(dto: SnapshotAccountDTO): InvoiceAccount {
         const entity = new InvoiceAccount();
         if (dto.id) {
             entity.id = dto.id;

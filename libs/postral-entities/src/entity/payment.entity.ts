@@ -66,14 +66,19 @@ export class Payment {
     @JoinColumn({ name: 'customerAccountId' })
     customerAccount?: Account;
 
-    @OneToOne(() => SnapshotAccount, { cascade: true, eager: true })
-    @JoinColumn()
-    customerSnapshotAccount?: SnapshotAccount;
+    @Column({ nullable: true })
+    customerSnapshotAddressId?: string;
 
-    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
-    @JoinColumn()
+    @OneToOne(() => SnapshotAddress, { cascade: true })
+    @JoinColumn({ name: 'customerSnapshotAddressId' })
     customerSnapshotAddress?: SnapshotAddress;
 
+    @Column({ nullable: true })
+    customerSnapshotAccountId?: string;
+
+    @OneToOne(() => SnapshotAccount, { cascade: true })
+    @JoinColumn({ name: 'customerSnapshotAccountId' })
+    customerSnapshotAccount?: SnapshotAccount;
 
     @Column({ type: 'varchar' })
     paymentStatus!: PaymentStatus;

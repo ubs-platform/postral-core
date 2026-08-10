@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentItemDto } from '@tk-postral/payment-common';
+import { PaymentItemDTO } from '@tk-postral/payment-common';
 import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { exec } from 'child_process';
 import { InvoiceAddressMapper } from './invoice-address.mapper';
+import { InvoiceAccountMapper } from './invoice-account.mapper';
 
 @Injectable()
 export class PaymentItemMapper {
 
-    constructor() { }
+    constructor(private invoiceAddressMapper: InvoiceAddressMapper, private invoiceAccountMapper: InvoiceAccountMapper) { }
 
-    toEntity(dto: PaymentItemDto): PostralPaymentItem {
+    toEntity(dto: PaymentItemDTO): PostralPaymentItem {
         // if (dto.appComissionAmount == 0) {
         //     exec(`kdialog --msgbox "PaymentItemMapper toEntity appComissionAmount is 0 for itemId: ${dto.itemId}, name: ${dto.name}"`);
         //     debugger
@@ -30,6 +31,8 @@ export class PaymentItemMapper {
         pi.entityName = dto.entityName;
         pi.sellerAccountId = dto.sellerAccountId;
         // pi.sellerAccountName = dto.sellerAccountName;
+        pi.sellerSnapshotAccountId = dto.sellerSnapshotAccountId;
+        pi.sellerSnapshotAddressId = dto.sellerSnapshotAddressId;
         pi.itemClass = dto.itemClass || "";
         pi.unit = dto.unit;
         pi.appComissionAmount = dto.appComissionAmount || 0;
@@ -37,8 +40,8 @@ export class PaymentItemMapper {
         return pi;
     }
 
-    toDto(items: PostralPaymentItem[]): PaymentItemDto[] {
-        const dtos: PaymentItemDto[] = [];
+    toDto(items: PostralPaymentItem[]): PaymentItemDTO[] {
+        const dtos: PaymentItemDTO[] = [];
         for (let index = 0; index < items.length; index++) {
             const a = items[index];
             dtos.push({
@@ -63,6 +66,10 @@ export class PaymentItemMapper {
                 refundCount: a.refundCount,
                 appComissionAmount: a.appComissionAmount,
                 appComissionPercent: a.appComissionPercent,
+                sellerSnapshotAccountId: a.sellerSnapshotAccountId,
+                sellerSnapshotAddressId: a.sellerSnapshotAddressId,
+                sellerSnapshotAccount: a.sellerSnapshotAccount ? this.invoiceAccountMapper.toDto(a.sellerSnapshotAccount) : undefined,
+                sellerSnapshotAddress: a.sellerSnapshotAddress ? this.invoiceAddressMapper.toDto(a.sellerSnapshotAddress) : undefined,
             });
         }
         return dtos;

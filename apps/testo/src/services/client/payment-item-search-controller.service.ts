@@ -4,7 +4,7 @@
  * Feel free to feedback any issues to https://github.com/ubs-platform/ubs-mona-mr
  * Generated on: 2026-05-09T10:40:29.248Z
  */
-import { PaymentItemDto } from '@tk-postral/payment-common';
+import { PaymentItemDTO } from '@tk-postral/payment-common';
 
 
 import { Injectable } from '@nestjs/common';
@@ -24,9 +24,9 @@ export class PaymentItemSearchControllerService {
 
 
 
-  async searchItems(id: string | undefined, itemId: string | undefined, name: string | undefined, variation: string | undefined, sellerAccountId: string | undefined, entityGroup: string | undefined, entityId: string | undefined, entityName: string | undefined, entityOwnerAccountId: string | undefined, paymentId: string | undefined): Promise<PaymentItemDto[]> {
+  async searchItems(id: string | undefined, itemId: string | undefined, name: string | undefined, variation: string | undefined, sellerAccountId: string | undefined, entityGroup: string | undefined, entityId: string | undefined, entityName: string | undefined, entityOwnerAccountId: string | undefined, paymentId: string | undefined): Promise<PaymentItemDTO[]> {
     let urlAltered = this.interceptUrl("api/payment-items") + '?' + `id=${id}` + '&' + `itemId=${itemId}` + '&' + `name=${name}` + '&' + `variation=${variation}` + '&' + `sellerAccountId=${sellerAccountId}` + '&' + `entityGroup=${entityGroup}` + '&' + `entityId=${entityId}` + '&' + `entityName=${entityName}` + '&' + `entityOwnerAccountId=${entityOwnerAccountId}` + '&' + `paymentId=${paymentId}`;
-    return firstValueFrom(this.http.get<PaymentItemDto[]>(urlAltered).pipe(map(r => r.data)));
+    return firstValueFrom(this.http.get<PaymentItemDTO[]>(urlAltered).pipe(map(r => r.data)));
   }
 
 
