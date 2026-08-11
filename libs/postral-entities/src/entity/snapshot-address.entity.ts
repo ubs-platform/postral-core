@@ -109,7 +109,7 @@ export class SnapshotAddress {
     timezone?: string;
 
 
-    @Column()
+    @Column({nullable: true})
     realAddressId?: string;
 }
 

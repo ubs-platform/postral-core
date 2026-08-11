@@ -113,24 +113,24 @@ export class Invoice {
     /**
      * @deprecated
      */
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'uuid' })
     customerInvoiceAddressId?: string;
 
     /**
    * @deprecated
    */
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'uuid' })
     customerAccountId?: string;
 
     /**
    * @deprecated
    */
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'uuid' })
     sellerInvoiceAccountId?: string;
 
     /**
    * @deprecated
    */
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'uuid' })
     sellerInvoiceAddressId?: string;
 }

@@ -33,6 +33,10 @@ export class V2MigrationUtil {
             this.migrateSnapshotAccounts(),
         ]).then(() =>
             this.migrateInvoices()
+        ).then(() =>
+            // Legacy tabloları ancak invoice FK'ları taşındıktan sonra temizliyoruz;
+            // OneToOne cascade nedeniyle önce silinirse invoice id'leri de siliniyordu.
+            this.cleanupLegacyTables()
         ).then(() => {
             console.log("Migration işlemleri tamamlandı.");
         }).catch((error) => {
@@ -43,11 +47,22 @@ export class V2MigrationUtil {
 
     async migrateSnapshotAddresses() {
         const legacyInvoiceAddresses = await this.invoiceAddressLegacyRepository.find();
-        const deletebatch: string[] = [];
         await this.snapshotAddressRepository.save(legacyInvoiceAddresses.map(oldSnapshotAddress => {
             const snapshotAddress = new SnapshotAddress();
             snapshotAddress.id = oldSnapshotAddress.id;
             snapshotAddress.name = oldSnapshotAddress.name;
+            snapshotAddress.country = oldSnapshotAddress.country;
+            snapshotAddress.countrySubentity = oldSnapshotAddress.countrySubentity;
+            snapshotAddress.countrySubentityCode = oldSnapshotAddress.countrySubentityCode;
+            snapshotAddress.addressFormatCode = oldSnapshotAddress.addressFormatCode;
+            snapshotAddress.addressTypeCode = oldSnapshotAddress.addressTypeCode;
+            snapshotAddress.department = oldSnapshotAddress.department;
+            snapshotAddress.markAttention = oldSnapshotAddress.markAttention;
+            snapshotAddress.markCare = oldSnapshotAddress.markCare;
+            snapshotAddress.plotIdentification = oldSnapshotAddress.plotIdentification;
+            snapshotAddress.cityCode = oldSnapshotAddress.cityCode;
+            snapshotAddress.inhaleName = oldSnapshotAddress.inhaleName;
+            snapshotAddress.timezone = oldSnapshotAddress.timezone;
             snapshotAddress.buildingNumber = oldSnapshotAddress.buildingNumber;
             snapshotAddress.buildingName = oldSnapshotAddress.buildingName;
             snapshotAddress.room = oldSnapshotAddress.room;
@@ -60,23 +75,20 @@ export class V2MigrationUtil {
             snapshotAddress.cityName = oldSnapshotAddress.cityName;
             snapshotAddress.postalZone = oldSnapshotAddress.postalZone;
             snapshotAddress.region = oldSnapshotAddress.region;
-            deletebatch.push(oldSnapshotAddress.id);
+            snapshotAddress.postbox = oldSnapshotAddress.postbox;
             return snapshotAddress;
         }));
-        if (deletebatch.length === 0) {
-            return;
-        }
-        await this.invoiceAddressLegacyRepository.delete(deletebatch);
-
     }
 
     async migrateSnapshotAccounts() {
         const snapshotAccounts = await this.invoiceAccountLegacyRepository.find();
-        const deletebatch: string[] = [];
         await this.snapshotAccountRepository.save(snapshotAccounts.map(oldSnapshotAccount => {
             const snapshotAccount = new SnapshotAccount();
             snapshotAccount.id = oldSnapshotAccount.id;
             snapshotAccount.realAccountId = oldSnapshotAccount.realAccountId;
+            snapshotAccount.phone = oldSnapshotAccount.phone;
+            snapshotAccount.website = oldSnapshotAccount.website;
+            snapshotAccount.emailAddress = oldSnapshotAccount.emailAddress;
             snapshotAccount.name = oldSnapshotAccount.name;
             snapshotAccount.legalIdentity = oldSnapshotAccount.legalIdentity;
             snapshotAccount.phone = oldSnapshotAccount.phone;
@@ -88,13 +100,8 @@ export class V2MigrationUtil {
             snapshotAccount.bankBic = oldSnapshotAccount.bankBic;
             snapshotAccount.bankSwift = oldSnapshotAccount.bankSwift;
             snapshotAccount.taxOffice = oldSnapshotAccount.taxOffice;
-            deletebatch.push(oldSnapshotAccount.id);
             return snapshotAccount;
         }));
-        if (deletebatch.length === 0) {
-            return;
-        }
-        await this.invoiceAccountLegacyRepository.delete(deletebatch);
     }
 
 
@@ -108,15 +115,23 @@ export class V2MigrationUtil {
             ]
         });
         await this.invoiceRepository.save(invoices.map(invoice => {
-            invoice.sellerSnapshotAccount = { id: invoice.sellerInvoiceAccountId } as SnapshotAccount;
-            invoice.sellerSnapshotAddress = { id: invoice.sellerInvoiceAddressId } as SnapshotAddress;
-            invoice.customerSnapshotAccount = { id: invoice.customerAccountId } as SnapshotAccount;
-            invoice.customerSnapshotAddress = { id: invoice.customerInvoiceAddressId } as SnapshotAddress;
+            // FK kolonlarını doğrudan set ediyoruz; ilişki nesnesi + eager @Column
+            // birlikte tanımlı olduğundan sadece ilişkiyi set etmek FK'yı null bırakıyordu.
+            invoice.sellerSnapshotAccountId = invoice.sellerInvoiceAccountId;
+            invoice.sellerSnapshotAddressId = invoice.sellerInvoiceAddressId;
+            invoice.customerSnapshotAccountId = invoice.customerAccountId;
+            invoice.customerSnapshotAddressId = invoice.customerInvoiceAddressId;
+
             invoice.sellerInvoiceAccountId = undefined;
             invoice.sellerInvoiceAddressId = undefined;
             invoice.customerAccountId = undefined;
             invoice.customerInvoiceAddressId = undefined;
             return invoice;
         }));
+    }
+
+    async cleanupLegacyTables() {
+        await this.invoiceAddressLegacyRepository.delete({});
+        await this.invoiceAccountLegacyRepository.delete({});
     }
 }
