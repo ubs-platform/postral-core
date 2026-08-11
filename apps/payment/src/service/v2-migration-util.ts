@@ -9,7 +9,7 @@ import { IsNull, Not, Repository } from "typeorm";
 @Injectable()
 export class V2MigrationUtil {
     // Add your utility methods here
-
+    // TODO: Paymentlar hala gerçek Account ve Address ile ilişkili. Bu yüzden Paymentları da migrate etmemiz gerekiyor. 
     constructor(
 
         @InjectRepository(SnapshotAddress)
