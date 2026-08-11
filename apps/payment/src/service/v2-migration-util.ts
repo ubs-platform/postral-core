@@ -131,7 +131,9 @@ export class V2MigrationUtil {
     }
 
     async cleanupLegacyTables() {
-        await this.invoiceAddressLegacyRepository.delete({});
-        await this.invoiceAccountLegacyRepository.delete({});
+        console.warn(
+            "Legacy veriler silinmedi. Eski kayıtları 'invoice_address_legacy' ve " +
+            "'invoice_account_legacy' tablolarından inceleyebilirsiniz."
+        );
     }
 }
