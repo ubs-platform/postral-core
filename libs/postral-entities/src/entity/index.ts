@@ -1,6 +1,6 @@
 import { Transaction } from 'typeorm';
 import { Account } from './account.entity';
-import { AppComission } from './app-commission.entity';
+import { AppComission, AppComissionElderly } from './app-commission.entity';
 import { ItemPrice } from './item-price.entity';
 import { Item } from './item.entity';
 import { PostralPaymentItem } from './payment-item.entity';
@@ -11,8 +11,8 @@ import { Address } from './address.entity';
 import { ItemTaxEntity, ItemTaxVariation } from './item-tax.entity';
 import { PaymentChannelOperation } from './payment-channel-operation.entity';
 import { Invoice } from './invoice.entity';
-import { SnapshotAddress } from './snapshot-address.entity';
-import { SnapshotAccount } from './snapshot-account.entity';
+import { InvoiceAddressLegacy, SnapshotAddress } from './snapshot-address.entity';
+import { InvoiceAccountLegacy, SnapshotAccount } from './snapshot-account.entity';
 import { PostralPaymentEvent } from './payment-event.entity';
 import { RefundRequest } from './refund-request.entity';
 import { RefundRequestItem } from './refund-request-item.entity';
@@ -62,6 +62,9 @@ export const PaymentsEntities = [
     WebhookEventLog,
     PaymentChannelConfig,
     ExternalPlatform,
+    AppComissionElderly,
+    InvoiceAddressLegacy,
+    InvoiceAccountLegacy
 ];
 
 export {
@@ -95,6 +98,9 @@ export {
     WebhookConfig,
     WebhookEventLog,
     ExternalPlatform,
+    AppComissionElderly,
+    InvoiceAddressLegacy,
+    InvoiceAccountLegacy
 }
 
 // export * from './payment-item.entity';

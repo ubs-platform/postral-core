@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AppComission } from '@tk-postral/postral-entities';
+import { AppComission, AppComissionElderly } from '@tk-postral/postral-entities';
 import { IsNull, Repository } from 'typeorm';
 import { AppComissionMapper } from '../mapper/app-comission.mapper';
 import { AppComissionDTO } from '@tk-postral/payment-common/dto/app-comission.dto';
@@ -12,8 +12,36 @@ export class AppComissionService {
     constructor(
         @InjectRepository(AppComission)
         private readonly appComissionRepo: Repository<AppComission>,
+        @InjectRepository(AppComissionElderly)
+        private readonly appComissionElderlyRepo: Repository<AppComissionElderly>,
         private readonly appComissionMapper: AppComissionMapper,
-    ) { }
+    ) { 
+
+        this.migrateElderlyData().then(() => {
+            console.log("AppComissionElderly data migration completed.");
+        }).catch(err => {
+            console.error("Error during AppComissionElderly data migration:", err);
+        });
+    }
+
+    /** @deprecated v3'te bu kaldırılacaktır... */
+    async migrateElderlyData() {
+        // AppComissionElderly'deki verileri çekip AppComission tablosuna taşıyacağız... 
+        if ((await this.appComissionElderlyRepo.count()) === 0) {
+            return
+        }
+        const allElderly = await this.appComissionElderlyRepo.find();
+        for (const elderly of allElderly) {
+            const newEntity = new AppComission();
+            newEntity.sellerAccountId = elderly.sellerAccountId;
+            newEntity.itemClass = elderly.itemClass;
+            newEntity.externalPlatformId = elderly.externalPlatformId;
+            newEntity.percent = elderly.percent;
+            newEntity.bias = elderly.bias;
+            await this.appComissionRepo.save(newEntity);
+            await this.appComissionElderlyRepo.remove(elderly);
+        }
+    }
 
 
     async fetchOneForCalculation(sellerAccountId: string, itemClass: string, externalPlatformId?: string) {

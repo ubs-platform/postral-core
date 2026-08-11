@@ -85,6 +85,7 @@ import { ExternalPlatformController } from './controller/external-platform.contr
 import { connection } from 'mongoose';
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from "@ubs-platform/cache-manager";
+import { V2MigrationUtil } from './service/v2-migration-util';
 
 @Module({
     imports: [
@@ -169,6 +170,7 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         PaymentChannelConfigMapper,
         ExternalPlatformService,
         ExternalPlatformMapper,
+        V2MigrationUtil
     ],
     controllers: [
         PaymentController,

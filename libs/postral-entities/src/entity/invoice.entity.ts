@@ -36,7 +36,7 @@ export class Invoice {
 
     @Column({ nullable: true })
     customerSnapshotAddressId?: string;
-    
+
     @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
     customerSnapshotAddress?: SnapshotAddress;
@@ -44,7 +44,7 @@ export class Invoice {
     @Column({ nullable: true })
     customerSnapshotAccountId?: string;
 
-    @OneToOne(() => SnapshotAccount, {  eager: true })
+    @OneToOne(() => SnapshotAccount, { eager: true })
     @JoinColumn({ name: "customerSnapshotAccountId" })
     customerSnapshotAccount?: SnapshotAccount;
 
@@ -101,4 +101,36 @@ export class Invoice {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    /**
+     * ESKİ ALANLAR
+     *   `customerInvoiceAddressId` uuid DEFAULT NULL,
+  `customerAccountId` uuid DEFAULT NULL,
+  `sellerInvoiceAccountId` uuid DEFAULT NULL,
+  `sellerInvoiceAddressId` uuid DEFAULT NULL,
+     */
+
+    /**
+     * @deprecated
+     */
+    @Column({ nullable: true })
+    customerInvoiceAddressId?: string;
+
+    /**
+   * @deprecated
+   */
+    @Column({ nullable: true })
+    customerAccountId?: string;
+
+    /**
+   * @deprecated
+   */
+    @Column({ nullable: true })
+    sellerInvoiceAccountId?: string;
+
+    /**
+   * @deprecated
+   */
+    @Column({ nullable: true })
+    sellerInvoiceAddressId?: string;
 }

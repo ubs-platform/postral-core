@@ -25,6 +25,11 @@ export class Account {
      */
     @Column({ nullable: true })
     phone?: string;
+    /**
+     * Web sitesi. Kurumsal ya da şahısın kendi web sitesi... Örn: www.tetakent.com
+     */
+    @Column({ nullable: true })
+    website?: string;
 
     /**
      * Eğer kişiselse TCKN, şirketse Vergi numarası
@@ -64,6 +69,20 @@ export class Account {
     @Column({ nullable: true })
     taxOffice?: string;
 
+
+    /**
+     * E-posta adresi (diğer PII gibi şifreli saklanır). Örn: derdinekeder_alayinagider_asaletinyeter_kasapserdar@sagolera.com
+     */
+    @Column({ nullable: true, length: 100 })
+    emailAddress?: string;
+
+
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
+
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    updatedAt: Date;
+
     // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
     // externalPlatformId null olabilir; unique kısıt yalnızca dolu çiftlerde işler
     // (MariaDB çoklu NULL'a izin verir, normal Postral hesapları kısıtlanmaz).
@@ -74,7 +93,7 @@ export class Account {
     @JoinColumn({ name: 'externalPlatformId' })
     externalPlatform?: ExternalPlatform;
 
-    // Harici platformdaki müşteri kimliği (o platform içindeki hesap id'si).
+    // Harici platformdaki müşteri kimliği (o platform içindeki hesap id'si. Eğer bu bilgi sağlanmıyorsa iletişim bilgisi kullanılabilir.. mi...).
     @Column({ nullable: true })
     externalPlatformAccountId?: string;
 }

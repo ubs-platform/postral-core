@@ -11,17 +11,28 @@ export class InvoiceAccountMapper {
     constructor(private cryptionUtil: CryptionUtil) {
         
     }
-    toEntityFromNormalAccount(account: Account | AccountDTO): InvoiceAccount {
+    toEntityFromNormalAccount(account: Account | AccountDTO, fromDto: boolean): InvoiceAccount {
+
+        let fromDtoGate = (a) => a;
+        if (fromDto) {
+            fromDtoGate = (a) => {
+                return this.cryptionUtil.encryptWithConfig(a, "USE_DEFAULT") || '';
+            }
+        }
         const entity = new InvoiceAccount();
-        entity.name = account.name;
+        entity.name = fromDtoGate(account.name);
         // zaten şifreli geliyor...
-        entity.legalIdentity = account.legalIdentity;
+        entity.legalIdentity = fromDtoGate(account.legalIdentity);
         entity.type = account.type;
         entity.realAccountId = account.id;
         entity.bankName = account.bankName;
-        entity.bankIban = account.bankIban;
-        entity.bankBic = account.bankBic;
-        entity.bankSwift = account.bankSwift;
+        entity.bankIban = fromDtoGate(account.bankIban);
+        entity.bankBic = fromDtoGate(account.bankBic);
+        entity.bankSwift = fromDtoGate(account.bankSwift);
+        entity.taxOffice = fromDtoGate(account.taxOffice);
+        entity.website = fromDtoGate(account.website);
+        entity.phone = fromDtoGate(account.phone);
+        entity.emailAddress = fromDtoGate(account.emailAddress);
         return entity;
     }
 
@@ -49,11 +60,11 @@ export class InvoiceAccountMapper {
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || '';
         entity.type = dto.type;
         entity.realAccountId = dto.realAccountId!;
-        entity.bankName = dto.bankName;
-        entity.bankIban = dto.bankIban;
-        entity.bankBic = dto.bankBic;
-        entity.bankSwift = dto.bankSwift;
-        entity.taxOffice = dto.taxOffice;
+        entity.bankName = this.cryptionUtil.encryptWithConfig(dto.bankName, "USE_DEFAULT") || '';
+        entity.bankIban = this.cryptionUtil.encryptWithConfig(dto.bankIban, "USE_DEFAULT") || '';
+        entity.bankBic = this.cryptionUtil.encryptWithConfig(dto.bankBic, "USE_DEFAULT") || '';
+        entity.bankSwift = this.cryptionUtil.encryptWithConfig(dto.bankSwift, "USE_DEFAULT") || '';
+        entity.taxOffice = this.cryptionUtil.encryptWithConfig(dto.taxOffice, "USE_DEFAULT") || '';
         return entity;
     }
 }

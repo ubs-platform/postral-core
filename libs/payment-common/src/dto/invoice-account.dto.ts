@@ -18,4 +18,11 @@ export class SnapshotAccountDTO {
     bankSwift?: string;
 
     taxOffice?: string;
+
+
+    phone?: string;
+
+    website?: string;
+
+    emailAddress?: string;
 }

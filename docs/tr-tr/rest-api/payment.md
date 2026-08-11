@@ -200,7 +200,7 @@ _Kaynak: `libs/payment-common/src/dto/payment.dto.ts`_
 
 ```
 {
-  items: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").PaymentItemDto[];
+  items: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").PaymentItemDTO[];
   taxes: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").TaxDTO[];
   id: string;
   type: "PURCHASE" | "REFUND";
@@ -2154,7 +2154,7 @@ _Kaynak: `libs/payment-common/src/dto/calculation.dto.ts`_
 
 ```
 {
-  items: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").PaymentItemDto[];
+  items: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").PaymentItemDTO[];
   totalAmount: number;
   totalTaxAmount: number;
   taxes: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").TaxDTO[];
@@ -2431,8 +2431,8 @@ _Kaynak: `libs/payment-common/src/dto/payment-item.dto.ts`_
     taxOffice: undefined | string;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
 
 }
 ```
@@ -2500,8 +2500,8 @@ _Kaynak: `libs/payment-common/src/dto/invoice.dto.ts`_
     taxOffice: string | undefined;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
   finalized: boolean;
 
 }
@@ -2582,8 +2582,8 @@ _Kaynak: `libs/payment-common/src/dto/invoice.dto.ts`_
     taxOffice: string | undefined;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
   finalized: boolean;
 
 }
@@ -2681,8 +2681,8 @@ _Kaynak: `libs/payment-common/src/dto/invoice.dto.ts`_
     taxOffice: string | undefined;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
   finalized: boolean;
 
 }
@@ -2745,10 +2745,10 @@ void
   notes: string | undefined;
   createdAt: Date;
   updatedAt: Date;
-  sellerInvoiceAddress: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto | undefined;
-  sellerInvoiceAccount: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO | undefined;
-  customerInvoiceAddress: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto | undefined;
-  customerAccount: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO | undefined;
+  sellerInvoiceAddress: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO | undefined;
+  sellerInvoiceAccount: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO | undefined;
+  customerInvoiceAddress: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO | undefined;
+  customerAccount: import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO | undefined;
   finalized: boolean;
 
 }[]
@@ -2887,8 +2887,8 @@ void
     taxOffice: string | undefined;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
   finalized: boolean;
 
 }
@@ -2969,8 +2969,8 @@ _Kaynak: `libs/payment-common/src/dto/invoice.dto.ts`_
     taxOffice: string | undefined;
 
   };
-  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAddressDto;
-  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").InvoiceAccountDTO;
+  customerInvoiceAddress: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAddressDTO;
+  customerAccount: undefined | import("/home/huseyin/dev/tk-ubs/postralmona/libs/payment-common/src/index").SnapshotAccountDTO;
   finalized: boolean;
 
 }

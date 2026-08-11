@@ -1,18 +1,19 @@
 import { InternalSearchDTO } from './internal-search.dto';
 
 export class AccountDTO {
-    id: string;
+    id!: string;
 
-    name: string;
+    name!: string;
 
     phone?: string;
+    website?: string;
+    emailAddress?: string;
+    legalIdentity!: string;
 
-    legalIdentity: string;
-
-    type: 'INDIVIDUAL' | 'COMMERCIAL';
+    type!: 'INDIVIDUAL' | 'COMMERCIAL';
 
     defaultAddressId?: string;
-
+    
     ownerUserId?: string;
     entityOwnershipGroupId?: string;
     deactivated?: boolean;
@@ -30,6 +31,7 @@ export class AccountDTO {
 export class AccountSearchParamsDTO implements InternalSearchDTO {
     name?: string;
 
+    // Eğer hassas alanlar şifrelenmişse, arama için de şifrelenmiş değerler kullanılmalıdır. Bu nedenle, hassas alanlar için arama yapılacaksa, bu alanların şifrelenmiş değerleri kullanılmalıdır.
     legalIdentity?: string;
 
     type?: 'INDIVIDUAL' | 'COMMERCIAL';

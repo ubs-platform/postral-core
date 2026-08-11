@@ -27,13 +27,17 @@ export class AccountMapper {
             id: ac.id,
             legalIdentity: this.cryptionUtil.decryptWithConfig(ac.legalIdentity, "USE_DEFAULT") || "",
             name: ac.name,
+            website: ac.website || "",
             phone: this.cryptionUtil.decryptWithConfig(ac.phone, "USE_DEFAULT") || "",
+            emailAddress: this.cryptionUtil.decryptWithConfig(ac.emailAddress, "USE_DEFAULT") || "",
             type: ac.type,
             defaultAddressId: ac.defaultAddressId,
             bankName: ac.bankName,
             bankIban: this.cryptionUtil.decryptWithConfig(ac.bankIban, "USE_DEFAULT") || "",
             bankBic: this.cryptionUtil.decryptWithConfig(ac.bankBic, "USE_DEFAULT") || "",
             taxOffice: this.cryptionUtil.decryptWithConfig(ac.taxOffice, "USE_DEFAULT") || "",
+            bankSwift: this.cryptionUtil.decryptWithConfig(ac.bankSwift, "USE_DEFAULT") || "",
+
             externalPlatformId: ac.externalPlatformId,
             externalPlatformAccountId: ac.externalPlatformAccountId,
         };
@@ -45,6 +49,9 @@ export class AccountMapper {
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || "";
         entity.name = dto.name;
         entity.phone = this.cryptionUtil.encryptWithConfig(dto.phone, "USE_DEFAULT") || "";
+        entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || "";
+        // website alanı hassas değer midir... 
+        entity.website = dto.website;
         entity.type = dto.type;
         entity.defaultAddressId = dto.defaultAddressId;
         entity.bankName = dto.bankName;
@@ -53,6 +60,8 @@ export class AccountMapper {
         entity.taxOffice = this.cryptionUtil.encryptWithConfig(dto.taxOffice, "USE_DEFAULT") || "";
         entity.externalPlatformId = dto.externalPlatformId;
         entity.externalPlatformAccountId = dto.externalPlatformAccountId;
+        entity.bankSwift = this.cryptionUtil.encryptWithConfig(dto.bankSwift, "USE_DEFAULT") || "";
+        entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || "";
         return entity;
     }
 }

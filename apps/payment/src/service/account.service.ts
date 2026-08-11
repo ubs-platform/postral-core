@@ -9,7 +9,7 @@
 // import { PostralPaymentTax } from '../entity/payment-tax.entity';
 // import { EventSenderService } from './event-management.service';
 // import {
-//     PaymentItemDto,
+//     PaymentItemDTO,
 //     PaymentInitDTO,
 //     PaymentDTO,
 //     TaxDTO,

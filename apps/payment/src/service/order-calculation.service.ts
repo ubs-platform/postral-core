@@ -42,12 +42,12 @@ export class OrderCalculationService {
             itemIndex < paymentItems.items.length;
             itemIndex++
         ) {
-            const paymentItemDto = paymentItems.items[itemIndex];
+            const PaymentItemDTO = paymentItems.items[itemIndex];
             if (
-                !paymentItemDto.itemId &&
-                (!paymentItemDto.entityGroup ||
-                    !paymentItemDto.entityId ||
-                    !paymentItemDto.entityName)
+                !PaymentItemDTO.itemId &&
+                (!PaymentItemDTO.entityGroup ||
+                    !PaymentItemDTO.entityId ||
+                    !PaymentItemDTO.entityName)
             ) {
                 throw new NotFoundException(
                     'Item identification is missing for payment init',
@@ -55,12 +55,12 @@ export class OrderCalculationService {
             }
             const realItemFind = (
                 await this.itemService.fetchAll(
-                    paymentItemDto.itemId
-                        ? { id: paymentItemDto.itemId }
+                    PaymentItemDTO.itemId
+                        ? { id: PaymentItemDTO.itemId }
                         : {
-                            entityGroup: paymentItemDto.entityGroup,
-                            entityId: paymentItemDto.entityId,
-                            entityName: paymentItemDto.entityName,
+                            entityGroup: PaymentItemDTO.entityGroup,
+                            entityId: PaymentItemDTO.entityId,
+                            entityName: PaymentItemDTO.entityName,
                         },
                 )
             )[0];
@@ -110,7 +110,7 @@ export class OrderCalculationService {
                     currency: paymentItems.currency,
                     itemId: realItemFind.id,
                     // region:
-                    variation: paymentItemDto.variation,
+                    variation: PaymentItemDTO.variation,
                 },
             );
             const itemPriceDefault =
@@ -118,7 +118,7 @@ export class OrderCalculationService {
                     currency: paymentItems.currency,
                     itemId: realItemFind.id,
                     // region:
-                    variation: paymentItemDto.variation,
+                    variation: PaymentItemDTO.variation,
                 });
 
             const paymentItem = new PostralPaymentItem();
@@ -130,7 +130,7 @@ export class OrderCalculationService {
             paymentItem.totalAmount =
                 AmountCalculationUtil.multiplyNumberValues(
                     itemPriceActive[0].itemPrice,
-                    paymentItemDto.quantity,
+                    PaymentItemDTO.quantity,
                 );
 
             const admSettings = await this.adminSettingsService.getAdminSettings();
@@ -161,7 +161,7 @@ export class OrderCalculationService {
             paymentItem.name = realItemFind.name;
             paymentItem.taxAmount = taxDto.taxAmount!;
             paymentItem.unTaxAmount = taxDto.untaxAmount!;
-            paymentItem.quantity = paymentItemDto.quantity;
+            paymentItem.quantity = PaymentItemDTO.quantity;
             paymentItem.appComissionPercent = comission.percent;
             paymentItem.appComissionAmount = AmountCalculationUtil.calculateComissionAmountByPercent(
                 admSettings.comissionsCalculatedFromNet ? paymentItem.unTaxAmount : paymentItem.totalAmount,

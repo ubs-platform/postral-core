@@ -751,7 +751,7 @@ export class PaymentService {
     }
 
     private async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
-        const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount);
+        const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount, true);
         p.customerSnapshotAccount = accountSnapshot;
     }
 
@@ -773,7 +773,7 @@ export class PaymentService {
             }
 
             const itemSellerAccount = realAccountMapByRealId.get(item.sellerAccountId)!;
-            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount);
+            item.sellerSnapshotAccount = await this.invoiceAccountMapper.toEntityFromNormalAccount(itemSellerAccount, true);
 
             if (!itemSellerAccount.defaultAddressId) {
                 throw new BadRequestException(`Seller account ${item.sellerAccountId} does not have a default address`);
