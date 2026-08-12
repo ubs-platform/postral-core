@@ -45,6 +45,11 @@ export class V2MigrationUtil {
         @InjectRepository(Address)
         private readonly addressRepository: Repository<Address>,
     ) {
+
+    }
+
+
+    async doMigration() {
         console.warn("DİKKAT: V2 Geçişleri başlatılacak. Ancak bir sonraki Minör sürümde bu geçiş işlemleri kaldırılacaktır.")
         console.log("V2MigrationUtil başlatıldı. Migration işlemleri başlatılıyor...");
         Promise.all([
