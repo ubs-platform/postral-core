@@ -1,10 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { SnapshotAddress } from "libs/postral-entities/src/entity/snapshot-address.entity";
-import { SnapshotAccount } from "libs/postral-entities/src/entity/snapshot-account.entity";
-import { InvoiceAccountLegacy } from "@tk-postral/postral-entities";
-import { Invoice, InvoiceAccount, InvoiceAddressLegacy } from "@tk-postral/postral-entities";
-import { IsNull, Not, Repository } from "typeorm";
+import {
+    Account,
+    Address,
+    Invoice,
+    InvoiceAccount,
+    InvoiceAccountLegacy,
+    InvoiceAddress,
+    InvoiceAddressLegacy,
+    Payment,
+    SellerPaymentOrder,
+} from "@tk-postral/postral-entities";
+import { In, IsNull, Not, Repository } from "typeorm";
 
 @Injectable()
 export class V2MigrationUtil {
@@ -12,10 +19,10 @@ export class V2MigrationUtil {
     // TODO: Paymentlar hala gerçek Account ve Address ile ilişkili. Bu yüzden Paymentları da migrate etmemiz gerekiyor. 
     constructor(
 
-        @InjectRepository(SnapshotAddress)
-        private readonly snapshotAddressRepository: Repository<SnapshotAddress>,
-        @InjectRepository(SnapshotAccount)
-        private readonly snapshotAccountRepository: Repository<SnapshotAccount>,
+        @InjectRepository(InvoiceAddress)
+        private readonly snapshotAddressRepository: Repository<InvoiceAddress>,
+        @InjectRepository(InvoiceAccount)
+        private readonly snapshotAccountRepository: Repository<InvoiceAccount>,
 
         @InjectRepository(InvoiceAddressLegacy)
         private readonly invoiceAddressLegacyRepository: Repository<InvoiceAddressLegacy>,
@@ -25,15 +32,27 @@ export class V2MigrationUtil {
 
         @InjectRepository(Invoice)
         private readonly invoiceRepository: Repository<Invoice>,
-    ) {
 
+        @InjectRepository(Payment)
+        private readonly paymentRepository: Repository<Payment>,
+
+        @InjectRepository(SellerPaymentOrder)
+        private readonly sellerPaymentOrderRepository: Repository<SellerPaymentOrder>,
+
+        @InjectRepository(Account)
+        private readonly accountRepository: Repository<Account>,
+
+        @InjectRepository(Address)
+        private readonly addressRepository: Repository<Address>,
+    ) {
+        console.warn("DİKKAT: V2 Geçişleri başlatılacak. Ancak bir sonraki Minör sürümde bu geçiş işlemleri kaldırılacaktır.")
         console.log("V2MigrationUtil başlatıldı. Migration işlemleri başlatılıyor...");
         Promise.all([
             this.migrateSnapshotAddresses(),
             this.migrateSnapshotAccounts(),
         ]).then(() =>
             this.migrateInvoices()
-        ).then(() =>
+        ).then(() => this.migratePayments()).then(() =>
             // Legacy tabloları ancak invoice FK'ları taşındıktan sonra temizliyoruz;
             // OneToOne cascade nedeniyle önce silinirse invoice id'leri de siliniyordu.
             this.cleanupLegacyTables()
@@ -48,7 +67,7 @@ export class V2MigrationUtil {
     async migrateSnapshotAddresses() {
         const legacyInvoiceAddresses = await this.invoiceAddressLegacyRepository.find();
         await this.snapshotAddressRepository.save(legacyInvoiceAddresses.map(oldSnapshotAddress => {
-            const snapshotAddress = new SnapshotAddress();
+            const snapshotAddress = new InvoiceAddress();
             snapshotAddress.id = oldSnapshotAddress.id;
             snapshotAddress.name = oldSnapshotAddress.name;
             snapshotAddress.country = oldSnapshotAddress.country;
@@ -83,7 +102,7 @@ export class V2MigrationUtil {
     async migrateSnapshotAccounts() {
         const snapshotAccounts = await this.invoiceAccountLegacyRepository.find();
         await this.snapshotAccountRepository.save(snapshotAccounts.map(oldSnapshotAccount => {
-            const snapshotAccount = new SnapshotAccount();
+            const snapshotAccount = new InvoiceAccount();
             snapshotAccount.id = oldSnapshotAccount.id;
             snapshotAccount.realAccountId = oldSnapshotAccount.realAccountId;
             snapshotAccount.phone = oldSnapshotAccount.phone;
@@ -135,5 +154,231 @@ export class V2MigrationUtil {
             "Legacy veriler silinmedi. Eski kayıtları 'invoice_address_legacy' ve " +
             "'invoice_account_legacy' tablolarından inceleyebilirsiniz."
         );
+    }
+
+    async migratePayments() {
+        const payments = await this.paymentRepository.find({
+            where: [
+                { customerSnapshotAccountId: IsNull() as any },
+                { customerSnapshotAddressId: IsNull() as any },
+                { items: { sellerSnapshotAccountId: IsNull() as any } },
+                { items: { sellerSnapshotAddressId: IsNull() as any } }
+            ],
+            relations: ['items', 'items.sellerAccount'],
+        });
+
+        const paymentsWillBeUpdated: Payment[] = [];
+
+        for (const payment of payments) {
+            let saveFlag = false;
+
+            if (!payment.customerSnapshotAccountId && payment.customerAccountId) {
+                const snapshotAccount = await this.getAccountSnapshot(payment.customerAccountId);
+                if (snapshotAccount) {
+                    payment.customerSnapshotAccountId = snapshotAccount.id;
+                    saveFlag = true;
+                }
+            }
+
+            if (!payment.customerSnapshotAddressId && payment.billingAddressId) {
+                const snapshotAddress = await this.getAddressSnapshot(payment.billingAddressId);
+                if (snapshotAddress) {
+                    payment.customerSnapshotAddressId = snapshotAddress.id;
+                    saveFlag = true;
+                }
+            }
+
+            for (const item of payment.items ?? []) {
+                if (!item.sellerSnapshotAccountId && item.sellerAccountId) {
+                    const snapshotAccount = await this.getAccountSnapshot(item.sellerAccountId);
+                    if (snapshotAccount) {
+                        item.sellerSnapshotAccountId = snapshotAccount.id;
+                        saveFlag = true;
+                    }
+                }
+
+                if (!item.sellerSnapshotAddressId) {
+                    const sellerDefaultAddressId = item.sellerAccount?.defaultAddressId ?? item.sellerAccountId
+                        ? (await this.accountRepository.findOneBy({ id: item.sellerAccountId! }))?.defaultAddressId
+                        : undefined;
+
+                    if (sellerDefaultAddressId) {
+                        const snapshotAddress = await this.getAddressSnapshot(sellerDefaultAddressId);
+                        if (snapshotAddress) {
+                            item.sellerSnapshotAddressId = snapshotAddress.id;
+                            saveFlag = true;
+                        }
+                    }
+                }
+            }
+
+            if (payment.customerSnapshotAccountId && payment.customerAccountId) {
+                payment.customerAccountId = undefined;
+                saveFlag = true;
+            }
+
+            if (payment.customerSnapshotAddressId && payment.billingAddressId) {
+                payment.billingAddressId = undefined;
+                saveFlag = true;
+            }
+
+            if (saveFlag) {
+                console.info(`Payment ${payment.id} güncellenecek. Snapshot Account ve Address bilgileri eklendi.`);
+                paymentsWillBeUpdated.push(payment);
+            } else {
+                console.warn(`Payment ${payment.id} güncellenemedi. customerAccountId=${payment.customerAccountId ?? 'null'}, billingAddressId=${payment.billingAddressId ?? 'null'}, customerSnapshotAccountId=${payment.customerSnapshotAccountId ?? 'null'}, customerSnapshotAddressId=${payment.customerSnapshotAddressId ?? 'null'}, itemCount=${payment.items?.length ?? 0}`);
+            }
+        }
+
+        const updatedPayments = await this.paymentRepository.save(paymentsWillBeUpdated);
+        const updatedPaymentIds = updatedPayments.map((p) => p.id);
+
+        const sellerOrders = await this.sellerPaymentOrderRepository.find({
+            where: [
+                { customerSnapshotAccountId: IsNull() as any },
+                { customerSnapshotAddressId: IsNull() as any },
+                { sellerSnapshotAccountId: IsNull() as any },
+                { sellerSnapshotAddressId: IsNull() as any }
+            ],
+            relations: ['sourceAccount', 'targetAccount'],
+        });
+
+        const sellerOrdersWillBeUpdated: SellerPaymentOrder[] = [];
+
+        for (const order of sellerOrders) {
+            let saveFlag = false;
+
+            if (!order.customerSnapshotAccountId) {
+                const customerRealAccountId = order.sourceAccountId ?? order.targetAccountId;
+                const snapshotAccount = customerRealAccountId ? await this.getAccountSnapshot(customerRealAccountId) : undefined;
+                if (snapshotAccount) {
+                    order.customerSnapshotAccountId = snapshotAccount.id;
+                    saveFlag = true;
+                }
+            }
+
+            if (!order.customerSnapshotAddressId) {
+                const customerRealAddressId = order.billingAddressId ?? (await this.accountRepository.findOneBy({ id: order.sourceAccountId ?? order.targetAccountId }))?.defaultAddressId;
+                const snapshotAddress = customerRealAddressId ? await this.getAddressSnapshot(customerRealAddressId) : undefined;
+                if (snapshotAddress) {
+                    order.customerSnapshotAddressId = snapshotAddress.id;
+                    saveFlag = true;
+                }
+            }
+
+            if (!order.sellerSnapshotAccountId) {
+                const sellerRealAccountId = order.targetAccountId ?? order.sourceAccountId;
+                const snapshotAccount = sellerRealAccountId ? await this.getAccountSnapshot(sellerRealAccountId) : undefined;
+                if (snapshotAccount) {
+                    order.sellerSnapshotAccountId = snapshotAccount.id;
+                    saveFlag = true;
+                }
+            }
+
+            if (!order.sellerSnapshotAddressId) {
+                const sellerAccount = await this.accountRepository.findOneBy({ id: order.targetAccountId ?? order.sourceAccountId });
+                const sellerDefaultAddressId = sellerAccount?.defaultAddressId ?? order.billingAddressId;
+                const snapshotAddress = sellerDefaultAddressId ? await this.getAddressSnapshot(sellerDefaultAddressId) : undefined;
+                if (snapshotAddress) {
+                    order.sellerSnapshotAddressId = snapshotAddress.id;
+                    saveFlag = true;
+                }
+            }
+
+            if (saveFlag) {
+                sellerOrdersWillBeUpdated.push(order);
+                console.info(`SellerPaymentOrder ${order.id} güncellenecek. Snapshot Account ve Address bilgileri eklendi.`);
+            } else {
+                console.warn(`SellerPaymentOrder ${order.id} güncellenemedi. paymentId=${order.paymentId}, sourceAccountId=${order.sourceAccountId ?? 'null'}, targetAccountId=${order.targetAccountId ?? 'null'}, sellerSnapshotAccountId=${order.sellerSnapshotAccountId ?? 'null'}, sellerSnapshotAddressId=${order.sellerSnapshotAddressId ?? 'null'}, customerSnapshotAccountId=${order.customerSnapshotAccountId ?? 'null'}, customerSnapshotAddressId=${order.customerSnapshotAddressId ?? 'null'}`);
+            }
+        }
+
+        await this.sellerPaymentOrderRepository.save(sellerOrdersWillBeUpdated);
+    }
+
+    private async getAccountSnapshot(realAccountId: string | undefined) {
+        if (!realAccountId) {
+            return undefined;
+        }
+
+        try {
+            const customerAccount = await this.accountRepository.findOne({
+                where: { id: realAccountId },
+                loadEagerRelations: true,
+            });
+
+            if (!customerAccount) {
+                console.warn(`SnapshotAccount oluşturulamadı: account bulunamadı. accountId=${realAccountId}`);
+                return undefined;
+            }
+
+            const snapshotAccount = new InvoiceAccount();
+            snapshotAccount.realAccountId = customerAccount.id;
+            snapshotAccount.name = customerAccount.name || "";
+            snapshotAccount.legalIdentity = customerAccount.legalIdentity || "";
+            snapshotAccount.phone = customerAccount.phone || "";
+            snapshotAccount.website = customerAccount.website || "";
+            snapshotAccount.emailAddress = customerAccount.emailAddress || "";
+            snapshotAccount.type = customerAccount.type || "";
+            snapshotAccount.bankName = customerAccount.bankName || "";
+            snapshotAccount.bankIban = customerAccount.bankIban || "";
+            snapshotAccount.bankBic = customerAccount.bankBic || "";
+            snapshotAccount.bankSwift = customerAccount.bankSwift || "";
+            snapshotAccount.taxOffice = customerAccount.taxOffice || "";
+            return await this.snapshotAccountRepository.save(snapshotAccount);
+        } catch (error) {
+            console.warn(`SnapshotAccount oluşturulamadı. accountId=${realAccountId}`, error);
+            return undefined;
+        }
+    }
+
+    private async getAddressSnapshot(realAddressId: string | undefined) {
+        if (!realAddressId) {
+            return undefined;
+        }
+
+        try {
+            const customerAddress = await this.addressRepository.findOne({
+                where: { id: realAddressId }
+            });
+
+            if (!customerAddress) {
+                console.warn(`SnapshotAddress oluşturulamadı: address bulunamadı. addressId=${realAddressId}`);
+                return undefined;
+            }
+
+            const snapshotAddress = new InvoiceAddress();
+            snapshotAddress.realAddressId = customerAddress.id || "";
+            snapshotAddress.name = customerAddress.name || "";
+            snapshotAddress.country = customerAddress.country || "";
+            snapshotAddress.countrySubentity = customerAddress.countrySubentity || "";
+            snapshotAddress.countrySubentityCode = customerAddress.countrySubentityCode || "";
+            snapshotAddress.addressFormatCode = customerAddress.addressFormatCode || "";
+            snapshotAddress.addressTypeCode = customerAddress.addressTypeCode || "";
+            snapshotAddress.department = customerAddress.department || "";
+            snapshotAddress.markAttention = customerAddress.markAttention || "";
+            snapshotAddress.markCare = customerAddress.markCare || "";
+            snapshotAddress.plotIdentification = customerAddress.plotIdentification || "";
+            snapshotAddress.cityCode = customerAddress.cityCode || "";
+            snapshotAddress.inhaleName = customerAddress.inhaleName || "";
+            snapshotAddress.timezone = customerAddress.timezone || "";
+            snapshotAddress.buildingNumber = customerAddress.buildingNumber || "";
+            snapshotAddress.buildingName = customerAddress.buildingName || "";
+            snapshotAddress.room = customerAddress.room || "";
+            snapshotAddress.floor = customerAddress.floor || "";
+            snapshotAddress.blockName = customerAddress.blockName || "";
+            snapshotAddress.streetName = customerAddress.streetName || "";
+            snapshotAddress.additionalStreetName = customerAddress.additionalStreetName || "";
+            snapshotAddress.district = customerAddress.district || "";
+            snapshotAddress.citySubdivisionName = customerAddress.citySubdivisionName || "";
+            snapshotAddress.cityName = customerAddress.cityName || "";
+            snapshotAddress.postalZone = customerAddress.postalZone || "";
+            snapshotAddress.region = customerAddress.region || "";
+            snapshotAddress.postbox = customerAddress.postbox || "";
+            return await this.snapshotAddressRepository.save(snapshotAddress);
+        } catch (error) {
+            console.warn(`SnapshotAddress oluşturulamadı. addressId=${realAddressId}`, error);
+            return undefined;
+        }
     }
 }
