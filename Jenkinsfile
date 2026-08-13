@@ -141,7 +141,7 @@ NODE
                     git config user.email "hcangunduz@gmail.com"
                     git add .
                     git commit -m "JENKINS: Version upgrade to ${RELEASE_VERSION} and publish completion" || echo "No changes to commit"
-                    git push origin HEAD:${BRANCH_NAME} || echo "Nothing to push"
+                    git push origin HEAD:${env.BRANCH_NAME:-"master"} || echo "Nothing to push"
                 '''
             }
         }
