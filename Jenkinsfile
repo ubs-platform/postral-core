@@ -140,8 +140,19 @@ NODE
                     sh '''
                         BRANCH_NAME=$(git branch --show-current 2>/dev/null || true)
                         if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
-                            BRANCH_NAME="${BRANCH_NAME:-${CHANGE_BRANCH:-${GIT_BRANCH:-master}}}"
+                            BRANCH_NAME="${CHANGE_BRANCH:-${GIT_BRANCH:-}}"
                         fi
+
+                        while [[ "$BRANCH_NAME" == origin/* ]]; do
+                            BRANCH_NAME="${BRANCH_NAME#origin/}"
+                        done
+
+                        BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
+                        BRANCH_NAME="${BRANCH_NAME#refs/remotes/origin/}"
+
+                        while [[ "$BRANCH_NAME" == origin/* ]]; do
+                            BRANCH_NAME="${BRANCH_NAME#origin/}"
+                        done
 
                         if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
                             BRANCH_NAME="master"
