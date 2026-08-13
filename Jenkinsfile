@@ -138,9 +138,23 @@ NODE
             steps {
                 withCredentials([usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     sh '''
-                        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+                        BRANCH_NAME=$(git branch --show-current 2>/dev/null || true)
+                        if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
+                            BRANCH_NAME="${BRANCH_NAME:-${CHANGE_BRANCH:-${GIT_BRANCH:-master}}}"
+                        fi
+
+                        if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
+                            BRANCH_NAME="master"
+                        fi
+
+                        echo "Using git branch: $BRANCH_NAME"
+
                         git config user.name "Hüseyin Can Gündüz"
                         git config user.email "hcangunduz@gmail.com"
+
+                        if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)" = "HEAD" ]; then
+                            git checkout -B "$BRANCH_NAME"
+                        fi
 
                         git add .
                         git commit -m "JENKINS: Version upgrade to ${RELEASE_VERSION} and publish completion" || echo "No changes to commit"
@@ -165,7 +179,7 @@ NODE
                         esac
 
                         git remote set-url origin "$AUTH_REPO_URL"
-                        git push origin HEAD:${BRANCH_NAME:-"master"} || echo "Nothing to push"
+                        git push origin "HEAD:refs/heads/$BRANCH_NAME" || echo "Nothing to push"
                     '''
                 }
             }
