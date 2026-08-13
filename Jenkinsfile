@@ -137,11 +137,12 @@ NODE
         stage('Commit version changes') {
             steps {
                 sh '''
+                    BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
                     git config user.name "Hüseyin Can Gündüz"
                     git config user.email "hcangunduz@gmail.com"
                     git add .
                     git commit -m "JENKINS: Version upgrade to ${RELEASE_VERSION} and publish completion" || echo "No changes to commit"
-                    git push origin HEAD:${env.BRANCH_NAME:-"master"} || echo "Nothing to push"
+                    git push origin HEAD:${BRANCH_NAME:-"master"} || echo "Nothing to push"
                 '''
             }
         }
