@@ -190,6 +190,15 @@ NODE
                         esac
 
                         git remote set-url origin "$AUTH_REPO_URL"
+
+                        if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+                            git fetch origin "$BRANCH_NAME"
+                            git rebase "origin/$BRANCH_NAME" || {
+                                echo "Rebase conflict while updating with remote branch $BRANCH_NAME"
+                                exit 1
+                            }
+                        fi
+
                         git push origin "HEAD:refs/heads/$BRANCH_NAME" || echo "Nothing to push"
                     '''
                 }
