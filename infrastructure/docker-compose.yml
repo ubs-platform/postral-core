@@ -37,7 +37,7 @@ services:
       - REQUIRE_AUTH=${REQUIRE_AUTH-false}
 
   ubs-dev-monolith:
-    image: hcangunduz/ubs-mona-dev-monolith:${UBS_VERSION-6.8.0}
+    image: hcangunduz/ubs-mona-dev-monolith:${UBS_VERSION-7.1.3}
     ports:
       - ${UBS_PORT-3000}:${UBS_PORT-3000}
     environment:
