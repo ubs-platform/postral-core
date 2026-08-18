@@ -9,7 +9,7 @@ REPO_OWNER="ubs-platform"
 REPO_NAME="postral-core"
 BRANCH="master"
 RAW_BASE_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}"
-INSTALL_DIR="${HOME}/.bin/tetakent/postral"
+INSTALL_DIR="${HOME}/.local/bin/tetakent/postral"
 STOCK_ENV_URL="${RAW_BASE_URL}/infrastructure/stock.env"
 ENV_FILE="${INSTALL_DIR}/.env"
 # ──────────────────────────────────────────────────────────────────────────────
