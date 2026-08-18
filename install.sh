@@ -15,6 +15,7 @@ FILES=(
   "infrastructure/docker-compose.yml"
   "infrastructure/config/postral-ui.conf"
   "infrastructure/init.sql"
+  "update.ps1"
 )
 
 # Empty directories to create inside the install dir

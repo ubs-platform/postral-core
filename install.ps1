@@ -16,7 +16,8 @@ $InstallDir  = "$env:USERPROFILE\.bin\tetakent\postral"
 $Files = @(
   "infrastructure/docker-compose.yml",
   "infrastructure/config/postral-ui.conf",
-  "infrastructure/init.sql"
+  "infrastructure/init.sql",
+  "update.ps1"
 )
 
 # Empty directories to create inside the install dir
