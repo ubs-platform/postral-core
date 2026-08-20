@@ -103,8 +103,10 @@ export class PaymentService {
 
     @Cron('0 */2 * * * *') // Her 2 dakikada bir çalışır
     async checkAndUpdateWaitingPayments() {
+        // Open payment olmayan ve WAITING durumunda olan ödemeleri bul ve updatePaymentByOperationStatuses ile güncelle.
+        // Open paymentlar postral yerine satıcı/platform tarafından onaylanacağı için burada kontrol edilmeyecektir. Bu faturaların kontrollerini bu iki taraf yapması gerekir...
         const waitingPayments = await this.paymentrepo.find({
-            where: { paymentStatus: 'WAITING' },
+            where: { paymentStatus: 'WAITING', openPayment: false },
         });
         if (waitingPayments.length === 0) {
             return;
