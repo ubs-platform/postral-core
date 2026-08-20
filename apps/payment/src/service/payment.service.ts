@@ -442,7 +442,9 @@ export class PaymentService {
                     // aktif bir operasyon yoksa, payment INITIATED olur. (WAITING ise zaten bekliyor demektir)
                     payment.paymentStatus = "INITIATED";
                 }
-            } else if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+
+            } else if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && !payment.openPayment && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+                // Eğer açık fatura değilse ve uzun süredir bekliyorsa, payment FAILED olur ve errorStatus = EXPIRED olur.
                 // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
                 // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
                 payment.paymentStatus = 'FAILED';
