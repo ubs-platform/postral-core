@@ -48,8 +48,11 @@ export class SnapshotAddressDTO {
     /** Posta kutusu numarası */
     postbox?: string;
 
-    /** Ülke adı */
+    /** Ülke kısaltması */
     country!: string;
+
+    /** Ülke adı okunabilir formatta (örn: "Türkiye") */
+    countryReadName?: string;
 
     /** Ülke alt bölümü (örn: eyalet, il) */
     countrySubentity?: string;

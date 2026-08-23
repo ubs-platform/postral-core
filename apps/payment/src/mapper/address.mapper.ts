@@ -10,7 +10,7 @@ export class AddressMapper {
      *
      */
     constructor(private cryptionUtil: CryptionUtil) {
-        
+
     }
     async toDtoList(exist: Address[]): Promise<AccountAddressDto[]> {
         const items: AccountAddressDto[] = [];
@@ -30,9 +30,11 @@ export class AddressMapper {
             cityName: this.cryptionUtil.decryptWithConfig(ac.cityName, "USE_DEFAULT") || "",
             postalZone: this.cryptionUtil.decryptWithConfig(ac.postalZone, "USE_DEFAULT") || "",
             countrySubentity: this.cryptionUtil.decryptWithConfig(ac.countrySubentity, "USE_DEFAULT") || "",
+            countrySubentityCode: this.cryptionUtil.decryptWithConfig(ac.countrySubentityCode, "USE_DEFAULT") || "",
             additionalStreetName: this.cryptionUtil.decryptWithConfig(ac.additionalStreetName, "USE_DEFAULT") || "",
             district: this.cryptionUtil.decryptWithConfig(ac.district, "USE_DEFAULT") || "",
             country: this.cryptionUtil.decryptWithConfig(ac.country, "USE_DEFAULT") || "",
+            countryReadName: this.cryptionUtil.decryptWithConfig(ac.countryReadName, "USE_DEFAULT") || "",
             citySubdivisionName: this.cryptionUtil.decryptWithConfig(ac.citySubdivisionName, "USE_DEFAULT") || "",
             floor: this.cryptionUtil.decryptWithConfig(ac.floor, "USE_DEFAULT") || "",
             room: this.cryptionUtil.decryptWithConfig(ac.room, "USE_DEFAULT") || "",
@@ -48,7 +50,6 @@ export class AddressMapper {
             addressFormatCode: this.cryptionUtil.decryptWithConfig(ac.addressFormatCode, "USE_DEFAULT") || "",
             addressTypeCode: this.cryptionUtil.decryptWithConfig(ac.addressTypeCode, "USE_DEFAULT") || "",
             cityCode: this.cryptionUtil.decryptWithConfig(ac.cityCode, "USE_DEFAULT") || "",
-            countrySubentityCode: this.cryptionUtil.decryptWithConfig(ac.countrySubentityCode, "USE_DEFAULT") || "",
             department: this.cryptionUtil.decryptWithConfig(ac.department, "USE_DEFAULT") || "",
             externalPlatformId: ac.externalPlatformId,
             externalPlatformAddressId: ac.externalPlatformAddressId,
@@ -67,6 +68,7 @@ export class AddressMapper {
         entity.additionalStreetName = this.cryptionUtil.encryptWithConfig(dto.additionalStreetName, "USE_DEFAULT") || "";
         entity.district = this.cryptionUtil.encryptWithConfig(dto.district, "USE_DEFAULT") || "";
         entity.country = this.cryptionUtil.encryptWithConfig(dto.country, "USE_DEFAULT") || "";
+        entity.countryReadName = this.cryptionUtil.encryptWithConfig(dto.countryReadName, "USE_DEFAULT") || "";
         entity.citySubdivisionName = this.cryptionUtil.encryptWithConfig(dto.citySubdivisionName, "USE_DEFAULT") || "";
         entity.floor = this.cryptionUtil.encryptWithConfig(dto.floor, "USE_DEFAULT") || "";
         entity.room = this.cryptionUtil.encryptWithConfig(dto.room, "USE_DEFAULT") || "";

@@ -60,9 +60,13 @@ export class SnapshotAddress {
     @Column({ nullable: true })
     postbox?: string;
 
-    /** Ülke adı */
+    /** Ülke kısaltması */
     @Column()
     country!: string;
+
+    /** Ülke adı okunabilir formatta (örn: "Türkiye") */
+    @Column({ nullable: true })
+    countryReadName?: string;
 
     /** Ülke alt bölümü (örn: eyalet, il) */
     @Column({ nullable: true })

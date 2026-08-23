@@ -27,6 +27,7 @@ export class InvoiceAddressMapper {
         entity.region = acad.region;
         entity.postbox = acad.postbox;
         entity.country = acad.country;
+        entity.countryReadName = acad.countryReadName;
         entity.countrySubentity = acad.countrySubentity;
         entity.countrySubentityCode = acad.countrySubentityCode;
         entity.addressFormatCode = acad.addressFormatCode;
@@ -59,6 +60,7 @@ export class InvoiceAddressMapper {
             region: this.cryptionUtil.decryptWithConfig(entity.region, "USE_DEFAULT") || "",
             postbox: this.cryptionUtil.decryptWithConfig(entity.postbox, "USE_DEFAULT") || "",
             country: this.cryptionUtil.decryptWithConfig(entity.country, "USE_DEFAULT") || "",
+            countryReadName: this.cryptionUtil.decryptWithConfig(entity.countryReadName, "USE_DEFAULT") || "",
             countrySubentity: this.cryptionUtil.decryptWithConfig(entity.countrySubentity, "USE_DEFAULT") || "",
             countrySubentityCode: this.cryptionUtil.decryptWithConfig(entity.countrySubentityCode, "USE_DEFAULT") || "",
             addressFormatCode: this.cryptionUtil.decryptWithConfig(entity.addressFormatCode, "USE_DEFAULT") || "",
@@ -93,6 +95,7 @@ export class InvoiceAddressMapper {
         entity.region = this.cryptionUtil.encryptWithConfig(dto.region, "USE_DEFAULT") || "";
         entity.postbox = this.cryptionUtil.encryptWithConfig(dto.postbox, "USE_DEFAULT") || "";
         entity.country = this.cryptionUtil.encryptWithConfig(dto.country, "USE_DEFAULT") || "";
+        entity.countryReadName = this.cryptionUtil.encryptWithConfig(dto.countryReadName, "USE_DEFAULT") || "";
         entity.countrySubentity = this.cryptionUtil.encryptWithConfig(dto.countrySubentity, "USE_DEFAULT") || "";
         entity.countrySubentityCode = this.cryptionUtil.encryptWithConfig(dto.countrySubentityCode, "USE_DEFAULT") || "";
         entity.addressFormatCode = this.cryptionUtil.encryptWithConfig(dto.addressFormatCode, "USE_DEFAULT") || "";

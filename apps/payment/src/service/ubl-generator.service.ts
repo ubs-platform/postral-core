@@ -188,6 +188,14 @@ export class UblGeneratorService {
                 postalAddress
                     .ele('cbc:CitySubdivisionName')
                     .txt(address.citySubdivisionName);
+            if (address.countrySubentity)
+                postalAddress
+                    .ele('cbc:CountrySubentity')
+                    .txt(address.countrySubentity);
+            if (address.countrySubentityCode)
+                postalAddress
+                    .ele('cbc:CountrySubentityCode')
+                    .txt(address.countrySubentityCode);
             if (address.cityName)
                 postalAddress.ele('cbc:CityName').txt(address.cityName);
             if (address.postalZone)
@@ -196,6 +204,8 @@ export class UblGeneratorService {
                 postalAddress
                     .ele('cac:Country')
                     .ele('cbc:Name')
+                    .txt(address.countryReadName || address.country)
+                    .ele('cbc:IdentificationCode')
                     .txt(address.country);
             }
         }

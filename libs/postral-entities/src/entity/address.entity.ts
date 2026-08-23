@@ -5,10 +5,10 @@ import { ExternalPlatform } from './external-platform.entity';
 @Unique(['externalPlatformId', 'externalPlatformAddressId'])
 export class Address {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
 
     /** Bina numarası (örn: "42", "123A") */
@@ -33,7 +33,7 @@ export class Address {
 
     /** Sokak/Cadde adı */
     @Column()
-    streetName: string;
+    streetName!: string;
 
     /** Ek sokak bilgisi */
     @Column({ nullable: true })
@@ -45,15 +45,15 @@ export class Address {
 
     /** İlçe adı */
     @Column()
-    citySubdivisionName: string;
+    citySubdivisionName!: string;
 
     /** Şehir/İl adı */
     @Column()
-    cityName: string;
+    cityName!: string;
 
     /** Posta kodu */
     @Column()
-    postalZone: string;
+    postalZone!: string;
 
     /** Bölge/Region (örn: "Marmara") */
     @Column({ nullable: true })
@@ -63,9 +63,13 @@ export class Address {
     @Column({ nullable: true })
     postbox?: string;
 
-    /** Ülke adı */
+    /** Ülke kısaltması */
     @Column()
-    country: string;
+    country!: string;
+
+    /** Ülke adı okunabilir formatta (örn: "Türkiye") */
+    @Column({ nullable: true })
+    countryReadName?: string;
 
     /** Ülke alt bölümü (örn: eyalet, il) */
     @Column({ nullable: true })
