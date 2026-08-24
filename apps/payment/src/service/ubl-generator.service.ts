@@ -201,10 +201,12 @@ export class UblGeneratorService {
             if (address.postalZone)
                 postalAddress.ele('cbc:PostalZone').txt(address.postalZone);
             if (address.country) {
-                postalAddress
-                    .ele('cac:Country')
+                const countryElement = postalAddress
+                    .ele('cac:Country');
+                countryElement
                     .ele('cbc:Name')
                     .txt(address.countryReadName || address.country)
+                    .up()
                     .ele('cbc:IdentificationCode')
                     .txt(address.country);
             }
