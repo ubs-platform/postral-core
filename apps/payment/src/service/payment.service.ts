@@ -106,7 +106,7 @@ export class PaymentService {
         // Open payment olmayan ve WAITING durumunda olan ödemeleri bul ve updatePaymentByOperationStatuses ile güncelle.
         // Open paymentlar postral yerine satıcı/platform tarafından onaylanacağı için burada kontrol edilmeyecektir. Bu faturaların kontrollerini bu iki taraf yapması gerekir...
         const waitingPayments = await this.paymentrepo.find({
-            where: { paymentStatus: 'WAITING', openPayment: false },
+            where: { paymentStatus: "INITIATED", openPayment: false },
         });
         if (waitingPayments.length === 0) {
             return;

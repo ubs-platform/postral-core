@@ -37,14 +37,14 @@ export class Invoice {
     @Column({ nullable: true })
     customerSnapshotAddressId?: string;
 
-    @OneToOne(() => SnapshotAddress, { cascade: true, eager: true })
+    @ManyToOne(() => SnapshotAddress, { cascade: true, eager: true })
     @JoinColumn()
     customerSnapshotAddress?: SnapshotAddress;
 
     @Column({ nullable: true })
     customerSnapshotAccountId?: string;
 
-    @OneToOne(() => SnapshotAccount, { eager: true })
+    @ManyToOne(() => SnapshotAccount, { eager: true })
     @JoinColumn({ name: "customerSnapshotAccountId" })
     customerSnapshotAccount?: SnapshotAccount;
 
@@ -54,11 +54,11 @@ export class Invoice {
     @Column({ nullable: true })
     sellerSnapshotAddressId?: string;
 
-    @OneToOne(() => SnapshotAccount, { eager: true })
+    @ManyToOne(() => SnapshotAccount, { eager: true })
     @JoinColumn({ name: 'sellerSnapshotAccountId' })
     sellerSnapshotAccount?: SnapshotAccount;
 
-    @OneToOne(() => SnapshotAddress, { eager: true })
+    @ManyToOne(() => SnapshotAddress, { eager: true })
     @JoinColumn({ name: 'sellerSnapshotAddressId' })
     sellerSnapshotAddress?: SnapshotAddress;
 

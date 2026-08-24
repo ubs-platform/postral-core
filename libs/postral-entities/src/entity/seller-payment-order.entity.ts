@@ -155,14 +155,14 @@ export class SellerPaymentOrder extends BaseEntity {
     @Column({ nullable: true })
     sellerSnapshotAddressId?: string;
 
-    @OneToOne(() => SnapshotAddress, { eager: true })
+    @ManyToOne(() => SnapshotAddress, { eager: true })
     @JoinColumn({ name: "sellerSnapshotAddressId" })
     sellerSnapshotAddress?: SnapshotAddress;
 
     @Column({ nullable: true })
     sellerSnapshotAccountId?: string;
 
-    @OneToOne(() => SnapshotAccount, { eager: true })
+    @ManyToOne(() => SnapshotAccount, { eager: true })
     @JoinColumn({ name: "sellerSnapshotAccountId" })
     sellerSnapshotAccount?: SnapshotAccount;
 
