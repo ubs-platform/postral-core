@@ -134,17 +134,20 @@ export class SellerPaymentOrder extends BaseEntity {
 
     // Additional fields can be added as needed
 
+    // Aynı payment içindeki farklı satıcılar için birden fazla seller_payment_order satırı
+    // aynı müşteri snapshot'ını paylaşabildiğinden ManyToOne olmalı (OneToOne unique kısıtı
+    // birden fazla satıcılı ödemelerde "Duplicate entry" hatasına yol açıyordu).
     @Column({ nullable: true })
     customerSnapshotAddressId?: string;
 
-    @OneToOne(() => SnapshotAddress, { eager: true })
+    @ManyToOne(() => SnapshotAddress, { eager: true })
     @JoinColumn({ name: "customerSnapshotAddressId" })
     customerSnapshotAddress?: SnapshotAddress;
 
     @Column({ nullable: true })
     customerSnapshotAccountId?: string;
 
-    @OneToOne(() => SnapshotAccount, { eager: true })
+    @ManyToOne(() => SnapshotAccount, { eager: true })
     @JoinColumn({ name: "customerSnapshotAccountId" })
     customerSnapshotAccount?: SnapshotAccount;
 
