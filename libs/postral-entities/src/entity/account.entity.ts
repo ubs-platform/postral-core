@@ -10,15 +10,16 @@ import {
 import { Payment } from './payment.entity';
 import { Address } from './address.entity';
 import { ExternalPlatform } from './external-platform.entity';
+import { BankAccount } from './bank-account.entity';
 
 @Entity()
 @Unique(['externalPlatformId', 'externalPlatformAccountId'])
 export class Account {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column()
-    name: string;
+    name!: string;
 
     /**
      * Telefon numarası (diğer PII gibi şifreli saklanır).
@@ -35,13 +36,13 @@ export class Account {
      * Eğer kişiselse TCKN, şirketse Vergi numarası
      */
     @Column()
-    legalIdentity: string;
+    legalIdentity!: string;
 
     /**
      * Kişisel veya Sirket
      */
     @Column()
-    type: 'INDIVIDUAL' | 'COMMERCIAL';
+    type!: 'INDIVIDUAL' | 'COMMERCIAL';
 
     @Column({ nullable: true })
     defaultAddressId?: string;
@@ -51,20 +52,36 @@ export class Account {
     defaultAddress?: Address;
 
     @Column({ nullable: false, type: 'boolean', default: false })
-    deactivated: boolean;
+    deactivated: boolean = false;
 
     // Banka bilgileri
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     @Column({ nullable: true })
     bankName?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     @Column({ nullable: true })
     bankIban?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     @Column({ nullable: true })
     bankBic?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     @Column({ nullable: true })
     bankSwift?: string;
+
+    // default array verdim diye uygulama çökertilir mi yaw
+    @OneToMany(() => BankAccount, bankAccount => bankAccount.account, { cascade: true })
+    bankAccounts!: BankAccount[];// = [];
 
     @Column({ nullable: true })
     taxOffice?: string;
@@ -78,10 +95,10 @@ export class Account {
 
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt: Date = new Date();
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
+    updatedAt: Date = new Date();
 
     // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
     // externalPlatformId null olabilir; unique kısıt yalnızca dolu çiftlerde işler

@@ -1,4 +1,5 @@
 import { InternalSearchDTO } from './internal-search.dto';
+import { BankAccountDTO } from './bank-account.dto';
 
 export class AccountDTO {
     id!: string;
@@ -18,10 +19,24 @@ export class AccountDTO {
     entityOwnershipGroupId?: string;
     deactivated?: boolean;
     taxOffice?: string;
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankName?: string;
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankIban?: string;
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankBic?: string;
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankSwift?: string;
+
+    bankAccounts?: BankAccountDTO[];
 
     // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
     externalPlatformId?: string;

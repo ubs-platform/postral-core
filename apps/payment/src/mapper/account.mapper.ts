@@ -1,5 +1,5 @@
 import { AccountDTO } from '@tk-postral/payment-common';
-import { Account } from '@tk-postral/postral-entities';
+import { Account, BankAccount } from '@tk-postral/postral-entities';
 import { Inject, Injectable } from '@nestjs/common';
 import { CryptionUtil } from '../util/cryption-util';
 
@@ -38,6 +38,15 @@ export class AccountMapper {
             taxOffice: this.cryptionUtil.decryptWithConfig(ac.taxOffice, "USE_DEFAULT") || "",
             bankSwift: this.cryptionUtil.decryptWithConfig(ac.bankSwift, "USE_DEFAULT") || "",
 
+            bankAccounts: ac.bankAccounts?.map(ba => ({
+                id: ba.id,
+                bankName: ba.bankName,
+                currency: ba.currency,
+                bankIban: this.cryptionUtil.decryptWithConfig(ba.bankIban, "USE_DEFAULT") || "",
+                bankBic: this.cryptionUtil.decryptWithConfig(ba.bankBic, "USE_DEFAULT") || "",
+                bankSwift: this.cryptionUtil.decryptWithConfig(ba.bankSwift, "USE_DEFAULT") || "",
+            })) || [],
+
             externalPlatformId: ac.externalPlatformId,
             externalPlatformAccountId: ac.externalPlatformAccountId,
         };
@@ -62,6 +71,20 @@ export class AccountMapper {
         entity.externalPlatformAccountId = dto.externalPlatformAccountId;
         entity.bankSwift = this.cryptionUtil.encryptWithConfig(dto.bankSwift, "USE_DEFAULT") || "";
         entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || "";
+
+        if (dto.bankAccounts) {
+            entity.bankAccounts = dto.bankAccounts.map(ba => {
+                const b = new BankAccount();
+                if (ba.id) b.id = ba.id;
+                b.bankName = ba.bankName;
+                b.currency = ba.currency;
+                b.bankIban = this.cryptionUtil.encryptWithConfig(ba.bankIban, "USE_DEFAULT") || "";
+                b.bankBic = this.cryptionUtil.encryptWithConfig(ba.bankBic, "USE_DEFAULT") || "";
+                b.bankSwift = this.cryptionUtil.encryptWithConfig(ba.bankSwift, "USE_DEFAULT") || "";
+                return b;
+            });
+        }
+
         return entity;
     }
 }

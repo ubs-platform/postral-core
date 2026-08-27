@@ -29,6 +29,9 @@ import { WebhookEventLog } from './webhook-event-log.entity';
 import { PaymentChannelConfig } from './payment-channel-config.entity';
 import { ExternalPlatform } from './external-platform.entity';
 
+import { BankAccount } from './bank-account.entity';
+import { SnapshotBankAccount } from './snapshot-bank-account.entity';
+
 export { PaymentChannelConfig };
 
 export const PaymentsEntities = [
@@ -37,6 +40,7 @@ export const PaymentsEntities = [
     PostralPaymentTax,
     AppComission,
     Account,
+    BankAccount,
     Item,
     ItemPrice,
     ItemTaxEntity,
@@ -47,6 +51,7 @@ export const PaymentsEntities = [
     Invoice,
     SnapshotAddress,
     SnapshotAccount,
+    SnapshotBankAccount,
     PostralPaymentEvent,
     RefundRequest,
     RefundRequestItem,
@@ -62,6 +67,7 @@ export const PaymentsEntities = [
     WebhookEventLog,
     PaymentChannelConfig,
     ExternalPlatform,
+    SnapshotBankAccount,
     AppComissionElderly,
     InvoiceAddressLegacy,
     InvoiceAccountLegacy
@@ -73,6 +79,7 @@ export {
     PostralPaymentTax,
     AppComission,
     Account,
+    BankAccount,
     Item,
     ItemPrice,
     SellerPaymentOrder,
@@ -83,6 +90,7 @@ export {
     Invoice,
     SnapshotAddress as InvoiceAddress,
     SnapshotAccount as InvoiceAccount,
+    SnapshotBankAccount as InvoiceBankAccount,
     PostralPaymentEvent,
     RefundRequest,
     RefundRequestItem,
@@ -100,7 +108,9 @@ export {
     ExternalPlatform,
     AppComissionElderly,
     InvoiceAddressLegacy,
-    InvoiceAccountLegacy
+    InvoiceAccountLegacy,
+    SnapshotBankAccount,
+
 }
 
 // export * from './payment-item.entity';

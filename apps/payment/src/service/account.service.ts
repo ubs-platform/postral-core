@@ -51,7 +51,7 @@ export class AccountService extends BaseCrudService<
         private eoService: EntityOwnershipService,
         private authUtilService: AuthUtilService,
     ) {
-        super(new TypeormRepositoryWrap<Account, string>(repo));
+        super(new TypeormRepositoryWrap<Account, string>(repo, ["bankAccounts"]));
         // this.encryptSensitiveData().catch((e) => {
         //     console.error('Error encrypting sensitive data on service initialization:', e);
         // });
@@ -213,6 +213,7 @@ export class AccountService extends BaseCrudService<
         }
         return this.repo.findOne({
             where: { externalPlatformId, externalPlatformAccountId },
+            relations: ['bankAccounts']
         });
     }
 

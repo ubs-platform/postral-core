@@ -1,3 +1,5 @@
+import { SnapshotBankAccountDTO } from './snapshot-bank-account.dto';
+
 export class SnapshotAccountDTO {
     id!: string;
 
@@ -9,13 +11,27 @@ export class SnapshotAccountDTO {
 
     realAccountId?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankName?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankIban?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankBic?: string;
 
+    /**
+     * @deprecated Use bankAccounts instead
+     */
     bankSwift?: string;
+
+    bankAccounts?: SnapshotBankAccountDTO[];
 
     taxOffice?: string;
 

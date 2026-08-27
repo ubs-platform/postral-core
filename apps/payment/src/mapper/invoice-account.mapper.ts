@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AccountDTO, SnapshotAccountDTO } from '@tk-postral/payment-common';
-import { InvoiceAccount, Account } from '@tk-postral/postral-entities';
+import { InvoiceAccount, Account, SnapshotBankAccount } from '@tk-postral/postral-entities';
 import { CryptionUtil } from '../util/cryption-util';
 
 @Injectable()
@@ -33,6 +33,19 @@ export class InvoiceAccountMapper {
         entity.website = fromDtoGate(account.website);
         entity.phone = fromDtoGate(account.phone);
         entity.emailAddress = fromDtoGate(account.emailAddress);
+
+        if (account.bankAccounts) {
+            entity.bankAccounts = account.bankAccounts.map(ba => {
+                const b = new SnapshotBankAccount();
+                b.bankName = ba.bankName;
+                b.currency = ba.currency;
+                b.bankIban = fromDtoGate(ba.bankIban);
+                b.bankBic = fromDtoGate(ba.bankBic);
+                b.bankSwift = fromDtoGate(ba.bankSwift);
+                return b;
+            });
+        }
+
         return entity;
     }
 
@@ -48,6 +61,14 @@ export class InvoiceAccountMapper {
             bankBic: entity.bankBic,
             bankSwift: entity.bankSwift,
             taxOffice: entity.taxOffice,
+            bankAccounts: entity.bankAccounts?.map(ba => ({
+                id: ba.id,
+                bankName: ba.bankName,
+                currency: ba.currency,
+                bankIban: ba.bankIban,
+                bankBic: ba.bankBic,
+                bankSwift: ba.bankSwift,
+            })) || [],
         };
     }
 
@@ -65,6 +86,20 @@ export class InvoiceAccountMapper {
         entity.bankBic = this.cryptionUtil.encryptWithConfig(dto.bankBic, "USE_DEFAULT") || '';
         entity.bankSwift = this.cryptionUtil.encryptWithConfig(dto.bankSwift, "USE_DEFAULT") || '';
         entity.taxOffice = this.cryptionUtil.encryptWithConfig(dto.taxOffice, "USE_DEFAULT") || '';
+
+        if (dto.bankAccounts) {
+            entity.bankAccounts = dto.bankAccounts.map(ba => {
+                const b = new SnapshotBankAccount();
+                if (ba.id) b.id = ba.id;
+                b.bankName = ba.bankName;
+                b.currency = ba.currency;
+                b.bankIban = this.cryptionUtil.encryptWithConfig(ba.bankIban, "USE_DEFAULT") || '';
+                b.bankBic = this.cryptionUtil.encryptWithConfig(ba.bankBic, "USE_DEFAULT") || '';
+                b.bankSwift = this.cryptionUtil.encryptWithConfig(ba.bankSwift, "USE_DEFAULT") || '';
+                return b;
+            });
+        }
+
         return entity;
     }
 }
