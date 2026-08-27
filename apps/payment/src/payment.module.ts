@@ -8,8 +8,7 @@ import { PaymentSearchController } from './controller/payment-search.controller'
 import { PaymentMapper } from './mapper/payment.mapper';
 import { PaymentItemMapper } from './mapper/payment-item.mapper';
 import { EventSenderService } from './service/event-management.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { randomUUID } from 'crypto';
+import { ClientsModule } from '@nestjs/microservices';
 import { AccountService } from './service/account.service';
 import { AccountMapper } from './mapper/account.mapper';
 import { AppComissionService } from './service/app-commission.service';
@@ -47,9 +46,6 @@ import { InvoiceService } from './service/invoice.service';
 import { InvoiceMapper } from './mapper/invoice.mapper';
 import { InvoiceAddressMapper } from './mapper/invoice-address.mapper';
 import { InvoiceAccountMapper } from './mapper/invoice-account.mapper';
-import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { PaymentMicroserviceController } from './controller/payment-microservice.controller';
 import { AuthUtilService } from './service/auth-util.service';
 import { RefundService } from './service/refund.service';
@@ -82,10 +78,8 @@ import { ExternalPlatformService } from './service/external-platform.service';
 import { ExternalPlatformMapper } from './mapper/external-platform.mapper';
 import { ExternalPlatformController } from './controller/external-platform.controller';
 
-import { connection } from 'mongoose';
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from "@ubs-platform/cache-manager";
-import { V2MigrationUtil } from './service/v2-migration-util';
 
 @Module({
     imports: [
@@ -170,7 +164,6 @@ import { V2MigrationUtil } from './service/v2-migration-util';
         PaymentChannelConfigMapper,
         ExternalPlatformService,
         ExternalPlatformMapper,
-        V2MigrationUtil
     ],
     controllers: [
         PaymentController,

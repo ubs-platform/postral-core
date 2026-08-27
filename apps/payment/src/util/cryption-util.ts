@@ -5,7 +5,7 @@ export class CryptionUtil {
 
     encryptWithConfig(text: string | null | undefined, onError: "THROW" | "USE_DEFAULT" = "THROW"): string | null | undefined {
         if (process.env.POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED !== "true") {
-            console.warn('Encryption is disabled. Returning original text.');
+            console.debug('Encryption is disabled. Returning original text.');
             return text; // Preserve null/undefined when encryption is disabled
         }
         if (text == null) {
