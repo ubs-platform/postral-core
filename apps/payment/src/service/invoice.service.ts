@@ -231,8 +231,8 @@ export class InvoiceService {
                 search.page,
                 { [sortKey]: sortOrder },
                 [
-                    'customerInvoiceAddress',
-                    'customerAccount',
+                    'customerSnapshotAddress',
+                    'sellerSnapshotAddress',
                     'sellerSnapshotAddress',
                     'sellerSnapshotAccount',
                 ],
@@ -247,7 +247,7 @@ export class InvoiceService {
         const accountIds: string[] = [];
 
         if (user) {
-            const sellerAccountIds = await this.authUtilService.fetchUserAccountIds(user.id, [[Capability.OWNER], [Capability.EDIT]]);
+            const sellerAccountIds = await this.authUtilService.fetchUserAccountIds(user.id, [[Capability.OWNER], [Capability.EDIT, Capability.VIEW]]);
 
             accountIds.push(...sellerAccountIds);
             if (accountIds.length === 0) {
@@ -259,17 +259,16 @@ export class InvoiceService {
                     realAccountId: In(accountIds),
                 }
             }, {
-                customerAccount: {
+                customerSnapshotAccount: {
                     realAccountId: In(accountIds),
-                }
+                },
+                finalized: true
             });
 
         }
         if (search.finalized !== undefined) {
             where.finalized =
-                search.finalized === 'true' || search.finalized === true
-                    ? true
-                    : false;
+                (search.finalized === 'true') || (search.finalized === true);
         }
 
         if (search.paymentId) {
@@ -281,7 +280,14 @@ export class InvoiceService {
         if (search.invoiceNumber) {
             where.invoiceNumber = search.invoiceNumber;
         }
-        return orClauses.map((clause) => ({ ...clause, ...where }));
+        return orClauses.map((clause) => {
+            const mergedClause = { ...clause, ...where };
+            if (clause.customerSnapshotAccount) {
+                // Müşteri olarak fatura getirilirken finalized getirsin. taslakları görmesine gerek yok.
+                mergedClause.finalized = true;
+            }
+            return mergedClause;
+        });
     }
 
     finalize(id: string, user: UserAuthBackendDTO): InvoiceDTO | PromiseLike<InvoiceDTO> {
