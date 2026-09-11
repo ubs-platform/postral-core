@@ -1,8 +1,9 @@
-import { Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "@ubs-platform/users-microservice-helper";
 import { Roles, RolesGuard } from "@ubs-platform/users-roles";
 import { AdminOperationsService } from "../service/admin-operations.service";
 import { BillingService } from "../service/billing.service";
+import { PaymentCleanupOptions, PaymentCleanupService } from "../service/payment-cleanup.service";
 
 @Controller("admin-operations")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -11,6 +12,7 @@ export class AdminOperationsController {
     constructor(
         private admOps: AdminOperationsService,
         private billingService: BillingService,
+        private paymentCleanupService: PaymentCleanupService,
     ) {}
 
     @Post("encrypt-sensitive-data")
@@ -31,5 +33,10 @@ export class AdminOperationsController {
     @Post("run-billing")
     async runBilling() {
         await this.billingService.runBilling(undefined, "THROW");
+    }
+
+    @Post("payment-cleanup/preview")
+    async previewPaymentCleanup(@Body() options: PaymentCleanupOptions = {}) {
+        return this.paymentCleanupService.preview(options);
     }
 }

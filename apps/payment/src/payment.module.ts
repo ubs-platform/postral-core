@@ -77,6 +77,7 @@ import { PaymentChannelConfigController } from './controller/payment-channel-con
 import { ExternalPlatformService } from './service/external-platform.service';
 import { ExternalPlatformMapper } from './mapper/external-platform.mapper';
 import { ExternalPlatformController } from './controller/external-platform.controller';
+import { PaymentCleanupService } from './service/payment-cleanup.service';
 
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from "@ubs-platform/cache-manager";
@@ -164,6 +165,7 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         PaymentChannelConfigMapper,
         ExternalPlatformService,
         ExternalPlatformMapper,
+        PaymentCleanupService,
     ],
     controllers: [
         PaymentController,
