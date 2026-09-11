@@ -12,7 +12,7 @@ export class PostralPaymentTax {
 
     @Column(MoneyDbField)
     untaxAmount: number = 0;
-    
+
     @Column(MoneyDbField)
     fullAmount: number = 0;
 
@@ -23,4 +23,7 @@ export class PostralPaymentTax {
         onDelete: 'CASCADE',
     })
     payment!: Payment;
+
+    @Column({ name: "paymentId" })
+    paymentId!: string;
 }

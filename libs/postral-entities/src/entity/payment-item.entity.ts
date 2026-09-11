@@ -54,6 +54,9 @@ export class PostralPaymentItem {
     })
     payment!: Payment;
 
+    @Column({ name: "paymentId" })
+    paymentId!: string;
+
     @Column({ nullable: true })
     sellerAccountId?: string;
 

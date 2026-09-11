@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     AccountPaymentTransaction,
@@ -17,7 +17,12 @@ import {
     ReportTaxGroup,
     SellerPaymentOrder,
 } from '@tk-postral/postral-entities';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
+import { createHash, randomUUID } from 'crypto';
+import { createReadStream } from 'fs';
+import { mkdir, readFile, readdir, stat, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { spawn } from 'child_process';
 
 export interface PaymentCleanupOptions {
     before?: string;
@@ -31,6 +36,29 @@ export interface PaymentCleanupPreview {
     affectedReportIds: string[];
     counts: Record<string, number>;
     warnings: string[];
+}
+
+export interface PaymentArchiveManifest {
+    id: string;
+    dumpPath: string;
+    checksum: string;
+    createdAt: string;
+    before?: string;
+    paymentCount: number;
+}
+
+export interface PaymentArchiveSummary {
+    id: string;
+    checksum: string;
+    createdAt: string;
+    before?: string;
+    paymentCount: number;
+    available: boolean;
+}
+
+export interface PaymentCleanupRequest extends PaymentCleanupOptions {
+    archiveId: string;
+    confirmation: string;
 }
 
 @Injectable()
@@ -66,6 +94,7 @@ export class PaymentCleanupService {
         private readonly paymentChannelOperationRepository: Repository<PaymentChannelOperation>,
         @InjectRepository(PostralPaymentEvent)
         private readonly paymentEventRepository: Repository<PostralPaymentEvent>,
+        private readonly dataSource: DataSource,
     ) {}
 
     isEnabled(): boolean {
@@ -94,7 +123,7 @@ export class PaymentCleanupService {
             refund_request_item: await this.countRefundItems(paymentIds),
             account_payment_transaction: await this.countLooseReference(this.accountPaymentTransactionRepository, paymentIds),
             payment_channel_operation: await this.countLooseReference(this.paymentChannelOperationRepository, paymentIds),
-            postral_payment_event: await this.countLooseReference(this.paymentEventRepository, paymentIds),
+            postral_payment_event: await this.countPaymentEvents(this.paymentEventRepository, paymentIds, options.before),
         };
 
         const affectedReportIds = await this.findAffectedReportIds(paymentIds);
@@ -114,12 +143,127 @@ export class PaymentCleanupService {
             affectedReportIds,
             counts,
             warnings: [
-                'ReportQuery records are preserved.',
-                'Affected report output buckets may appear empty until new payments are digested.',
-                'Live account, address, and bank account records are not part of this cleanup preview.',
-                'Preview does not archive or delete any data.',
+                'postral.admin.warning.report-queries-preserved',
+                'postral.admin.warning.reports-may-be-empty',
+                'postral.admin.warning.live-accounts-preserved',
+                'postral.admin.warning.preview-only',
             ],
         };
+    }
+
+    async createArchive(options: PaymentCleanupOptions = {}): Promise<PaymentArchiveManifest> {
+        const preview = await this.preview(options);
+        const archiveDirectory = process.env.POSTRAL_ARCHIVE_DIRECTORY || '/tmp/postral-payment-archives';
+        await mkdir(archiveDirectory, { recursive: true, mode: 0o700 });
+
+        const id = randomUUID();
+        const dumpPath = join(archiveDirectory, `${id}.sql`);
+        await this.runMysqldump(dumpPath);
+        const checksum = await this.calculateChecksum(dumpPath);
+        const manifest: PaymentArchiveManifest = {
+            id,
+            dumpPath,
+            checksum,
+            createdAt: new Date().toISOString(),
+            ...(options.before ? { before: options.before } : {}),
+            paymentCount: preview.paymentIds.length,
+        };
+        await writeFile(join(archiveDirectory, `${id}.json`), JSON.stringify(manifest, null, 2), {
+            encoding: 'utf8',
+            mode: 0o600,
+        });
+        return manifest;
+    }
+
+    async getArchiveStream(archiveId: string): Promise<{ stream: NodeJS.ReadableStream; fileName: string }> {
+        const manifest = await this.readManifest(archiveId);
+        await this.assertArchiveIntact(manifest);
+        return { stream: createReadStream(manifest.dumpPath), fileName: `${manifest.id}.sql` };
+    }
+
+    async listArchives(): Promise<PaymentArchiveSummary[]> {
+        this.assertEnabled();
+        const archiveDirectory = this.getArchiveDirectory();
+        let entries: string[];
+        try {
+            entries = await readdir(archiveDirectory);
+        } catch {
+            return [];
+        }
+
+        const manifests = await Promise.all(
+            entries
+                .filter(entry => entry.endsWith('.json'))
+                .map(async entry => {
+                    try {
+                        const manifest = JSON.parse(
+                            await readFile(join(archiveDirectory, entry), 'utf8'),
+                        ) as PaymentArchiveManifest;
+                        await this.assertArchiveIntact(manifest);
+                        return {
+                            id: manifest.id,
+                            checksum: manifest.checksum,
+                            createdAt: manifest.createdAt,
+                            ...(manifest.before ? { before: manifest.before } : {}),
+                            paymentCount: manifest.paymentCount,
+                            available: true,
+                        };
+                    } catch {
+                        return undefined;
+                    }
+                }),
+        );
+        return manifests
+            .filter((manifest): manifest is PaymentArchiveSummary => manifest !== undefined)
+            .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    }
+
+    async cleanup(request: PaymentCleanupRequest): Promise<PaymentCleanupPreview> {
+        this.assertEnabled();
+        if (request.confirmation !== 'DELETE_PAYMENT_DATA') {
+            throw new BadRequestException('Type DELETE_PAYMENT_DATA to confirm payment cleanup.');
+        }
+        const manifest = await this.readManifest(request.archiveId);
+        await this.assertArchiveIntact(manifest);
+        const preview = await this.preview({ before: request.before ?? manifest.before });
+        if (preview.paymentIds.length !== manifest.paymentCount) {
+            throw new BadRequestException('The archive manifest does not match the current cleanup scope.');
+        }
+
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const paymentIds = preview.paymentIds;
+            const reportIds = preview.affectedReportIds;
+            if (reportIds.length > 0) {
+                await queryRunner.manager.delete(ReportTaxGroup, { reportId: In(reportIds) });
+                await queryRunner.manager.delete(ReportExpense, { reportId: In(reportIds) });
+                await queryRunner.manager.delete(ReportPaymentRelation, { reportId: In(reportIds) });
+                await queryRunner.manager.delete(Report, { id: In(reportIds) });
+            }
+            if (paymentIds.length > 0) {
+                await queryRunner.manager.delete(RefundRequestItem, {
+                    refundRequestId: In(await this.findRefundRequestIds(paymentIds)),
+                });
+                await queryRunner.manager.delete(RefundRequest, { paymentId: In(paymentIds) });
+                await queryRunner.manager.delete(AccountPaymentTransaction, { paymentId: In(paymentIds) });
+                await queryRunner.manager.delete(PaymentChannelOperation, { paymentId: In(paymentIds) });
+                await queryRunner.manager.delete(PostralPaymentEvent, { aggregateId: In(paymentIds) } as any);
+                await queryRunner.manager.delete(Invoice, { paymentId: In(paymentIds) });
+                await queryRunner.manager.delete(SellerPaymentOrder, { paymentId: In(paymentIds) });
+                await queryRunner.manager.delete(PostralPaymentItem, { paymentId: In(paymentIds) } as any);
+                await queryRunner.manager.delete(PostralPaymentTax, { paymentId: In(paymentIds) } as any);
+                await queryRunner.manager.delete(Payment, { id: In(paymentIds) });
+            }
+            await queryRunner.commitTransaction();
+            return preview;
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     private async findPaymentIds(before?: string): Promise<string[]> {
@@ -171,6 +315,22 @@ export class PaymentCleanupService {
             .getCount();
     }
 
+    private async countPaymentEvents(
+        repository: Repository<PostralPaymentEvent>,
+        paymentIds: string[],
+        before?: string,
+    ): Promise<number> {
+        if (paymentIds.length === 0) return 0;
+
+        const query = repository
+            .createQueryBuilder('event')
+            .where('event.aggregateId IN (:...paymentIds)', { paymentIds });
+        if (before) {
+            query.andWhere('event.occurredAt < :before', { before: this.parseBefore(before) });
+        }
+        return query.getCount();
+    }
+
     private async findAffectedReportIds(paymentIds: string[]): Promise<string[]> {
         if (paymentIds.length === 0) return [];
         const rows = await this.reportPaymentRelationRepository
@@ -179,6 +339,14 @@ export class PaymentCleanupService {
             .where('relation.paymentId IN (:...paymentIds)', { paymentIds })
             .getRawMany<{ reportId: string }>();
         return rows.map(row => row.reportId);
+    }
+
+    private parseBefore(before: string): Date {
+        const date = new Date(before);
+        if (Number.isNaN(date.getTime())) {
+            throw new BadRequestException('before must be a valid ISO date.');
+        }
+        return date;
     }
 
     private async countByReport(
@@ -191,4 +359,73 @@ export class PaymentCleanupService {
             .where('row.reportId IN (:...reportIds)', { reportIds })
             .getCount();
     }
+
+    private async findRefundRequestIds(paymentIds: string[]): Promise<string[]> {
+        if (paymentIds.length === 0) return [];
+        const requests = await this.refundRequestRepository.find({ where: { paymentId: In(paymentIds) } });
+        return requests.map(request => request.id);
+    }
+
+    private async runMysqldump(dumpPath: string): Promise<void> {
+        const args = [
+            '--single-transaction',
+            '--skip-lock-tables',
+            '--host', process.env.POSTRAL_DB_HOST || 'localhost',
+            '--port', String(process.env.POSTRAL_DB_PORT || 3306),
+            '--user', process.env.POSTRAL_DB_USER || 'root',
+            '--result-file', dumpPath,
+            process.env.POSTRAL_DB_NAME || 'postral_core',
+        ];
+        await new Promise<void>((resolve, reject) => {
+            const childProcess = spawn('mysqldump', args, {
+                env: { ...processEnv(), MYSQL_PWD: process.env.POSTRAL_DB_PASSWORD || '' },
+                stdio: ['ignore', 'ignore', 'pipe'],
+            });
+            let errorOutput = '';
+            childProcess.stderr.on('data', chunk => {
+                errorOutput += chunk.toString();
+            });
+            childProcess.on('error', reject);
+            childProcess.on('close', code => {
+                if (code === 0) resolve();
+                else reject(new BadRequestException(`mysqldump failed: ${errorOutput.trim() || `exit code ${code}`}`));
+            });
+        });
+    }
+
+    private async calculateChecksum(filePath: string): Promise<string> {
+        const content = await readFile(filePath);
+        return createHash('sha256').update(content).digest('hex');
+    }
+
+    private async readManifest(archiveId: string): Promise<PaymentArchiveManifest> {
+        if (!/^[0-9a-f-]{36}$/i.test(archiveId)) {
+            throw new BadRequestException('Invalid payment archive ID.');
+        }
+        try {
+            return JSON.parse(await readFile(join(this.getArchiveDirectory(), `${archiveId}.json`), 'utf8')) as PaymentArchiveManifest;
+        } catch {
+            throw new NotFoundException('Payment archive manifest not found.');
+        }
+    }
+
+    private getArchiveDirectory(): string {
+        return process.env.POSTRAL_ARCHIVE_DIRECTORY || '/tmp/postral-payment-archives';
+    }
+
+    private async assertArchiveIntact(manifest: PaymentArchiveManifest): Promise<void> {
+        try {
+            await stat(manifest.dumpPath);
+        } catch {
+            throw new BadRequestException('Payment archive dump is missing.');
+        }
+        const checksum = await this.calculateChecksum(manifest.dumpPath);
+        if (checksum !== manifest.checksum) {
+            throw new BadRequestException('Payment archive checksum does not match its manifest.');
+        }
+    }
+}
+
+function processEnv(): NodeJS.ProcessEnv {
+    return { ...process.env };
 }

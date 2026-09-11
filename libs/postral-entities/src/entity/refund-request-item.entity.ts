@@ -18,6 +18,9 @@ export class RefundRequestItem extends BaseEntity {
     })
     refundRequest!: RefundRequest;
 
+    @Column({ name: "refundRequestId" })
+    refundRequestId!: string;
+
     @Column()
     variation!: string;
 
@@ -47,7 +50,7 @@ export class RefundRequestItem extends BaseEntity {
 
     @Column(MoneyDbField)
     refundTaxAmount?: number = 0;
-    
+
     @Column()
     itemClass: string = "";
 
