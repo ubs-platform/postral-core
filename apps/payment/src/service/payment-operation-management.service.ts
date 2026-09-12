@@ -18,6 +18,7 @@ import {
 import { TypeAssertionUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
+import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -93,6 +94,7 @@ export class PaymentOperationManagementService {
 
             refundOp.amount = refundAmountForThisOp;
             refundOp.currency = purchasePayment.currency;
+            refundOp.operationType = refundPayment.type;
             refundOp.paymentChannelId = element.paymentChannelId;
             refundOp.paymentId = refundPayment.id;
             // refundOperationsToCreate.push(refundOp);
@@ -144,6 +146,7 @@ export class PaymentOperationManagementService {
             const paymentOperationRecord = new PaymentChannelOperation();
             paymentOperationRecord.amount = captureInfo.paidAmount!;
             paymentOperationRecord.currency = captureInfo.currency;
+            paymentOperationRecord.operationType = paymentFullDto.type;
             return await this.savePaymentChannelRecord(
                 paymentOperationRecord,
                 result,
@@ -211,11 +214,12 @@ export class PaymentOperationManagementService {
 
     async cancelPaymentOperationsByPaymentId(id: string) {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
-            where: [{ paymentId: id, status: 'WAITING' }],
+            where: [{ paymentId: id, status: 'WAITING', operationType: 'PURCHASE' }],
         });
 
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
+            // exec(`kdialog --msgbox "Cancelling payment operation ${paymentOperation.operationId}"`)
             const cancellationResult =
                 await this.eventSenderService.paymentChannelCancelled(
                     paymentOperation.paymentChannelId,

@@ -22,6 +22,9 @@ export class PaymentChannelOperation {
     @Column(MoneyDbField)
     amount: number = 0;
 
+    @Column({type: "varchar", nullable: false, default: "PURCHASE"})
+    operationType: "PURCHASE" | "REFUND" = "PURCHASE";
+
     // hata verirse manuel kontrollere geçebiliriz...
     @Column({ type: 'varchar', nullable: false })
     currency!: string;
@@ -59,4 +62,5 @@ export class PaymentChannelOperation {
      */
     @Column({ type: 'boolean', default: false })
     feeCutInstantly: boolean = false;
+
 }
