@@ -101,17 +101,22 @@ export class PaymentService {
         return this.paymentTaxMapper.toDto(ac[0].taxes);
     }
 
-    @Cron('0 */2 * * * *') // Her 2 dakikada bir çalışır
+    @Cron('*/15 * * * * *') // Her 15 saniyede bir çalışır
     async checkAndUpdateWaitingPayments() {
         // Open payment olmayan ve WAITING durumunda olan ödemeleri bul ve updatePaymentByOperationStatuses ile güncelle.
         // Open paymentlar postral yerine satıcı/platform tarafından onaylanacağı için burada kontrol edilmeyecektir. Bu faturaların kontrollerini bu iki taraf yapması gerekir...
+        // Daha önce neden sadece initiated durumundaki ödemeleri kontrol ediyorduk unuttum :/
+
         const waitingPayments = await this.paymentrepo.find({
-            where: { paymentStatus: "INITIATED", openPayment: false },
+            where: [{ paymentStatus: "INITIATED", openPayment: false },
+            { paymentStatus: "WAITING", openPayment: false }
+            ],
         });
         if (waitingPayments.length === 0) {
             return;
         }
         for (const payment of waitingPayments) {
+            // TODO: Refund paymentlerin neden dummy controller'da true ayarlanmasına rağmen Failed geliyor bir bakmam lazım...
             await this.updatePaymentByOperationStatuses(payment.id, true);
         }
 
@@ -445,8 +450,8 @@ export class PaymentService {
                     payment.paymentStatus = "INITIATED";
                 }
 
-            } else if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && !payment.openPayment && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
-                // Eğer açık fatura değilse ve uzun süredir bekliyorsa, payment FAILED olur ve errorStatus = EXPIRED olur.
+            } else if (((payment.paymentStatus === 'WAITING') || (payment.paymentStatus === 'INITIATED')) && !payment.openPayment && payment.type !== 'REFUND' && payment.createdAt && ((new Date().getTime() - payment.createdAt.getTime()) > this.PAYMENT_EXPIRE_MS)) {
+                // Eğer açık faturya ya da iade değilse ve uzun süredir bekliyorsa, payment FAILED olur ve errorStatus = EXPIRED olur.
                 // Eğer payment INITIATED veya WAITING ise ve PAYMENT_EXPIRE_MS süresinden uzun beklediyse, payment FAILED olur ve errorStatus = EXPIRED olur.
                 // bir süredir bekleyen ödemeler FAILED olarak işaretlenir. Bu süre PAYMENT_EXPIRE_MS ile değiştirilebilir. (ms cinsinden)
                 payment.paymentStatus = 'FAILED';
@@ -716,7 +721,7 @@ export class PaymentService {
         payment.openPayment = false;
         payment.includeInReportDigestion = true;
         payment.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
-        
+
         await this.applyItemSellerSnapshots(payment.items);
         await this.applyAccountSnapshot(customerAccount, payment);
         await this.applyAddressSnapshot(payment);

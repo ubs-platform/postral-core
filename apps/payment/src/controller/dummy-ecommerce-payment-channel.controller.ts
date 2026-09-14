@@ -106,11 +106,34 @@ export class DummyEcommercePaymentChannelController {
         // kaydın oluşması garanti edildiğinden (30s bekleme var) güvenle güncelleyebiliriz.
         if (paymentDto.type == 'REFUND') {
             // 30 saniye sonra otomatik olarak ödemeyi tamamla.
-            setTimeout(async () => {
-                const currentStatus = await this.getStatus(paymentDto.id);
-                if (currentStatus === 'WAITING') {
-                    await this.setStatus(paymentDto.id, 'COMPLETED');
-                }
+            console.info("Dummy E-Commerce Payment: Starting auto-complete timer for refund operation");
+            setTimeout(() => {
+                this.getStatus(paymentDto.id).then(
+                    currentStatus => {
+                        console.info(`Dummy E-Commerce Payment: Current status for operation ${paymentDto.id} is ${currentStatus}`);
+                        // if (currentStatus === 'WAITING') {
+
+                        // }
+                        // Yapay zeka sağ olsun sadece setStatusleri kaydediyor. yani bizim if ile kontrolümüz boşuna. gerçi test ortamı olduğu için sıkıntı yok ama payment servistekiler otomatik olarak fail olmasına sebep olabileceği için uzun süreli bekletmelerde açık fatura gibi exclude edilecek...
+
+                        console.info(`Dummy E-Commerce Payment: Auto-completing operation ${paymentDto.id}`);
+                        this.setStatus(paymentDto.id, 'COMPLETED').then(
+                            () => {
+                                this.kfk.emit(
+                                    'postral/payment-operation-status-updated',
+                                    paymentDto.id,
+                                );
+
+                                console.info(`Dummy E-Commerce Payment: Operation ${paymentDto.id} marked as COMPLETED`);
+                            }
+                        ).catch(
+                            (error) => {
+                                console.error(`Dummy E-Commerce Payment: Failed to mark operation ${paymentDto.id} as COMPLETED`, error);
+                            }
+                        );
+
+                    }
+                );
             }, 30000);
         }
 
@@ -215,7 +238,7 @@ export class DummyEcommercePaymentChannelController {
     async kDialogTestPut(@Body() body: any) {
         return this.kDialogTest({ body });
     }
-    
+
     @UseGuards(NonProductionGuard)
     @Post('kdialog')
     async kDialogTestPost(@Body() body: any) {
