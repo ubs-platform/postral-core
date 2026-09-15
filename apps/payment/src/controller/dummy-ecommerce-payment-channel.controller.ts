@@ -87,11 +87,13 @@ export class DummyEcommercePaymentChannelController {
         paymentOperationId: string,
     ): Promise<PaymentChannelStatusDTO> {
         const status = await this.getStatus(paymentOperationId);
+        // Kayıt henüz oluşmamışsa (init sonrası ilk check daha erken gelirse) FAILED yerine WAITING dönülmeli,
+        // aksi halde henüz tamamlanmamış operasyonlar erken kontrol nedeniyle yanlışlıkla FAILED işaretlenir.
         return {
             paymentChannelId: 'dummy-ecommerce',
             paymentChannelOperationId: paymentOperationId,
             redirectUrl: `dummy-ecommerce-payment-channel/pay/${paymentOperationId}`,
-            paymentStatus: status ?? 'FAILED',
+            paymentStatus: status ?? 'WAITING',
         } as PaymentChannelStatusDTO;
     }
 
@@ -101,6 +103,9 @@ export class DummyEcommercePaymentChannelController {
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         const fee = paymentDto.totalAmount * 0.1 + 0.1; // Örnek olarak %10 ve 10 kuruş daha komisyon alalım. Ödeme sağlayıcılarının salak salak hesapları var :d bir tane örnek deneyelim. 100 TL'lik ödeme için 10 TL + 0.1 TL = 10.1 TL komisyon alırız. 1000 TL'lik ödeme için 100 TL + 0.1 TL = 100.1 TL komisyon alırız. 10 TL'lik ödeme için 1 TL + 0.1 TL = 1.1 TL komisyon alırız.
+
+        // Operasyon kaydı burada WAITING olarak oluşturulmalı; aksi halde check çağrısı kayıt bulamayıp FAILED'e düşer.
+        await this.setStatus(paymentDto.id, 'WAITING');
 
         // savePaymentChannelRecord bu operasyonu DB'ye kaydedecek; ancak REFUND için timeout'tan önce
         // kaydın oluşması garanti edildiğinden (30s bekleme var) güvenle güncelleyebiliriz.

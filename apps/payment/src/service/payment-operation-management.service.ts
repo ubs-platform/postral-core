@@ -197,10 +197,12 @@ export class PaymentOperationManagementService {
     ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
+            // Kanala kendi operasyon kimli\u011fi g\u00f6nderilmeli, paymentId de\u011fil; aksi halde ger\u00e7ek
+            // kanallarda (operationId \u2260 paymentId oldu\u011funda) yanl\u0131\u015f operasyon sorgulan\u0131r.
             const result =
                 await this.eventSenderService.paymentChannelStatusCheck(
                     paymentOperation.paymentChannelId,
-                    paymentOperation.paymentId,
+                    paymentOperation.operationId,
                 );
             await this.savePaymentChannelRecord(
                 paymentOperation,
@@ -242,8 +244,9 @@ export class PaymentOperationManagementService {
     }
 
     async findOperationById(operationId: string) {
+        // operationId burada kanal operasyon kimliğidir (PaymentChannelOperation.operationId), entity PK'sı (id) değil.
         return await this.paymentChannelOperationRepo.findOneBy({
-            id: operationId,
+            operationId: operationId,
         });
     }
 
