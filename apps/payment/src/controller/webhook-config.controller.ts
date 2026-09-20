@@ -45,6 +45,11 @@ export class WebhookConfigController {
         return await this.webhookConfigService.update(id, dto);
     }
 
+    @Post(':id/regenerate-key')
+    async regenerateEventKey(@Param('id') id: string) {
+        return await this.webhookConfigService.regenerateEventKey(id);
+    }
+
     @Delete(':id')
     async delete(@Param('id') id: string) {
         await this.webhookConfigService.delete(id);

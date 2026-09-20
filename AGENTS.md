@@ -15,3 +15,7 @@ Read `README.md` and the task-relevant documentation in `docs/architecture/` and
 - Run the narrowest available build, lint, or test target after changes.
 - Read the payment and encryption notes before modifying payment lifecycle, account/address search, or sensitive fields.
 - Read release notes before changing Docker or version tooling.
+
+### Note for external services
+
+When edits are on ubs-mona-mr (or users-mona-mr locally probably), and getting import errors or missing fields errors; "npm run xr patch-libs  "relative-path-of-postral"/node_modules;" should be runned on ubs-mona-mr for updating `postral` project.  

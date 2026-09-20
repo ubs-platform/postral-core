@@ -62,6 +62,20 @@ export class WebhookConfigService {
         await this.webhookConfigRepo.remove(entity);
     }
 
+    /** Yeni bir event key üretir, şifreli saklar ve açık halini tek seferlik döner */
+    async regenerateEventKey(id: string): Promise<WebhookConfigDTO> {
+        const entity = await this.webhookConfigRepo.findOne({ where: { id } });
+        if (!entity) {
+            throw new NotFoundException(`WebhookConfig ${id} bulunamadı`);
+        }
+
+        const rawKey = randomBytes(32).toString('hex');
+        entity.eventKey = this.cryptionUtil.encryptWithConfig(rawKey, 'USE_DEFAULT') as string;
+
+        const saved = await this.webhookConfigRepo.save(entity);
+        return this.toDto(saved, rawKey);
+    }
+
     async findByAccountId(accountId: string): Promise<WebhookConfigDTO | null> {
         const entity = await this.webhookConfigRepo.findOne({ where: { accountId } });
         if (!entity) return null;
