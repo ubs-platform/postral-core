@@ -19,6 +19,7 @@ import {
     PaymentFullDTO,
     PaymentTransactionDTO,
 } from '@tk-postral/payment-common';
+import { UnauthorizedException } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { SearchResult } from '@ubs-platform/crud-base-common';
@@ -55,7 +56,7 @@ export class InvoiceService {
         );
 
         if (!sellerIncludes) {
-            throw new Error('User does not have access to the seller account');
+            throw new UnauthorizedException('User does not have access to the seller account');
         }
     }
 
@@ -142,16 +143,20 @@ export class InvoiceService {
         return invoices.map((inv) => this.invoiceMapper.toDto(inv));
     }
 
-    /**
-     * Fatura bilgilerini günceller
-     */
     async update(id: string, updateDto: InvoiceUpdateDTO): Promise<InvoiceDTO> {
         const invoice = await this.invoiceRepo.findOne({ where: { id } });
 
         if (!invoice) {
             throw new NotFoundException(`Invoice with id ${id} not found`);
         }
-
+        if (invoice.finalized) {
+            throw new BadRequestException('Cannot update a finalized invoice');
+        }
+        // Todo: İyimser kilit mekanizması, updated date ya da revisionCount ile yapılabilir...
+        // const updateDtoUpdateTime = updateDto. ? updateDto.updatedAt.getTime() : null;
+        // if (invoice.updatedAt && invoice.updatedAt.getTime() > updateDtoUpdateTime) {
+        //     throw new BadRequestException('Invoice has already been updated at the current time');
+        // }
         if (updateDto.invoiceNumber !== undefined) {
             invoice.invoiceNumber = updateDto.invoiceNumber;
         }

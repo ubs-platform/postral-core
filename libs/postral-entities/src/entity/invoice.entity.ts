@@ -89,7 +89,7 @@ export class Invoice {
 
     /**
      * Ek notlar
-     */
+    */
     @Column({ type: 'text', nullable: true })
     notes?: string;
 

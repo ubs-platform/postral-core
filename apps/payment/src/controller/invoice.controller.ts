@@ -191,7 +191,22 @@ export class InvoiceController {
     }
 
 
-
+    @Put(':id/extra-notes')
+    @UseGuards(JwtAuthGuard)
+    async updateExtraNotes(
+        @Param('id') id: string,
+        @Body('notes') notes: string,
+        @CurrentUser() user: UserAuthBackendDTO,
+    ): Promise<InvoiceDTO> {
+        const invoice = await this.invoiceService.findById(id);
+        if (!invoice) {
+            throw new Error('Invoice not found');
+        }
+        await this.invoiceService.assertSellerIsOwner(user, invoice.sellerInvoiceAccount?.realAccountId!);
+        invoice.notes = notes;
+        return this.invoiceService.update(id, { notes });
+        // return this.invoiceService.updateExtraNotes(id, notes);
+    }
 
     @MessagePattern('file-upload-POSTRAL_INVOICE')
     async thumbUploadInfo({
@@ -237,7 +252,7 @@ export class InvoiceController {
             };
         } catch (error) {
             console.error('Error in thumbUploadInfo:', error);
-            return { error: error.message };
+            return { error: (error as Error).message };
         }
     }
 
