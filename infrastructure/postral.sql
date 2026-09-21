@@ -1265,6 +1265,9 @@ CREATE TABLE `refund_request` (
   `requestedByPaymentAccountId` varchar(255) DEFAULT NULL,
   `requestedToPaymentAccountId` varchar(255) DEFAULT NULL,
   `paymentId` varchar(255) NOT NULL,
+  `reasonKeys` json DEFAULT NULL,
+  `requestNote` text DEFAULT NULL,
+  `resolutionNote` text DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

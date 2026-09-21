@@ -14,6 +14,7 @@ import {
     PaymentInitDTO,
     RefundRequestDTO,
     RefundRequestSearchDTO,RefundRequestStatus
+    ,REFUND_REASON_KEYS, ResolveRefundRequestDTO
 } from '@tk-postral/payment-common';
 import { PostralConstants } from '../util/consts';
 import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
@@ -48,6 +49,8 @@ export class RefundService {
         this.assertPaymentIsRefundable(payment);
         this.validateRefundItems(payment, dto.items);
         this.assertItemsBelongToSingleSeller(payment, dto.items);
+        this.validateRefundReasons(dto.reasonKeys);
+        this.validateNote(dto.requestNote);
 
         const request = await this.buildRefundRequestEntity(user, dto, payment);
 
@@ -58,6 +61,7 @@ export class RefundService {
     async approveRefundRequest(
         user: UserAuthBackendDTO,
         requestId: string,
+        dto: ResolveRefundRequestDTO = {},
     ): Promise<RefundRequestDTO> {
   
         const { request, payment } =
@@ -75,12 +79,13 @@ export class RefundService {
         );
         await this.updateOriginalItemsRefundState(payment, request.items);
 
-        return this.resolveRefundRequest(request, user, 'APPROVED');
+        return this.resolveRefundRequest(request, user, 'APPROVED', dto.resolutionNote);
     }
 
     async rejectRefundRequest(
         user: UserAuthBackendDTO,
         requestId: string,
+        dto: ResolveRefundRequestDTO = {},
     ): Promise<RefundRequestDTO> {
         const { request, payment } =
             await this.loadPendingRefundRequestWithPayment(requestId);
@@ -89,7 +94,7 @@ export class RefundService {
         }
         await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'reject');
 
-        return this.resolveRefundRequest(request, user, 'REJECTED');
+        return this.resolveRefundRequest(request, user, 'REJECTED', dto.resolutionNote);
     }
 
     private async findPaymentWithItems(
@@ -228,8 +233,22 @@ export class RefundService {
         request.requestedToPaymentAccountId = firstItem.sellerAccountId;
         request.status = 'PENDING';
         request.currency = payment.currency;
+        request.reasonKeys = dto.reasonKeys;
+        request.requestNote = dto.requestNote;
         request.items = this.buildRefundRequestItems(payment, dto.items);
         return request;
+    }
+
+    private validateRefundReasons(reasonKeys: CreateRefundRequestDTO['reasonKeys']): void {
+        if (!reasonKeys?.length || reasonKeys.some((key) => !REFUND_REASON_KEYS.includes(key))) {
+            throw new BadRequestException('At least one valid refund reason is required');
+        }
+    }
+
+    private validateNote(note?: string): void {
+        if (note && note.length > 10000) {
+            throw new BadRequestException('Refund notes cannot exceed 10000 characters');
+        }
     }
 
     private buildRefundRequestItems(
@@ -341,9 +360,12 @@ export class RefundService {
         request: RefundRequest,
         user: UserAuthBackendDTO,
         status: RefundRequestStatus,
+        resolutionNote?: string,
     ): Promise<RefundRequestDTO> {
+        this.validateNote(resolutionNote);
         request.status = status;
         request.resolvedByAccountId = user.id;
+        request.resolutionNote = resolutionNote;
 
         const savedRequest = await this.refundRequestRepo.save(request);
         return this.mapToDTO(savedRequest);
@@ -361,6 +383,9 @@ export class RefundService {
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
             currency: entity.currency,
+            reasonKeys: entity.reasonKeys || [],
+            requestNote: entity.requestNote,
+            resolutionNote: entity.resolutionNote,
             items:
                 entity.items?.map((i) => ({
                     id: i.id,

@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { RefundRequestItem } from './refund-request-item.entity';
 import { Payment } from './payment.entity';
-import { RefundRequestStatus } from '@tk-postral/payment-common';
+import { RefundReasonKey, RefundRequestStatus } from '@tk-postral/payment-common';
 
 
 @Entity()
@@ -61,6 +61,15 @@ export class RefundRequest extends BaseEntity {
 
     @Column({ nullable: true })
     currency?: string;
+
+    @Column({ type: 'json', nullable: true })
+    reasonKeys?: RefundReasonKey[];
+
+    @Column({ type: 'text', nullable: true })
+    requestNote?: string;
+
+    @Column({ type: 'text', nullable: true })
+    resolutionNote?: string;
 
     /**
      * UBS Users'teki kullanıcı idsi. Bu, refund request'i kimin çözdüğünü takip etmek için kullanılabilir. Ancak, bu sadece bir referans ve gerçek kullanıcı bilgisi için UBS Users servisine sorgu atılması gerekebilir.

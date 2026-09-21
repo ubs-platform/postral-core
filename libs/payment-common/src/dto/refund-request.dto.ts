@@ -1,5 +1,24 @@
 export type RefundRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export type RefundReasonKey =
+    | 'DAMAGED'
+    | 'DEFECTIVE'
+    | 'WRONG_ITEM'
+    | 'MISSING_PARTS'
+    | 'NOT_AS_DESCRIBED'
+    | 'CHANGED_MIND'
+    | 'OTHER';
+
+export const REFUND_REASON_KEYS: RefundReasonKey[] = [
+    'DAMAGED',
+    'DEFECTIVE',
+    'WRONG_ITEM',
+    'MISSING_PARTS',
+    'NOT_AS_DESCRIBED',
+    'CHANGED_MIND',
+    'OTHER',
+];
+
 
 export class RefundRequestItemDTO {
     paymentItemId: string;
@@ -9,6 +28,12 @@ export class RefundRequestItemDTO {
 export class CreateRefundRequestDTO {
     paymentId: string;
     items: RefundRequestItemDTO[];
+    reasonKeys: RefundReasonKey[];
+    requestNote?: string;
+}
+
+export class ResolveRefundRequestDTO {
+    resolutionNote?: string;
 }
 
 export class RefundRequestDTO {
@@ -43,4 +68,7 @@ export class RefundRequestDTO {
  */
     requestedToPaymentAccountId?: string;
     currency?: string;
+    reasonKeys?: RefundReasonKey[];
+    requestNote?: string;
+    resolutionNote?: string;
 }

@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, UseGuards, Req, Get, Query } from '@nestjs/common';
 import { RefundService } from './service/refund.service';
-import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO } from '@tk-postral/payment-common';
+import { CreateRefundRequestDTO, RefundRequestDTO, RefundRequestSearchDTO, ResolveRefundRequestDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { AuthGuard } from '@nestjs/passport'; // Assuming basic auth setup
 import { CurrentUser, JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
@@ -23,18 +23,20 @@ export class RefundController {
     async approveRefundRequest(
         @Req() req: any,
         @Param('id') id: string,
+        @Body() dto: ResolveRefundRequestDTO,
     ): Promise<RefundRequestDTO> {
         const user: UserAuthBackendDTO = req.user;
-        return this.refundService.approveRefundRequest(user, id);
+        return this.refundService.approveRefundRequest(user, id, dto);
     }
 
     @Post('request/:id/reject')
     async rejectRefundRequest(
         @Req() req: any,
         @Param('id') id: string,
+        @Body() dto: ResolveRefundRequestDTO,
     ): Promise<RefundRequestDTO> {
         const user: UserAuthBackendDTO = req.user;
-        return this.refundService.rejectRefundRequest(user, id);
+        return this.refundService.rejectRefundRequest(user, id, dto);
     }
 
     @Get('request/_search')
