@@ -26,6 +26,34 @@ EMPTY_DIRS=(
 )
 # ──────────────────────────────────────────────────────────────────────────────
 
+set_macos_apple_silicon_mongo_version() {
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    return
+  fi
+
+  local machine_arch
+  machine_arch="$(uname -m)"
+  if [[ "${machine_arch}" != "arm64" && "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" != "1" ]]; then
+    return
+  fi
+
+  local env_file="${INSTALL_DIR}/.env"
+  local temp_file
+  temp_file="$(mktemp)"
+  awk '
+    /^MONGO_VERSION=/ {
+      print "MONGO_VERSION=7.0.43-jammy"
+      updated = 1
+      next
+    }
+    { print }
+    END {
+      if (!updated) print "MONGO_VERSION=7.0.43-jammy"
+    }
+  ' "${env_file}" > "${temp_file}"
+  mv "${temp_file}" "${env_file}"
+}
+
 # ─── Preflight checks ─────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
   echo "ERROR: Docker is not installed or not in PATH."
@@ -69,6 +97,7 @@ done
 # Download stock.env as .env (version pins)
 echo "  Downloading infrastructure/stock.env -> .env ..."
 curl -fsSL "${RAW_BASE_URL}/infrastructure/stock.env" -o "${INSTALL_DIR}/.env"
+set_macos_apple_silicon_mongo_version
 
 echo ""
 echo "Done! Postral Core installed to: ${INSTALL_DIR}"
