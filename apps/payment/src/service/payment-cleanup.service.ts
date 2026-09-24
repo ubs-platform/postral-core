@@ -258,7 +258,7 @@ export class PaymentCleanupService {
             }
             await queryRunner.commitTransaction();
             return preview;
-        } catch (error) {
+        } catch (error: any) {
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {

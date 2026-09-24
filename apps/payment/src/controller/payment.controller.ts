@@ -77,7 +77,7 @@ export class PaymentController {
             }
 
             return await this.ps.startPaymentOperation(id, captureInfo);
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Error starting payment operation for payment ${id}:`, error);
             try {
                 await this.ps.failPaymentIfSetFailFieldTrue(id);

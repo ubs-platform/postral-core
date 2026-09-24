@@ -194,7 +194,7 @@ export class InvoiceService {
         // // Önce dosyayı silmeyi dene (optional - hata olursa da devam edebiliriz)
         // try {
         //     await fs.unlink(invoice.filePath);
-        // } catch (error) {
+        // } catch (error: any) {
         //     console.warn(`Could not delete file at ${invoice.filePath}:`, error);
         //     // Dosya silinemese bile veritabanı kaydını sileceğiz
         // }
