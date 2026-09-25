@@ -16,6 +16,13 @@ Read `README.md` and the task-relevant documentation in `docs/architecture/` and
 - Read the payment and encryption notes before modifying payment lifecycle, account/address search, or sensitive fields.
 - Read release notes before changing Docker or version tooling.
 
+## DTO and TypeScript Build Notes
+
+- Interfaces and type aliases do not exist at runtime. For decorated Nest parameters or schema properties that need runtime metadata, use a DTO class and verify the owning app's bundler build; keep compile-time-only unions and aliases as types.
+- Keep one declaration per DTO class. Put constructors on that class; a second `class Foo implements Foo` is a duplicate declaration, not a way to add a constructor.
+- TypeScript classes can extend only one class. For composed search/pagination DTOs, extend one class and implement/declare the other shape, or define a single combined DTO; `extends A, B` is invalid.
+- With an `Object.assign(this, partial)` constructor, required DTO fields need definite-assignment markers (`!`) or explicit assignments when strict property initialization is enabled.
+
 ## Cross-Repository Shared Libraries
 
 This repository both consumes and produces shared libraries:
