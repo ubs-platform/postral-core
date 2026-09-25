@@ -24,6 +24,21 @@ export class PaymentSearchFlatDTO  {
     activeSessionId?: string;
 }
 
-export class PaymentSearchPaginationFlatDTO extends PaymentSearchFlatDTO, SearchRequest {
+export class PaymentSearchPaginationFlatDTO implements PaymentSearchFlatDTO, SearchRequest {
+    page!: number;
+    size!: number;
+    sortBy?: string | undefined;
+    sortRotation?: "asc" | "desc" | undefined;
+    id?: string | undefined;
+    type?: "PURCHASE" | "REFUND" | undefined;
+    customerAccountId?: string | undefined;
+    sellerAccountIds?: string | undefined;
+    paymentChannelIds?: string | undefined;
+    paymentStatus?: string | undefined;
+    currency?: string | undefined;
+    dateFrom?: string | undefined;
+    dateTo?: string | undefined;
+    searchSide?: "USER" | "ADMIN" | undefined;
+    activeSessionId?: string | undefined;
 
 }

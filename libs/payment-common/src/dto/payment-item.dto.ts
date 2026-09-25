@@ -2,6 +2,10 @@ import { SnapshotAccountDTO } from "./invoice-account.dto";
 import { SnapshotAddressDTO } from "./invoice-address.dto";
 
 export class PaymentItemDTO {
+    constructor(partial: Partial<PaymentItemDTO>) {
+        Object.assign(this, partial);
+    }
+    
     id: string;
     itemId: string;
     name: string;
@@ -25,12 +29,6 @@ export class PaymentItemDTO {
     appComissionAmount: number;
     sellerSnapshotAccountId?: string;
     sellerSnapshotAddressId?: string;
-    sellerSnapshotAccount?: SnapshotAccountDTO 
-    sellerSnapshotAddress?: SnapshotAddressDTO 
-}
-
-export class PaymentItemDTO implements PaymentItemDTO {
-    constructor(partial: Partial<PaymentItemDTO>) {
-        Object.assign(this, partial);
-    }
+    sellerSnapshotAccount?: SnapshotAccountDTO
+    sellerSnapshotAddress?: SnapshotAddressDTO
 }

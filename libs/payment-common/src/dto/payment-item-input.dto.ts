@@ -8,6 +8,6 @@ export class PaymentItemInputDto {
     entityId?: string;
     variation?: string;
 
-    quantity: number;
+    quantity!: number;
     unit?: string;
 }

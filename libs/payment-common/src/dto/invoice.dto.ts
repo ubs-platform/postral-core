@@ -15,6 +15,7 @@ export class InvoiceDTO {
     updatedAt: Date;
     sellerInvoiceAddress?: SnapshotAddressDTO;
     sellerInvoiceAccount?: SnapshotAccountDTO;
+
     customerInvoiceAddress?: SnapshotAddressDTO;
     customerAccount?: SnapshotAccountDTO;
     finalized: boolean;
@@ -55,6 +56,18 @@ export class InvoiceSearchDTO {
     finalized?: 'true' | 'false' | boolean | undefined;
 }
 
-export class InvoiceSearchPaginationDTO
-    extends SearchRequest,
-        InvoiceSearchDTO {}
+export class InvoiceSearchPaginationDTO implements SearchRequest,
+    InvoiceSearchDTO {
+    page!: number;
+    size!: number;
+    sortBy?: string | undefined;
+    sortRotation?: 'asc' | 'desc' | undefined;
+    paymentId?: string;
+    sellerPaymentOrderId?: string;
+    invoiceNumber?: string;
+    status?: string;
+    uploadedByUserId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    finalized?: 'true' | 'false' | boolean | undefined;
+}
