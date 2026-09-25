@@ -1,7 +1,7 @@
 
 import { PaymentItemInputDto } from './payment-item-input.dto';
 
-export interface PaymentInitDTO {
+export class PaymentInitDTO {
     // id: string;
 
     type: 'PURCHASE' | 'REFUND';

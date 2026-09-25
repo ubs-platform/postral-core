@@ -1,7 +1,7 @@
 import { SnapshotAccountDTO } from "./invoice-account.dto";
 import { SnapshotAddressDTO } from "./invoice-address.dto";
 
-export interface PaymentItemDTO {
+export class PaymentItemDTO {
     id: string;
     itemId: string;
     name: string;

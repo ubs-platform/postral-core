@@ -1,6 +1,6 @@
 import { SearchRequest } from "@ubs-platform/crud-base-common";
 
-export interface PaymentSearchFlatDTO  {
+export class PaymentSearchFlatDTO  {
     id?: string;
     type?: 'PURCHASE' | 'REFUND';
     // Çoklu arama yapabilir, virgülle ayrılmış şekilde gönderilir. Örnek: "id1,id2,id3"
@@ -24,6 +24,6 @@ export interface PaymentSearchFlatDTO  {
     activeSessionId?: string;
 }
 
-export interface PaymentSearchPaginationFlatDTO extends PaymentSearchFlatDTO, SearchRequest {
+export class PaymentSearchPaginationFlatDTO extends PaymentSearchFlatDTO, SearchRequest {
 
 }

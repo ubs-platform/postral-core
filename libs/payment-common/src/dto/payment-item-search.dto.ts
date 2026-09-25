@@ -1,4 +1,4 @@
-export interface PaymentItemSearchDTO {
+export class PaymentItemSearchDTO {
     id?: string;
     itemId?: string;
     name?: string;

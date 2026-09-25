@@ -1,4 +1,4 @@
-export interface PaymentItemInputDto {
+export class PaymentItemInputDto {
     itemId?: string;
 
     entityGroup?: string;

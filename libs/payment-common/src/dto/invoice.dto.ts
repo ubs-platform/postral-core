@@ -2,7 +2,7 @@ import { SearchRequest } from '@ubs-platform/crud-base-common';
 import { SnapshotAddressDTO } from './invoice-address.dto';
 import { SnapshotAccountDTO } from './invoice-account.dto';
 
-export interface InvoiceDTO {
+export class InvoiceDTO {
     id: string;
     paymentId: string;
     sellerPaymentOrderId: string;
@@ -20,7 +20,7 @@ export interface InvoiceDTO {
     finalized: boolean;
 }
 
-export interface InvoiceCreateDTO {
+export class InvoiceCreateDTO {
     paymentId: string;
     sellerPaymentOrderId: string;
     filePath: string;
@@ -37,14 +37,14 @@ export interface InvoiceCreateDTO {
     customerAccount?: SnapshotAccountDTO;
 }
 
-export interface InvoiceUpdateDTO {
+export class InvoiceUpdateDTO {
     invoiceNumber?: string;
     invoiceDate?: Date;
     status?: string;
     notes?: string;
 }
 
-export interface InvoiceSearchDTO {
+export class InvoiceSearchDTO {
     paymentId?: string;
     sellerPaymentOrderId?: string;
     invoiceNumber?: string;
@@ -55,6 +55,6 @@ export interface InvoiceSearchDTO {
     finalized?: 'true' | 'false' | boolean | undefined;
 }
 
-export interface InvoiceSearchPaginationDTO
+export class InvoiceSearchPaginationDTO
     extends SearchRequest,
         InvoiceSearchDTO {}

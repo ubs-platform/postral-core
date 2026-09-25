@@ -3,7 +3,7 @@ export class ItemPriceDefaults {
     public static REGION_ANY = 'any';
 }
 
-export interface ItemPriceDTO {
+export class ItemPriceDTO {
     id: string;
 
     itemId: string;
@@ -29,7 +29,7 @@ export interface ItemPriceDTO {
     automaticExchangeFromCurrency?: string;
 }
 
-export interface ItemPriceSearchDTO {
+export class ItemPriceSearchDTO {
     itemId: string | string[];
 
     variation?: string;
