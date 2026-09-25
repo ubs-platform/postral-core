@@ -12,7 +12,7 @@ import {
 import { Account, Item, ItemPrice } from '@tk-postral/postral-entities';
 import { ItemMapper } from '../mapper/item.mapper';
 import { ItemPriceMapper } from '../mapper/item-price.mapper';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Injectable()
 export class ItemPriceService {
