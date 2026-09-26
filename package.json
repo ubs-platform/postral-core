@@ -68,8 +68,6 @@
     "@ubs-platform/notify-common": "^8.0.1",
     "@ubs-platform/social-common": "^8.0.1",
     "@ubs-platform/superlama-common": "^8.0.1",
-    "@ubs-platform/translator-core": "^1.0.9",
-    "@ubs-platform/translator-ngx": "^4.0.0",
     "@ubs-platform/users-common": "^8.0.1",
     "@ubs-platform/users-microservice-helper": "^8.0.1",
     "@ubs-platform/users-roles": "^8.0.1",
