@@ -1,5 +1,5 @@
 
-export interface BaseReport {
+export class BaseReport {
     paymentCount: number;
 
     // Toplam satın alma

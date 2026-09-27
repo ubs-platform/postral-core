@@ -152,7 +152,7 @@ export class PaymentOperationManagementService {
                 result,
                 paymentFullDto.id,
             );
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
             throw error;
         }

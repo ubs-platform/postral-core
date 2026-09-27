@@ -220,7 +220,7 @@ export class PaymentService {
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);
         try {
             await this.eventSenderService.onPaymentInitialized(paymentDtoFinal);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
         }
         return paymentDtoFinal;

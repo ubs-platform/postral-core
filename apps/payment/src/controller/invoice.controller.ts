@@ -250,7 +250,7 @@ export class InvoiceController {
                 maxLimitBytes: 3000000,
                 needAuthorizationAtView: true,
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error in thumbUploadInfo:', error);
             return { error: (error as Error).message };
         }
@@ -279,7 +279,7 @@ export class InvoiceController {
             }
 
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error in fileGetAllowance:', error);
             return false;
         }

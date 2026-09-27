@@ -331,7 +331,7 @@
 //             snapshotAccount.bankSwift = customerAccount.bankSwift || "";
 //             snapshotAccount.taxOffice = customerAccount.taxOffice || "";
 //             return await this.snapshotAccountRepository.save(snapshotAccount);
-//         } catch (error) {
+//         } catch (error: any) {
 //             console.warn(`SnapshotAccount oluşturulamadı. accountId=${realAccountId}`, error);
 //             return undefined;
 //         }
@@ -381,7 +381,7 @@
 //             snapshotAddress.region = customerAddress.region || "";
 //             snapshotAddress.postbox = customerAddress.postbox || "";
 //             return await this.snapshotAddressRepository.save(snapshotAddress);
-//         } catch (error) {
+//         } catch (error: any) {
 //             console.warn(`SnapshotAddress oluşturulamadı. addressId=${realAddressId}`, error);
 //             return undefined;
 //         }

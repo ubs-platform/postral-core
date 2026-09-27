@@ -1,4 +1,4 @@
-export interface PaymentItemInputDto {
+export class PaymentItemInputDto {
     itemId?: string;
 
     entityGroup?: string;
@@ -8,6 +8,6 @@ export interface PaymentItemInputDto {
     entityId?: string;
     variation?: string;
 
-    quantity: number;
+    quantity!: number;
     unit?: string;
 }

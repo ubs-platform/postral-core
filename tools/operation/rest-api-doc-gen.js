@@ -8,15 +8,11 @@ const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const controller_scanner_1 = require("../rest-doc-extractor/controller-scanner");
 const directory_util_1 = require("../util/directory-util");
-const child_process_1 = require("child_process");
 class RestApiDocGen {
     static async generate() {
         const mainPath = process.cwd();
         console.info('Project directory: ' + mainPath);
         const byProject = await controller_scanner_1.ControllerScanner.scanAllControllers(mainPath);
-        if (Object.entries(byProject).length == 0) {
-            (0, child_process_1.exec)(`kdialog --msgbox 'ByProject içi dolu gelmiyor...'`);
-        }
         Object.entries(byProject).forEach(([key, ac]) => {
             console.info(key, ac);
             ac.forEach((c) => {

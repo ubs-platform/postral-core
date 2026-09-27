@@ -5,7 +5,7 @@ import { SnapshotAddressDTO } from './invoice-address.dto';
 import { PaymentItemDTO } from './payment-item.dto';
 import { TaxDTO } from './tax.dto';
 
-export interface PaymentDTO {
+export class PaymentDTO {
     id: string;
 
     type: 'PURCHASE' | 'REFUND';
@@ -40,7 +40,7 @@ export interface PaymentDTO {
     customerSnapshotAddressId?: string;
 }
 
-export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
+export class PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     items: PaymentItemDTO[];
     taxes: TaxDTO[];
     customerSnapshotAccount?: SnapshotAccountDTO;
@@ -48,7 +48,7 @@ export interface PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     captureInfo: PaymentCaptureInfoDTO;
 }
 
-export interface PaymentFullDTO extends PaymentDTO {
+export class PaymentFullDTO extends PaymentDTO {
     items: PaymentItemDTO[];
     taxes: TaxDTO[];
     customerSnapshotAccount?: SnapshotAccountDTO;

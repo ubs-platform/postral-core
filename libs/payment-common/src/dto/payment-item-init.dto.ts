@@ -1,4 +1,4 @@
-export interface PaymentItemInitDto {
+export class PaymentItemInitDto {
     name: string;
     quantity: number;
     totalAmount: number;

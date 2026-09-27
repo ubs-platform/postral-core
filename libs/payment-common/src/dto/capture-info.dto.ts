@@ -1,4 +1,4 @@
-export interface PaymentCaptureInfoDTO {
+export class PaymentCaptureInfoDTO {
     // Ödeme metodu, şimdilik dummy kalmalı
     paidAmount?: number;
     paymentChannelId: string;

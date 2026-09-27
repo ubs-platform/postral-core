@@ -6,7 +6,7 @@
 import { AccountDTO } from './account.dto';
 import { AccountAddressDto } from './address.dto';
 
-export interface ExternalPlatformPaymentItemInputDTO {
+export class ExternalPlatformPaymentItemInputDTO {
     // Postral ürün kimliği (opsiyonel — harici katalog farklı olabilir)
     itemId?: string;
 
@@ -29,7 +29,7 @@ export interface ExternalPlatformPaymentItemInputDTO {
     unit?: string;
 }
 
-export interface CreateExternalPlatformPaymentDTO {
+export class CreateExternalPlatformPaymentDTO {
     externalPlatformId: string;
 
     externalPlatformOrderId: string;

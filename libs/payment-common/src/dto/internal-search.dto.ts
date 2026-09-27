@@ -1,4 +1,4 @@
-export interface InternalSearchDTO {
+export class InternalSearchDTO {
 
     /**
  * Eğer kullanıcı admin değilse, bu alanı kullanarak sadece 

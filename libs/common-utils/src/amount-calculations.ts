@@ -1,5 +1,5 @@
 import { TypeAssertionUtil } from "./type-assertion";
-import * as BigJs from "big.js";
+import BigJs from "big.js";
 export class AmountCalculationUtil {
 
     static addNumberValues(...values: number[]): number {
