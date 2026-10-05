@@ -23,3 +23,10 @@ Use `NonProductionGuard` for development-only endpoints. Administrative mutation
 ## Persistence and Numeric Fields
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.
+
+## Deferred Work
+
+- [External-platform payment snapshot-only customer plan](./external-platform-payment-snapshot-plan.md):
+  proposed removal of real external customer account/address creation, including
+  persistence, completion, refund policy, and consumer compatibility work. Not yet
+  implemented.
