@@ -148,6 +148,17 @@ export class AuthUtilService {
             throw new Error('En az bir yetenek sağlanmalıdır');
         }
 
+        if (ownershipGroupId) {
+            return await lastValueFrom(
+                this.eo.searchByEntityIdsByEogroup({
+                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
+                    entityName,
+                    entityOwnershipGroupId: ownershipGroupId,
+                    requestedCapabilities,
+                }),
+            );
+        }
+
         return await lastValueFrom(
             this.eo.searchOwnershipEntityIdsByUser({
                 entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
