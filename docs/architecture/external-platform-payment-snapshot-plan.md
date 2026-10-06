@@ -1,11 +1,18 @@
 # External Platform Payment: Snapshot-Only Customer Plan
 
-Status: Deferred; not implemented.
+Status: Deferred; snapshot-only behavior not implemented.
 Recorded: 2026-10-06.
 
 This feature is not currently in active use. This document preserves the
 implementation plan for a future change; it does not describe existing behavior.
 Reconfirm the referenced contracts and code before implementation.
+
+The existing create flow has since been isolated in
+[ExternalPlatformPaymentService](../../apps/payment/src/service/external-platform-payment.service.ts).
+That service is intentionally not registered in `PaymentModule`, and the
+`POST /payment/external-platform` route has been removed. The implementation below
+still describes the deferred snapshot-only redesign; moving the method did not
+implement that redesign.
 
 ## Goal and Scope
 
@@ -19,7 +26,7 @@ existing account/address behavior.
 
 ## Current Behavior and Blockers
 
-[PaymentService.createExternalPlatformPayment](../../apps/payment/src/service/payment.service.ts)
+[ExternalPlatformPaymentService.createExternalPlatformPayment](../../apps/payment/src/service/external-platform-payment.service.ts)
 currently:
 
 1. Resolves or creates the customer account and billing address.

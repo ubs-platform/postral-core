@@ -8,11 +8,9 @@ import {
     Param,
     Post,
     Sse,
-    UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import {
-    CreateExternalPlatformPaymentDTO,
     PaymentDTO,
     PaymentFullDTO,
     PaymentInitDTO,
@@ -22,8 +20,6 @@ import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-in
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { filter } from 'rxjs';
 import { PaymentChannelConfigService } from '../service/payment-channel-config.service';
-import { JwtAuthGuard, CurrentUser } from '@ubs-platform/users-microservice-helper';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { exec } from 'child_process';
 @Controller('payment')
 export class PaymentController {
@@ -37,16 +33,6 @@ export class PaymentController {
     public async initialize(@Body() body: PaymentInitDTO) {
         await this.as.fetchOne(body.customerAccountId);
         return await this.ps.init(body);
-    }
-
-    // Harici platform (Hepsiburada, Trendyol vb.) satışını Postral'a kaydeder.
-    @Post('/external-platform')
-    @UseGuards(JwtAuthGuard)
-    public async createExternalPlatformPayment(
-        @Body() body: CreateExternalPlatformPaymentDTO,
-        @CurrentUser() user: UserAuthBackendDTO,
-    ): Promise<PaymentDTO> {
-        return await this.ps.createExternalPlatformPayment(body, user);
     }
 
     @Post('/:id/operation/start')

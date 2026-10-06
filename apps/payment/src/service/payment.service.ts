@@ -4,7 +4,7 @@ import { Payment, PostralPaymentItem } from '@tk-postral/postral-entities';
 import { Repository } from 'typeorm';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
+import { TaxCalculationUtil } from '@tk-postral/common-utils';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDTO,
@@ -13,7 +13,6 @@ import {
     TaxDTO,
     PaymentFullDTO,
     SellerPaymentOrderDTO,
-    CreateExternalPlatformPaymentDTO,
     AccountDTO,
     AccountAddressDto,
 } from '@tk-postral/payment-common';
@@ -32,11 +31,7 @@ import { AccountPaymentTransactionService } from './account-payment-transaction.
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { WebhookDispatchService } from './webhook-dispatch.service';
-import { AdminSettingsService } from './admin-settings.service';
-import { AppComissionService } from './app-commission.service';
-import { ExternalPlatformService } from './external-platform.service';
 import { AddressService } from './address.service';
-import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { InvoiceAccountMapper } from '../mapper/invoice-account.mapper';
@@ -65,9 +60,6 @@ export class PaymentService {
         private transactionMapper: TransactionMapper,
         private paymentCommonService: PaymentCommonService,
         private webhookDispatchService: WebhookDispatchService,
-        private adminSettingsService: AdminSettingsService,
-        private appComissionService: AppComissionService,
-        private externalPlatformService: ExternalPlatformService,
         private addressService: AddressService,
         private invoiceAccountMapper: InvoiceAccountMapper,
         private invoiceAddressMapper: InvoiceAddressMapper
@@ -471,7 +463,7 @@ export class PaymentService {
 
     // Ödeme COMPLETED olduğunda çalışacak ortak yan etkiler: seller order/transaction üretimi,
     // rapor digestion kuyruğuna ekleme, tamamlandı eventi ve ilgili hesaplara webhook bildirimi.
-    private async onPaymentCompleted(payment: Payment) {
+    async onPaymentCompleted(payment: Payment) {
         await this.postPaymentOperation(payment);
         const fullDto = await this.findPaymentById(payment.id, true) as PaymentFullDTO;
         this.reportDigestionService.insertPaymentToReportDigestionQueue(fullDto);
@@ -620,121 +612,6 @@ export class PaymentService {
         return saved;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Harici platform (Hepsiburada, Trendyol, Amazon, Google Play vb.) satışını
-    // Postral'a kaydeder. Para harici platformda tahsil edildiği için kanal operasyonu
-    // yoktur; ödeme doğrudan COMPLETED olarak kaydedilir ve komisyon/rapor/webhook
-    // yan etkileri tetiklenir.
-    // ─────────────────────────────────────────────────────────────
-    public async createExternalPlatformPayment(dto: CreateExternalPlatformPaymentDTO, user?: UserAuthBackendDTO): Promise<PaymentDTO> {
-        if (!dto.items || dto.items.length === 0) {
-            throw new BadRequestException('External platform payment must contain at least one item');
-        }
-
-        const externalPlatform = await this.externalPlatformService.fetchOne(dto.externalPlatformId);
-        if (!externalPlatform) {
-            throw new NotFoundException('External platform not found');
-        }
-
-        // Müşteri hesabı ve faturalama adresi düz metin DTO olarak alınır: önce harici
-        // platform kimliğiyle, yoksa kimlik/alan bazlı eşleştirilir; bulunamazsa oluşturulur.
-        const customerAccount = await this.accountService.resolveOrCreateForExternalPlatform(
-            dto.customerAccount,
-            dto.externalPlatformId,
-            user,
-        );
-        const billingAddress = await this.addressService.resolveOrCreateForExternalPlatform(
-            dto.billingAddress,
-            dto.externalPlatformId,
-            user,
-        );
-        // Çözülen faturalama adresi müşteri hesabının varsayılan adresi yapılır.
-        if (customerAccount.defaultAddressId !== billingAddress.id) {
-            await this.accountService.updateDefaultAddress(customerAccount.id, billingAddress.id);
-        }
-
-        const admSettings = await this.adminSettingsService.getAdminSettings();
-
-        const items: PostralPaymentItem[] = [];
-        const taxesFromItems: TaxDTO[] = [];
-        let totalAmt = 0;
-        let taxTotal = 0;
-
-        for (const inputItem of dto.items) {
-            const itemClass = inputItem.itemClass || '';
-            const comission = await this.appComissionService.fetchOneForCalculation(
-                inputItem.sellerAccountId,
-                itemClass,
-                dto.externalPlatformId,
-            );
-
-            const item = new PostralPaymentItem();
-            item.itemId = inputItem.itemId || '';
-            item.name = inputItem.name;
-            item.quantity = inputItem.quantity;
-            item.unitAmount = inputItem.unitAmount;
-            item.originalUnitAmount = inputItem.unitAmount;
-            item.totalAmount = AmountCalculationUtil.multiplyNumberValues(
-                inputItem.unitAmount,
-                inputItem.quantity,
-            );
-            item.taxPercent = inputItem.taxRate;
-
-            const taxDto = TaxCalculationUtil.generateTaxDto(
-                `${externalPlatform.name} - ${inputItem.taxRate}`,
-                item.totalAmount,
-                inputItem.taxRate,
-            );
-            item.taxAmount = taxDto.taxAmount!;
-            item.unTaxAmount = taxDto.untaxAmount!;
-            item.sellerAccountId = inputItem.sellerAccountId;
-            item.variation = inputItem.variation || '';
-            item.itemClass = itemClass;
-            item.entityGroup = '';
-            item.entityName = '';
-            item.entityId = '';
-            item.unit = inputItem.unit || 'ITEM';
-            item.appComissionPercent = comission.percent;
-            item.appComissionAmount = AmountCalculationUtil.calculateComissionAmountByPercent(
-                admSettings.comissionsCalculatedFromNet ? item.unTaxAmount : item.totalAmount,
-                comission.percent,
-            );
-
-            totalAmt = AmountCalculationUtil.addNumberValues(totalAmt, item.totalAmount);
-            taxTotal = AmountCalculationUtil.addNumberValues(taxTotal, item.taxAmount);
-            taxesFromItems.push(taxDto);
-            items.push(item);
-        }
-
-        const payment = new Payment();
-        payment.type = 'PURCHASE';
-        payment.currency = dto.currency;
-        payment.totalAmount = totalAmt;
-        payment.taxAmount = taxTotal;
-        payment.items = items;
-        payment.customerAccountId = customerAccount.id;
-        payment.billingAddressId = billingAddress.id;
-        payment.externalPlatformId = dto.externalPlatformId;
-        payment.externalPlatformOrderId = dto.externalPlatformOrderId;
-        // Para harici platformda tahsil edildiği için ödeme doğrudan tamamlanmış sayılır.
-        payment.paymentStatus = 'COMPLETED';
-        payment.openPayment = false;
-        payment.includeInReportDigestion = true;
-        payment.taxes = TaxCalculationUtil.mergeTaxesByPercent(taxesFromItems).map((a) => this.paymentTaxMapper.toEntity(a));
-
-        await this.applyItemSellerSnapshots(payment.items);
-        await this.applyAccountSnapshot(customerAccount, payment);
-        await this.applyAddressSnapshot(payment);
-
-        const saved = await this.paymentrepo.save(payment);
-        await this.onPaymentCompleted(saved);
-
-        const dtoFinal = this.paymentMapper.toDto(saved);
-        this.paymentStream.next(dtoFinal);
-        return dtoFinal;
-    }
-
-
     public async failPaymentIfSetFailFieldTrue(paymentId: string) {
         const field = await this.paymentrepo.update({
             id: paymentId,
@@ -747,7 +624,7 @@ export class PaymentService {
     }
 
 
-    private async applyAddressSnapshot(p: Payment) {
+    async applyAddressSnapshot(p: Payment) {
         if (!p.billingAddressId) {
             throw new BadRequestException('Valid billing address ID is required for payment init');
         }
@@ -759,13 +636,13 @@ export class PaymentService {
         p.customerSnapshotAddress = await this.invoiceAddressMapper.toEntityFromAccountAddress(address);
     }
 
-    private async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
+    async applyAccountSnapshot(customerAccount: AccountDTO, p: Payment) {
         const accountSnapshot = await this.invoiceAccountMapper.toEntityFromNormalAccount(customerAccount, true);
         p.customerSnapshotAccount = accountSnapshot;
     }
 
 
-    private async applyItemSellerSnapshots(items: PostralPaymentItem[]) {
+    async applyItemSellerSnapshots(items: PostralPaymentItem[]) {
         const realAccountMapByRealId = new Map<string, AccountDTO>();
         const realAddressMapByAccountId = new Map<string, AccountAddressDto>();
         for (const item of items) {
