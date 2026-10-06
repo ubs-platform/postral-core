@@ -1,5 +1,6 @@
 import {
     Controller,
+    BadRequestException,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
@@ -35,6 +36,9 @@ export class AccountNewController extends BaseCrudController<
         queriesAndPaths: Optional<{ [key: string]: any }>,
         body: Optional<AccountDTO>,
     ): Promise<void> {
+        if (operation === "ADD" && body?.type === 'INDIVIDUAL' && body.entityOwnershipGroupId) {
+            throw new BadRequestException('Individual accounts cannot have an entity ownership group ID.');
+        }
         return await this.authUtilService.checkUserEntityOwnership(
             operation,
             user,
