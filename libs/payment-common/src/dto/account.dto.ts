@@ -13,6 +13,8 @@ export class AccountDTO {
 
     type!: 'INDIVIDUAL' | 'COMMERCIAL';
 
+    isExternal?: boolean;
+
     defaultAddressId?: string;
     
     ownerUserId?: string;

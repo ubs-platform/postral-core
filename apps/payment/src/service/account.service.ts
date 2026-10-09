@@ -19,7 +19,7 @@
 // import { AccountMapper } from '../mapper/account.mapper';
 // import { NotFoundError } from 'rxjs';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Account } from '@tk-postral/postral-entities';
 import { AccountDTO, AccountSearchParamsDTO, RelatedAccountFilterDto } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -58,7 +58,7 @@ export class AccountService extends BaseCrudService<
     }
 
     override async afterCreate(m: AccountDTO, input: AccountDTO, user?: UserAuthBackendDTO): Promise<void> {
-        if (!user) {
+        if (!user || input.isExternal) {
             return Promise.resolve();
         }
         await this.authUtilService.afterCreate(
@@ -94,6 +94,17 @@ export class AccountService extends BaseCrudService<
     ): Promise<AccountDTO> {
         await this.repo.update(id, { deactivated: true });
         return this.fetchOne(id, user);
+    }
+
+    async findAccountForAuthorization(id: string): Promise<Account> {
+        const account = await this.repo.findOne({
+            where: { id },
+            select: ['id', 'isExternal'],
+        });
+        if (!account) {
+            throw new NotFoundException(`Account ${id} not found`);
+        }
+        return account;
     }
 
     async searchParams(
@@ -257,7 +268,7 @@ export class AccountService extends BaseCrudService<
         }
 
         const created = await this.create(
-            { ...dto, externalPlatformId },
+            { ...dto, externalPlatformId, isExternal: true },
             user,
         );
         const entity = await this.repo.findOne({ where: { id: created.id } });

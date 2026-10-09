@@ -123,13 +123,10 @@ export class AuthUtilService {
     }
 
     async fetchUserAccountIds(userId: string, requestedCapabilities: number[][] = [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]]): Promise<string[]> {
-        return await lastValueFrom(
-            this.eo.searchOwnershipEntityIdsByUser({
-                entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                entityName: PostralConstants.ENTITY_NAME_ACCOUNT,
-                userId,
-                requestedCapabilities,
-            }),
+        return await this.searchOwnedIds(
+            PostralConstants.ENTITY_NAME_ACCOUNT,
+            requestedCapabilities,
+            { userId },
         );
     }
 

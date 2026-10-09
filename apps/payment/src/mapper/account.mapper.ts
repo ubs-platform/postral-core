@@ -31,6 +31,7 @@ export class AccountMapper {
             phone: this.cryptionUtil.decryptWithConfig(ac.phone, "USE_DEFAULT") || "",
             emailAddress: this.cryptionUtil.decryptWithConfig(ac.emailAddress, "USE_DEFAULT") || "",
             type: ac.type,
+            isExternal: ac.isExternal,
             defaultAddressId: ac.defaultAddressId,
             bankName: ac.bankName,
             bankIban: this.cryptionUtil.decryptWithConfig(ac.bankIban, "USE_DEFAULT") || "",
@@ -62,6 +63,9 @@ export class AccountMapper {
         // website alanı hassas değer midir... 
         entity.website = dto.website;
         entity.type = dto.type;
+        if (dto.isExternal !== undefined) {
+            entity.isExternal = dto.isExternal;
+        }
         entity.defaultAddressId = dto.defaultAddressId;
         entity.bankName = dto.bankName;
         entity.bankIban = this.cryptionUtil.encryptWithConfig(dto.bankIban, "USE_DEFAULT") || "";

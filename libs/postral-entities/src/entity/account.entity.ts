@@ -12,7 +12,6 @@ import { Address } from './address.entity';
 import { ExternalPlatform } from './external-platform.entity';
 import { BankAccount } from './bank-account.entity';
 
-// TODO: External Platform olanlara ayrı bir grupta eklenebilir, ya da parent hesap mantığı kurulabilir... Ana hesap varsa ana hesabın entity ownership grubuna bakılır/eklenir...
 @Entity()
 @Unique(['externalPlatformId', 'externalPlatformAccountId'])
 export class Account {
@@ -44,6 +43,9 @@ export class Account {
      */
     @Column()
     type!: 'INDIVIDUAL' | 'COMMERCIAL';
+
+    @Column({ type: 'boolean', default: false })
+    isExternal: boolean = false;
 
     @Column({ nullable: true })
     defaultAddressId?: string;

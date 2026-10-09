@@ -33,6 +33,10 @@ Postral aşağıdaki yatay yeteneklerde UBS Mona platformuna bağlı çalışır
 
 - [REST API indeks](./rest-api/index.md)
 
+### Mimari Notlar
+
+- [Account parent ilişkisi taslağı](../architecture/account-parent-relationship-proposal.md)
+
 ### Messaging (MQ / Engine5)
 
 - [Engine5 event ve request dokumani](./messaging/engine5-event-ve-requestler.md)

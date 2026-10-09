@@ -1,6 +1,7 @@
 import {
     Controller,
     BadRequestException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { AccountService } from '../service/account.service';
 import { AccountDTO, AccountSearchParamsDTO } from '@tk-postral/payment-common';
@@ -39,6 +40,72 @@ export class AccountNewController extends BaseCrudController<
         if (operation === "ADD" && body?.type === 'INDIVIDUAL' && body.entityOwnershipGroupId) {
             throw new BadRequestException('Individual accounts cannot have an entity ownership group ID.');
         }
+
+        if (
+            operation === 'ADD' &&
+            body?.isExternal &&
+            body.entityOwnershipGroupId
+        ) {
+            throw new BadRequestException(
+                'External accounts cannot be assigned an ownership group.',
+            );
+        }
+
+        if (
+            operation === 'ADD' &&
+            body?.isExternal &&
+            !user?.roles?.includes('ADMIN')
+        ) {
+            throw new UnauthorizedException(
+                'Only admins can create external accounts.',
+            );
+        }
+
+        if (operation === 'EDIT' && body?.id) {
+            const current = await this.service.findAccountForAuthorization(body.id);
+            if (
+                body.isExternal !== undefined &&
+                body.isExternal !== current.isExternal
+            ) {
+                throw new BadRequestException('An account external status cannot be changed after creation.');
+            }
+            if (current.isExternal && !user?.roles?.includes('ADMIN')) {
+                throw new UnauthorizedException('Only admins can edit external accounts.');
+            }
+            if (!current.isExternal) {
+                await this.authUtilService.checkUserEntityOwnership(
+                    operation,
+                    user,
+                    queriesAndPaths,
+                    body,
+                    PostralConstants.ENTITY_NAME_ACCOUNT,
+                    'account',
+                );
+            }
+            return;
+        }
+
+        if (operation === 'GETID' || operation === 'REMOVE') {
+            const account = await this.service.findAccountForAuthorization(
+                queriesAndPaths?.id,
+            );
+            if (account.isExternal) {
+                if (!user?.roles?.includes('ADMIN')) {
+                    throw new UnauthorizedException('Only admins can access external accounts.');
+                }
+                return;
+            }
+            await this.authUtilService.checkUserEntityOwnership(
+                operation,
+                user,
+                queriesAndPaths,
+                body,
+                PostralConstants.ENTITY_NAME_ACCOUNT,
+                'account',
+            );
+            return;
+        }
+
         return await this.authUtilService.checkUserEntityOwnership(
             operation,
             user,
