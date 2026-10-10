@@ -44,6 +44,7 @@ export class ExternalPlatformPaymentService {
         dto: CreateExternalPlatformPaymentDTO,
         user?: UserAuthBackendDTO,
     ): Promise<PaymentDTO> {
+        
         if (!dto.items || dto.items.length === 0) {
             throw new BadRequestException(
                 'External platform payment must contain at least one item',

@@ -237,6 +237,7 @@ export class AccountService extends BaseCrudService<
             name: probe.name,
             type: probe.type,
             deactivated: false,
+            isExternal: true
         };
         if (dto.legalIdentity) {
             where.legalIdentity = probe.legalIdentity;
@@ -271,7 +272,7 @@ export class AccountService extends BaseCrudService<
             { ...dto, externalPlatformId, isExternal: true },
             user,
         );
-        const entity = await this.repo.findOne({ where: { id: created.id } });
+        const entity = await this.repo.findOne({ where: { id: created.id, } });
         if (!entity) {
             throw new Error('Failed to create customer account for external platform payment');
         }
