@@ -14,7 +14,7 @@
   },
   "iksir": {
     "type": "ROOT",
-    "childrenVersionTag": "beta",
+    "childrenVersionTag": "",
     "childrenAccess": "public",
     "childrenPrefix": "@tk-postral"
   },
