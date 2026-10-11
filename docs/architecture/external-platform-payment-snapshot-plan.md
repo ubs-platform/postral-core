@@ -3,14 +3,24 @@
 Status: Deferred; snapshot-only behavior not implemented.
 Recorded: 2026-10-06.
 
-This feature is not currently in active use. This document preserves the
+The snapshot-only redesign is not currently in active use. This document preserves the
 implementation plan for a future change; it does not describe existing behavior.
 Reconfirm the referenced contracts and code before implementation.
 
 The existing create flow has since been isolated in
 [ExternalPlatformPaymentService](../../apps/payment/src/service/external-platform-payment.service.ts).
-That service is intentionally not registered in `PaymentModule`, and the
-`POST /payment/external-platform` route has been removed. The implementation below
+That service is now registered in `PaymentModule`, and the authenticated
+`POST /payment/external-platform` route is enabled for experimental seller entry.
+The current flow retains real `isExternal` customer accounts, without seller
+ownership, and real external billing addresses. Seller write authorization and
+active commercial-account checks run before customer writes. Customer/address
+resolution and payment persistence share a transaction, locking the platform row
+to reject repeated platform/order references across application instances.
+Address field matching is restricted to the selected external platform.
+Completion runs after commit through the existing shared lifecycle. If it fails,
+the response and server log identify the saved payment and instruct the caller
+not to recreate the order; administrator reconciliation is required.
+The implementation below
 still describes the deferred snapshot-only redesign; moving the method did not
 implement that redesign.
 

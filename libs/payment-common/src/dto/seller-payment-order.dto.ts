@@ -12,6 +12,7 @@ export class SellerPaymentOrderDTO {
     untaxedAmount!: number;
     currency!: string;
     paymentId!: string;
+    externalPlatformId?: string;
     targetAccountId!: string;
     targetAccountName?: string;
     sourceAccountId!: string;

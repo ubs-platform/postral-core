@@ -19,11 +19,11 @@
 // import { AccountMapper } from '../mapper/account.mapper';
 // import { NotFoundError } from 'rxjs';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Account } from '@tk-postral/postral-entities';
 import { AccountDTO, AccountSearchParamsDTO, RelatedAccountFilterDto } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ArrayContains, In, Repository } from 'typeorm';
+import { ArrayContains, EntityManager, In, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
@@ -218,11 +218,12 @@ export class AccountService extends BaseCrudService<
     async findByExternalPlatformAccount(
         externalPlatformId?: string,
         externalPlatformAccountId?: string,
+        repo: Repository<Account> = this.repo,
     ): Promise<Account | null> {
         if (!externalPlatformId || !externalPlatformAccountId) {
             return null;
         }
-        return this.repo.findOne({
+        return repo.findOne({
             where: { externalPlatformId, externalPlatformAccountId },
             relations: ['bankAccounts']
         });
@@ -231,7 +232,7 @@ export class AccountService extends BaseCrudService<
     // Kimlik alanlarıyla (name + legalIdentity + type + phone) eşleşen hesabı bulur.
     // Şifreli alanlar deterministik olduğundan DTO mapper üzerinden entity'ye çevrilir
     // ve ortaya çıkan (şifreli ya da düz) değerlerle eşitlik sorgusu yapılır.
-    async findByIdentityMatch(dto: AccountDTO): Promise<Account | null> {
+    async findByIdentityMatch(dto: AccountDTO, repo: Repository<Account> = this.repo): Promise<Account | null> {
         const probe = await this.accountMapper.updateEntity(new Account(), dto);
         const where: any = {
             name: probe.name,
@@ -245,29 +246,40 @@ export class AccountService extends BaseCrudService<
         if (dto.phone) {
             where.phone = probe.phone;
         }
-        return this.repo.findOne({ where });
+        return repo.findOne({ where });
     }
 
     // Harici platform ödemesi için müşteri hesabını çözer; bulunamazsa oluşturup
-    // çağıran kullanıcının (satıcının) sahipliğine bağlar. Entity döner.
+    // isExternal olarak, satıcı sahipliği olmadan oluşturur. Entity döner.
     async resolveOrCreateForExternalPlatform(
         dto: AccountDTO,
         externalPlatformId: string,
         user?: UserAuthBackendDTO,
+        manager?: EntityManager,
     ): Promise<Account> {
+        const repo = manager?.getRepository(Account) ?? this.repo;
         const byExternal = await this.findByExternalPlatformAccount(
             externalPlatformId,
             dto.externalPlatformAccountId,
+            repo,
         );
         if (byExternal) {
+            if (!byExternal.isExternal || byExternal.deactivated) {
+                throw new BadRequestException('External customer must be an active external account');
+            }
             return byExternal;
         }
 
-        const byIdentity = await this.findByIdentityMatch(dto);
+        const byIdentity = await this.findByIdentityMatch(dto, repo);
         if (byIdentity) {
             return byIdentity;
         }
 
+        if (manager) {
+            return repo.save(await this.accountMapper.updateEntity(
+                new Account(), { ...dto, externalPlatformId, isExternal: true },
+            ));
+        }
         const created = await this.create(
             { ...dto, externalPlatformId, isExternal: true },
             user,
@@ -280,8 +292,8 @@ export class AccountService extends BaseCrudService<
     }
 
     // Hesabın varsayılan adresini günceller (faturalama adresini defaultAddress yapmak için).
-    async updateDefaultAddress(accountId: string, addressId: string): Promise<void> {
-        await this.repo.update(accountId, { defaultAddressId: addressId });
+    async updateDefaultAddress(accountId: string, addressId: string, manager?: EntityManager): Promise<void> {
+        await (manager?.getRepository(Account) ?? this.repo).update(accountId, { defaultAddressId: addressId });
         this.invalidateSelfCache();
     }
 }

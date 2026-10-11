@@ -72,6 +72,7 @@ export class RefundService {
         }
 
         await this.authorizeRefundAction(user, request.requestedToPaymentAccountId, 'approve');
+        this.assertPaymentIsRefundable(payment);
         this.assertItemsBelongToSingleSeller(payment, request.items);
         await this.triggerPaymentChannelRefund(payment);
         await this.paymentService.createRefundPayment(
@@ -129,6 +130,9 @@ export class RefundService {
     }
 
     private assertPaymentIsRefundable(payment: Payment): void {
+        if (payment.externalPlatformId) {
+            throw new BadRequestException('External platform refunds are not supported yet; process the refund on the external platform');
+        }
         if (payment.type !== 'PURCHASE') {
             // Tekrar satın al o zaman :d
             throw new BadRequestException('Only PURCHASE payments can be refunded');

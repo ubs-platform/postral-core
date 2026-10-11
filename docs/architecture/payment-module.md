@@ -24,8 +24,40 @@ Use `NonProductionGuard` for development-only endpoints. Administrative mutation
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.
 
-## Deferred Work
+## Experimental External Sales
 
+`POST /payment/external-platform` records an already-settled external sale; it
+does not initiate payment-channel collection. `ExternalPlatformPaymentService`
+requires JWT authentication, write access to every seller account, active
+commercial sellers with default addresses, and an active external platform.
+Customer accounts are real `isExternal` records without seller ownership;
+billing addresses are also resolved/created without seller ownership.
+Normal account CRUD authorization is unchanged.
+
+The platform row is locked while resolving customer/address records and saving
+the purchase in one transaction. Repeated platform/order references return 409.
+The shared completion flow produces seller orders, account transactions, reports
+and events after commit. A completion failure returns an explicit error with the
+saved payment ID, requiring administrator reconciliation rather than resubmission.
+The seller frontend labels this feature as under construction.
+External refunds are explicitly rejected before request creation or channel
+operations; payment and seller-order details explain that refunds must be
+processed on the external platform. Normal Postral refunds are unchanged.
+
+Focused tests (Node 24.9+ is needed for Nest 12 ESM dependencies in the current
+Jest runner; the payment build supplies type validation):
+
+```bash
+npm run build -- payment
+node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
+  --runTestsByPath \
+  apps/payment/src/service/external-platform-payment.service.spec.ts \
+  apps/payment/src/service/external-customer-resolution.spec.ts \
+  apps/payment/src/service/external-platform-refund.spec.ts \
+  --transform='{"^.+\\.(t|j)s$":["ts-jest",{"tsconfig":{"isolatedModules":true}}]}'
+```
+
+## Deferred Work
 - [External-platform payment snapshot-only customer plan](./external-platform-payment-snapshot-plan.md):
   proposed removal of real external customer account/address creation, including
   persistence, completion, refund policy, and consumer compatibility work. Not yet

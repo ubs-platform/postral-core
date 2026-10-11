@@ -42,6 +42,8 @@ export class SellerPaymentOrderSearchService {
         private accountMapper: AccountMapper,
         private accountService: AccountService,
         private authUtilService: AuthUtilService,
+        @InjectRepository(Payment)
+        private readonly paymentRepo: Repository<Payment>,
     ) { }
 
     async fetchById(id: string, user?: UserAuthBackendDTO | undefined) {
@@ -51,7 +53,7 @@ export class SellerPaymentOrderSearchService {
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-        return this.transactionMapper.toDto(transaction);
+        return (await this.withExternalPlatform([this.transactionMapper.toDto(transaction)]))[0];
     }
 
     async findByPaymentIdAndAccountId(paymentId: string, accountId: string): Promise<SellerPaymentOrderDTO> {
@@ -64,7 +66,7 @@ export class SellerPaymentOrderSearchService {
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-        return await this.transactionMapper.toDto(transaction);
+        return (await this.withExternalPlatform([this.transactionMapper.toDto(transaction)]))[0];
      }
 
     async findAll(
@@ -72,9 +74,9 @@ export class SellerPaymentOrderSearchService {
         user?: UserAuthBackendDTO,
     ): Promise<PaymentTransactionDTO[]> {
         const where = await this.searchWhereQuery(modelSearch, user);
-        return (await this.transactionRepo.find({ where })).map((p) =>
+        return this.withExternalPlatform((await this.transactionRepo.find({ where })).map((p) =>
             this.transactionMapper.toDto(p),
-        );
+        ));
     }
 
     async modelSearch(
@@ -84,7 +86,7 @@ export class SellerPaymentOrderSearchService {
         const where = await this.searchWhereQuery(modelSearch, user);
         const sortKey = modelSearch.sortBy || 'createdAt';
         const sortOrder = modelSearch.sortRotation || 'desc';
-        return (
+        const result = (
             await TypeormSearchUtil.modelSearch<SellerPaymentOrder>(
                 this.transactionRepo,
                 modelSearch.size,
@@ -94,8 +96,25 @@ export class SellerPaymentOrderSearchService {
                 where,
             )
         ).map((p) => this.transactionMapper.toDto(p));
+        await this.withExternalPlatform(result.content);
+        return result;
     }
 
+    private async withExternalPlatform(orders: SellerPaymentOrderDTO[]): Promise<SellerPaymentOrderDTO[]> {
+        if (!orders.length) {
+            return orders;
+        }
+        const payments = await this.paymentRepo.find({
+            where: { id: In([...new Set(orders.map(order => order.paymentId))]) },
+            select: ['id', 'externalPlatformId'],
+            loadEagerRelations: false,
+        });
+        const platformByPayment = new Map(payments.map(payment => [payment.id, payment.externalPlatformId]));
+        for (const order of orders) {
+            order.externalPlatformId = platformByPayment.get(order.paymentId);
+        }
+        return orders;
+    }
 
 
     private async searchWhereQuery(

@@ -8,12 +8,14 @@ import {
     Param,
     Post,
     Sse,
+    UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from '../service/payment.service';
 import {
     PaymentDTO,
     PaymentFullDTO,
     PaymentInitDTO,
+    CreateExternalPlatformPaymentDTO,
 } from '@tk-postral/payment-common';
 import { AccountService } from '../service/account.service';
 import { PaymentCaptureInfoDTO } from '@tk-postral/payment-common/dto/capture-info.dto';
@@ -21,18 +23,31 @@ import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { filter } from 'rxjs';
 import { PaymentChannelConfigService } from '../service/payment-channel-config.service';
 import { exec } from 'child_process';
+import { CurrentUser, JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
+import { UserAuthBackendDTO } from '@ubs-platform/users-common';
+import { ExternalPlatformPaymentService } from '../service/external-platform-payment.service';
 @Controller('payment')
 export class PaymentController {
     constructor(
         private ps: PaymentService,
         private as: AccountService,
-        private paymentChannelConfigService: PaymentChannelConfigService
+        private paymentChannelConfigService: PaymentChannelConfigService,
+        private externalPlatformPayments: ExternalPlatformPaymentService,
     ) { }
 
     @Post()
     public async initialize(@Body() body: PaymentInitDTO) {
         await this.as.fetchOne(body.customerAccountId);
         return await this.ps.init(body);
+    }
+
+    @Post('external-platform')
+    @UseGuards(JwtAuthGuard)
+    public async createExternalPlatformPayment(
+        @Body() body: CreateExternalPlatformPaymentDTO,
+        @CurrentUser() user: UserAuthBackendDTO,
+    ): Promise<PaymentDTO> {
+        return this.externalPlatformPayments.createExternalPlatformPayment(body, user);
     }
 
     @Post('/:id/operation/start')

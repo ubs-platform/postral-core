@@ -138,6 +138,9 @@ export class PaymentService {
         if (!originalPayment) {
             throw new NotFoundException('Original payment not found for refund generation');
         }
+        if (originalPayment.externalPlatformId) {
+            throw new BadRequestException('External platform refunds are not supported yet; process the refund on the external platform');
+        }
 
         const paymentInit = new PaymentInitDTO({
             type: 'REFUND',

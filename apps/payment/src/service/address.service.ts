@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Account, Address } from '@tk-postral/postral-entities';
 import { AccountDTO, AccountSearchParamsDTO, AccountAddressDto, AddressSearchParamsDTO } from '@tk-postral/payment-common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ArrayContains, In, Like, Repository } from 'typeorm';
+import { ArrayContains, EntityManager, In, Like, Repository } from 'typeorm';
 import { AccountMapper } from '../mapper/account.mapper';
 import { BaseCrudService } from '@ubs-platform/crud-base';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
@@ -100,49 +100,53 @@ export class AddressService extends BaseCrudService<
     async findByExternalPlatformAddress(
         externalPlatformId?: string,
         externalPlatformAddressId?: string,
+        repo: Repository<Address> = this.repo,
     ): Promise<Address | null> {
         if (!externalPlatformId || !externalPlatformAddressId) {
             return null;
         }
-        return this.repo.findOne({
+        return repo.findOne({
             where: { externalPlatformId, externalPlatformAddressId },
         });
     }
 
-    // Alan bazlı (cityName + district + streetName) eşleşen adresi bulur.
+    // Aynı platformdaki tüm adres bileşenleri eşleşen adresi bulur.
     // Şifreli alanlar deterministik olduğundan DTO mapper üzerinden entity'ye çevrilir.
-    async findByFieldMatch(dto: AccountAddressDto): Promise<Address | null> {
+    async findByFieldMatch(dto: AccountAddressDto, externalPlatformId: string, repo: Repository<Address> = this.repo): Promise<Address | null> {
         const probe = await this.addressMapper.updateEntity(new Address(), dto);
-        const where: any = {
-            cityName: probe.cityName,
-            streetName: probe.streetName,
-        };
-        if (dto.district) {
-            where.district = probe.district;
-        }
-        return this.repo.findOne({ where });
+        const { id, externalPlatformAddressId, ...fields } = probe;
+        const where = { ...fields, externalPlatformId };
+        return repo.findOne({ where });
     }
 
     // Harici platform ödemesi için faturalama adresini çözer; bulunamazsa oluşturup
-    // çağıran kullanıcının (satıcının) sahipliğine bağlar. Entity döner.
+    // harici platform kapsamında oluşturur. Entity döner.
     async resolveOrCreateForExternalPlatform(
         dto: AccountAddressDto,
         externalPlatformId: string,
         user?: UserAuthBackendDTO,
+        manager?: EntityManager,
     ): Promise<Address> {
+        const repo = manager?.getRepository(Address) ?? this.repo;
         const byExternal = await this.findByExternalPlatformAddress(
             externalPlatformId,
             dto.externalPlatformAddressId,
+            repo,
         );
         if (byExternal) {
             return byExternal;
         }
 
-        const byField = await this.findByFieldMatch(dto);
+        const byField = await this.findByFieldMatch(dto, externalPlatformId, repo);
         if (byField) {
             return byField;
         }
 
+        if (manager) {
+            return repo.save(await this.addressMapper.updateEntity(
+                new Address(), { ...dto, externalPlatformId },
+            ));
+        }
         const created = await this.create(
             { ...dto, externalPlatformId },
             user,
