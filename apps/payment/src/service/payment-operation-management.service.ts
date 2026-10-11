@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
 import { Payment, PaymentChannelOperation } from '@tk-postral/postral-entities';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
+import Big from 'big.js';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { PaymentMapper } from '../mapper/payment.mapper';
@@ -22,7 +23,7 @@ import { exec } from 'child_process';
 
 @Injectable()
 export class PaymentOperationManagementService {
-
+    private readonly logger = new Logger(PaymentOperationManagementService.name);
 
     /**
      *
@@ -75,42 +76,96 @@ export class PaymentOperationManagementService {
 
     async startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, refundPayment: PaymentFullDTO, purchasePayment: PaymentFullDTO) {
         const totalRefundAmount = refundPayment.totalAmount;
-        const totalPaidAmount = purchasePayment.totalAmount;
-
-        const refundRatio = AmountCalculationUtil.divideNumberValues(totalRefundAmount, totalPaidAmount);
-
+        if (!Number.isFinite(totalRefundAmount) || totalRefundAmount < 0 ||
+            purchasePayment.paymentStatus !== 'COMPLETED' || purchasePayment.type !== 'PURCHASE') {
+            throw new BadRequestException('Refund requires a completed purchase and a valid amount');
+        }
+        if (totalRefundAmount === 0) {
+            return;
+        }
         const alreadyCompletedOps = await this.paymentChannelOperationRepo.find({
-            where: [
-                { paymentId: purchasePayment.id, status: 'COMPLETED' },
-            ],
+            where: { paymentId: purchasePayment.id, status: 'COMPLETED', operationType: 'PURCHASE' },
+            order: { id: 'ASC' },
         });
+        if (!alreadyCompletedOps.length || alreadyCompletedOps.some(op => !op.operationId || op.currency !== refundPayment.currency)) {
+            throw new BadRequestException('Completed payment channel operations are required to refund this purchase');
+        }
+        const previousRefunds = await this.paymentChannelOperationRepo.find({
+            where: {
+                originalOperationId: In(alreadyCompletedOps.map(op => op.id)),
+                paymentId: Not(refundPayment.id),
+                operationType: 'REFUND',
+            },
+        });
+        const available = alreadyCompletedOps.map(op => {
+            const reserved = previousRefunds.filter(refund => refund.originalOperationId === op.id)
+                .reduce((sum, refund) => AmountCalculationUtil.addNumberValues(sum, refund.amount), 0);
+            return AmountCalculationUtil.minusNumberValues(op.amount, reserved);
+        });
+        let remainingAvailable = AmountCalculationUtil.addNumberValues(...available);
+        if (available.some(amount => amount < 0) || totalRefundAmount > remainingAvailable) {
+            throw new BadRequestException('Refund exceeds the remaining captured channel amount');
+        }
+        let remainingRefund = totalRefundAmount;
         for (let index = 0; index < alreadyCompletedOps.length; index++) {
             const element = alreadyCompletedOps[index];
-            const refundAmountForThisOp = AmountCalculationUtil.multiplyNumberValues(element.amount, refundRatio);
+            const refundAmountForThisOp = remainingAvailable === available[index]
+                ? remainingRefund
+                : Number(new Big(remainingRefund).times(available[index]).div(remainingAvailable).round(4, 0));
+            remainingRefund = AmountCalculationUtil.minusNumberValues(remainingRefund, refundAmountForThisOp);
+            remainingAvailable = AmountCalculationUtil.minusNumberValues(remainingAvailable, available[index]);
             if (refundAmountForThisOp <= 0) {
                 continue;
             }
-            const refundOp = new PaymentChannelOperation();
-
-            refundOp.amount = refundAmountForThisOp;
-            refundOp.currency = purchasePayment.currency;
-            refundOp.operationType = refundPayment.type;
-            refundOp.paymentChannelId = element.paymentChannelId;
-            refundOp.paymentId = refundPayment.id;
-            // refundOperationsToCreate.push(refundOp);
+            const reservation = await this.paymentChannelOperationRepo.manager.transaction(async manager => {
+                await manager.findOneOrFail(Payment, {
+                    where: { id: refundPayment.id }, lock: { mode: 'pessimistic_write' },
+                });
+                const existing = await manager.findOne(PaymentChannelOperation, {
+                    where: { paymentId: refundPayment.id, originalOperationId: element.id },
+                });
+                if (existing) {
+                    if (!existing.operationId || existing.status === 'FAILED' || existing.amount !== refundAmountForThisOp) {
+                        throw new ConflictException(`Refund channel operation ${existing.id} needs reconciliation; it will not be initialized twice`);
+                    }
+                    return { operation: existing, created: false };
+                }
+                const operation = new PaymentChannelOperation();
+                operation.amount = refundAmountForThisOp;
+                operation.currency = refundPayment.currency;
+                operation.operationType = 'REFUND';
+                operation.paymentChannelId = element.paymentChannelId;
+                operation.paymentId = refundPayment.id;
+                operation.originalOperationId = element.id;
+                return { operation: await manager.save(PaymentChannelOperation, operation), created: true };
+            });
+            if (!reservation.created) {
+                continue;
+            }
+            const refundOp = reservation.operation;
             const result = await this.eventSenderService.initializePaymentChannelOperation(
                 refundOp.paymentChannelId,
-                refundPayment,
+                {
+                    ...refundPayment,
+                    originalPaymentChannelOperationId: element.operationId,
+                    refundOperationId: refundOp.id,
+                    captureInfo: {
+                        paymentChannelId: element.paymentChannelId,
+                        paidAmount: refundOp.amount,
+                        currency: refundPayment.currency,
+                    },
+                },
             );
-
-            refundOp.operationId = result.paymentChannelOperationId;
-            refundOp.status = result.paymentStatus;
-
-            const saved = await this.paymentChannelOperationRepo.save(refundOp);
-            console.debug(`Refund operation created with ID: ${saved.id} for refund request ${refundRequest.id}`);
+            if (!result.paymentChannelOperationId || result.paymentChannelId !== refundOp.paymentChannelId ||
+                !['WAITING', 'READY', 'COMPLETED', 'FAILED'].includes(result.paymentStatus)) {
+                throw new BadRequestException(`Refund channel operation ${refundOp.id} returned an invalid response; reconciliation is required`);
+            }
+            await this.savePaymentChannelRecord(refundOp, result, refundPayment.id);
+            this.logger.log(`Refund operation ${refundOp.id} created for refund request ${refundRequest.id}`);
+            if (refundOp.status === 'FAILED') {
+                throw new BadRequestException(`Refund channel operation ${refundOp.id} failed`);
+            }
         }
-
-
     }
 
     async startPaymentOperation(paymentFullDto: PaymentFullWithCaptureInfoDTO) {
@@ -197,6 +252,10 @@ export class PaymentOperationManagementService {
     ) {
         for (let index = 0; index < paymentOperations.length; index++) {
             const paymentOperation = paymentOperations[index];
+            if (!paymentOperation.operationId) {
+                this.logger.error(`Payment channel operation ${paymentOperation.id} has no channel operation ID; reconciliation is required`);
+                continue;
+            }
             // Kanala kendi operasyon kimli\u011fi g\u00f6nderilmeli, paymentId de\u011fil; aksi halde ger\u00e7ek
             // kanallarda (operationId \u2260 paymentId oldu\u011funda) yanl\u0131\u015f operasyon sorgulan\u0131r.
             const result =

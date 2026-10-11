@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import {
     SellerPaymentOrderDTO,
@@ -66,9 +66,11 @@ export class SellerPaymentOrderService {
 
     async addTransaction(
         tr: SellerPaymentOrderDTO,
+        manager?: EntityManager,
     ): Promise<SellerPaymentOrderDTO> {
+        const repository = manager?.getRepository(SellerPaymentOrder) ?? this.transactionRepository;
         // zaten varsa varolanın durumunu vs. güncelle, yoksa yenisini ekle. Miktar değişmeyecek.
-        const existing = await this.transactionRepository.findOne({
+        const existing = await repository.findOne({
             where: {
                 sourceAccountId: tr.sourceAccountId,
                 targetAccountId: tr.targetAccountId,
@@ -89,18 +91,19 @@ export class SellerPaymentOrderService {
             existing.customerSnapshotAddressId = tr.customerSnapshotAddressId;
             // exec(`kdialog --msgbox "sellerSnapshotAccountId: ${existing.sellerSnapshotAccountId} customerSnapshotAccountId: ${existing.customerSnapshotAccountId} sellerSnapshotAddressId: ${existing.sellerSnapshotAddressId} customerSnapshotAddressId: ${existing.customerSnapshotAddressId} "   `);
 
-            await this.transactionRepository.save(existing);
+            await repository.save(existing);
             return this.toDto(existing);
         }
 
         const entity = this.fromDto(tr);
-        await this.transactionRepository.save(entity);
+        await repository.save(entity);
         // Save to DB logic here (omitted for brevity)
         return await this.toDto(entity);
     }
 
     async addSellerPaymentOrders(
         transactions: SellerPaymentOrderDTO[],
+        manager?: EntityManager,
     ): Promise<SellerPaymentOrderDTO[]> {
         const transactionGrouped = ArrayToObjectUtil.arrayConditionCirculation(
             transactions,
@@ -149,7 +152,7 @@ export class SellerPaymentOrderService {
         const values = Object.values(transactionGrouped).flat().flat();
         const savedTransactions: SellerPaymentOrderDTO[] = [];
         for (const tr of values) {
-            const savedSellerPaymentOrder = await this.addTransaction(tr as SellerPaymentOrderDTO);
+            const savedSellerPaymentOrder = await this.addTransaction(tr as SellerPaymentOrderDTO, manager);
             savedTransactions.push(savedSellerPaymentOrder);
         }
         return savedTransactions;

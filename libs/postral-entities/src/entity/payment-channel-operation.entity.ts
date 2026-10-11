@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import {
     PaymentOperationStatus,
     PaymentStatus,
@@ -6,6 +6,7 @@ import {
 import { MoneyDbField } from './base';
 
 @Entity()
+@Index(['paymentId', 'originalOperationId'], { unique: true })
 export class PaymentChannelOperation {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -34,6 +35,9 @@ export class PaymentChannelOperation {
 
     @Column({ type: 'varchar', nullable: true })
     paymentId!: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    originalOperationId?: string;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();

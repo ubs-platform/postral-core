@@ -9,13 +9,22 @@ import { EventSenderService } from './event-management.service';
 
 describe('External platform refund policy', () => {
     let service: RefundService;
-    const paymentRepo = { findOne: jest.fn() };
+    const paymentRepo = {
+        findOne: jest.fn(),
+        manager: {
+            transaction: jest.fn(),
+        },
+    };
     const refundRepo = { findOne: jest.fn(), save: jest.fn() };
     const paymentService = { createRefundPayment: jest.fn() };
     const user = Object.assign(new UserAuthBackendDTO(), { id: 'user', roles: ['ADMIN'] });
 
     beforeEach(async () => {
         jest.clearAllMocks();
+        paymentRepo.manager.transaction.mockImplementation(action => action({
+            findOne: entity => entity === Payment ? paymentRepo.findOne() : refundRepo.findOne(),
+            findOneOrFail: entity => entity === Payment ? paymentRepo.findOne() : refundRepo.findOne(),
+        }));
         const module = await Test.createTestingModule({
             providers: [
                 RefundService,

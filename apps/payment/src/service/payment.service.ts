@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Payment, PostralPaymentItem } from '@tk-postral/postral-entities';
-import { Repository } from 'typeorm';
+import { Payment, PostralPaymentItem, RefundRequest } from '@tk-postral/postral-entities';
+import { EntityManager, Repository } from 'typeorm';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
-import { TaxCalculationUtil } from '@tk-postral/common-utils';
+import { AmountCalculationUtil, TaxCalculationUtil } from '@tk-postral/common-utils';
 import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDTO,
@@ -15,6 +15,7 @@ import {
     SellerPaymentOrderDTO,
     AccountDTO,
     AccountAddressDto,
+    ItemListCalculationDto,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { TransactionMapper } from '../mapper/transaction.mapper';
@@ -141,31 +142,70 @@ export class PaymentService {
         if (originalPayment.externalPlatformId) {
             throw new BadRequestException('External platform refunds are not supported yet; process the refund on the external platform');
         }
-
-        const paymentInit = new PaymentInitDTO({
-            type: 'REFUND',
-            currency: originalPayment.currency,
-            customerAccountId: originalPayment.customerAccountId,
-            refundRequestId: refundRequest.id,
-            items: refundRequest.items.map((item) => {
-                const pi = new PaymentItemDTO({
-                    itemId: item.realItemId,
-                    variation: item.variation,
-                    quantity: item.refundCount,
-                    unitAmount: item.unitAmount,
-                    totalAmount: item.refundAmount,
-                    taxPercent: item.refundTaxAmount && item.refundAmount ? (item.refundTaxAmount / item.refundAmount) * 100 : 0,
-                    sellerAccountId: refundRequest.requestedToPaymentAccountId,
-                });
-
-                return pi;
-            })
+        if (originalPayment.type !== 'PURCHASE' || originalPayment.paymentStatus !== 'COMPLETED') {
+            throw new BadRequestException('Can only refund completed PURCHASE payments');
+        }
+        let prepared: Payment | undefined;
+        if (!await this.paymentrepo.exists({ where: { refundRequestId: refundRequest.id } })) {
+            const items = refundRequest.items.map(item => {
+                const original = originalPayment.items.find(candidate => candidate.id === item.paymentItemId);
+                if (!original || item.refundAmount == null || item.refundTaxAmount == null || item.refundAmountWithoutTax == null) {
+                    throw new BadRequestException('Refund item is missing original payment or amount information');
+                }
+                const dto = this.paymentItemMapper.toDto([original])[0];
+                dto.quantity = item.refundCount;
+                dto.totalAmount = item.refundAmount;
+                dto.taxAmount = item.refundTaxAmount;
+                dto.unTaxAmount = item.refundAmountWithoutTax;
+                dto.appComissionAmount = item.appComissionAmount ?? AmountCalculationUtil.multiplyNumberValues(
+                    original.appComissionAmount, AmountCalculationUtil.divideNumberValues(item.refundCount, original.quantity));
+                dto.sellerSnapshotAccountId = undefined;
+                dto.sellerSnapshotAddressId = undefined;
+                return dto;
+            });
+            const taxes = items.map(item => new TaxDTO(
+                String(item.taxPercent), item.totalAmount, item.taxPercent, item.taxAmount, item.unTaxAmount));
+            const calculation = new ItemListCalculationDto(
+                items,
+                AmountCalculationUtil.addNumberValues(...items.map(item => item.totalAmount)),
+                AmountCalculationUtil.addNumberValues(...items.map(item => item.taxAmount)),
+                taxes,
+            );
+            prepared = await this.generateEntityFromInitDto(new PaymentInitDTO({
+                type: 'REFUND',
+                currency: originalPayment.currency,
+                customerAccountId: originalPayment.customerAccountId,
+                refundRequestId: refundRequest.id,
+                items,
+            }), calculation);
+            prepared.paymentStatus = 'WAITING';
+        }
+        const paymentSaved = await this.paymentrepo.manager.transaction(async manager => {
+            const request = await manager.findOne(RefundRequest, {
+                where: { id: refundRequest.id },
+                lock: { mode: 'pessimistic_write' },
+            });
+            if (!request || request.status !== 'PENDING') {
+                throw new BadRequestException('Refund request must be persisted and PENDING');
+            }
+            const existing = await manager.findOne(Payment, { where: { refundRequestId: refundRequest.id } });
+            if (existing) {
+                if (existing.paymentStatus === 'FAILED') {
+                    throw new BadRequestException('Refund payment failed; reconcile its channel operations before retrying');
+                }
+                return existing;
+            }
+            if (!prepared) {
+                throw new BadRequestException('Refund payment changed during preparation; retry the same request');
+            }
+            const saved = await manager.save(Payment, prepared);
+            const full = await manager.findOneOrFail(Payment, {
+                where: { id: saved.id }, relations: ['items', 'taxes'],
+            });
+            await this.generateSellerPaymentOrders(full, manager);
+            await this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(full), manager);
+            return saved;
         });
-
-        const entity = await this.generateEntityFromInitDto(paymentInit);
-        entity.paymentStatus = "WAITING";
-        const paymentSaved = await this.paymentrepo.save(entity);
-        await this.postPaymentOperation(paymentSaved);
 
         await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
             refundRequest,
@@ -191,7 +231,7 @@ export class PaymentService {
     }
 
 
-    async generateSellerPaymentOrders(paymentReal: Payment) {
+    async generateSellerPaymentOrders(paymentReal: Payment, manager?: EntityManager) {
 
         let items: PaymentItemDTO[] = [];
         if (paymentReal.items?.length > 0) {
@@ -206,7 +246,7 @@ export class PaymentService {
             transactions.push(transaction);
         }
 
-        return await this.sellerPaymentOrderService.addSellerPaymentOrders(transactions);
+        return await this.sellerPaymentOrderService.addSellerPaymentOrders(transactions, manager);
     }
 
     async init(pdto: PaymentInitDTO): Promise<PaymentDTO> {
@@ -240,7 +280,7 @@ export class PaymentService {
         return uuid;
     }
 
-    private async generateEntityFromInitDto(pdto: PaymentInitDTO) {
+    private async generateEntityFromInitDto(pdto: PaymentInitDTO, refundCalculation?: ItemListCalculationDto) {
         let activeSessionId: string | undefined = pdto.activeSessionId,
             generateActiveSessionId: boolean = pdto.generateActiveSessionId || false;
 
@@ -283,7 +323,7 @@ export class PaymentService {
         // transactions: {[sourceAccountId: string]: PaymentTransactionDTO} = {};
         let totalAmt = 0, taxTotal = 0;
 
-        const calculationResult = await this.calcService.calculateTotalAmount({
+        const calculationResult = refundCalculation ?? await this.calcService.calculateTotalAmount({
             items: pdto.items,
             saleMode: pdto.saleMode,
             currency: pdto.currency,

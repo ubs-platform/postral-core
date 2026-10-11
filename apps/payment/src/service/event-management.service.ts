@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { PaymentDTO, PaymentFullDTO } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentFullDTO, PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, timeout } from 'rxjs';
 @Injectable()
 export class EventSenderService {
 
@@ -53,9 +53,9 @@ export class EventSenderService {
 
     async initializePaymentChannelOperation(
         paymentChannelId: string,
-        pd: PaymentFullDTO,
+        pd: PaymentFullDTO | PaymentFullWithCaptureInfoDTO,
     ): Promise<PaymentChannelStatusDTO> {
-        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd));
+        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd).pipe(timeout(30_000)));
     }
 
     /**

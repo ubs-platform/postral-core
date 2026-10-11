@@ -18,6 +18,9 @@ export class RefundRequest extends BaseEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
+    @Column({ type: 'varchar', length: 200, nullable: true, unique: true })
+    idempotencyKey?: string;
+
     /**
      * Purchase tipi payment'e referans. Bu, refund request'in hangi purchase payment'e ait olduğunu belirtir. Ancak, bu sadece bir referans ve gerçek payment bilgisi için Payment servisine sorgu atılması gerekebilir.
      */

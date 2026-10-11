@@ -32,12 +32,17 @@ export class CreateRefundRequestDTO {
     requestNote?: string;
 }
 
+export class StartSystemRefundDTO extends CreateRefundRequestDTO {
+    idempotencyKey: string;
+}
+
 export class ResolveRefundRequestDTO {
     resolutionNote?: string;
 }
 
 export class RefundRequestDTO {
     id: string;
+    idempotencyKey?: string;
     paymentId: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     items: {
@@ -52,6 +57,9 @@ export class RefundRequestDTO {
         refundAmountWithoutTax?: number;
         refundTaxAmount?: number;
         variation?: string;
+        appComissionAmount?: number;
+        appComissionPercent?: number;
+        itemClass?: string;
     }[];
     requestedByAccountId?: string;
     resolvedByAccountId?: string;

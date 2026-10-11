@@ -46,6 +46,8 @@ export class PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     customerSnapshotAccount?: SnapshotAccountDTO;
     customerSnapshotAddress?: SnapshotAddressDTO;
     captureInfo: PaymentCaptureInfoDTO;
+    originalPaymentChannelOperationId?: string;
+    refundOperationId?: string;
 }
 
 export class PaymentFullDTO extends PaymentDTO {

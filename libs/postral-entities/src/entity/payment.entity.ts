@@ -119,6 +119,12 @@ export class Payment {
     @Column({ nullable: true })
     refundRequestId?: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    refundApprovalToken?: string | null;
+
+    @Column({ type: 'datetime', nullable: true })
+    refundApprovalExpiresAt?: Date | null;
+
     @OneToMany(() => ReportPaymentRelation, (rpr) => rpr.payment, { eager: false })
     reportPaymentRelations!: ReportPaymentRelation[];
 

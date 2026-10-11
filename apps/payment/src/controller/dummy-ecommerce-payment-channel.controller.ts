@@ -102,10 +102,24 @@ export class DummyEcommercePaymentChannelController {
 
     @Post('/operation')
     async startPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
-        const fee = paymentDto.totalAmount * 0.1 + 0.1; // Örnek olarak %10 ve 10 kuruş daha komisyon alalım. Ödeme sağlayıcılarının salak salak hesapları var :d bir tane örnek deneyelim. 100 TL'lik ödeme için 10 TL + 0.1 TL = 10.1 TL komisyon alırız. 1000 TL'lik ödeme için 100 TL + 0.1 TL = 100.1 TL komisyon alırız. 10 TL'lik ödeme için 1 TL + 0.1 TL = 1.1 TL komisyon alırız.
+        const operationId = paymentDto.type === 'REFUND' ? paymentDto.refundOperationId ?? paymentDto.id : paymentDto.id;
+        const fee = (paymentDto.captureInfo?.paidAmount ?? paymentDto.totalAmount) * 0.1 + 0.1;
+        if (paymentDto.type === 'REFUND') {
+            const existingStatus = await this.getStatus(operationId);
+            if (existingStatus) {
+                return {
+                    paymentChannelId: 'dummy-ecommerce',
+                    paymentChannelOperationId: operationId,
+                    paymentStatus: existingStatus,
+                    redirectUrl: `dummy-ecommerce-payment-channel/operation/${operationId}`,
+                    feeCutInstantly: true,
+                    providerFee: fee,
+                } satisfies PaymentChannelStatusDTO;
+            }
+        }
 
         // Operasyon kaydı burada WAITING olarak oluşturulmalı; aksi halde check çağrısı kayıt bulamayıp FAILED'e düşer.
-        await this.setStatus(paymentDto.id, 'WAITING');
+        await this.setStatus(operationId, 'WAITING');
 
         // savePaymentChannelRecord bu operasyonu DB'ye kaydedecek; ancak REFUND için timeout'tan önce
         // kaydın oluşması garanti edildiğinden (30s bekleme var) güvenle güncelleyebiliriz.
@@ -113,7 +127,7 @@ export class DummyEcommercePaymentChannelController {
             // 30 saniye sonra otomatik olarak ödemeyi tamamla.
             console.info("Dummy E-Commerce Payment: Starting auto-complete timer for refund operation");
             setTimeout(() => {
-                this.getStatus(paymentDto.id).then(
+                this.getStatus(operationId).then(
                     currentStatus => {
                         console.info(`Dummy E-Commerce Payment: Current status for operation ${paymentDto.id} is ${currentStatus}`);
                         // if (currentStatus === 'WAITING') {
@@ -122,11 +136,11 @@ export class DummyEcommercePaymentChannelController {
                         // Yapay zeka sağ olsun sadece setStatusleri kaydediyor. yani bizim if ile kontrolümüz boşuna. gerçi test ortamı olduğu için sıkıntı yok ama payment servistekiler otomatik olarak fail olmasına sebep olabileceği için uzun süreli bekletmelerde açık fatura gibi exclude edilecek...
 
                         console.info(`Dummy E-Commerce Payment: Auto-completing operation ${paymentDto.id}`);
-                        this.setStatus(paymentDto.id, 'COMPLETED').then(
+                        this.setStatus(operationId, 'COMPLETED').then(
                             () => {
                                 this.kfk.emit(
                                     'postral/payment-operation-status-updated',
-                                    paymentDto.id,
+                                    operationId,
                                 );
 
                                 console.info(`Dummy E-Commerce Payment: Operation ${paymentDto.id} marked as COMPLETED`);
@@ -144,8 +158,8 @@ export class DummyEcommercePaymentChannelController {
 
         return {
             paymentChannelId: 'dummy-ecommerce',
-            paymentChannelOperationId: paymentDto.id,
-            redirectUrl: `dummy-ecommerce-payment-channel/operation/${paymentDto.id}`,
+            paymentChannelOperationId: operationId,
+            redirectUrl: `dummy-ecommerce-payment-channel/operation/${operationId}`,
             paymentStatus: 'WAITING',
             feeCutInstantly: true,
             providerFee: fee,

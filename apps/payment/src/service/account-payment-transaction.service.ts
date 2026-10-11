@@ -2,12 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { AccountPaymentTransactionDTO, PaymentFullDTO, PaymentItemDTO, PaymentTransactionDTO, SellerPaymentOrderDTO } from "@tk-postral/payment-common";
 import { Account, AccountPaymentTransaction } from "@tk-postral/postral-entities";
 import { AccountPaymentTransactionMapper } from "../mapper/account-payment-transaction.mapper";
-import { Repository } from "typeorm/repository/Repository";
 import { InjectRepository } from "@nestjs/typeorm";
-import { UUID } from "typeorm/driver/mongodb/bson.typings";
 import { randomUUID } from "crypto";
 import { AmountCalculationUtil, TypeAssertionUtil } from "@tk-postral/common-utils";
-import { Or } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 
 @Injectable()
 export class AccountPaymentTransactionService {
@@ -79,7 +77,7 @@ export class AccountPaymentTransactionService {
         return this.accountMapper.toDto(savedEntity);
     }
 
-    async fromPayment(paymentReal: PaymentFullDTO) {
+    async fromPayment(paymentReal: PaymentFullDTO, manager?: EntityManager) {
         const customerRotation = paymentReal.type == "PURCHASE" ? "DEBIT" : "CREDIT", sellerRotation = paymentReal.type == "PURCHASE" ? "CREDIT" : "DEBIT";
 
         const transactions: AccountPaymentTransactionDTO[] = [];
@@ -127,6 +125,11 @@ export class AccountPaymentTransactionService {
         customerTransaction.description = `Payment ${paymentReal.type.toLowerCase()} for payment id ${paymentReal.id}. Sellers: ${Array.from(transactionSellerNames).join(", ")}`;
         transactions.push(customerTransaction);
 
+        if (manager) {
+            const repository = manager.getRepository(AccountPaymentTransaction);
+            const saved = await repository.save(transactions.map(dto => this.accountMapper.toEntity(dto)));
+            return saved.map(entity => this.accountMapper.toDto(entity));
+        }
         return await this.createNew(...transactions);
     }
 }
