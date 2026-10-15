@@ -143,6 +143,8 @@ export class ReportDigestionService {
                     reportItem.itemTotalAmount,
                     AmountCalculationUtil.multiplyNumberValues(paymentItem.originalUnitAmount, paymentItem.quantity)
                 );
+
+            
             if (payment.type === "PURCHASE") {
                 reportItem.purchasedQuantity = AmountCalculationUtil.addNumberValues(reportItem.purchasedQuantity, paymentItem.quantity);
                 reportItem.purchasedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedTotalAmount, paymentItem.totalAmount);
@@ -161,24 +163,14 @@ export class ReportDigestionService {
 
             reportItem.itemComissionAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedComissionAmount, reportItem.refundedComissionAmount);
             reportItem.itemTaxAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedTaxAmount, reportItem.refundedTaxAmount);
+            // FIXME: İndirim hesaplarken eksik çıkıyor olabilir tam da kestiremedim
+            // TODO: Atıyorum 3 al bir öde tarzı bir indirim mantığını burada hesaba katmamız gerekebilir.
+            // Bunu Core içinde değil de pro içine alabilirim.  Biraz biz de para kazanalım :d 
             reportItem.itemDiscountAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedDiscountAmount, reportItem.refundedDiscountAmount);
             reportItem.itemTotalAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedTotalAmount, reportItem.refundedTotalAmount);
             reportItem.itemQuantity = AmountCalculationUtil.minusNumberValues(reportItem.purchasedQuantity, reportItem.refundedQuantity);
-            
-            // reportItem.refundedQuantity = AmountCalculationUtil.addNumberValues(reportItem.refundedQuantity, paymentItem.refundCount);
-            // reportItem.refundedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTotalAmount, paymentItem.refundedTotalAmount);
-            // reportItem.refundedComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedComissionAmount, paymentItem.refundedAppComissionAmount);
-            // reportItem.refundedTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTaxAmount, paymentItem.refundedTaxAmount);
-            // reportItem.refundedDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedDiscountAmount, paymentItem.refundedDiscountAmount);
-            // reportItem.refundedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTotalAmount, paymentItem.refundedTotalAmount);
 
-
-
-
-
-            // TODO: Atıyorum 3 al bir öde tarzı bir indirim mantığını burada hesaba katmamız gerekebilir.
-            // Bunu Core içinde değil de pro içine alabilirim.  Biraz biz de para kazanalım :d
-            reportItem.itemDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.itemDiscountAmount, differenceFromRealUnit);
+          
             await this.reportItemRepo.save(reportItem);
 
 
