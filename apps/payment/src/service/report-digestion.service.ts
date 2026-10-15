@@ -140,11 +140,12 @@ export class ReportDigestionService {
             }
             const differenceFromRealUnit =
                 AmountCalculationUtil.minusNumberValues(
-                    reportItem.itemTotalAmount,
+                    paymentItem.totalAmount,
                     AmountCalculationUtil.multiplyNumberValues(paymentItem.originalUnitAmount, paymentItem.quantity)
                 );
 
-            
+            // console.info("Difference from real unit:", differenceFromRealUnit);
+            // console.info("Orjinal halsinde:", paymentItem.originalUnitAmount, paymentItem.quantity);
             if (payment.type === "PURCHASE") {
                 reportItem.purchasedQuantity = AmountCalculationUtil.addNumberValues(reportItem.purchasedQuantity, paymentItem.quantity);
                 reportItem.purchasedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedTotalAmount, paymentItem.totalAmount);
