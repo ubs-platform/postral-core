@@ -27,6 +27,29 @@ export class ReportItemDTO {
     itemComissionAmount: number = 0;
 
 
+
+    purchasedQuantity: number = 0;
+
+    purchasedTotalAmount: number = 0;
+
+    purchasedTaxAmount: number = 0;
+
+    purchasedDiscountAmount: number = 0;
+
+    purchasedComissionAmount: number = 0;
+
+
+    refundedQuantity: number = 0;
+
+    refundedTotalAmount: number = 0;
+
+    refundedTaxAmount: number = 0;
+
+    refundedDiscountAmount: number = 0;
+
+    refundedComissionAmount: number = 0;
+
+
     updatedAt!: Date;
 
     createdAt!: Date;

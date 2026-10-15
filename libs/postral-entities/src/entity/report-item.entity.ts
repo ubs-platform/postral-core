@@ -51,6 +51,39 @@ export class ReportItem {
     itemComissionAmount: number = 0;
 
 
+
+    @Column(BigintDbField)
+    purchasedQuantity: number = 0;
+
+    @Column(MoneyDbField)
+    purchasedTotalAmount: number = 0;
+
+    @Column(MoneyDbField)
+    purchasedTaxAmount: number = 0;
+
+    @Column(MoneyDbField)
+    purchasedDiscountAmount: number = 0;
+
+    @Column(MoneyDbField)
+    purchasedComissionAmount: number = 0;
+
+
+    @Column(BigintDbField)
+    refundedQuantity: number = 0;
+
+    @Column(MoneyDbField)
+    refundedTotalAmount: number = 0;
+
+    @Column(MoneyDbField)
+    refundedTaxAmount: number = 0;
+
+    @Column(MoneyDbField)
+    refundedDiscountAmount: number = 0;
+
+    @Column(MoneyDbField)
+    refundedComissionAmount: number = 0;
+
+
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt!: Date;
 

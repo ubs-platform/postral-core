@@ -138,16 +138,44 @@ export class ReportDigestionService {
             if (reportItem) {
                 itemsMappedByKey[key] = reportItem;
             }
-
-            reportItem.itemTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.itemTotalAmount, paymentItem.totalAmount);
-            reportItem.itemQuantity = AmountCalculationUtil.addNumberValues(reportItem.itemQuantity, paymentItem.quantity);
-            reportItem.itemComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.itemComissionAmount, paymentItem.appComissionAmount);
-            reportItem.itemTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.itemTaxAmount, paymentItem.taxAmount);
             const differenceFromRealUnit =
                 AmountCalculationUtil.minusNumberValues(
                     reportItem.itemTotalAmount,
                     AmountCalculationUtil.multiplyNumberValues(paymentItem.originalUnitAmount, paymentItem.quantity)
                 );
+            if (payment.type === "PURCHASE") {
+                reportItem.purchasedQuantity = AmountCalculationUtil.addNumberValues(reportItem.purchasedQuantity, paymentItem.quantity);
+                reportItem.purchasedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedTotalAmount, paymentItem.totalAmount);
+                reportItem.purchasedComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedComissionAmount, paymentItem.appComissionAmount);
+                reportItem.purchasedTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedTaxAmount, paymentItem.taxAmount);
+                reportItem.purchasedDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.purchasedDiscountAmount, differenceFromRealUnit);
+            }
+
+            if (payment.type === "REFUND") {
+                reportItem.refundedQuantity = AmountCalculationUtil.addNumberValues(reportItem.refundedQuantity, paymentItem.quantity);
+                reportItem.refundedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTotalAmount, paymentItem.totalAmount);
+                reportItem.refundedComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedComissionAmount, paymentItem.appComissionAmount);
+                reportItem.refundedTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTaxAmount, paymentItem.taxAmount);
+                reportItem.refundedDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedDiscountAmount, differenceFromRealUnit);
+            }
+
+            reportItem.itemComissionAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedComissionAmount, reportItem.refundedComissionAmount);
+            reportItem.itemTaxAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedTaxAmount, reportItem.refundedTaxAmount);
+            reportItem.itemDiscountAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedDiscountAmount, reportItem.refundedDiscountAmount);
+            reportItem.itemTotalAmount = AmountCalculationUtil.minusNumberValues(reportItem.purchasedTotalAmount, reportItem.refundedTotalAmount);
+            reportItem.itemQuantity = AmountCalculationUtil.minusNumberValues(reportItem.purchasedQuantity, reportItem.refundedQuantity);
+            
+            // reportItem.refundedQuantity = AmountCalculationUtil.addNumberValues(reportItem.refundedQuantity, paymentItem.refundCount);
+            // reportItem.refundedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTotalAmount, paymentItem.refundedTotalAmount);
+            // reportItem.refundedComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedComissionAmount, paymentItem.refundedAppComissionAmount);
+            // reportItem.refundedTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTaxAmount, paymentItem.refundedTaxAmount);
+            // reportItem.refundedDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedDiscountAmount, paymentItem.refundedDiscountAmount);
+            // reportItem.refundedTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.refundedTotalAmount, paymentItem.refundedTotalAmount);
+
+
+
+
+
             // TODO: Atıyorum 3 al bir öde tarzı bir indirim mantığını burada hesaba katmamız gerekebilir.
             // Bunu Core içinde değil de pro içine alabilirim.  Biraz biz de para kazanalım :d
             reportItem.itemDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.itemDiscountAmount, differenceFromRealUnit);
