@@ -30,7 +30,7 @@ export class ReportMapper {
         return dto;
     }
 
-    toFullDto(entity: Report, taxReports: ReportTaxGroup[], expenses: ReportExpense[]): ReportFullDTO {
+    toFullDto(entity: Report, taxReports: ReportTaxGroup[], expenses: ReportExpense[], reportItems: any[]): ReportFullDTO {  // Replace 'any' with the correct type for report items if available
         const fullDto = new ReportFullDTO();
         const plainDto = this.toDto(entity);
         Object.assign(fullDto, plainDto);
@@ -52,6 +52,26 @@ export class ReportMapper {
         }) || [];
 
         fullDto.expenses = expenses || [];
+        fullDto.items = reportItems.map(
+            a => {
+                return {
+                    id: a.id,
+                    reportId: a.reportId,
+                    reportItemKey: a.reportItemKey,
+                    accountId: a.accountId,
+                    itemId: a.itemId,
+                    itemName: a.itemName,
+                    itemVariation: a.itemVariation,
+                    itemQuantity: a.itemQuantity,
+                    itemTotalAmount: a.itemTotalAmount,
+                    itemTaxAmount: a.itemTaxAmount,
+                    itemDiscountAmount: a.itemDiscountAmount,
+                    itemComissionAmount: a.itemComissionAmount,
+                    updatedAt: a.updatedAt,
+                    createdAt: a.createdAt,
+                }
+            }
+        )
 
         return fullDto;
     }

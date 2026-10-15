@@ -31,6 +31,7 @@ import { ExternalPlatform } from './external-platform.entity';
 
 import { BankAccount } from './bank-account.entity';
 import { SnapshotBankAccount } from './snapshot-bank-account.entity';
+import { ReportItem } from './report-item.entity';
 
 export { PaymentChannelConfig };
 
@@ -68,6 +69,7 @@ export const PaymentsEntities = [
     PaymentChannelConfig,
     ExternalPlatform,
     SnapshotBankAccount,
+    ReportItem,
     // AppComissionElderly,
     // InvoiceAddressLegacy,
     // InvoiceAccountLegacy
@@ -110,6 +112,7 @@ export {
     // InvoiceAddressLegacy,
     // InvoiceAccountLegacy,
     SnapshotBankAccount,
+    ReportItem,
 
 }
 

@@ -13,6 +13,7 @@ import { PaymentItemDTO } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 import { exec } from 'child_process';
 import { EventSenderService } from './event-management.service';
+import { ReportItem } from '@tk-postral/postral-entities/entity/report-item.entity';
 
 @Injectable()
 export class ReportDigestionService {
@@ -34,6 +35,8 @@ export class ReportDigestionService {
         private readonly reportExpenseRepo: Repository<ReportExpense>,
         @InjectRepository(PaymentChannelOperation)
         private readonly paymentChannelOperationRepo: Repository<PaymentChannelOperation>,
+        @InjectRepository(ReportItem)
+        private readonly reportItemRepo: Repository<ReportItem>,
         private readonly comissionService: AppComissionService,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
@@ -96,6 +99,64 @@ export class ReportDigestionService {
     insertPaymentToReportDigestionQueue(payment: PaymentFullDTO) {
         this.eventSenderService.sendDigestionQueueInsertionEvent(payment.id);
     }
+
+
+
+    private async updatePaymentItemReport(reportId: string, payment: PaymentFullDTO, accountId?: string): Promise<void> {
+
+        const itemsMappedByKey: Record<string, ReportItem | null | undefined> = {};
+
+        for (const paymentItem of payment.items) {
+            if (accountId != null && paymentItem.sellerAccountId !== accountId) {
+                continue;
+            }
+
+            // DİKKAT: Burada itemId'yi paymentItem.itemId olarak kullanıyoruz. paymentItem.id payment item kaydının idsi, burada lazım olan şey gerçek item idsi
+            const key = ReportItem.generateKey(reportId, paymentItem.itemId, paymentItem.variation);
+            let reportItem = itemsMappedByKey[key];
+            if (!reportItem) {
+                reportItem = await this.reportItemRepo.findOne({
+                    where: {
+                        reportItemKey: key,
+                        reportId: reportId,
+                        itemId: paymentItem.itemId,
+                        itemVariation: paymentItem.variation,
+                        ...(accountId != null ? { accountId: accountId } : {})
+                    }
+                });
+            }
+            if (!reportItem) {
+                reportItem = new ReportItem();
+                reportItem.reportItemKey = key;
+                reportItem.reportId = reportId;
+                reportItem.itemId = paymentItem.itemId;
+                reportItem.itemName = paymentItem.name;
+                reportItem.itemVariation = paymentItem.variation;
+                reportItem.accountId = accountId || "PLATFORM";
+                reportItem = await this.reportItemRepo.save(reportItem);
+            }
+            if (reportItem) {
+                itemsMappedByKey[key] = reportItem;
+            }
+
+            reportItem.itemTotalAmount = AmountCalculationUtil.addNumberValues(reportItem.itemTotalAmount, paymentItem.totalAmount);
+            reportItem.itemQuantity = AmountCalculationUtil.addNumberValues(reportItem.itemQuantity, paymentItem.quantity);
+            reportItem.itemComissionAmount = AmountCalculationUtil.addNumberValues(reportItem.itemComissionAmount, paymentItem.appComissionAmount);
+            reportItem.itemTaxAmount = AmountCalculationUtil.addNumberValues(reportItem.itemTaxAmount, paymentItem.taxAmount);
+            const differenceFromRealUnit =
+                AmountCalculationUtil.minusNumberValues(
+                    reportItem.itemTotalAmount,
+                    AmountCalculationUtil.multiplyNumberValues(paymentItem.originalUnitAmount, paymentItem.quantity)
+                );
+            // TODO: Atıyorum 3 al bir öde tarzı bir indirim mantığını burada hesaba katmamız gerekebilir.
+            // Bunu Core içinde değil de pro içine alabilirim.  Biraz biz de para kazanalım :d
+            reportItem.itemDiscountAmount = AmountCalculationUtil.addNumberValues(reportItem.itemDiscountAmount, differenceFromRealUnit);
+            await this.reportItemRepo.save(reportItem);
+
+
+        }
+    }
+
 
 
     // ─────────────────────────────────────────────────────────────
@@ -290,6 +351,12 @@ export class ReportDigestionService {
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId) {
+        if (payment.externalPlatformId) {
+            // TODO: External platform için komisyonları ayrı hesapla...
+            return;
+
+        }
+
         // Eğer birden fazla instance bir rapora işleseydi, bu yapı daha doğru olurdu. Ancak tek bir rapor tek bir instance işleyeceği için burada expense'leri bir 
         // anda çekip güncelleyebilirim, böylece performans artışı sağlanır. 
         // Eğer birden fazla instance aynı raporu işleyebilseydi, her expense güncellemesi için fetchOrCreate yapmak zorunda kalırdım, bu da performansı ciddi şekilde düşürürdü.
@@ -313,6 +380,11 @@ export class ReportDigestionService {
                 if (!itemClassExpenseReport) {
                     itemClassExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
                     expenseMap.set(expenseKey, itemClassExpenseReport);
+                    if (itemClassExpenseReport.expenseKey == null || itemClassExpenseReport.expenseKey === "") {
+                        debugger;
+                        throw new Error("Expense key cannot be null or empty");
+
+                    }
                 }
 
                 itemClassExpenseReport.expenseAmount = action(itemClassExpenseReport.expenseAmount, item.appComissionAmount);
@@ -322,10 +394,19 @@ export class ReportDigestionService {
 
             const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
             let totalComissionExpenseReport = expenseMap.get(totalComissionExpenseKey);
+
+
             if (!totalComissionExpenseReport) {
                 totalComissionExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, totalComissionExpenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(totalComissionExpenseKey));
                 expenseMap.set(totalComissionExpenseKey, totalComissionExpenseReport);
             }
+
+
+            if (totalComissionExpenseReport.expenseKey == null || totalComissionExpenseReport.expenseKey === "") {
+                debugger;
+                throw new Error("Expense key cannot be null or empty");
+            }
+
             totalComissionExpenseReport.expenseAmount = action(totalComissionExpenseReport.expenseAmount, item.appComissionAmount);
 
             const reportTotalExpenseKey = REPORT_TOTAL;
@@ -338,7 +419,6 @@ export class ReportDigestionService {
             reportTotalExpenseReport.expenseAmount = action(reportTotalExpenseReport.expenseAmount, item.appComissionAmount);
             // await this.reportExpenseRepo.save(reportTotalExpenseReport);
         }
-
         await this.reportExpenseRepo.save(Array.from(expenseMap.values()));
 
     }
@@ -388,6 +468,12 @@ export class ReportDigestionService {
      * @returns 
      */
     async digestComissionIncomeForReport(platformReport: Report, payment: PaymentFullDTO, accountId?: string) {
+
+        if (payment.externalPlatformId) {
+            // TODO: External platform için komisyonları ayrı hesapla...
+            return;
+
+        }
         const adminSettings = await this.admSettings.getAdminSettings();
 
         if (platformReport.query == null) {
@@ -478,6 +564,7 @@ export class ReportDigestionService {
     }
 
 
+
     // ─────────────────────────────────────────────────────────────
     // Cron: checkRelations
     // ─────────────────────────────────────────────────────────────
@@ -544,9 +631,11 @@ export class ReportDigestionService {
                     await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
                     await this.digestPayment(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
+                    await this.updatePaymentItemReport(freshReport.id, payment, accountId);
                 }
                 if (flag && freshReport.reportType === "PLATFORM") {
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+
                 }
                 if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
 
@@ -561,6 +650,8 @@ export class ReportDigestionService {
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
                     await this.digestPlatformFlowReport(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
+                    await this.updatePaymentItemReport(freshReport.id, payment);
+
                 }
 
                 relation.digestionStatus = 'COMPLETED';
@@ -576,7 +667,6 @@ export class ReportDigestionService {
             this.checkingRelations = false;
         }
     }
-
 
     // ─────────────────────────────────────────────────────────────
     // Helpers

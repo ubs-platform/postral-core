@@ -12,7 +12,7 @@ import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { AuthUtilService } from './auth-util.service';
 import { SearchResult } from '@ubs-platform/crud-base-common';
 import { ReportDigestionService } from './report-digestion.service';
-import { ReportTaxGroup, ReportExpense, ReportPaymentRelation, Report } from '@tk-postral/postral-entities';
+import { ReportTaxGroup, ReportExpense, ReportPaymentRelation, Report, ReportItem } from '@tk-postral/postral-entities';
 
 @Injectable()
 export class ReportService {
@@ -28,6 +28,8 @@ export class ReportService {
         private readonly expenseRepo: Repository<ReportExpense>,
         @InjectRepository(ReportPaymentRelation)
         private readonly reportPaymentRelationRepo: Repository<ReportPaymentRelation>,
+        @InjectRepository(ReportItem)
+        private readonly reportItemRepo: Repository<ReportItem>,
         private readonly paymentCommonService: PaymentCommonService,
         private readonly reportMapper: ReportMapper,
         private readonly authUtil: AuthUtilService,
@@ -159,15 +161,16 @@ export class ReportService {
     }
 
     async fetchReportFull(reportId: string): Promise<ReportFullDTO> {
-        const [mainReport, taxGroupReports, reportExpenses] = await Promise.all([
+        const [mainReport, taxGroupReports, reportExpenses, reportItems] = await Promise.all([
             this.reportRepo.findOne({ where: { id: reportId }, relations: ['query', 'query.account'] }),
             this.taxGroupRepo.find({ where: { reportId } }),
             this.expenseRepo.find({ where: { reportId }, order: { displayWeight: 'ASC' } }),
+            this.reportItemRepo.find({ where: { reportId } }),
         ]);
         if (!mainReport) {
             throw new Error(`Report ${reportId} not found`);
         }
-        return this.reportMapper.toFullDto(mainReport, taxGroupReports, reportExpenses);
+        return this.reportMapper.toFullDto(mainReport, taxGroupReports, reportExpenses, reportItems);
     }
 
     async searchPagination(q: ReportSearchPaginationDTO, user: UserAuthBackendDTO): Promise<SearchResult<ReportDTO>> {

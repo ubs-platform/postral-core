@@ -39,3 +39,4 @@ export * from './dto/webhook-config.dto';
 export * from './dto/payment-channel-config.dto';
 export * from './dto/external-platform.dto';
 export * from './dto/external-platform-payment.dto';
+export * from './dto/report-item.dto';
