@@ -61,7 +61,10 @@ node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
 
 `GET /report/seller-series` requires JWT and read access to an active, non-external
 commercial account. Filters are `accountId`, `currency`, `dateGrouping`
-(`DAILY`, `MONTHLY`, `YEARLY`), `reportSize`, and optional `queryId`. Shared
+(`DAILY`, `MONTHLY`, `YEARLY`), `reportSize`, optional `queryId`, and optional
+`skipUnavailableReports` (`true`/`false`, default `false`). When enabled, missing
+periods are omitted within the selected calendar range; the range is not extended
+to find older reports. Existing zero-amount reports remain included. Shared
 `SELLER_REPORT_SIZES` defines allowed calendar-period counts, including the
 current incomplete period. Calendar labels use the same server-local rules as
 digestion; deployments must keep that timezone consistent.

@@ -59,7 +59,12 @@ export class SellerReportSeriesService {
             !Number.isInteger(size) ||
             !SELLER_REPORT_SIZES[input.dateGrouping].includes(size) ||
             (input.queryId !== undefined &&
-                (typeof input.queryId !== 'string' || !input.queryId.trim()))
+                (typeof input.queryId !== 'string' || !input.queryId.trim())) ||
+            (input.skipUnavailableReports !== undefined &&
+                input.skipUnavailableReports !== true &&
+                input.skipUnavailableReports !== false &&
+                input.skipUnavailableReports !== 'true' &&
+                input.skipUnavailableReports !== 'false')
         ) {
             throw new BadRequestException(
                 'Invalid seller report series filters',
@@ -144,6 +149,14 @@ export class SellerReportSeriesService {
                 ? this.reportMapper.toDto(byLabel.get(periodLabel)!)
                 : null,
         }));
+        if (
+            input.skipUnavailableReports === true ||
+            input.skipUnavailableReports === 'true'
+        ) {
+            result.periods = result.periods.filter(
+                (period) => period.report !== null,
+            );
+        }
         const reportIds = result.periods.flatMap((period) =>
             period.report ? [period.report.id] : [],
         );

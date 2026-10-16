@@ -21,6 +21,7 @@ export class SellerReportSeriesSearchDTO {
     dateGrouping!: SellerReportGrouping;
     reportSize!: number;
     queryId?: string;
+    skipUnavailableReports?: boolean | 'true' | 'false';
 }
 
 export class SellerReportPeriodDTO {

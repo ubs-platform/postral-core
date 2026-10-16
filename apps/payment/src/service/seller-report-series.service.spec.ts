@@ -215,6 +215,10 @@ describe('SellerReportSeriesService', () => {
     });
 
     it.each([
+        { skipUnavailableReports: 'yes' },
+        { skipUnavailableReports: '' },
+        { skipUnavailableReports: 1 },
+        { skipUnavailableReports: ['true'] },
         { reportSize: 0 },
         { reportSize: 8 },
         { reportSize: 1.5 },
@@ -240,5 +244,49 @@ describe('SellerReportSeriesService', () => {
             { reportSize: '7' },
         );
         expect((await service.fetch(input, user)).periods).toHaveLength(7);
+    });
+
+    it.each([true, 'true'] as const)(
+        'omits only missing periods when skipUnavailableReports is %j',
+        async (skipUnavailableReports) => {
+            const report = Object.assign(new Report(), {
+                id: 'zero-report',
+                periodLabel: '2026-01-02',
+                totalSaleAmount: 0,
+            });
+            reports.find.mockResolvedValue([report]);
+            const result = await service.fetch(
+                { ...filters, skipUnavailableReports },
+                user,
+            );
+            expect(result.periods).toEqual([{
+                periodLabel: '2026-01-02',
+                isCurrentPeriod: false,
+                report,
+            }]);
+            expect(result.reportSize).toBe(7);
+            expect(reports.find).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it.each([false, 'false'] as const)(
+        'preserves missing periods when skipUnavailableReports is %j',
+        async (skipUnavailableReports) => {
+            const result = await service.fetch(
+                { ...filters, skipUnavailableReports },
+                user,
+            );
+            expect(result.periods).toHaveLength(7);
+            expect(result.periods.every((period) => period.report === null)).toBe(true);
+        },
+    );
+
+    it('returns no periods when skipping and no reports exist', async () => {
+        const result = await service.fetch(
+            { ...filters, skipUnavailableReports: true },
+            user,
+        );
+        expect(result.periods).toEqual([]);
+        expect(relations.existsBy).not.toHaveBeenCalled();
     });
 });
