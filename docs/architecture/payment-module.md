@@ -57,7 +57,25 @@ node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
   --transform='{"^.+\\.(t|j)s$":["ts-jest",{"tsconfig":{"isolatedModules":true}}]}'
 ```
 
+## Seller report charts
+
+`GET /report/seller-series` requires JWT and read access to an active, non-external
+commercial account. Filters are `accountId`, `currency`, `dateGrouping`
+(`DAILY`, `MONTHLY`, `YEARLY`), `reportSize`, and optional `queryId`. Shared
+`SELLER_REPORT_SIZES` defines allowed calendar-period counts, including the
+current incomplete period. Calendar labels use the same server-local rules as
+digestion; deployments must keep that timezone consistent.
+
+Only existing, non-archived `SELLER` reports of the exact grouping, query, and
+currency are returned. No daily-to-monthly aggregation, currency conversion,
+or report creation/backfill occurs. Multiple matching query sources are returned
+for explicit selection; no source is silently chosen. Missing periods have
+`report: null`, not zero amounts. Pending and failed digestion flags describe
+relations belonging to the returned reports, not payments not yet queued.
+The endpoint is registered before the parameterized report-detail route.
+
 ## Deferred Work
+
 - [External-platform payment snapshot-only customer plan](./external-platform-payment-snapshot-plan.md):
   proposed removal of real external customer account/address creation, including
   persistence, completion, refund policy, and consumer compatibility work. Not yet

@@ -6,11 +6,20 @@ import { ReportSearchDTO, ReportSearchPaginationDTO } from "@tk-postral/payment-
 import { AuthGuard } from "@nestjs/passport";
 import { CurrentUser } from "@ubs-platform/users-microservice-helper";
 import { UserAuthBackendDTO } from "@ubs-platform/users-common";
+import { SellerReportSeriesSearchDTO } from "@tk-postral/payment-common";
+import { SellerReportSeriesService } from "../service/seller-report-series.service";
 
 @Controller('report')
 export class ReportController {
     constructor(protected readonly service: ReportQueryCrudService,
-        private readonly reportService: ReportService,) { }
+        private readonly reportService: ReportService,
+        private readonly sellerSeries: SellerReportSeriesService,) { }
+
+    @Get('seller-series')
+    @UseGuards(AuthGuard('jwt'))
+    async sellerReportSeries(@Query() q: SellerReportSeriesSearchDTO, @CurrentUser() user: UserAuthBackendDTO) {
+        return this.sellerSeries.fetch(q, user);
+    }
 
     @Post('reconstruct')
     async reconstructReport(@Body() body: ReportReconstructionDTO) {

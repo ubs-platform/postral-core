@@ -79,6 +79,7 @@ import { ExternalPlatformMapper } from './mapper/external-platform.mapper';
 import { ExternalPlatformController } from './controller/external-platform.controller';
 import { PaymentCleanupService } from './service/payment-cleanup.service';
 import { ExternalPlatformPaymentService } from './service/external-platform-payment.service';
+import { SellerReportSeriesService } from './service/seller-report-series.service';
 
 import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from "@ubs-platform/cache-manager";
@@ -152,6 +153,7 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         ReportQueryCrudService,
         ReportQueryMapper,
         ReportService,
+        SellerReportSeriesService,
         ReportDigestionService,
         PaymentCommonService,
         ReportMapper,
