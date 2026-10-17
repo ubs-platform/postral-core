@@ -559,6 +559,9 @@ export class RefundService {
             orClauses.push({})
         }
         // TODO: Diğer filtreleme kriterleri eklenecek (status, date range vb.)
+        if (searchParams.status) {
+            query['status'] = searchParams.status;
+        }
         return TypeormSearchUtil.modelSearch<RefundRequestDTO>(
             this.refundRequestRepo,
             searchParams.size,
