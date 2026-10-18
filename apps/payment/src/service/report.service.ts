@@ -206,6 +206,7 @@ export class ReportService {
                 queryId: q.queryId,
                 ...((q.includeArchived === 'true') || q.includeArchived === true ? {} : { archived: false }),
                 ...((userRelatedAccountIds.length > 0) ? { "query": { ownerAccountId: In(userRelatedAccountIds) }, reportType: allowedGroup } : {}),
+                ...(q.periodLabel ? { periodLabel: q.periodLabel } : {}),
             },
         ).then(result => result.map(r => this.reportMapper.toDto(r)));
     }
