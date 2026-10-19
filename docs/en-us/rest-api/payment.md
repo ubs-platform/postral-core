@@ -4,7 +4,7 @@ This document will be expanded with endpoint-level details.
 
 For now, the source of truth is the payment controllers and DTOs under:
 
-- `apps/payment/src/controller`
+- `libs/payment-core-webservice/src/controller`
 - `libs/payment-common/src/dto`
 
 ## Scope

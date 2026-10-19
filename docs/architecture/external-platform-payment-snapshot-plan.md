@@ -8,7 +8,7 @@ implementation plan for a future change; it does not describe existing behavior.
 Reconfirm the referenced contracts and code before implementation.
 
 The existing create flow has since been isolated in
-[ExternalPlatformPaymentService](../../apps/payment/src/service/external-platform-payment.service.ts).
+[ExternalPlatformPaymentService](../../libs/payment-core-webservice/src/service/external-platform-payment.service.ts).
 That service is now registered in `PaymentModule`, and the authenticated
 `POST /payment/external-platform` route is enabled for experimental seller entry.
 The current flow retains real `isExternal` customer accounts, without seller
@@ -36,7 +36,7 @@ existing account/address behavior.
 
 ## Current Behavior and Blockers
 
-[ExternalPlatformPaymentService.createExternalPlatformPayment](../../apps/payment/src/service/external-platform-payment.service.ts)
+[ExternalPlatformPaymentService.createExternalPlatformPayment](../../libs/payment-core-webservice/src/service/external-platform-payment.service.ts)
 currently:
 
 1. Resolves or creates the customer account and billing address.
@@ -55,11 +55,11 @@ Removing the resolve/create calls alone is insufficient:
   and the corresponding DTO field are required.
 - [PaymentDTO.customerAccountId](../../libs/payment-common/src/dto/payment.dto.ts)
   is required, although the Payment entity permits an absent customer account.
-- [AccountPaymentTransactionService.fromPayment](../../apps/payment/src/service/account-payment-transaction.service.ts)
+- [AccountPaymentTransactionService.fromPayment](../../libs/payment-core-webservice/src/service/account-payment-transaction.service.ts)
   always creates a customer account transaction.
-- [PaymentMapper](../../apps/payment/src/mapper/payment.mapper.ts) currently reads
+- [PaymentMapper](../../libs/payment-core-webservice/src/mapper/payment.mapper.ts) currently reads
   the customer name from the real account; its short DTO omits snapshot IDs.
-- [PaymentService.createRefundPayment](../../apps/payment/src/service/payment.service.ts)
+- [PaymentService.createRefundPayment](../../libs/payment-core-webservice/src/service/payment.service.ts)
   initializes refunds using the original real customer account.
 
 ## Implementation Steps
@@ -83,8 +83,8 @@ Update [CreateExternalPlatformPaymentDTO](../../libs/payment-common/src/dto/exte
 ### 2. Map Plaintext Inputs Safely
 
 Use or extract shared mapping logic in
-[InvoiceAccountMapper](../../apps/payment/src/mapper/invoice-account.mapper.ts) and
-[InvoiceAddressMapper](../../apps/payment/src/mapper/invoice-address.mapper.ts).
+[InvoiceAccountMapper](../../libs/payment-core-webservice/src/mapper/invoice-account.mapper.ts) and
+[InvoiceAddressMapper](../../libs/payment-core-webservice/src/mapper/invoice-address.mapper.ts).
 Their legacy Invoice entity names are aliases for snapshot entities.
 
 - Provide an explicit plaintext input path that constructs a new snapshot without
@@ -116,7 +116,7 @@ See [sensitive-field encryption](./sensitive-field-encryption.md).
 
 ### 4. Refactor External Payment Creation
 
-In [PaymentService](../../apps/payment/src/service/payment.service.ts):
+In [PaymentService](../../libs/payment-core-webservice/src/service/payment.service.ts):
 
 - Remove customer/account address resolve/create and default-address mutation from
   the external-platform flow.
@@ -130,18 +130,18 @@ In [PaymentService](../../apps/payment/src/service/payment.service.ts):
 
 ### 5. Adapt Completion and Read Paths
 
-- [TransactionMapper](../../apps/payment/src/mapper/transaction.mapper.ts):
+- [TransactionMapper](../../libs/payment-core-webservice/src/mapper/transaction.mapper.ts):
   allow an absent customer account and propagate customer snapshot IDs into seller
   orders.
-- [SellerPaymentOrderService](../../apps/payment/src/service/seller-payment-order.service.ts):
+- [SellerPaymentOrderService](../../libs/payment-core-webservice/src/service/seller-payment-order.service.ts):
   handle absent source accounts explicitly in grouping and existing-order lookup.
   Do not rely on TypeORM's handling of `undefined` query values; use a stable order
   identity consistent with the existing payment/target-account uniqueness.
-- [AccountPaymentTransactionService](../../apps/payment/src/service/account-payment-transaction.service.ts):
+- [AccountPaymentTransactionService](../../libs/payment-core-webservice/src/service/account-payment-transaction.service.ts):
   proposed behavior is to retain seller transactions but omit the customer ledger
   entry when there is no real customer account. Confirm this accounting policy
   before implementation; missing accounts in normal flows must not silently pass.
-- [PaymentMapper](../../apps/payment/src/mapper/payment.mapper.ts) and seller-order
+- [PaymentMapper](../../libs/payment-core-webservice/src/mapper/payment.mapper.ts) and seller-order
   output: display customer identity from the snapshot when no real account exists.
   Ensure required snapshot relations are loaded for both short and full read paths,
   and include snapshot IDs in the short payment response.

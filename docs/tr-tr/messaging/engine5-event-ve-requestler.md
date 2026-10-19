@@ -10,8 +10,8 @@ Bu sayfa, Postral payment controller tarafinda su an kullanilan mesajlasma sozle
 
 ## Kaynak controller dosyalari
 
-- apps/payment/src/controller/payment-microservice.controller.ts
-- apps/payment/src/controller/dummy-ecommerce-payment-channel.controller.ts
+- libs/payment-core-webservice/src/controller/payment-microservice.controller.ts
+- libs/payment-core-webservice/src/controller/dummy-ecommerce-payment-channel.controller.ts
 
 ## Event abonelikleri
 

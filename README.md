@@ -8,9 +8,9 @@ Postral Core was initially derived from the UBS Mona codebase, but it has evolve
 
 The current repository primarily includes:
 
-- `payment` app: payment lifecycle, channel operations, reporting, invoice workflows, webhook dispatching.
+- `payment` app: Nest application and runtime configuration for the payment service.
 - `testo` app: flow testing app for Postral. It is still under active development and not fully ready yet.
-- shared libs: `payment-common`, `postral-entities`, and `common-utils`.
+- shared libs: `payment-core-webservice` (payment lifecycle, items, reports, refunds, invoices, and related domain logic), `payment-common`, `postral-entities`, and `common-utils`.
 
 ## Platform dependency (UBS Mona)
 

@@ -40,6 +40,12 @@
       "@tk-postral/payment-common/*": [
         "libs/payment-common/src/*"
       ],
+      "@tk-postral/payment-core-webservice": [
+        "libs/payment-core-webservice/src"
+      ],
+      "@tk-postral/payment-core-webservice/*": [
+        "libs/payment-core-webservice/src/*"
+      ],
       "@tk-postral/postral-entities": [
         "libs/postral-entities/src"
       ],

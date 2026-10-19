@@ -10,8 +10,8 @@ This page documents current messaging contracts used by Postral payment controll
 
 ## Source controllers
 
-- apps/payment/src/controller/payment-microservice.controller.ts
-- apps/payment/src/controller/dummy-ecommerce-payment-channel.controller.ts
+- libs/payment-core-webservice/src/controller/payment-microservice.controller.ts
+- libs/payment-core-webservice/src/controller/dummy-ecommerce-payment-channel.controller.ts
 
 ## Event subscriptions
 

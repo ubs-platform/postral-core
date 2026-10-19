@@ -1,0 +1,10 @@
+{
+  "name": "@tk-postral/payment-core-webservice",
+  "version": "1.0.0",
+  "description": "Postral payment core NestJS webservice module",
+  "iksir": {
+    "type": "LIBRARY",
+    "libraryMode": "PEER",
+    "buildSubFolder": ""
+  }
+}

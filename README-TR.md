@@ -8,9 +8,9 @@ Postral Core, başlangıçta UBS Mona kod tabanından türetilmiş olup zamanla 
 
 Mevcut depo şunları içerir:
 
-- `payment` uygulaması: ödeme yaşam döngüsü, kanal işlemleri, raporlama, fatura akışları, webhook gönderimi.
+- `payment` uygulaması: ödeme servisi için Nest uygulaması ve çalışma zamanı yapılandırması.
 - `testo` uygulaması: Postral için akış test uygulaması. Hâlâ aktif geliştirme aşamasındadır ve tam olarak hazır değildir.
-- Paylaşılan kütüphaneler: `payment-common`, `postral-entities`, `common-utils`.
+- Paylaşılan kütüphaneler: `payment-core-webservice` (ödeme yaşam döngüsü, item, rapor, iade, fatura ve ilişkili alan mantığı), `payment-common`, `postral-entities`, `common-utils`.
 
 ## Platform bağımlılığı (UBS Mona)
 

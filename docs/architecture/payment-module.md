@@ -2,10 +2,11 @@
 
 ## Ownership
 
-- `apps/payment` contains the Nest application, controllers, services, mappers, guards, and payment utilities.
+- `apps/payment` contains the Nest application and runtime configuration, including the database connection, scheduler, and microservice client.
+- `libs/payment-core-webservice` contains the payment, item, report, invoice, refund, and other payment-domain controllers, services, mappers, guards, utilities, and the `PaymentCoreWebserviceModule`.
 - `libs/postral-entities` owns TypeORM entities. Add a new entity to both the `PaymentsEntities` array and the named exports in its entity index.
 - `libs/payment-common` owns payment DTOs and status types.
-- `PaymentModule` imports the entity module, registers controllers and providers, and configures the microservice client.
+- `PaymentCoreWebserviceModule.register(clientProvider)` imports the configured microservice client and registers its domain controllers/providers. The application supplies the client provider and owns root-level database and scheduler setup.
 
 ## Payment Channels
 
@@ -51,9 +52,9 @@ Jest runner; the payment build supplies type validation):
 npm run build -- payment
 node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
   --runTestsByPath \
-  apps/payment/src/service/external-platform-payment.service.spec.ts \
-  apps/payment/src/service/external-customer-resolution.spec.ts \
-  apps/payment/src/service/external-platform-refund.spec.ts \
+  libs/payment-core-webservice/src/service/external-platform-payment.service.spec.ts \
+  libs/payment-core-webservice/src/service/external-customer-resolution.spec.ts \
+  libs/payment-core-webservice/src/service/external-platform-refund.spec.ts \
   --transform='{"^.+\\.(t|j)s$":["ts-jest",{"tsconfig":{"isolatedModules":true}}]}'
 ```
 

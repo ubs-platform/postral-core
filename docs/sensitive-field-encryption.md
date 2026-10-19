@@ -1,7 +1,7 @@
 # Hassas Alan Şifreleme Önerileri
 
 > Tarih: 18 Nisan 2026  
-> Kapsam: `apps/payment/src/entity/`
+> Kapsam: `libs/postral-entities/src/entity/` ve ödeme alanındaki mapper'lar.
 
 ---
 
