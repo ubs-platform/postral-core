@@ -28,6 +28,15 @@
         "tsConfigPath": "apps/payment/tsconfig.app.json"
       }
     },
+    "payment-core-webservice": {
+      "type": "library",
+      "root": "libs/payment-core-webservice",
+      "entryFile": "index",
+      "sourceRoot": "libs/payment-core-webservice/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/payment-core-webservice/tsconfig.lib.json"
+      }
+    },
     "payment-common": {
       "type": "library",
       "root": "libs/payment-common",

@@ -2,7 +2,7 @@
 
 ## Configuration and Scope
 
-Sensitive data encryption is configured through `POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED`, with modes to encrypt new data, disable encryption, or decrypt existing data without encrypting new values. The implementation is mapper-based through `apps/payment/src/util/cryption-util.ts`, not a database transformer.
+Sensitive data encryption is configured through `POSTRAL_SENSITIVE_DATA_ENCRYPTION_ENABLED`, with modes to encrypt new data, disable encryption, or decrypt existing data without encrypting new values. The implementation is mapper-based through `libs/payment-core-webservice/src/util/cryption-util.ts`, not a database transformer.
 
 Encrypted account fields include legal identity and banking/tax data. Address and invoice-address mappers encrypt address components; invoice account legal identity is also encrypted. Consult the mapper before adding or changing a sensitive field.
 

@@ -359,7 +359,7 @@ _Kaynak: `libs/payment-common/src/dto/payment.dto.ts`_
 }
 ```
 
-_Kaynak: `apps/payment/src/controller/payment.controller.ts`_
+_Kaynak: `libs/payment-core-webservice/src/controller/payment.controller.ts`_
 
 **Yanıt tipi:**
 
@@ -1011,7 +1011,7 @@ void
 }
 ```
 
-_Kaynak: `apps/payment/src/controller/report.controller.ts`_
+_Kaynak: `libs/payment-core-webservice/src/controller/report.controller.ts`_
 
 **Yanıt tipi:**
 
@@ -1881,7 +1881,7 @@ any
 }
 ```
 
-_Kaynak: `apps/payment/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
+_Kaynak: `libs/payment-core-webservice/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
 
 ---
 
@@ -1905,7 +1905,7 @@ any
 }
 ```
 
-_Kaynak: `apps/payment/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
+_Kaynak: `libs/payment-core-webservice/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
 
 ---
 
@@ -1935,7 +1935,7 @@ any
 }
 ```
 
-_Kaynak: `apps/payment/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
+_Kaynak: `libs/payment-core-webservice/src/controller/dummy-ecommerce-payment-channel.controller.ts`_
 
 ---
 

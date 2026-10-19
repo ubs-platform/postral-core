@@ -7,7 +7,7 @@ Read `README.md` and the task-relevant documentation in `docs/architecture/` and
 ## Repository Shape
 
 - This NestJS monorepo contains applications in `apps/` and shared packages in `libs/`.
-- The main payment service is under `apps/payment`; payment DTOs are in `libs/payment-common` and persistence entities are in `libs/postral-entities`.
+- The payment runtime application is under `apps/payment`; payment controllers, services, mappers, guards, and utilities are in `libs/payment-core-webservice`. Payment DTOs are in `libs/payment-common` and persistence entities are in `libs/postral-entities`.
 - Register new entities, services, and controllers with their owning module and exports.
 
 ## Working Rules

@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { DynamicModule, Module } from '@nestjs/common';
+import { ClientProviderOptions, ClientsModule } from '@nestjs/microservices';
 
 import { PaymentService } from './service/payment.service';
 import { PaymentController } from './controller/payment.controller';
@@ -8,7 +8,6 @@ import { PaymentSearchController } from './controller/payment-search.controller'
 import { PaymentMapper } from './mapper/payment.mapper';
 import { PaymentItemMapper } from './mapper/payment-item.mapper';
 import { EventSenderService } from './service/event-management.service';
-import { ClientsModule } from '@nestjs/microservices';
 import { AccountService } from './service/account.service';
 import { AccountMapper } from './mapper/account.mapper';
 import { AppComissionService } from './service/app-commission.service';
@@ -19,7 +18,6 @@ import { ItemService } from './service/item.service';
 import { PaymentTaxMapper } from './mapper/payment-tax.mapper';
 import { ItemPriceMapper } from './mapper/item-price.mapper';
 import { ItemPriceService } from './service/item-price.service';
-import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { BackendJwtUtilsModule } from '@ubs-platform/users-microservice-helper';
 import { SellerPaymentOrderService } from './service/seller-payment-order.service';
 import { DummyEcommercePaymentChannelController } from './controller/dummy-ecommerce-payment-channel.controller';
@@ -50,7 +48,6 @@ import { PaymentMicroserviceController } from './controller/payment-microservice
 import { AuthUtilService } from './service/auth-util.service';
 import { RefundService } from './service/refund.service';
 import { RefundController } from './refund.controller';
-import { ScheduleModule } from '@nestjs/schedule';
 import { AccountPaymentTransactionService } from './service/account-payment-transaction.service';
 import { AccountPaymentTransactionMapper } from './mapper/account-payment-transaction.mapper';
 import { ReportQueryCrudService } from './service/report-query.service';
@@ -81,40 +78,16 @@ import { PaymentCleanupService } from './service/payment-cleanup.service';
 import { ExternalPlatformPaymentService } from './service/external-platform-payment.service';
 import { SellerReportSeriesService } from './service/seller-report-series.service';
 
-import { PaymentsEntities, PostralEntitiesModule } from '@tk-postral/postral-entities';
-import { CacheManagerModule } from "@ubs-platform/cache-manager";
+import { PostralEntitiesModule } from '@tk-postral/postral-entities';
+import { CacheManagerModule } from '@ubs-platform/cache-manager';
 
 @Module({
     imports: [
-        ScheduleModule.forRoot(),
         PostralEntitiesModule,
-        TypeOrmModule.forRoot({
-            type: process.env.POSTRAL_DB_DRIVER as any || 'mariadb',
-            host: process.env.POSTRAL_DB_HOST || 'localhost',
-            port: process.env.POSTRAL_DB_PORT as any || 3306,
-            username: process.env.POSTRAL_DB_USER || 'root',
-            password: process.env.POSTRAL_DB_PASSWORD || '',
-            database: process.env.POSTRAL_DB_NAME || 'postral_core',
-            entities: PaymentsEntities,
-            synchronize: true,
-            timezone: 'Z',
-            logging: (process.env.POSTRAL_DB_LOGGING_FLAGS || "error").split(',') as any,
-            extra: {
-                connectionLimit: 5
-            }
-        }),
-        ClientsModule.register([
-            {
-                ...MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT'),
-            },
-        ]),
         BackendJwtUtilsModule,
         CacheManagerModule
     ],
-    exports: [TypeOrmModule,
-        CacheManagerModule
-
-    ],
+    exports: [CacheManagerModule],
     providers: [
         AccountService,
         AccountMapper,
@@ -196,4 +169,11 @@ import { CacheManagerModule } from "@ubs-platform/cache-manager";
         ExternalPlatformController,
     ],
 })
-export class PaymentModule { }
+export class PaymentCoreWebserviceModule {
+    static register(clientProvider: ClientProviderOptions): DynamicModule {
+        return {
+            module: PaymentCoreWebserviceModule,
+            imports: [ClientsModule.register([clientProvider])],
+        };
+    }
+}
