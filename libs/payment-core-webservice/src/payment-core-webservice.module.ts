@@ -80,12 +80,13 @@ import { SellerReportSeriesService } from './service/seller-report-series.servic
 
 import { PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from '@ubs-platform/cache-manager';
+import { NonProductionGuard } from './guard/non-production.guard';
 
 @Module({
     imports: [
         PostralEntitiesModule,
         BackendJwtUtilsModule,
-        CacheManagerModule
+        CacheManagerModule,
     ],
     exports: [CacheManagerModule],
     providers: [
@@ -143,6 +144,7 @@ import { CacheManagerModule } from '@ubs-platform/cache-manager';
         ExternalPlatformMapper,
         ExternalPlatformPaymentService,
         PaymentCleanupService,
+        NonProductionGuard
     ],
     controllers: [
         PaymentController,
