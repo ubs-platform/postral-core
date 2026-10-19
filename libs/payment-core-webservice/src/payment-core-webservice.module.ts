@@ -144,6 +144,7 @@ import { NonProductionGuard } from './guard/non-production.guard';
         ExternalPlatformMapper,
         ExternalPlatformPaymentService,
         PaymentCleanupService,
+        // TODO: Debugging için kullanılan kdialog sınıflarını farklı bir modül ve uygulama yapmak daha iyi olabilir...
         NonProductionGuard
     ],
     controllers: [
