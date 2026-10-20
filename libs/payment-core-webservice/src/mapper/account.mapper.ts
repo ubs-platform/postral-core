@@ -32,6 +32,7 @@ export class AccountMapper {
             emailAddress: this.cryptionUtil.decryptWithConfig(ac.emailAddress, "USE_DEFAULT") || "",
             type: ac.type,
             isExternal: ac.isExternal,
+            deactivated: ac.deactivated,
             defaultAddressId: ac.defaultAddressId,
             bankName: ac.bankName,
             bankIban: this.cryptionUtil.decryptWithConfig(ac.bankIban, "USE_DEFAULT") || "",

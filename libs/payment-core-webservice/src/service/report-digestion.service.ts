@@ -14,6 +14,7 @@ import { AdminSettingsService } from './admin-settings.service';
 import { exec } from 'child_process';
 import { EventSenderService } from './event-management.service';
 import { ReportItem } from '@tk-postral/postral-entities/entity/report-item.entity';
+import { SellerReportSetupService } from './seller-report-setup.service';
 
 @Injectable()
 export class ReportDigestionService {
@@ -41,7 +42,8 @@ export class ReportDigestionService {
         private readonly paymentCommonService: PaymentCommonService,
         private readonly sellerPaymentOrderService: SellerPaymentOrderSearchService,
         private readonly admSettings: AdminSettingsService,
-        private readonly eventSenderService: EventSenderService
+        private readonly eventSenderService: EventSenderService,
+        private readonly reportSetup: SellerReportSetupService,
     ) { }
 
 
@@ -697,66 +699,14 @@ export class ReportDigestionService {
      * Finds all ReportQueries whose filter criteria match this payment.
      */
     private async findMatchingQueries(payment: PaymentFullDTO): Promise<ReportQuery[]> {
-        const itemSellerAccountIds = payment.items?.map(i => i.sellerAccountId) ?? [];
-        // Eğer PLATFORM_SELLER - Günlük yoksa yeni query oluşturulacak...
-
-
         const existingQueries = await this.queryRepo.find({
-            where: [
-                // Satıcının kendisi ile ilgili raporları çekmek istediğim için ownerAccountId'ye göre de filtreleme yapıyorum. Çünkü bir payment içinde farklı satıcıların ürünleri olabilir, bu yüzden payment ile ilişkili tüm raporları çekmek istiyorum, ancak seller raporlarında sadece ilgili satıcının raporlarıyla eşleşsin istiyorum, diğer raporlarda ise tüm payment ile eşleşsin istiyorum.
-                {
-                    currency: payment.currency,
-                    ownerAccountId: In([...itemSellerAccountIds]),
-                    reportType: In(['SELLER', 'PLATFORM_SELLER']),
-                },
-                // Platformun komisyondan geliri ve ödeme hizmeti sağlayıcı ücretinden gelen giderleri raporlamak istediğim için PLATFORM ve PLATFORM_FLOW raporları da payment ile eşleşiyor olacak. PLATFORM raporunda sadece toplam komisyon gelirini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum, PLATFORM_FLOW raporunda ise her bir ödeme için ayrı ayrı komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini göstermek istiyorum.
-                {
-                    currency: payment.currency,
-                    reportType: In(['PLATFORM', "PLATFORM_FLOW"]),
-                },
-
-            ],
+            where: { currency: payment.currency, reportType: In(['PLATFORM', 'PLATFORM_FLOW']) },
         });
-
-        const sellerAccountNamesMap = new Map(payment.items.map(i => [i.sellerAccountId, i.sellerAccountName]));
-        const sellerAccountIds = new Set(sellerAccountNamesMap.keys());
-        // const paymentSellerAccounts = new Set(payment.items.map(i => ({ id: i.sellerAccountId, name: i.sellerAccountName })));
-        const batchInsert: Partial<ReportQuery>[] = [];
-        for (let i = 0; i < sellerAccountIds.size; i++) {
-            const accountId = Array.from(sellerAccountIds)[i];
-            const existDailyPlatformSellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'PLATFORM_SELLER' && q.ownerAccountId === accountId),
-                existDailySellerQuery = existingQueries.find(q => q.dateGrouping === 'DAILY' && q.reportType === 'SELLER' && q.ownerAccountId === accountId);
-
-            if (!existDailyPlatformSellerQuery) {
-                const newQuery = new ReportQuery();
-                const accountName = sellerAccountNamesMap.get(accountId);
-                newQuery.ownerAccountId = accountId;
-                newQuery.dateGrouping = 'DAILY';
-                newQuery.reportType = 'PLATFORM_SELLER';
-                newQuery.currency = payment.currency;
-                newQuery.name = `Platform Seller Report / ${accountName} / ${payment.currency} / DAILY`;
-                newQuery.description = "Bu rapor, satıcıların platformdan elde ettiği komisyon gelirlerini ve ödeme hizmeti sağlayıcı ücretlerini günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir.";
-                batchInsert.push(newQuery);
-            }
-
-            if (!existDailySellerQuery) {
-                const newQuery = new ReportQuery();
-                const accountName = sellerAccountNamesMap.get(accountId);
-                newQuery.ownerAccountId = accountId;
-                newQuery.dateGrouping = 'DAILY';
-                newQuery.reportType = 'SELLER';
-                newQuery.currency = payment.currency;
-                newQuery.name = `Seller Report / ${accountName} / ${payment.currency} / DAILY`;
-                newQuery.description = "Bu rapor, satıcıların satış performansını günlük olarak gösterir. Her gün için ayrı bir rapor oluşturulur ve sadece ilgili satıcının verilerini içerir. Satıcının Platforma hakedişi için yapılacak faturalandırma için kullanılacaktır.";
-                batchInsert.push(newQuery);
-            }
+        const accountIds = [...new Set(payment.items.map(item => item.sellerAccountId))].sort();
+        for (const accountId of accountIds) {
+            if (!accountId) throw new Error(`Payment ${payment.id} contains an item without a seller account`);
+            existingQueries.push(...await this.reportSetup.ensureDailyQueries(accountId, payment.currency));
         }
-
-        if (batchInsert.length > 0) {
-            const newlySaved = await this.queryRepo.save(batchInsert);
-            existingQueries.push(...newlySaved);
-        }
-
         return existingQueries;
     }
 

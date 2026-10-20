@@ -92,6 +92,45 @@ channel reservations, and existing external-platform restrictions. With the
 current Nest 12 dependencies, use Node 24.9+ and
 `NODE_OPTIONS=--experimental-vm-modules` when running Jest.
 
+## Seller report setup
+
+Authenticated sellers can preview standard reporting with
+`GET /api/account/:accountId/report-setup?currency=TRY` and create missing sources
+with `POST /api/account/:accountId/report-setup`:
+
+```json
+{
+  "currency": "TRY",
+  "dateGroupings": ["DAILY", "MONTHLY", "YEARLY"]
+}
+```
+
+Setup supports TRY/USD/EUR/GBP and DAILY/MONTHLY/YEARLY. DAILY is mandatory for
+commission calculations. Preview requires account view/edit/owner capability;
+creation requires edit/owner capability, including for team-owned accounts.
+The target must be an active, non-external COMMERCIAL account. Admin role alone
+does not bypass ownership for this seller endpoint.
+
+Responses contain `accountId`, `currency`, `existing`, `created`, and `missing`.
+Only missing SELLER queries are created; existing/custom sources are never
+modified, merged, or deleted. Multiple matching sources remain valid and still
+require explicit source selection in seller report charts. POST creates the
+selected missing queries in one transaction, locks the account row before
+checking, and rechecks current sources rather than trusting preview results.
+Payment digestion uses the same account lock when ensuring daily SELLER and
+PLATFORM_SELLER sources, preventing duplicates between retries/concurrent setup
+and payment automation. All configured matching groupings still receive payments.
+Automatic payment setup continues to accept payment currencies independently
+of the narrower interactive currency choices.
+
+This does not schedule calendar jobs or backfill historical payments: grouping
+controls calendar buckets and new queries receive future digestion events.
+The first period can therefore be incomplete. PLATFORM/PLATFORM_FLOW setup is
+separate; daily PLATFORM_SELLER automation remains internal to payment digestion.
+No schema migration is required. The UI calls the same endpoints through
+`/service/payment/api/...`; existing development proxies and the compose-mounted
+`infrastructure/config/postral-ui.conf` strip only `/service/payment`.
+
 ## Detailed documentations
 
 - [English US 🇺🇸](./docs/en-us/README.md)
