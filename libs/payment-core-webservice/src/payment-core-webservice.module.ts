@@ -79,6 +79,8 @@ import { ExternalPlatformPaymentService } from './service/external-platform-paym
 import { SellerReportSeriesService } from './service/seller-report-series.service';
 import { SellerReportSetupService } from './service/seller-report-setup.service';
 import { SellerReportSetupController } from './controller/seller-report-setup.controller';
+import { PlatformSetupService } from './service/platform-setup.service';
+import { PlatformSetupController } from './controller/platform-setup.controller';
 
 import { PostralEntitiesModule } from '@tk-postral/postral-entities';
 import { CacheManagerModule } from '@ubs-platform/cache-manager';
@@ -131,6 +133,7 @@ import { NonProductionGuard } from './guard/non-production.guard';
         ReportService,
         SellerReportSeriesService,
         SellerReportSetupService,
+        PlatformSetupService,
         ReportDigestionService,
         PaymentCommonService,
         ReportMapper,
@@ -160,6 +163,7 @@ import { NonProductionGuard } from './guard/non-production.guard';
         ItemController,
         AccountNewController,
         SellerReportSetupController,
+        PlatformSetupController,
         DummyEcommercePaymentChannelController,
         ItemTaxController,
         CalculationController,

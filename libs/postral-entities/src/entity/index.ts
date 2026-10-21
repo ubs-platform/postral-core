@@ -32,10 +32,12 @@ import { ExternalPlatform } from './external-platform.entity';
 import { BankAccount } from './bank-account.entity';
 import { SnapshotBankAccount } from './snapshot-bank-account.entity';
 import { ReportItem } from './report-item.entity';
+import { PlatformSetup } from './platform-setup.entity';
 
 export { PaymentChannelConfig };
 
 export const PaymentsEntities = [
+    PlatformSetup,
     PostralPaymentItem,
     Payment,
     PostralPaymentTax,
@@ -76,6 +78,7 @@ export const PaymentsEntities = [
 ];
 
 export {
+    PlatformSetup,
     PostralPaymentItem,
     Payment,
     PostralPaymentTax,
@@ -139,5 +142,4 @@ export {
 // export * from './report.entity';
 // export * from "./report-tax-group.entity"
 // export * from "./report-comission.entity"
-
 

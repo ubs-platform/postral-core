@@ -131,6 +131,55 @@ No schema migration is required. The UI calls the same endpoints through
 `/service/payment/api/...`; existing development proxies and the compose-mounted
 `infrastructure/config/postral-ui.conf` strip only `/service/payment`.
 
+## First-run platform setup
+
+`/api/platform-setup` is a separate, system-owned singleton, not a field accepted
+by the normal admin-settings API. Every handler requires JWT and `ADMIN`,
+`POSTRAL-ADMIN` or the legacy `POSTRAL_ADMIN` role. GET only reads status; it does
+not create default settings or mark an installation complete.
+
+New installations POST `team`, `platform-account` (address and commercial
+account), `settings`, optionally `seller-account`, then `complete`. Completed
+steps are persisted and retries reuse their resource IDs. The administrator who
+started setup must resume it. A five-minute row lease rejects simultaneous
+steps; interrupted operations can resume after it expires. Network calls have
+30-second timeouts and do not hold SQL transactions open. Address/account data
+uses the existing encryption mappers.
+
+- Own sales: explicit zero global/account commission, optional SELLER sources,
+  platform billing account set, automatic billing days left empty.
+- Marketplace: default commission, billing days (defaults 1 and 28; integers
+  1–28), configurable commission-service tax (default 20%, whole percentages
+  supported by the existing tax entity), PLATFORM and PLATFORM_FLOW sources.
+  Optional own sales use a **separate** zero-commission seller account, sharing
+  the platform address if desired.
+- TRY/USD/EUR/GBP and DAILY/MONTHLY/YEARLY use the seller reporting conventions.
+  DAILY is mandatory; no currency conversion, calendar scheduling or historical
+  backfill is introduced. PLATFORM_SELLER daily provisioning remains internal.
+
+Completion validates the saved accounts, team and tax, then activates settings,
+commissions, report sources and completion state in one SQL transaction.
+Conflicting existing billing accounts/days, commission taxes or default
+commissions produce an error instead of being overwritten. Existing matching
+sources are preserved. Billing skips the platform billing account itself to
+prevent self-to-self invoices; a separate own-seller account remains eligible.
+
+Existing installations with a billing account must explicitly POST
+`keep-existing`; this validates an active commercial account/address and marks
+setup complete **without changing any existing settings or sources**. The
+mere existence of an auto-created empty admin-settings row is not completion.
+There is no reset action in normal settings. Saved choices are immutable during
+onboarding; reconciliation of conflicting legacy data is an administrator task.
+
+Deploy the updated users service **before** the payment service: group creation
+uses a persisted retry key and ownership uses the acknowledged
+`ensure-team-ownership` command, not the legacy fire-and-forget event. Rebuild
+and patch UBS libraries into both Postral and the UI, then patch Postral contracts
+into the UI. The new `platform_setup` table is registered with TypeORM; the
+current payment app uses schema synchronization. Deployments without it must
+apply the corresponding entity schema before rollout. Do not drop this table
+to restart onboarding: it contains the recovery IDs for already-created records.
+
 ## Detailed documentations
 
 - [English US 🇺🇸](./docs/en-us/README.md)

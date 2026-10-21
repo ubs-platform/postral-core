@@ -66,6 +66,7 @@ export class BillingService {
         }
 
         for (const { ownerAccountId } of sellerRows) {
+            if (ownerAccountId === resolvedSettings.billingAccountId) continue;
             const currencies = await this.getDistinctUnbilledCurrencies(ownerAccountId);
             for (const currency of currencies) {
                 await this.createCommissionBillingForSeller(ownerAccountId, currency, resolvedSettings);

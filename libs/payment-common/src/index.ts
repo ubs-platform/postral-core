@@ -42,3 +42,4 @@ export * from './dto/external-platform-payment.dto';
 export * from './dto/report-item.dto';
 export * from './dto/seller-report-series.dto';
 export * from './dto/seller-report-setup.dto';
+export * from './dto/platform-setup.dto';

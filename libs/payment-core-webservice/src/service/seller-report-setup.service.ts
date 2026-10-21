@@ -37,16 +37,23 @@ export class SellerReportSetupService {
         }
         await this.authorize(accountId, user, true);
         return this.dataSource.transaction(async manager => {
-            const account = await this.findAccount(manager, accountId, true, true);
-            const existing = await this.findSellerQueries(manager, accountId, input.currency);
-            const created: ReportQuery[] = [];
-            for (const grouping of new Set(input.dateGroupings)) {
-                if (!existing.some(query => query.dateGrouping === grouping)) {
-                    created.push(await this.createQuery(manager, account, input.currency, grouping, 'SELLER'));
-                }
-            }
+            const { existing, created } = await this.ensureSellerQueries(manager, accountId, input.currency, input.dateGroupings);
             return this.result(accountId, input.currency, existing, created);
         });
+    }
+
+    async ensureSellerQueries(
+        manager: EntityManager, accountId: string, currency: string, groupings: SellerReportSetupGrouping[],
+    ): Promise<{ existing: ReportQuery[]; created: ReportQuery[] }> {
+        const account = await this.findAccount(manager, accountId, true, true);
+        const existing = await this.findSellerQueries(manager, accountId, currency);
+        const created: ReportQuery[] = [];
+        for (const grouping of new Set(groupings)) {
+            if (!existing.some(query => query.dateGrouping === grouping)) {
+                created.push(await this.createQuery(manager, account, currency, grouping, 'SELLER'));
+            }
+        }
+        return { existing, created };
     }
 
     async ensureDailyQueries(accountId: string, currency: string): Promise<ReportQuery[]> {
