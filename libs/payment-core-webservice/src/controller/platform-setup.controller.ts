@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser, JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 import { Roles, RolesGuard } from '@ubs-platform/users-roles';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
-import { PlatformSetupAccountDTO, PlatformSetupSettingsDTO, PlatformSetupTeamDTO } from '@tk-postral/payment-common';
+import { PlatformSetupAccountDTO, PlatformSetupCompleteDTO, PlatformSetupSettingsDTO, PlatformSetupTeamDTO } from '@tk-postral/payment-common';
 import { PlatformSetupService } from '../service/platform-setup.service';
 
 @Controller('platform-setup')
@@ -40,7 +40,9 @@ export class PlatformSetupController {
 
     @Post('complete')
     @Roles(['ADMIN', 'POSTRAL-ADMIN', 'POSTRAL_ADMIN'])
-    complete(@CurrentUser() user: UserAuthBackendDTO) { return this.service.complete(user); }
+    complete(@CurrentUser() user: UserAuthBackendDTO, @Body() input: PlatformSetupCompleteDTO) {
+        return this.service.complete(user, input);
+    }
 
     @Post('keep-existing')
     @Roles(['ADMIN', 'POSTRAL-ADMIN', 'POSTRAL_ADMIN'])

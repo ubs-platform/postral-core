@@ -3,8 +3,8 @@ import { BadRequestException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { DataSource, FindOperator } from 'typeorm';
 import { of, throwError } from 'rxjs';
-import { Account, Address, AdminSettings, AppComission, ItemTaxEntity, PlatformSetup, ReportQuery } from '@tk-postral/postral-entities';
-import { PlatformSetupSettingsDTO } from '@tk-postral/payment-common';
+import { Account, Address, AdminSettings, AppComission, ItemTaxEntity, PaymentChannelConfig, PlatformSetup, ReportQuery } from '@tk-postral/postral-entities';
+import { PlatformSetupCompleteDTO, PlatformSetupSettingsDTO } from '@tk-postral/payment-common';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { EntityOwnershipGroupClientService, EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { Roles } from '@ubs-platform/users-roles';
@@ -94,6 +94,58 @@ describe('PlatformSetupService', () => {
         expect(await service.status()).toMatchObject({ status: 'NOT_STARTED', step: 'TEAM', legacyAvailable: false });
         expect(manager.save).not.toHaveBeenCalled();
         expect(manager.insert).not.toHaveBeenCalled();
+    });
+
+    it('adds the selected test channel enabled with devOnly false, only once', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF' }), user);
+        const selection = { paymentChannelIds: ['dummy-ecommerce', 'dummy-ecommerce'] };
+        await service.complete(user, selection);
+        expect(bucket(PaymentChannelConfig)).toHaveLength(1);
+        expect(bucket(PaymentChannelConfig)[0]).toMatchObject({
+            channelId: 'dummy-ecommerce', enabled: true, devOnly: false,
+        });
+        await service.complete(user, selection);
+        expect(bucket(PaymentChannelConfig)).toHaveLength(1);
+    });
+
+    it('does not add any channel when the optional selection is absent or empty', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF' }), user);
+        await service.complete(user, { paymentChannelIds: [] });
+        expect(bucket(PaymentChannelConfig)).toHaveLength(0);
+    });
+
+    it('preserves an existing disabled development-only test channel', async () => {
+        const existing = Object.assign(new PaymentChannelConfig(), {
+            channelId: 'dummy-ecommerce', enabled: false, devOnly: true, name: 'Custom test channel',
+        });
+        bucket(PaymentChannelConfig).push(existing);
+        await platform();
+        await service.configure(config({ mode: 'SELF' }), user);
+        await service.complete(user, { paymentChannelIds: ['dummy-ecommerce'] });
+        expect(bucket(PaymentChannelConfig)).toEqual([existing]);
+        expect(existing).toMatchObject({ enabled: false, devOnly: true, name: 'Custom test channel' });
+    });
+
+    it.each([
+        { paymentChannelIds: ['paytr'] }, { paymentChannelIds: ['iyzico'] },
+        { paymentChannelIds: 'dummy-ecommerce' }, { paymentChannelIds: [null] }, { paymentChannelIds: null },
+    ])('rejects unsupported or malformed channel selection %j', async invalid => {
+        await expect(service.complete(user, Object.assign(new PlatformSetupCompleteDTO(), invalid))).rejects.toThrow('Unsupported setup payment channel');
+        expect(manager.save).not.toHaveBeenCalled();
+    });
+
+    it('does not mark setup complete when channel persistence fails', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF' }), user);
+        manager.findOneBy.mockImplementation(async (target: Function, where: Record<string, unknown>) => {
+            if (target === PaymentChannelConfig) throw new Error('channel database unavailable');
+            return bucket(target).find(row => matches(row, where)) ?? null;
+        });
+        await expect(service.complete(user, { paymentChannelIds: ['dummy-ecommerce'] })).rejects.toThrow('channel database unavailable');
+        expect((await service.status()).status).toBe('IN_PROGRESS');
+        expect(bucket(AdminSettings)).toEqual([]);
     });
 
     it('reserves a persistent team retry key before calling users, including a lost response', async () => {

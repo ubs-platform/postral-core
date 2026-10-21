@@ -5,6 +5,10 @@ import { SellerReportSetupGrouping } from './seller-report-setup.dto';
 export type PlatformSetupMode = 'SELF' | 'MARKETPLACE';
 export type PlatformSetupStep = 'TEAM' | 'PLATFORM' | 'SETTINGS' | 'SELLER' | 'REVIEW' | 'COMPLETED';
 
+export class PlatformSetupCompleteDTO {
+    paymentChannelIds?: string[];
+}
+
 export class PlatformSetupTeamDTO {
     name!: string;
 }

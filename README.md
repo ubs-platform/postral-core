@@ -159,6 +159,15 @@ uses the existing encryption mappers.
 
 Completion validates the saved accounts, team and tax, then activates settings,
 commissions, report sources and completion state in one SQL transaction.
+`POST complete` optionally accepts `{ "paymentChannelIds": ["dummy-ecommerce"] }`.
+Only this integrated test provider is currently allowed. Missing selected
+channels are created in the completion transaction with `enabled: true` and
+`devOnly: false`; existing channel settings are never overwritten. Omitted or
+empty selection creates no channel. The UI warns during review and on channel
+management pages: **before production set `devOnly: true` or disable the dummy
+channel**, which does not collect real payments. Adding future providers requires
+explicit backend support. Existing installations adopted with `keep-existing`
+are unchanged.
 Conflicting existing billing accounts/days, commission taxes or default
 commissions produce an error instead of being overwritten. Existing matching
 sources are preserved. Billing skips the platform billing account itself to

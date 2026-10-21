@@ -2,10 +2,10 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { randomUUID } from 'node:crypto';
 import { DataSource, EntityManager, IsNull, QueryFailedError } from 'typeorm';
 import {
-    AccountDTO, AccountAddressDto, PlatformSetupAccountDTO, PlatformSetupSettingsDTO,
+    AccountDTO, AccountAddressDto, PlatformSetupAccountDTO, PlatformSetupCompleteDTO, PlatformSetupSettingsDTO,
     PlatformSetupStatusDTO, PlatformSetupStep, SELLER_REPORT_SETUP_CURRENCIES, SELLER_REPORT_SETUP_GROUPINGS,
 } from '@tk-postral/payment-common';
-import { Account, Address, AdminSettings, AppComission, ItemTaxEntity, PlatformSetup, ReportQuery } from '@tk-postral/postral-entities';
+import { Account, Address, AdminSettings, AppComission, ItemTaxEntity, PaymentChannelConfig, PlatformSetup, ReportQuery } from '@tk-postral/postral-entities';
 import { EntityOwnershipGroupClientService, EntityOwnershipService } from '@ubs-platform/users-microservice-helper';
 import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { lastValueFrom, timeout } from 'rxjs';
@@ -159,7 +159,14 @@ export class PlatformSetupService {
         });
     }
 
-    async complete(user: UserAuthBackendDTO): Promise<PlatformSetupStatusDTO> {
+    async complete(user: UserAuthBackendDTO, input: PlatformSetupCompleteDTO = {}): Promise<PlatformSetupStatusDTO> {
+        if (!input || typeof input !== 'object' || Array.isArray(input)) {
+            throw new BadRequestException('Invalid setup completion input');
+        }
+        const channelIds = input.paymentChannelIds === undefined ? [] : input.paymentChannelIds;
+        if (!Array.isArray(channelIds) || channelIds.some(id => id !== 'dummy-ecommerce')) {
+            throw new BadRequestException('Unsupported setup payment channel');
+        }
         return this.run(user, async token => {
             const state = await this.edit(token, manager => this.lock(manager, token));
             if (this.step(state) !== 'REVIEW') throw new ConflictException('Complete all setup steps before finishing');
@@ -216,6 +223,15 @@ export class PlatformSetupService {
                 }
                 if (seller && config.sellerReports) {
                     await this.sellerReports.ensureSellerQueries(manager, seller.id, config.currency, config.dateGroupings);
+                }
+                for (const channelId of new Set(channelIds)) {
+                    const existing = await manager.findOneBy(PaymentChannelConfig, { channelId });
+                    if (!existing) {
+                        await manager.save(PaymentChannelConfig, manager.create(PaymentChannelConfig, {
+                            channelId, name: 'Dummy E-commerce', enabled: true, devOnly: false,
+                            description: 'Test payments only. Before production, set devOnly=true or disable this channel.',
+                        }));
+                    }
                 }
                 await manager.save(admin);
                 current.status = 'COMPLETED';
