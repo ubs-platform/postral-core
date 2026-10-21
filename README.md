@@ -157,6 +157,20 @@ uses the existing encryption mappers.
   DAILY is mandatory; no currency conversion, calendar scheduling or historical
   backfill is introduced. PLATFORM_SELLER daily provisioning remains internal.
 
+Both models accept optional `settings.additionalTaxes`, an array of
+`{ taxName, taxRate }` entries. Each creates a private administration-team tax
+with one `DEFAULT` variation, independently from the marketplace commission tax;
+taxes are not assigned to products automatically. The UI starts with editable
+KDV 0/1/10/20 presets and allows adding/removing rows, including all of them.
+The backend allows at most 50 entries, distinct trimmed names (up to 150
+characters) and whole rates 0–100, matching the existing integer tax column.
+Omitting the field keeps older clients/in-progress setups compatible and creates
+no additional taxes. Existing completed installations are not modified.
+Recovery IDs are persisted in the nullable `platform_setup.additionalTaxIds`
+JSON column in the same transaction as the taxes. Retried steps repair ownership
+without duplicates; completion verifies the saved names/rates/DEFAULT variations.
+Apply this column before rollout when TypeORM schema synchronization is disabled.
+
 Completion validates the saved accounts, team and tax, then activates settings,
 commissions, report sources and completion state in one SQL transaction.
 `POST complete` optionally accepts `{ "paymentChannelIds": ["dummy-ecommerce"] }`.

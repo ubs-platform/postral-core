@@ -146,6 +146,15 @@ export class PlatformSetupService {
                     return current;
                 }
                 current.settings = this.normalizeSettings(input);
+                current.additionalTaxIds = [];
+                for (const definition of current.settings.additionalTaxes ?? []) {
+                    const id = randomUUID();
+                    current.additionalTaxIds.push(id);
+                    await manager.save(this.taxes.updateEntity(Object.assign(new ItemTaxEntity(), { id }), {
+                        id, taxName: definition.taxName, isPublic: false,
+                        variations: [{ taxMode: 'DEFAULT', taxRate: definition.taxRate }],
+                    }));
+                }
                 if (current.settings.mode === 'MARKETPLACE') {
                     const tax = this.taxes.updateEntity(Object.assign(new ItemTaxEntity(), { id: current.taxId }), {
                         id: current.taxId, taxName: 'Platform commission tax', isPublic: false,
@@ -156,6 +165,7 @@ export class PlatformSetupService {
                 return manager.save(current);
             });
             if (state.settings?.mode === 'MARKETPLACE') await this.attachOwnership('TAX', state.taxId, state);
+            for (const id of state.additionalTaxIds ?? []) await this.attachOwnership('TAX', id, state);
         });
     }
 
@@ -178,9 +188,23 @@ export class PlatformSetupService {
                 await this.attachOwnership('ACCOUNT', state.sellerAccountId, state);
             }
             if (state.settings!.mode === 'MARKETPLACE') await this.attachOwnership('TAX', state.taxId, state);
+            for (const id of state.additionalTaxIds ?? []) await this.attachOwnership('TAX', id, state);
             await this.edit(token, async manager => {
                 const current = await this.lock(manager, token);
                 const config = current.settings!;
+                const additionalTaxes = config.additionalTaxes ?? [];
+                if ((current.additionalTaxIds?.length ?? 0) !== additionalTaxes.length) {
+                    throw new ConflictException('Additional tax recovery IDs are missing');
+                }
+                for (const [index, definition] of additionalTaxes.entries()) {
+                    const tax = await manager.findOne(ItemTaxEntity, {
+                        where: { id: current.additionalTaxIds![index] }, relations: ['variations'],
+                    });
+                    if (!tax || tax.taxName !== definition.taxName || tax.isPublic || tax.variations.length !== 1 ||
+                        tax.variations[0].taxMode !== 'DEFAULT' || tax.variations[0].taxRate !== definition.taxRate) {
+                        throw new ConflictException('An additional tax is missing or changed');
+                    }
+                }
                 const platform = await this.validAccount(manager, current.platformAccountId, current.addressId);
                 const seller = config.mode === 'SELF' ? platform : config.alsoSells
                     ? await this.validAccount(manager, current.sellerAccountId, current.sellerAddressId) : undefined;
@@ -368,6 +392,9 @@ export class PlatformSetupService {
             alsoSells: input.mode === 'MARKETPLACE' && input.alsoSells,
             sellerReports: input.sellerReports && (input.mode === 'SELF' || input.alsoSells),
             dateGroupings: SELLER_REPORT_SETUP_GROUPINGS.filter(grouping => input.dateGroupings.includes(grouping)),
+            ...(input.additionalTaxes !== undefined ? {
+                additionalTaxes: input.additionalTaxes.map(tax => ({ taxName: tax.taxName.trim(), taxRate: tax.taxRate })),
+            } : {}),
         };
     }
 
@@ -385,6 +412,22 @@ export class PlatformSetupService {
             !Array.isArray(input.billingDays) || !input.billingDays.length ||
             input.billingDays.some(day => !Number.isInteger(day) || day < 1 || day > 28)
         )) throw new BadRequestException('Commission/tax must be 0-100 and billing days 1-28');
+        if (input.additionalTaxes !== undefined) {
+            if (!Array.isArray(input.additionalTaxes) || input.additionalTaxes.length > 50) {
+                throw new BadRequestException('Choose at most 50 additional taxes');
+            }
+            const names = new Set<string>();
+            for (const tax of input.additionalTaxes) {
+                if (!tax || typeof tax !== 'object') throw new BadRequestException('Invalid additional tax');
+                this.requiredText(tax.taxName, 'Tax name', 150);
+                if (!Number.isInteger(tax.taxRate) || tax.taxRate < 0 || tax.taxRate > 100) {
+                    throw new BadRequestException('Additional tax rate must be a whole percentage from 0 to 100');
+                }
+                const name = tax.taxName.trim().toLowerCase();
+                if (names.has(name)) throw new BadRequestException('Additional tax names must be unique');
+                names.add(name);
+            }
+        }
     }
 
     private requiredText(value: unknown, label: string, max = 255): void {

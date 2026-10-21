@@ -96,6 +96,72 @@ describe('PlatformSetupService', () => {
         expect(manager.insert).not.toHaveBeenCalled();
     });
 
+    it.each(['SELF', 'MARKETPLACE'] as const)('creates private DEFAULT additional taxes for %s, independently from commission tax', async mode => {
+        await platform();
+        const additionalTaxes = [0, 1, 10, 20].map(taxRate => ({ taxName: `VAT ${taxRate}`, taxRate }));
+        const settings = config({ mode, additionalTaxes });
+        await service.configure(settings, user);
+        const ids = [...savedState().additionalTaxIds!];
+        expect(ids).toHaveLength(4);
+        expect(new Set(ids).size).toBe(4);
+        for (const [index, id] of ids.entries()) {
+            expect(bucket(ItemTaxEntity).find(row => Reflect.get(row, 'id') === id)).toMatchObject({
+                taxName: additionalTaxes[index].taxName, isPublic: false,
+                variations: [expect.objectContaining({ taxMode: 'DEFAULT', taxRate: additionalTaxes[index].taxRate })],
+            });
+            expect(ownership.ensureTeamOwnership).toHaveBeenCalledWith(expect.objectContaining({
+                entityName: 'TAX', entityId: id, entityOwnershipGroupId: 'team-id',
+            }));
+        }
+        await service.configure(settings, user);
+        await service.complete(user);
+        expect(savedState().additionalTaxIds).toEqual(ids);
+        expect(bucket(ItemTaxEntity)).toHaveLength(mode === 'SELF' ? 4 : 5);
+        const admin = bucket(AdminSettings)[0] as AdminSettings;
+        expect(admin.comissionItemTaxId).toBe(mode === 'SELF' ? undefined : savedState().taxId);
+    });
+
+    it('repairs additional tax ownership after a lost reply without recreating taxes', async () => {
+        await platform();
+        const settings = config({ mode: 'SELF', additionalTaxes: [{ taxName: 'VAT', taxRate: 20 }] });
+        ownership.ensureTeamOwnership.mockReturnValueOnce(throwError(() => new Error('ownership unavailable')));
+        await expect(service.configure(settings, user)).rejects.toThrow('ownership unavailable');
+        const id = savedState().additionalTaxIds![0];
+        await service.complete(user);
+        expect(bucket(ItemTaxEntity)).toHaveLength(1);
+        expect(savedState().additionalTaxIds).toEqual([id]);
+        expect(ownership.ensureTeamOwnership).toHaveBeenCalledWith(expect.objectContaining({ entityId: id, entityName: 'TAX' }));
+        expect((await service.status()).status).toBe('COMPLETED');
+    });
+
+    it('allows removing every additional tax and preserves older requests without the field', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF', additionalTaxes: [] }), user);
+        await service.complete(user);
+        expect(bucket(ItemTaxEntity)).toHaveLength(0);
+    });
+
+    it('rejects changed or deleted additional taxes before activating settings', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF', additionalTaxes: [{ taxName: 'VAT', taxRate: 20 }] }), user);
+        const tax = bucket(ItemTaxEntity)[0] as ItemTaxEntity;
+        tax.variations[0].taxMode = 'OTHER';
+        await expect(service.complete(user)).rejects.toThrow('additional tax is missing or changed');
+        expect((await service.status()).status).toBe('IN_PROGRESS');
+        expect(bucket(AdminSettings)).toHaveLength(0);
+    });
+
+    it.each([
+        null, 'VAT', [null], [{ taxName: '', taxRate: 20 }], [{ taxName: 'VAT', taxRate: 20.5 }],
+        [{ taxName: 'VAT', taxRate: -1 }], [{ taxName: 'VAT', taxRate: 101 }],
+        [{ taxName: 'VAT', taxRate: '20' }],
+        [{ taxName: ' VAT ', taxRate: 20 }, { taxName: 'vat', taxRate: 10 }],
+        Array.from({ length: 51 }, (_, i) => ({ taxName: `VAT ${i}`, taxRate: 20 })),
+    ].map(additionalTaxes => ({ additionalTaxes })))('rejects invalid additional taxes %j before writing anything', async ({ additionalTaxes }) => {
+        await expect(service.configure(Object.assign(config(), { additionalTaxes }), user)).rejects.toThrow(BadRequestException);
+        expect(manager.save).not.toHaveBeenCalled();
+    });
+
     it('adds the selected test channel enabled with devOnly false, only once', async () => {
         await platform();
         await service.configure(config({ mode: 'SELF' }), user);

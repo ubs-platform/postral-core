@@ -60,6 +60,9 @@ export class PlatformSetup {
     @Column({ type: 'simple-json', nullable: true })
     settings?: PlatformSetupSettingsDTO;
 
+    @Column({ type: 'simple-json', nullable: true })
+    additionalTaxIds?: string[];
+
     @Column({ nullable: true })
     leaseToken?: string;
 

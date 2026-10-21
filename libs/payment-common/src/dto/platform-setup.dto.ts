@@ -19,6 +19,11 @@ export class PlatformSetupAccountDTO {
     usePlatformAddress?: boolean;
 }
 
+export class PlatformSetupTaxDTO {
+    taxName!: string;
+    taxRate!: number;
+}
+
 export class PlatformSetupSettingsDTO {
     mode!: PlatformSetupMode;
     currency!: string;
@@ -28,6 +33,7 @@ export class PlatformSetupSettingsDTO {
     alsoSells!: boolean;
     sellerReports!: boolean;
     dateGroupings!: SellerReportSetupGrouping[];
+    additionalTaxes?: PlatformSetupTaxDTO[];
 }
 
 export class PlatformSetupStatusDTO {
