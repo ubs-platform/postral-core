@@ -19,6 +19,15 @@
         "tsConfigPath": "libs/common-utils/tsconfig.lib.json"
       }
     },
+    "integration-iyzico": {
+      "type": "application",
+      "root": "apps/integration-iyzico",
+      "entryFile": "main",
+      "sourceRoot": "apps/integration-iyzico/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/integration-iyzico/tsconfig.app.json"
+      }
+    },
     "payment": {
       "type": "application",
       "root": "apps/payment",
@@ -28,15 +37,6 @@
         "tsConfigPath": "apps/payment/tsconfig.app.json"
       }
     },
-    "payment-core-webservice": {
-      "type": "library",
-      "root": "libs/payment-core-webservice",
-      "entryFile": "index",
-      "sourceRoot": "libs/payment-core-webservice/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/payment-core-webservice/tsconfig.lib.json"
-      }
-    },
     "payment-common": {
       "type": "library",
       "root": "libs/payment-common",
@@ -44,6 +44,15 @@
       "sourceRoot": "libs/payment-common/src",
       "compilerOptions": {
         "tsConfigPath": "libs/payment-common/tsconfig.lib.json"
+      }
+    },
+    "payment-core-webservice": {
+      "type": "library",
+      "root": "libs/payment-core-webservice",
+      "entryFile": "index",
+      "sourceRoot": "libs/payment-core-webservice/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/payment-core-webservice/tsconfig.lib.json"
       }
     },
     "postral-entities": {

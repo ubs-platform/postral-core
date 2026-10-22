@@ -6,7 +6,9 @@ set -euo pipefail
 for APP_DIR in apps/*/; do
     APP=$(basename "$APP_DIR")
 
-    if [ "$APP" = "testo" ]; then
+    ## TODO: Testo uygulaması hazır değil.
+    ## TODO: Integration Iyzico uygulaması hazır değil. Tamamlanınca release edilecek.
+    if [ "$APP" = "testo" ] || [ "$APP" = "integration-iyzico" ]; then
         echo "Skipping $APP"
         continue
     fi

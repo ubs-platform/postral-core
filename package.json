@@ -29,7 +29,7 @@
     "start": "tools/devserve.sh",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/ubs-mona-mr/main",
+    "start:prod": "node dist/apps/tk-postral/apps/tk-postral/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
