@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
-import { Report, ReportQuery, ReportComission, ReportTaxGroup, PaymentChannelOperation, ReportPaymentRelation, ReportExpense } from '@tk-postral/postral-entities';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType } from '@tk-postral/payment-common';
+import { Report, ReportQuery, ReportComission, ReportTaxGroup, PaymentChannelOperation, ReportPaymentRelation, ReportExpense, ReportPlatform, ExternalPlatform } from '@tk-postral/postral-entities';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType, POSTRAL_INSTANCE } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
@@ -44,6 +44,10 @@ export class ReportDigestionService {
         private readonly admSettings: AdminSettingsService,
         private readonly eventSenderService: EventSenderService,
         private readonly reportSetup: SellerReportSetupService,
+        @InjectRepository(ReportPlatform)
+        private readonly reportPlatformRepo: Repository<ReportPlatform>,
+        @InjectRepository(ExternalPlatform)
+        private readonly externalPlatformRepo: Repository<ExternalPlatform>,
     ) { }
 
 
@@ -106,7 +110,8 @@ export class ReportDigestionService {
 
     private async updatePaymentItemReport(reportId: string, payment: PaymentFullDTO, accountId?: string): Promise<void> {
 
-        const itemsMappedByKey: Record<string, ReportItem | null | undefined> = {};
+        const itemsMappedByKey = new Map<string, ReportItem>();
+        const reportAccountId = accountId ?? "PLATFORM";
 
         for (const paymentItem of payment.items) {
             if (accountId != null && paymentItem.sellerAccountId !== accountId) {
@@ -114,31 +119,23 @@ export class ReportDigestionService {
             }
 
             // DİKKAT: Burada itemId'yi paymentItem.itemId olarak kullanıyoruz. paymentItem.id payment item kaydının idsi, burada lazım olan şey gerçek item idsi
-            const key = ReportItem.generateKey(reportId, paymentItem.itemId, paymentItem.variation);
-            let reportItem = itemsMappedByKey[key];
-            if (!reportItem) {
-                reportItem = await this.reportItemRepo.findOne({
-                    where: {
-                        reportItemKey: key,
-                        reportId: reportId,
-                        itemId: paymentItem.itemId,
-                        itemVariation: paymentItem.variation,
-                        ...(accountId != null ? { accountId: accountId } : {})
-                    }
-                });
-            }
+            const key = ReportItem.generateKey(reportId, paymentItem.itemId, paymentItem.variation, paymentItem.name);
+            let reportItem = itemsMappedByKey.get(key) ?? await this.reportItemRepo.findOne({
+                where: { reportItemKey: key, reportId, accountId: reportAccountId }
+            });
             if (!reportItem) {
                 reportItem = new ReportItem();
                 reportItem.reportItemKey = key;
                 reportItem.reportId = reportId;
                 reportItem.itemId = paymentItem.itemId;
+                reportItem.identifiedByName = !paymentItem.itemId?.trim();
                 reportItem.itemName = paymentItem.name;
-                reportItem.itemVariation = paymentItem.variation;
-                reportItem.accountId = accountId || "PLATFORM";
+                reportItem.itemVariation = paymentItem.variation ?? "";
+                reportItem.accountId = reportAccountId;
                 reportItem = await this.reportItemRepo.save(reportItem);
             }
             if (reportItem) {
-                itemsMappedByKey[key] = reportItem;
+                itemsMappedByKey.set(key, reportItem);
             }
             const differenceFromRealUnit =
                 AmountCalculationUtil.minusNumberValues(
@@ -181,6 +178,62 @@ export class ReportDigestionService {
     }
 
 
+
+    private async resolveReportPlatform(payment: PaymentFullDTO, platforms: Map<string, ExternalPlatform>): Promise<Pick<ReportPlatform, 'platformKey' | 'platformName' | 'externalPlatformId'>> {
+        if (!payment.externalPlatformId) {
+            return { platformKey: POSTRAL_INSTANCE, platformName: 'Postral' };
+        }
+        let platform = platforms.get(payment.externalPlatformId);
+        if (!platform) {
+            platform = await this.externalPlatformRepo.findOneBy({ id: payment.externalPlatformId }) ?? undefined;
+            if (!platform?.code?.trim() || platform.code === POSTRAL_INSTANCE) {
+                throw new Error(`Payment ${payment.id} has a missing or invalid external platform ${payment.externalPlatformId}`);
+            }
+            platforms.set(platform.id, platform);
+        }
+        return { platformKey: platform.code, platformName: platform.name, externalPlatformId: platform.id };
+    }
+
+    private async updatePlatformReport(
+        reportId: string,
+        payment: PaymentFullDTO,
+        platform: Pick<ReportPlatform, 'platformKey' | 'platformName' | 'externalPlatformId'>,
+        accountId?: string,
+    ): Promise<void> {
+        const items = accountId == null ? payment.items : payment.items.filter(item => item.sellerAccountId === accountId);
+        if (items.length === 0) return;
+        if (payment.type !== 'PURCHASE' && payment.type !== 'REFUND') {
+            throw new Error(`Unsupported report payment type ${payment.type} for payment ${payment.id}`);
+        }
+        const where = { reportId, accountId: accountId ?? 'PLATFORM', platformKey: platform.platformKey };
+        let row = await this.reportPlatformRepo.findOne({ where });
+        if (!row) {
+            row = Object.assign(new ReportPlatform(), where, platform);
+        }
+        if ((row.externalPlatformId ?? null) !== (platform.externalPlatformId ?? null)) {
+            throw new Error(`Platform key ${platform.platformKey} conflicts with an existing source in report ${reportId}`);
+        }
+        if (payment.type === 'PURCHASE') {
+            row.purchaseCount = AmountCalculationUtil.addNumberValues(row.purchaseCount, 1);
+        } else {
+            row.refundCount = AmountCalculationUtil.addNumberValues(row.refundCount, 1);
+        }
+        for (const item of items) {
+            if (payment.type === 'PURCHASE') {
+                row.soldQuantity = AmountCalculationUtil.addNumberValues(row.soldQuantity, item.quantity);
+                row.totalSaleAmount = AmountCalculationUtil.addNumberValues(row.totalSaleAmount, item.totalAmount);
+                row.totalSaleTaxAmount = AmountCalculationUtil.addNumberValues(row.totalSaleTaxAmount, item.taxAmount);
+            } else {
+                row.refundedQuantity = AmountCalculationUtil.addNumberValues(row.refundedQuantity, item.quantity);
+                row.totalRefundAmount = AmountCalculationUtil.addNumberValues(row.totalRefundAmount, item.totalAmount);
+                row.totalRefundTaxAmount = AmountCalculationUtil.addNumberValues(row.totalRefundTaxAmount, item.taxAmount);
+            }
+        }
+        row.netSaleAmount = AmountCalculationUtil.minusNumberValues(row.totalSaleAmount, row.totalRefundAmount);
+        const netTax = AmountCalculationUtil.minusNumberValues(row.totalSaleTaxAmount, row.totalRefundTaxAmount);
+        row.netRevenue = AmountCalculationUtil.minusNumberValues(row.netSaleAmount, netTax);
+        await this.reportPlatformRepo.save(row);
+    }
 
     // ─────────────────────────────────────────────────────────────
     // insertPaymentToReportDigestionQueue
@@ -637,6 +690,7 @@ export class ReportDigestionService {
             });
             if (relationsWaiting.length === 0) return;
 
+            const platforms = new Map<string, ExternalPlatform>();
             for (const relation of relationsWaiting) {
                 const payment = await this.paymentCommonService.findPaymentById(relation.paymentId, true) as PaymentFullDTO;
                 const freshReport = await this.reportRepo.findOne({ where: { id: relation.reportId }, relations: ['query'] });
@@ -649,15 +703,17 @@ export class ReportDigestionService {
                     this.logger.warn(`Report ${freshReport.id} has no query ownerAccountId, skipping digestion`);
                     continue;
                 }
-                let flag = payment.includeInReportDigestion
+                const flag = payment.includeInReportDigestion;
                 if (flag && freshReport.reportType === "SELLER") {
+                    const platform = await this.resolveReportPlatform(payment, platforms);
                     await this.updateExpensesForReport(freshReport.id, payment, accountId);
                     await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
                     await this.digestPayment(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
                     await this.updatePaymentItemReport(freshReport.id, payment, accountId);
+                    await this.updatePlatformReport(freshReport.id, payment, platform, accountId);
                 }
-                if (flag && freshReport.reportType === "PLATFORM") {
+                if (flag && !payment.externalPlatformId && freshReport.reportType === "PLATFORM") {
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
 
                 }
@@ -670,11 +726,13 @@ export class ReportDigestionService {
                 }
 
                 if (flag && freshReport.reportType === "PLATFORM_FLOW") {
+                    const platform = await this.resolveReportPlatform(payment, platforms);
                     await this.updateExpensesForReport(freshReport.id, payment, accountId, null);
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
                     await this.digestPlatformFlowReport(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
                     await this.updatePaymentItemReport(freshReport.id, payment);
+                    await this.updatePlatformReport(freshReport.id, payment, platform);
 
                 }
 

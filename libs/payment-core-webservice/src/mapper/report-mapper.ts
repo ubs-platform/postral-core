@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ReportDTO, ReportFullDTO } from "@tk-postral/payment-common";
-import { Report, ReportExpense, ReportTaxGroup } from '@tk-postral/postral-entities';
+import { Report, ReportExpense, ReportTaxGroup, ReportItem, ReportPlatform } from '@tk-postral/postral-entities';
 @Injectable()
 export class ReportMapper {
 
@@ -30,7 +30,7 @@ export class ReportMapper {
         return dto;
     }
 
-    toFullDto(entity: Report, taxReports: ReportTaxGroup[], expenses: ReportExpense[], reportItems: any[]): ReportFullDTO {  // Replace 'any' with the correct type for report items if available
+    toFullDto(entity: Report, taxReports: ReportTaxGroup[], expenses: ReportExpense[], reportItems: ReportItem[], platforms: ReportPlatform[]): ReportFullDTO {
         const fullDto = new ReportFullDTO();
         const plainDto = this.toDto(entity);
         Object.assign(fullDto, plainDto);
@@ -52,6 +52,24 @@ export class ReportMapper {
         }) || [];
 
         fullDto.expenses = expenses || [];
+        fullDto.platforms = platforms.map(platform => ({
+            id: platform.id,
+            reportId: platform.reportId,
+            accountId: platform.accountId,
+            platformKey: platform.platformKey,
+            externalPlatformId: platform.externalPlatformId,
+            platformName: platform.platformName,
+            purchaseCount: platform.purchaseCount,
+            refundCount: platform.refundCount,
+            soldQuantity: platform.soldQuantity,
+            refundedQuantity: platform.refundedQuantity,
+            totalSaleAmount: platform.totalSaleAmount,
+            totalRefundAmount: platform.totalRefundAmount,
+            totalSaleTaxAmount: platform.totalSaleTaxAmount,
+            totalRefundTaxAmount: platform.totalRefundTaxAmount,
+            netSaleAmount: platform.netSaleAmount,
+            netRevenue: platform.netRevenue,
+        }));
         fullDto.items = reportItems.map(
             a => {
                 return {
@@ -60,6 +78,7 @@ export class ReportMapper {
                     reportItemKey: a.reportItemKey,
                     accountId: a.accountId,
                     itemId: a.itemId,
+                    identifiedByName: a.identifiedByName || !a.itemId?.trim(),
                     itemName: a.itemName,
                     itemVariation: a.itemVariation,
                     itemQuantity: a.itemQuantity,

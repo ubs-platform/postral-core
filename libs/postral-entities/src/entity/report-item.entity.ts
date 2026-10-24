@@ -1,8 +1,9 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { BigintDbField, MoneyDbField } from "./base";
+import { createHash } from "crypto";
 
 @Entity("report_item")
-@Unique(["reportId", "accountId", "itemId", "itemVariation"])
+@Unique(["reportId", "accountId", "reportItemKey"])
 export class ReportItem {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -13,21 +14,15 @@ export class ReportItem {
     @Column()
     accountId?: string;
 
-    /**
-     * Bu alan Masrafların tipini belirtmek için kullanılır. Örneğin:
-     * - Rapor toplamı için "REPORT_TOTAL"
-     * - Platform Komisyon (Toplam) için "PLATFORM_COMISSION_TOTAL"
-     * - Bir item class'ına ait masraf için "ITEM_CLASS_COMISSION_{itemClassName}" gibi bir format kullanılabilir. Örneğin, elektronik ürünler için "ITEM_CLASS_COMISSION_ELECTRONICS".
-     * - Ödeme hizmetlerine ait masraflar için "PAYMENT_SERVICE_FEE" gibi bir format kullanılabilir.
-     * Bu şekilde, raporlama sırasında masrafları tiplerine göre ayırabilir ve analiz edebiliriz. 
-     * Ayrıca, yeni masraf tipleri eklemek istediğimizde de esneklik sağlamış oluruz.
-     */
+    /** Product identity within a report/account, using the name when no catalog ID exists. */
     @Column({ type: "varchar", length: 600, nullable: true })
     reportItemKey!: string;
 
     @Column({ type: "varchar", length: 600, nullable: true })
     itemId!: string;
 
+    @Column({ default: false })
+    identifiedByName: boolean = false;
 
     @Column({ type: "varchar", length: 600, nullable: true })
     itemName!: string;
@@ -124,14 +119,25 @@ export class ReportItem {
     //     return expense;
     // }
 
-    static generateKey(reportId: string, itemId: string, itemVariation: string): string {
-        return reportId + "_" + itemId + "_" + itemVariation;
+    static generateKey(reportId: string, itemId: string | null | undefined, itemVariation: string | null | undefined, itemName?: string): string {
+        if (itemId?.trim()) {
+            // Retain existing catalog-ID keys so active reports keep accumulating in the same rows.
+            return reportId + "_" + itemId + "_" + itemVariation;
+        }
+        const name = itemName?.trim().replace(/\s+/g, " ").toLowerCase();
+        if (!name) {
+            throw new Error(`Report ${reportId} contains an item without an ID or name`);
+        }
+        const identity = createHash("sha256").update(JSON.stringify([name, itemVariation ?? ""])).digest("hex");
+        return reportId + ":no-id:" + identity;
     }
 
     static create(reportId: string, itemId: string, itemName: string, itemVariation: string, itemAmount: number, itemTaxAmount: number, itemDiscountAmount: number, itemComissionAmount: number): ReportItem {
         const reportItem = new ReportItem();
-        reportItem.reportItemKey = ReportItem.generateKey(reportId, itemId, itemVariation);
+        reportItem.reportItemKey = ReportItem.generateKey(reportId, itemId, itemVariation, itemName);
+        reportItem.reportId = reportId;
         reportItem.itemId = itemId;
+        reportItem.identifiedByName = !itemId?.trim();
         reportItem.itemName = itemName;
         reportItem.itemVariation = itemVariation;
         reportItem.itemTotalAmount = itemAmount;

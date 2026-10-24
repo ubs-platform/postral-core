@@ -11,6 +11,7 @@ export class ReportItemDTO {
 
     itemId!: string;
 
+    identifiedByName: boolean = false;
 
     itemName!: string;
 

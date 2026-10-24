@@ -78,6 +78,66 @@ for explicit selection; no source is silently chosen. Missing periods have
 relations belonging to the returned reports, not payments not yet queued.
 The endpoint is registered before the parameterized report-detail route.
 
+## Platform sales and ID-less report items
+
+Full report detail includes `platforms: ReportPlatformDTO[]`. Digestion maintains
+`report_platform` rows for SELLER and PLATFORM_FLOW reports only. SELLER rows use
+only that seller's items; PLATFORM_FLOW rows aggregate all sellers. Each report
+already fixes the currency and period, so no cross-currency aggregation occurs.
+`platformKey` is the external platform's `code`, or the shared `POSTRAL_INSTANCE`
+constant for native Postral payments. External IDs and names are captured on the
+row. Missing external platforms, empty codes, the reserved `POSTRAL_INSTANCE`
+external code, and conflicting sources are errors, never native-payment fallbacks.
+External platform codes should remain stable once used for reporting.
+
+`purchaseCount` counts purchase payments with at least one matching item, not item
+rows or quantities. Refund payments increment `refundCount` without decrementing
+purchase counts. `soldQuantity` and `refundedQuantity` preserve four-decimal
+quantities. Sale/refund amounts include tax; `netSaleAmount` subtracts refunds and
+`netRevenue` additionally subtracts net tax, **before** commissions and other
+expenses. Existing report/expense/commission formulas are unchanged. PLATFORM
+and PLATFORM_SELLER remain Postral commission-income reports and skip external
+payments, including provider-fee processing.
+
+Report items with a nonblank catalog `itemId` retain their existing keys.
+Otherwise, identity uses the trimmed, whitespace-collapsed, lowercase payment
+item name and the existing variation; null/missing fallback variations equal the
+empty string. A SHA-256 digest of this tuple bounds the key and avoids delimiter
+collisions. This is separate from the display name, and the `:no-id:` key namespace
+cannot collide with catalog-ID keys. `identifiedByName` exposes the fallback to
+clients, which display `(no id)`. Matching names intentionally merge within the
+same report/account/variation even if they came from different external sources.
+The unique constraint is now `(reportId, accountId, reportItemKey)`, not the
+nullable/empty catalog ID. Items without either an ID or a name are rejected.
+
+### Rollout and historical reports
+
+The app's schema synchronization adds `report_platform`, the `identifiedByName`
+column and the report-item unique constraint. Installations with synchronization
+disabled must apply these changes before starting the new backend. Back up and
+check existing report-item keys for duplicates within each report/account before
+adding the unique constraint; reconcile duplicates rather than dropping data.
+Do not run old and new digestion workers concurrently during rollout.
+Patch shared libraries into the frontend after building the backend contracts.
+
+Existing aggregate rows cannot recover products previously merged under an empty
+ID. Reconstruct affected reports from their payment relations using the existing
+report action. Reconstruction archives the old report and fills a new report;
+it does not rewrite archived aggregates. Platform breakdowns similarly include
+only newly digested payments until reconstruction; old reports must not be
+presented as having a complete historical platform breakdown.
+
+Focused tests (same Node/Jest requirements as external sales):
+
+```bash
+node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
+  --runTestsByPath \
+  libs/postral-entities/src/entity/report-item.entity.spec.ts \
+  libs/payment-core-webservice/src/service/report-sales-breakdown.service.spec.ts \
+  libs/payment-core-webservice/src/mapper/report-platform-mapper.spec.ts \
+  --transform='{"^.+\\.(t|j)s$":["ts-jest",{"tsconfig":{"isolatedModules":true}}]}'
+```
+
 ## Deferred Work
 
 - [External-platform payment snapshot-only customer plan](./external-platform-payment-snapshot-plan.md):
