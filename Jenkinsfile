@@ -134,76 +134,77 @@ NODE
             }
         }
 
-        stage('Commit version changes') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
-                    sh '''
-                        BRANCH_NAME=$(git branch --show-current 2>/dev/null || true)
-                        if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
-                            BRANCH_NAME="${CHANGE_BRANCH:-${GIT_BRANCH:-}}"
-                        fi
+        // Disabled: version commit/push from Jenkins caused recurring problems.
+        // stage('Commit version changes') {
+        //     steps {
+        //         withCredentials([usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+        //             sh '''
+        //                 BRANCH_NAME=$(git branch --show-current 2>/dev/null || true)
+        //                 if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
+        //                     BRANCH_NAME="${CHANGE_BRANCH:-${GIT_BRANCH:-}}"
+        //                 fi
 
-                        while [[ "$BRANCH_NAME" == origin/* ]]; do
-                            BRANCH_NAME="${BRANCH_NAME#origin/}"
-                        done
+        //                 while [[ "$BRANCH_NAME" == origin/* ]]; do
+        //                     BRANCH_NAME="${BRANCH_NAME#origin/}"
+        //                 done
 
-                        BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
-                        BRANCH_NAME="${BRANCH_NAME#refs/remotes/origin/}"
+        //                 BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
+        //                 BRANCH_NAME="${BRANCH_NAME#refs/remotes/origin/}"
 
-                        while [[ "$BRANCH_NAME" == origin/* ]]; do
-                            BRANCH_NAME="${BRANCH_NAME#origin/}"
-                        done
+        //                 while [[ "$BRANCH_NAME" == origin/* ]]; do
+        //                     BRANCH_NAME="${BRANCH_NAME#origin/}"
+        //                 done
 
-                        if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
-                            BRANCH_NAME="master"
-                        fi
+        //                 if [ -z "$BRANCH_NAME" ] || [ "$BRANCH_NAME" = "HEAD" ]; then
+        //                     BRANCH_NAME="master"
+        //                 fi
 
-                        echo "Using git branch: $BRANCH_NAME"
+        //                 echo "Using git branch: $BRANCH_NAME"
 
-                        git config user.name "Hüseyin Can Gündüz"
-                        git config user.email "hcangunduz@gmail.com"
+        //                 git config user.name "Hüseyin Can Gündüz"
+        //                 git config user.email "hcangunduz@gmail.com"
 
-                        if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)" = "HEAD" ]; then
-                            git checkout -B "$BRANCH_NAME"
-                        fi
+        //                 if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)" = "HEAD" ]; then
+        //                     git checkout -B "$BRANCH_NAME"
+        //                 fi
 
-                        git add .
-                        git commit -m "JENKINS: Version upgrade to ${RELEASE_VERSION} and publish completion" || echo "No changes to commit"
+        //                 git add .
+        //                 git commit -m "JENKINS: Version upgrade to ${RELEASE_VERSION} and publish completion" || echo "No changes to commit"
 
-                        REPO_URL=$(git config --get remote.origin.url)
-                        if [ -z "$REPO_URL" ]; then
-                            echo "No git remote origin configured."
-                            exit 1
-                        fi
+        //                 REPO_URL=$(git config --get remote.origin.url)
+        //                 if [ -z "$REPO_URL" ]; then
+        //                     echo "No git remote origin configured."
+        //                     exit 1
+        //                 fi
 
-                        case "$REPO_URL" in
-                            https://*)
-                                AUTH_REPO_URL="https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL#https://}"
-                                ;;
-                            git@github.com:*)
-                                AUTH_REPO_URL="https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/${REPO_URL#git@github.com:}"
-                                ;;
-                            *)
-                                echo "Unsupported remote URL: $REPO_URL"
-                                exit 1
-                                ;;
-                        esac
+        //                 case "$REPO_URL" in
+        //                     https://*)
+        //                         AUTH_REPO_URL="https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL#https://}"
+        //                         ;;
+        //                     git@github.com:*)
+        //                         AUTH_REPO_URL="https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/${REPO_URL#git@github.com:}"
+        //                         ;;
+        //                     *)
+        //                         echo "Unsupported remote URL: $REPO_URL"
+        //                         exit 1
+        //                         ;;
+        //                 esac
 
-                        git remote set-url origin "$AUTH_REPO_URL"
+        //                 git remote set-url origin "$AUTH_REPO_URL"
 
-                        if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
-                            git fetch origin "$BRANCH_NAME"
-                            git rebase "origin/$BRANCH_NAME" || {
-                                echo "Rebase conflict while updating with remote branch $BRANCH_NAME"
-                                exit 1
-                            }
-                        fi
+        //                 if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+        //                     git fetch origin "$BRANCH_NAME"
+        //                     git rebase "origin/$BRANCH_NAME" || {
+        //                         echo "Rebase conflict while updating with remote branch $BRANCH_NAME"
+        //                         exit 1
+        //                     }
+        //                 fi
 
-                        git push origin "HEAD:refs/heads/$BRANCH_NAME" || echo "Nothing to push"
-                    '''
-                }
-            }
-        }
+        //                 git push origin "HEAD:refs/heads/$BRANCH_NAME" || echo "Nothing to push"
+        //             '''
+        //         }
+        //     }
+        // }
 
         // if not provided, it will skip the notification stage
         stage('Telegram Notification') {
