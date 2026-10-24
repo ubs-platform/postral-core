@@ -16,7 +16,9 @@ export class ReportExpense {
     /**
      * Bu alan Masrafların tipini belirtmek için kullanılır. Örneğin:
      * - Rapor toplamı için "REPORT_TOTAL"
-     * - Platform Komisyon (Toplam) için "PLATFORM_COMISSION_TOTAL"
+     * - Postral komisyonu (toplam) için "PLATFORM_COMISSION_TOTAL"
+     * - Harici platform komisyonu için "EXTERNAL_PLATFORM_COMISSION:{encodedPlatformCode}"
+     * - Harici ürün sınıfı için "EXTERNAL_ITEM_CLASS_COMISSION:{encodedPlatformCode}:{encodedItemClass}"
      * - Bir item class'ına ait masraf için "ITEM_CLASS_COMISSION_{itemClassName}" gibi bir format kullanılabilir. Örneğin, elektronik ürünler için "ITEM_CLASS_COMISSION_ELECTRONICS".
      * - Ödeme hizmetlerine ait masraflar için "PAYMENT_SERVICE_FEE" gibi bir format kullanılabilir.
      * Bu şekilde, raporlama sırasında masrafları tiplerine göre ayırabilir ve analiz edebiliriz. 

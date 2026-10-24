@@ -5,7 +5,7 @@ import {
     ExternalPlatform, PaymentChannelOperation, Report, ReportExpense, ReportItem,
     ReportPaymentRelation, ReportPlatform, ReportQuery, ReportTaxGroup,
 } from '@tk-postral/postral-entities';
-import { PaymentFullDTO, PaymentItemDTO, POSTRAL_INSTANCE, ReportType } from '@tk-postral/payment-common';
+import { EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, EXTERNAL_PLATFORM_COMISSION_PREFIX, ITEM_CLASS_COMISSION_PREFIX, PLATFORM_COMISSION_TOTAL, REPORT_TOTAL, PaymentFullDTO, PaymentItemDTO, POSTRAL_INSTANCE, ReportType } from '@tk-postral/payment-common';
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { AppComissionService } from './app-commission.service';
@@ -100,6 +100,79 @@ describe('ReportDigestionService sales breakdown', () => {
             ],
         }).compile();
         service = module.get(ReportDigestionService);
+    });
+
+    describe('commission expense attribution', () => {
+        let storedExpenses: ReportExpense[];
+
+        beforeEach(() => {
+            storedExpenses = [];
+            expenses.find.mockImplementation(async ({ where }: { where: { reportId: string; accountId: string } }) =>
+                storedExpenses.filter(row => row.reportId === where.reportId && row.accountId === where.accountId));
+            expenses.save.mockImplementation(async (rows: ReportExpense[]) => {
+                for (const row of rows) {
+                    if (!storedExpenses.includes(row)) storedExpenses.push(row);
+                }
+                return rows;
+            });
+        });
+
+        it('keeps Postral and each external platform separate while charging each commission once to total expenses', async () => {
+            const data = payment({ items: [item({ itemClass: 'BOOK' }), item({ sellerAccountId: 'other', appComissionAmount: 999 })] });
+            await service['updateExpensesForReport']('report', data, 'seller');
+            await service['updateExpensesForReport']('report', { ...data, externalPlatformId: 'external' }, 'seller');
+            externalRepo.findOneBy.mockResolvedValue({ id: 'other-platform', code: 'OTHER' });
+            await service['updateExpensesForReport']('report', {
+                ...data, externalPlatformId: 'other-platform', items: [item({ itemClass: 'BOOK', appComissionAmount: 30 })],
+            }, 'seller');
+            const amounts = Object.fromEntries(storedExpenses.map(row => [row.expenseKey, row.expenseAmount]));
+            expect(amounts).toEqual({
+                [PLATFORM_COMISSION_TOTAL]: 20,
+                [ITEM_CLASS_COMISSION_PREFIX + 'BOOK']: 20,
+                [EXTERNAL_PLATFORM_COMISSION_PREFIX + 'EXTERNAL']: 20,
+                [EXTERNAL_ITEM_CLASS_COMISSION_PREFIX + 'EXTERNAL:BOOK']: 20,
+                [EXTERNAL_PLATFORM_COMISSION_PREFIX + 'OTHER']: 30,
+                [EXTERNAL_ITEM_CLASS_COMISSION_PREFIX + 'OTHER:BOOK']: 30,
+                [REPORT_TOTAL]: 70,
+            });
+            expect(storedExpenses.filter(row => row.expenseKey.startsWith(EXTERNAL_PLATFORM_COMISSION_PREFIX))
+                .every(row => row.displayWeight === 2)).toBe(true);
+            expect(storedExpenses.filter(row => row.expenseKey.startsWith(EXTERNAL_ITEM_CLASS_COMISSION_PREFIX))
+                .every(row => row.displayWeight === 3)).toBe(true);
+        });
+
+        it('subtracts refunded external commissions only from the matching source and report total', async () => {
+            await service['updateExpensesForReport']('report', payment(), 'seller');
+            const externalPayment = payment({ externalPlatformId: 'external', items: [item({ itemClass: 'BOOK', appComissionAmount: 50 })] });
+            await service['updateExpensesForReport']('report', externalPayment, 'seller');
+            await service['updateExpensesForReport']('report', {
+                ...externalPayment, type: 'REFUND', items: [item({ itemClass: 'BOOK', appComissionAmount: 15 })],
+            }, 'seller');
+            expect(storedExpenses.find(row => row.expenseKey === PLATFORM_COMISSION_TOTAL)?.expenseAmount).toBe(20);
+            expect(storedExpenses.find(row => row.expenseKey === EXTERNAL_PLATFORM_COMISSION_PREFIX + 'EXTERNAL')?.expenseAmount).toBe(35);
+            expect(storedExpenses.find(row => row.expenseKey === EXTERNAL_ITEM_CLASS_COMISSION_PREFIX + 'EXTERNAL:BOOK')?.expenseAmount).toBe(35);
+            expect(storedExpenses.find(row => row.expenseKey === REPORT_TOTAL)?.expenseAmount).toBe(55);
+        });
+
+        it('preserves all-seller flow filtering and encodes delimiter characters without creating Postral rows', async () => {
+            externalRepo.findOneBy.mockResolvedValue({ id: 'external', code: 'MARKET:TR' });
+            await service['updateExpensesForReport']('flow', payment({
+                externalPlatformId: 'external',
+                items: [item({ itemClass: 'BOOK:PRINT' }), item({ sellerAccountId: 'other' })],
+            }), 'owner', null);
+            expect(storedExpenses.find(row => row.expenseKey === EXTERNAL_PLATFORM_COMISSION_PREFIX + 'MARKET%3ATR'))
+                .toMatchObject({ accountId: 'owner', expenseAmount: 40 });
+            expect(storedExpenses.find(row => row.expenseKey === EXTERNAL_ITEM_CLASS_COMISSION_PREFIX + 'MARKET%3ATR:BOOK%3APRINT')?.expenseAmount).toBe(20);
+            expect(storedExpenses.find(row => row.expenseKey === REPORT_TOTAL)?.expenseAmount).toBe(40);
+            expect(storedExpenses.some(row => row.expenseKey === PLATFORM_COMISSION_TOTAL || row.expenseKey.startsWith(ITEM_CLASS_COMISSION_PREFIX))).toBe(false);
+        });
+
+        it('does not attribute an unresolved external commission to Postral', async () => {
+            externalRepo.findOneBy.mockResolvedValue(null);
+            await expect(service['updateExpensesForReport']('report', payment({ externalPlatformId: 'missing' }), 'seller'))
+                .rejects.toThrow('missing or invalid external platform');
+            expect(expenses.save).not.toHaveBeenCalled();
+        });
     });
 
     it('groups ID-less products by normalized name across payments, with refund accounting', async () => {
@@ -223,6 +296,13 @@ describe('ReportDigestionService sales breakdown', () => {
         expect(storedPlatforms.map(row => row.reportId)).toEqual(['report-0', 'report-1']);
         expect(storedItems).toHaveLength(2);
         expect(externalRepo.findOneBy).toHaveBeenCalledTimes(1);
+        for (const [rows] of expenses.save.mock.calls) {
+            expect(rows).toEqual(expect.arrayContaining([
+                expect.objectContaining({ expenseKey: EXTERNAL_PLATFORM_COMISSION_PREFIX + 'EXTERNAL', expenseAmount: 20 }),
+                expect.objectContaining({ expenseKey: REPORT_TOTAL, expenseAmount: 20 }),
+            ]));
+            expect(rows.some((row: ReportExpense) => row.expenseKey === PLATFORM_COMISSION_TOTAL)).toBe(false);
+        }
         expect(admin.getAdminSettings).not.toHaveBeenCalled();
         expect(operations.find).toHaveBeenCalledTimes(2);
         expect(reports[2].totalSaleAmount).toBe(0);

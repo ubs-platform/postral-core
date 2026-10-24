@@ -99,6 +99,25 @@ expenses. Existing report/expense/commission formulas are unchanged. PLATFORM
 and PLATFORM_SELLER remain Postral commission-income reports and skip external
 payments, including provider-fee processing.
 
+### Commission expense ownership
+
+In SELLER and PLATFORM_FLOW expense breakdowns, `PLATFORM_COMISSION_TOTAL` and
+`ITEM_CLASS_COMISSION:{itemClass}` contain native Postral commissions only.
+External commissions use `EXTERNAL_PLATFORM_COMISSION:{encodedPlatformCode}` and
+`EXTERNAL_ITEM_CLASS_COMISSION:{encodedPlatformCode}:{encodedItemClass}`.
+Dynamic external key segments are URI-encoded to avoid delimiter collisions;
+clients decode them for display. External totals have display weight 2, class
+details weight 3. `REPORT_TOTAL` still includes both commission sources exactly
+once, plus the existing other expenses; do not sum totals and class-detail rows.
+Refund digestion subtracts from the corresponding source and the overall total.
+This does not enable external refunds, which remain blocked at payment entry.
+
+No additional schema change is needed for this expense split. Reconstruct old
+reports to separate previously mixed commission aggregates; existing totals
+cannot identify their historical source by themselves. Postral commission
+billing already reads PLATFORM_SELLER reports (not expense totals) and continues
+to skip external platform commissions.
+
 Report items with a nonblank catalog `itemId` retain their existing keys.
 Otherwise, identity uses the trimmed, whitespace-collapsed, lowercase payment
 item name and the existing variation; null/missing fallback variations equal the

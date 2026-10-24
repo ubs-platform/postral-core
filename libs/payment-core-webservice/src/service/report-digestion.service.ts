@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report, ReportQuery, ReportComission, ReportTaxGroup, PaymentChannelOperation, ReportPaymentRelation, ReportExpense, ReportPlatform, ExternalPlatform } from '@tk-postral/postral-entities';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType, POSTRAL_INSTANCE } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, EXTERNAL_PLATFORM_COMISSION_PREFIX, EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType, POSTRAL_INSTANCE } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
@@ -355,7 +355,7 @@ export class ReportDigestionService {
 
     private static expenseDisplayWeight(expenseKey: string): number {
         if (expenseKey === REPORT_TOTAL) return 1;
-        if (expenseKey === PLATFORM_COMISSION_TOTAL || expenseKey === PAYMENT_SERVICE_FEE) return 2;
+        if (expenseKey === PLATFORM_COMISSION_TOTAL || expenseKey === PAYMENT_SERVICE_FEE || expenseKey.startsWith(EXTERNAL_PLATFORM_COMISSION_PREFIX)) return 2;
         return 3; // ITEM_CLASS_COMISSION_* ve diğerleri
     }
 
@@ -426,13 +426,13 @@ export class ReportDigestionService {
         }
     }
 
-    private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId) {
-        // Not: External platformların zaten komisyonları eklenirken hesaplanıyor. belki dış platform ismini yazdırabiliriz...
-        // if (payment.externalPlatformId) {
-        //     // TODO: External platform için komisyonları ayrı hesapla...
-        //     return;
-
-        // }
+    private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId, platforms = new Map<string, ExternalPlatform>()) {
+        const platformCode = payment.externalPlatformId
+            ? encodeURIComponent((await this.resolveReportPlatform(payment, platforms)).platformKey)
+            : undefined;
+        const totalComissionExpenseKey = platformCode == null
+            ? PLATFORM_COMISSION_TOTAL
+            : EXTERNAL_PLATFORM_COMISSION_PREFIX + platformCode;
 
         // Eğer birden fazla instance bir rapora işleseydi, bu yapı daha doğru olurdu. Ancak tek bir rapor tek bir instance işleyeceği için burada expense'leri bir 
         // anda çekip güncelleyebilirim, böylece performans artışı sağlanır. 
@@ -452,7 +452,9 @@ export class ReportDigestionService {
             if (itemFilterAccountId !== null && item.sellerAccountId !== itemFilterAccountId) continue;
 
             if (item.itemClass) {
-                const expenseKey = ITEM_CLASS_COMISSION_PREFIX + item.itemClass;
+                const expenseKey = platformCode == null
+                    ? ITEM_CLASS_COMISSION_PREFIX + item.itemClass
+                    : EXTERNAL_ITEM_CLASS_COMISSION_PREFIX + platformCode + ':' + encodeURIComponent(item.itemClass);
                 let itemClassExpenseReport = expenseMap.get(expenseKey);
                 if (!itemClassExpenseReport) {
                     itemClassExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
@@ -469,7 +471,6 @@ export class ReportDigestionService {
                 // await this.reportExpenseRepo.save(itemClassExpenseReport);
             }
 
-            const totalComissionExpenseKey = PLATFORM_COMISSION_TOTAL;
             let totalComissionExpenseReport = expenseMap.get(totalComissionExpenseKey);
 
 
@@ -706,7 +707,7 @@ export class ReportDigestionService {
                 const flag = payment.includeInReportDigestion;
                 if (flag && freshReport.reportType === "SELLER") {
                     const platform = await this.resolveReportPlatform(payment, platforms);
-                    await this.updateExpensesForReport(freshReport.id, payment, accountId);
+                    await this.updateExpensesForReport(freshReport.id, payment, accountId, accountId, platforms);
                     await this.updateProviderFeeExpenseForReportAccountId(freshReport.id, payment, accountId);
                     await this.digestPayment(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, accountId);
@@ -727,7 +728,7 @@ export class ReportDigestionService {
 
                 if (flag && freshReport.reportType === "PLATFORM_FLOW") {
                     const platform = await this.resolveReportPlatform(payment, platforms);
-                    await this.updateExpensesForReport(freshReport.id, payment, accountId, null);
+                    await this.updateExpensesForReport(freshReport.id, payment, accountId, null, platforms);
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
                     await this.digestPlatformFlowReport(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
