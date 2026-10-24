@@ -374,11 +374,12 @@ export class ReportDigestionService {
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId) {
-        if (payment.externalPlatformId) {
-            // TODO: External platform için komisyonları ayrı hesapla...
-            return;
+        // Not: External platformların zaten komisyonları eklenirken hesaplanıyor. belki dış platform ismini yazdırabiliriz...
+        // if (payment.externalPlatformId) {
+        //     // TODO: External platform için komisyonları ayrı hesapla...
+        //     return;
 
-        }
+        // }
 
         // Eğer birden fazla instance bir rapora işleseydi, bu yapı daha doğru olurdu. Ancak tek bir rapor tek bir instance işleyeceği için burada expense'leri bir 
         // anda çekip güncelleyebilirim, böylece performans artışı sağlanır. 
