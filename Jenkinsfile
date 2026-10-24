@@ -58,10 +58,7 @@ const fs = require('fs');
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
 packageJson.version = process.env.RELEASE_VERSION;
-
-if (process.env.RELEASE_VERSION_TAG) {
-    packageJson.childrenVersionTag = process.env.RELEASE_VERSION_TAG;
-}
+packageJson.iksir.childrenVersionTag = process.env.RELEASE_VERSION_TAG || '';
 
 fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\\n');
 NODE
