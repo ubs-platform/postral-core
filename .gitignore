@@ -58,3 +58,5 @@ xr-generated
 infrastructure/mongo-data
 infrastructure/mariadb-data
 infrastructure/redis-data
+# app-level local env files (see dev.env.example)
+apps/*/dev.env
