@@ -391,7 +391,7 @@ export class PaymentOperationManagementService {
 
 
     async hasFailedPaymentOperations(paymentId: string): Promise<boolean> {
-        
+
         const operations = await this.paymentChannelOperationRepo.count({
             where: [
                 { paymentId: paymentId, status: "FAILED" },
