@@ -7,6 +7,7 @@ import {
     NotFoundException,
     Param,
     Post,
+    Req,
     Sse,
     UseGuards,
 } from '@nestjs/common';
@@ -26,6 +27,7 @@ import { exec } from 'child_process';
 import { CurrentUser, JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { ExternalPlatformPaymentService } from '../service/external-platform-payment.service';
+import { FastifyRequest } from 'fastify';
 @Controller('payment')
 export class PaymentController {
     constructor(
@@ -54,6 +56,7 @@ export class PaymentController {
     public async startOperation(
         @Param() { id }: { id: string },
         @Body() captureInfo: PaymentCaptureInfoDTO,
+        @Req() request: FastifyRequest,
     ) {
         let error: any = null;
         try {
@@ -77,7 +80,10 @@ export class PaymentController {
                 throw error;
             }
 
-            return await this.ps.startPaymentOperation(id, captureInfo);
+            return await this.ps.startPaymentOperation(id, {
+                ...captureInfo,
+                buyerIp: request.ip,
+            });
         } catch (error: any) {
             console.error(`Error starting payment operation for payment ${id}:`, error);
             try {

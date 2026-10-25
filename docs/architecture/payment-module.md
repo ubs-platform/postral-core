@@ -21,6 +21,11 @@ The handlers return `PaymentChannelStatusDTO` with the operation identifiers, re
 
 Use `NonProductionGuard` for development-only endpoints. Administrative mutations use `JwtAuthGuard`, `RolesGuard`, and the `admin` or `postral-admin` roles.
 
+`apps/integration-iyzico` is a separate sandbox-only Engine5 channel application.
+It owns provider operations and item-transaction mappings without changing
+`PaymentChannelOperation`. See its [setup and limitations](../../apps/integration-iyzico/README.md).
+The only additional checkout context is server-populated `captureInfo.buyerIp`.
+
 ## Persistence and Numeric Fields
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.
