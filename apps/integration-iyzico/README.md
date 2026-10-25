@@ -38,6 +38,9 @@ core entity/schema change is required. This version refuses production mode and
 non-sandbox API endpoints. Plain HTTP public URLs are for local testing only;
 use externally reachable HTTPS for complete callback tests.
 
+For local development, copy `apps/integration-iyzico/dev.env.example` to the
+git-ignored `apps/integration-iyzico/dev.env` and fill in your sandbox keys.
+
 ```bash
 npm run build -- integration-iyzico
 # existing launcher loads dev.env then apps/integration-iyzico/dev.env:

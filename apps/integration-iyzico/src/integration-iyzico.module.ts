@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { IntegrationIyzicoController } from './integration-iyzico.controller';
 import { IntegrationIyzicoService } from './integration-iyzico.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
+import { MicroservicesCommonModule, MicroserviceSetupUtil } from '@ubs-platform/microservice-setup-util';
 import { IyzicoOperation } from './iyzico-operation.entity';
 import { IyzicoClientService } from './iyzico-client.service';
+import { ClientsModule, NestMicroservice } from '@nestjs/microservices';
 
 @Module({
     imports: [
@@ -21,7 +22,8 @@ import { IyzicoClientService } from './iyzico-client.service';
             extra: { connectionLimit: 5 },
         }),
         TypeOrmModule.forFeature([IyzicoOperation]),
-        MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT'),
+        // MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT'),
+        ClientsModule.register([MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT')]),
     ],
     controllers: [IntegrationIyzicoController],
     providers: [IntegrationIyzicoService, IyzicoClientService],
