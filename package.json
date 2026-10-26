@@ -152,5 +152,9 @@
       "^@tk-postral/payment-common(|/.*)$": "<rootDir>/libs/payment-common/src/$1",
       "^@tk-postral/payment-core-webservice(|/.*)$": "<rootDir>/libs/payment-core-webservice/src/$1"
     }
+  },
+  "___overrideNotu": "TODO: Sonraki güncellemede multer sürümünü kontrol et, eğer nestjs tarafında yükseltilmişse buradaki sürümü de güncelle (Ya da override'ı kaldır)",
+  "overrides": {
+    "multer": "^2.5.0"
   }
 }
