@@ -1,8 +1,18 @@
-import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Post,
+    Query,
+    Res,
+    UseFilters,
+} from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { FastifyReply } from 'fastify';
 import { IntegrationIyzicoService } from './integration-iyzico.service';
+import { HttpToRpcExceptionFilter } from './http-to-rpc-exception.filter';
 
 @Controller('iyzico')
 export class IntegrationIyzicoController {
@@ -15,21 +25,25 @@ export class IntegrationIyzicoController {
         return { mode: 'sandbox' };
     }
 
+    @UseFilters(HttpToRpcExceptionFilter)
     @MessagePattern('postral/payment-channel/iyzico/init')
     initialize(payment: PaymentFullWithCaptureInfoDTO) {
         return this.integrationIyzicoService.initialize(payment);
     }
 
+    @UseFilters(HttpToRpcExceptionFilter)
     @MessagePattern('postral/payment-channel/iyzico/check')
     check(operationId: string) {
         return this.integrationIyzicoService.check(operationId);
     }
 
+    @UseFilters(HttpToRpcExceptionFilter)
     @MessagePattern('postral/payment-channel/iyzico/fire')
     fire(operationId: string) {
         return this.integrationIyzicoService.fire(operationId);
     }
 
+    @UseFilters(HttpToRpcExceptionFilter)
     @MessagePattern('postral/payment-channel/iyzico/cancel')
     cancel(operationId: string) {
         return this.integrationIyzicoService.cancel(operationId);

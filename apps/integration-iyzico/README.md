@@ -5,8 +5,9 @@ An independent Engine5 payment channel (`iyzico`), not a replacement for
 and fulfillment events. This first increment supports full-amount, single-charge
 Checkout Form purchases with all items temporarily classified as digital. Currency comes
 from the payment DTO; TRY/EUR/USD/GBP/NOK/CHF are accepted subject to the sandbox
-merchant's capabilities. Marketplace, physical products, preauthorization,
-cancellation and refunds are **not enabled**.
+merchant's capabilities. Unpaid checkouts can be cancelled locally (see `cancel`).
+Marketplace, physical products, preauthorization, voiding a captured payment and
+refunds are **not enabled**.
 
 ## Configuration and startup
 
@@ -80,8 +81,15 @@ card form, hardcoded merchant keys or absolute provider URLs are needed.
   still pending.
 - `fire`: returns an already captured operation, without another charge. It
   explicitly rejects uncaptured operations.
-- `cancel`: explicitly rejects the unsupported operation; it does not pretend
-  that a local expiry reversed a provider charge.
+- `cancel`: cancels an unpaid checkout locally (`FAILED`, `cancellationState:
+  CANCELLED`) and is idempotent. If the token's retrieval reports
+  `paymentStatus=SUCCESS` (including fraud review), or the operation is already
+  `COMPLETED`, it fails with a conflict instead; captured payments need a refund.
+  iyzico documents neither the retrieval response for an unpaid form nor a way to
+  invalidate an open form token, so a failed retrieval is treated as unpaid. A
+  successful callback arriving after cancellation is not completed; the row is
+  set to `cancellationState: PAID_AFTER_CANCEL` and an error is logged for manual
+  reconciliation/refund.
 - `init` with `type: REFUND`: explicitly rejected until the refund increment.
 
 `PaymentChannelOperation.operationId` stores the adapter UUID returned at init.
@@ -92,8 +100,9 @@ mapping in its own row, ready for later item-level refunds. Basket IDs use
 Postral payment IDs and line IDs use **payment-item** IDs, not catalog IDs.
 No buyer identity/address or raw provider response is persisted by the adapter.
 
-The public redirect stays relative: `iyzico/operation/<adapter-operation-id>`.
-The existing client appends `redirectUrl`. The adapter binds the first validated
+The public redirect is an app-origin path derived from `IYZICO_PUBLIC_BASE_URL`,
+e.g. `/service/payment/api/iyzico/operation/<adapter-operation-id>`. Clients
+resolve it against their own origin and append `redirectUrl`. The adapter binds the first validated
 same-origin return URL and redirects to the stored hosted checkout URL. On
 callback it validates the token, retrieves the result server-side, verifies the
 HMAC signature and correlation/amount/currency/basket details, stores status
@@ -139,11 +148,13 @@ manual recovery; do not delete reservations just to retry.
 - TODO: ❗ No webhook or autonomous lost-callback reconciliation yet. If the
   browser never posts the callback, provider result recovery is manual. A stored
   callback flag allows normal `check` retries after a callback retrieval error.
-- TODO: ❗ Postral expiry currently calls channel cancellation and terminal Postral
-  payments ignore later results. Unsupported cancellation fails explicitly.
-  Test within Postral's payment expiry window (default 15 minutes); late captured
-  payments require manual reconciliation. Do not deploy this increment for real
-  money or treat closing the browser as cancelling a provider charge.
+- TODO: ❗ Postral expiry and page exits call channel cancellation, which cancels
+  only locally; the open iyzico form stays payable until its token expires.
+  Payments completed afterwards are flagged `PAID_AFTER_CANCEL` and require
+  manual reconciliation/refund (no automatic void); see
+  [the reversal plan](../../docs/architecture/iyzico-paid-after-cancel-reversal-plan.md).
+  Do not deploy this increment
+  for real money or treat closing the browser as cancelling a provider charge.
 - TODO: ❗ Full-amount captures only; amounts and each basket line must be positive,
   exactly representable in two decimal places, with matching totals. No silent
   rounding, installment surcharge or split-channel allocation is performed.

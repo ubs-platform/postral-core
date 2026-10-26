@@ -28,6 +28,7 @@ export function mapCheckout(
     operationId: string,
     callbackUrl: string,
 ) {
+    console.info("Postral Payment:", payment);
     if (payment.type !== 'PURCHASE') {
         throw new BadRequestException('iyzico refunds are not implemented yet');
     }
@@ -137,7 +138,7 @@ export function mapCheckout(
             'iyzico basket IDs must be unique and item totals must equal the capture amount',
         );
     }
-    return {
+    const iyzicoCheckoutRequest = {
         locale: 'tr',
         conversationId: operationId,
         basketId: required(payment.id, 'payment.id'),
@@ -169,4 +170,6 @@ export function mapCheckout(
         billingAddress,
         basketItems,
     };
+    console.log('iyzicoCheckoutRequest:', iyzicoCheckoutRequest);
+    return iyzicoCheckoutRequest;
 }

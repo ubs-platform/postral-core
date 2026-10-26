@@ -4,6 +4,7 @@ import {
     Controller,
     Delete,
     Get,
+    HttpException,
     NotFoundException,
     Param,
     Post,
@@ -90,6 +91,9 @@ export class PaymentController {
                 await this.ps.failPaymentIfSetFailFieldTrue(id);
             } catch (failError) {
                 console.error(`Error failing payment ${id} after failed operation start:`, failError);
+            }
+            if (error instanceof HttpException && error.getStatus() < 500) {
+                throw error;
             }
             throw new BadRequestException(`Failed to start payment operation`);
         }

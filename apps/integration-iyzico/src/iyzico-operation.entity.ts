@@ -58,6 +58,13 @@ export class IyzicoOperation {
     @Column({ default: false })
     callbackReceived!: boolean;
 
+    /**
+     * `CANCELLED`: cancelled locally while unpaid. `PAID_AFTER_CANCEL`: iyzico
+     * later reported a successful payment; needs manual reconciliation/refund.
+     */
+    @Column({ type: 'varchar', nullable: true })
+    cancellationState!: 'CANCELLED' | 'PAID_AFTER_CANCEL' | null;
+
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
 }

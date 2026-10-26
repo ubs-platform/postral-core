@@ -54,20 +54,22 @@ export class InvoiceAccountMapper {
             id: entity.id,
             name: entity.name,
             legalIdentity: this.cryptionUtil.decryptWithConfig(entity.legalIdentity, "USE_DEFAULT") || '',
-            type: entity.type,
-            realAccountId: entity.realAccountId,
+            type: this.cryptionUtil.decryptWithConfig(entity.type, "THROW") as any,
+            realAccountId: this.cryptionUtil.decryptWithConfig(entity.realAccountId, "USE_DEFAULT") || '',
             bankName: entity.bankName,
             bankIban: entity.bankIban,
             bankBic: entity.bankBic,
             bankSwift: entity.bankSwift,
-            taxOffice: entity.taxOffice,
+            taxOffice: this.cryptionUtil.decryptWithConfig(entity.taxOffice, "USE_DEFAULT") || '',
+            emailAddress: this.cryptionUtil.decryptWithConfig(entity.emailAddress, "USE_DEFAULT") || '',
+            phone: this.cryptionUtil.decryptWithConfig(entity.phone, "USE_DEFAULT") || '',
             bankAccounts: entity.bankAccounts?.map(ba => ({
                 id: ba.id,
                 bankName: ba.bankName,
                 currency: ba.currency,
-                bankIban: ba.bankIban,
-                bankBic: ba.bankBic,
-                bankSwift: ba.bankSwift,
+                bankIban: this.cryptionUtil.decryptWithConfig(ba.bankIban, "USE_DEFAULT") || '',
+                bankBic: this.cryptionUtil.decryptWithConfig(ba.bankBic, "USE_DEFAULT") || '',
+                bankSwift: this.cryptionUtil.decryptWithConfig(ba.bankSwift, "USE_DEFAULT") || '',
             })) || [],
         };
     }
@@ -86,7 +88,9 @@ export class InvoiceAccountMapper {
         entity.bankBic = this.cryptionUtil.encryptWithConfig(dto.bankBic, "USE_DEFAULT") || '';
         entity.bankSwift = this.cryptionUtil.encryptWithConfig(dto.bankSwift, "USE_DEFAULT") || '';
         entity.taxOffice = this.cryptionUtil.encryptWithConfig(dto.taxOffice, "USE_DEFAULT") || '';
-
+        entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || '';
+        entity.phone = this.cryptionUtil.encryptWithConfig(dto.phone, "USE_DEFAULT") || '';
+        
         if (dto.bankAccounts) {
             entity.bankAccounts = dto.bankAccounts.map(ba => {
                 const b = new SnapshotBankAccount();

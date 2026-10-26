@@ -275,6 +275,7 @@ describe('IntegrationIyzicoService', () => {
                     itemTransactions: null,
                     returnUrl: null,
                     callbackReceived: false,
+                    cancellationState: null,
                 },
                 value,
             ),
@@ -314,6 +315,7 @@ describe('IntegrationIyzicoService', () => {
                           id: string;
                           status?: string;
                           returnUrl?: FindOperator<unknown>;
+                          cancellationState?: string;
                       },
                 value: Partial<IyzicoOperation>,
             ) => {
@@ -324,7 +326,10 @@ describe('IntegrationIyzicoService', () => {
                 if (
                     typeof criteria !== 'string' &&
                     ((criteria.status && row.status !== criteria.status) ||
-                        (criteria.returnUrl && row.returnUrl !== null))
+                        (criteria.returnUrl && row.returnUrl !== null) ||
+                        (criteria.cancellationState &&
+                            row.cancellationState !==
+                                criteria.cancellationState))
                 )
                     return;
                 rows.set(id, { ...row, ...value });
@@ -407,7 +412,7 @@ describe('IntegrationIyzicoService', () => {
         expect(first).toEqual(second);
         expect(first.paymentChannelOperationId).not.toBe('postral-payment');
         expect(first.redirectUrl).toBe(
-            `iyzico/operation/${first.paymentChannelOperationId}`,
+            `/service/payment/api/iyzico/operation/${first.paymentChannelOperationId}`,
         );
         expect(client.initialize).toHaveBeenCalledTimes(1);
         expect(first).not.toHaveProperty('providerFee');
@@ -574,7 +579,7 @@ describe('IntegrationIyzicoService', () => {
         },
     );
 
-    it('explicitly rejects refunds, uncaptured fire and cancellation without mutating state', async () => {
+    it('explicitly rejects refunds and uncaptured fire without mutating state', async () => {
         const refund = payment();
         refund.type = 'REFUND';
         await expect(service.initialize(refund)).rejects.toThrow('refunds');
@@ -582,7 +587,86 @@ describe('IntegrationIyzicoService', () => {
         const initialized = await service.initialize(payment());
         const id = initialized.paymentChannelOperationId;
         await expect(service.fire(id)).rejects.toThrow('not captured');
-        await expect(service.cancel(id)).rejects.toThrow('not implemented');
         expect((await service.find(id)).status).toBe('WAITING');
+    });
+
+    it('cancels an unpaid checkout locally and idempotently', async () => {
+        const initialized = await service.initialize(payment());
+        const id = initialized.paymentChannelOperationId;
+        client.retrieve.mockRejectedValue(new Error('iyzico rejected'));
+        expect(await service.cancel(id)).toMatchObject({
+            paymentStatus: 'FAILED',
+        });
+        expect(await service.find(id)).toMatchObject({
+            status: 'FAILED',
+            cancellationState: 'CANCELLED',
+        });
+        expect(await service.cancel(id)).toMatchObject({
+            paymentStatus: 'FAILED',
+        });
+        expect(client.retrieve).toHaveBeenCalledTimes(1);
+    });
+
+    it('cancels when iyzico reports a failed payment', async () => {
+        const initialized = await service.initialize(payment());
+        const id = initialized.paymentChannelOperationId;
+        client.retrieve.mockResolvedValue(
+            result(id, { paymentStatus: 'FAILURE' }),
+        );
+        expect(await service.cancel(id)).toMatchObject({
+            paymentStatus: 'FAILED',
+        });
+    });
+
+    it.each([{ fraudStatus: 1 }, { fraudStatus: 0 }])(
+        'refuses to cancel a checkout iyzico reports as paid: %j',
+        async (change) => {
+            const initialized = await service.initialize(payment());
+            const id = initialized.paymentChannelOperationId;
+            client.retrieve.mockResolvedValue(result(id, change));
+            await expect(service.cancel(id)).rejects.toThrow('reports this checkout as paid');
+            expect(await service.find(id)).toMatchObject({
+                status: 'WAITING',
+                cancellationState: null,
+            });
+        },
+    );
+
+    it('refuses to cancel a captured payment', async () => {
+        const initialized = await service.initialize(payment());
+        const id = initialized.paymentChannelOperationId;
+        client.retrieve.mockResolvedValue(result(id));
+        await service.callback(id, 'checkout-token');
+        await expect(service.cancel(id)).rejects.toThrow('use a refund');
+        expect((await service.find(id)).status).toBe('COMPLETED');
+    });
+
+    it('flags a payment completed after cancellation without completing it', async () => {
+        const initialized = await service.initialize(payment());
+        const id = initialized.paymentChannelOperationId;
+        client.retrieve.mockRejectedValueOnce(new Error('iyzico rejected'));
+        await service.cancel(id);
+        client.retrieve.mockResolvedValue(result(id));
+        expect(await service.callback(id, 'checkout-token')).toMatchObject({
+            status: 'FAILED',
+            cancellationState: 'PAID_AFTER_CANCEL',
+            providerPaymentId: null,
+        });
+        expect(await service.check(id)).toMatchObject({
+            paymentStatus: 'FAILED',
+        });
+    });
+
+    it('keeps a cancelled checkout cancelled when the late callback is a failure', async () => {
+        const initialized = await service.initialize(payment());
+        const id = initialized.paymentChannelOperationId;
+        client.retrieve.mockRejectedValueOnce(new Error('iyzico rejected'));
+        await service.cancel(id);
+        client.retrieve.mockResolvedValue(
+            result(id, { paymentStatus: 'FAILURE' }),
+        );
+        expect(
+            (await service.callback(id, 'checkout-token')).cancellationState,
+        ).toBe('CANCELLED');
     });
 });

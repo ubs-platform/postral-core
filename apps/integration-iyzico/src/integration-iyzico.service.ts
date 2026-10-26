@@ -116,7 +116,11 @@ export class IntegrationIyzicoService {
         return {
             paymentChannelId: 'iyzico',
             paymentChannelOperationId: operation.id,
-            redirectUrl: `iyzico/operation/${operation.id}`,
+            // Path only: the browser resolves it against the origin it is on.
+            redirectUrl: new URL(
+                `operation/${operation.id}`,
+                this.client.publicBaseUrl,
+            ).pathname,
             paymentStatus: operation.status,
             feeCutInstantly: true,
             ...(operation.providerFee !== null &&
@@ -189,8 +193,29 @@ export class IntegrationIyzicoService {
             throw new BadRequestException('Invalid iyzico callback token');
         }
         await this.operations.update(id, { callbackReceived: true });
+        if (operation.cancellationState === 'CANCELLED') {
+            await this.flagPaymentAfterCancellation(operation);
+            return this.find(id);
+        }
         await this.check(id);
         return this.find(id);
+    }
+
+    private async flagPaymentAfterCancellation(
+        operation: IyzicoOperation,
+    ): Promise<void> {
+        const result = await this.client.retrieve(
+            operation.token!,
+            operation.id,
+        );
+        if (result.paymentStatus !== 'SUCCESS') return;
+        await this.operations.update(
+            { id: operation.id, cancellationState: 'CANCELLED' },
+            { cancellationState: 'PAID_AFTER_CANCEL' },
+        );
+        this.logger.error(
+            `iyzico operation ${operation.id} was paid after cancellation; manual reconciliation/refund is required`,
+        );
     }
 
     async check(id: string): Promise<PaymentChannelStatusDTO> {
@@ -335,12 +360,53 @@ export class IntegrationIyzicoService {
         return status;
     }
 
-    async cancel(id: string): Promise<never> {
-        await this.find(id);
-        // TODO: ❗ Postral cancellation must distinguish an unpaid checkout from a
-        // charged payment. A local expiry must not pretend an iyzico capture was voided.
-        throw new ConflictException(
-            'iyzico cancellation is not implemented; reconcile this operation with the provider',
+    /**
+     * Cancels an unpaid checkout locally. iyzico has no documented way to
+     * invalidate an open Checkout Form token, so a payment completed after this
+     * point is flagged as `PAID_AFTER_CANCEL` on callback instead.
+     */
+    async cancel(id: string): Promise<PaymentChannelStatusDTO> {
+        const operation = await this.find(id);
+        if (operation.status === 'FAILED') return this.toStatus(operation);
+        if (operation.status !== 'WAITING') {
+            throw new ConflictException(
+                'iyzico payment is already captured; use a refund instead of cancellation',
+            );
+        }
+        if (operation.token && (await this.providerReportsPaid(operation))) {
+            throw new ConflictException(
+                'iyzico reports this checkout as paid; it cannot be cancelled',
+            );
+        }
+        await this.operations.update(
+            { id, status: 'WAITING' },
+            { status: 'FAILED', cancellationState: 'CANCELLED' },
         );
+        const cancelled = await this.find(id);
+        if (cancelled.cancellationState !== 'CANCELLED') {
+            throw new ConflictException(
+                'iyzico operation changed during cancellation; check its status',
+            );
+        }
+        return this.toStatus(cancelled);
+    }
+
+    private async providerReportsPaid(
+        operation: IyzicoOperation,
+    ): Promise<boolean> {
+        try {
+            const result = await this.client.retrieve(
+                operation.token!,
+                operation.id,
+            );
+            return result.paymentStatus === 'SUCCESS';
+        } catch {
+            // iyzico does not document the response for an unpaid form; a later
+            // successful callback is still caught by flagPaymentAfterCancellation.
+            this.logger.warn(
+                `iyzico operation ${operation.id} has no retrievable payment; cancelling locally`,
+            );
+            return false;
+        }
     }
 }

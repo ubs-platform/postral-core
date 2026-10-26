@@ -152,6 +152,7 @@ export class IyzicoClientService {
     }
 
     async initialize(request: ReturnType<typeof mapCheckout>) {
+        console.info("iyzico initialize request:", request);
         const result = await this.call((cb) =>
             this.sdk.checkoutFormInitialize.create(request, cb),
         );

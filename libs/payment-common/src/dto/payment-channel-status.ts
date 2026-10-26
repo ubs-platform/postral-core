@@ -3,6 +3,11 @@ import { PaymentErrorStatus, PaymentOperationFailReason, PaymentOperationStatus,
 export class PaymentChannelStatusDTO {
     paymentChannelId!: string;
     paymentChannelOperationId!: string;
+    /**
+     * Payment page to open: an absolute `http(s)` URL or an app-origin path
+     * starting with `/`. Bare relative paths are legacy and resolved by clients
+     * under `/service/payment/api/`.
+     */
     redirectUrl!: string;
     paymentStatus!: PaymentOperationStatus;
     paymentErrorStatus?: PaymentOperationFailReason;

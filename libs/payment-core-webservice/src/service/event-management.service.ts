@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import { PaymentDTO, PaymentFullDTO, PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
@@ -36,7 +36,11 @@ export class EventSenderService {
         paymentChannelId: string,
         paymentOperationId: string,
     ): Promise<PaymentChannelStatusDTO> {
-        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/cancel`, paymentOperationId));
+        try {
+            return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/cancel`, paymentOperationId));
+        } catch (error) {
+            throw this.toHttpException(error);
+        }
     }
 
     /**
@@ -55,7 +59,21 @@ export class EventSenderService {
         paymentChannelId: string,
         pd: PaymentFullDTO | PaymentFullWithCaptureInfoDTO,
     ): Promise<PaymentChannelStatusDTO> {
-        return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd).pipe(timeout(30_000)));
+        try {
+            return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd).pipe(timeout(30_000)));
+        } catch (error) {
+            throw this.toHttpException(error);
+        }
+    }
+
+    /** Restores the `{ statusCode, message }` payload sent by a channel's RPC exception filter. */
+    private toHttpException(error: unknown): unknown {
+        const statusCode = (error as { statusCode?: unknown } | null)?.statusCode;
+        if (typeof statusCode !== 'number' || statusCode < 400 || statusCode > 599) {
+            return error;
+        }
+        const { message } = error as { message?: unknown };
+        return new HttpException({ statusCode, message }, statusCode);
     }
 
     /**
