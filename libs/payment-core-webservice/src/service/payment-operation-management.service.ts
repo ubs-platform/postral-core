@@ -344,9 +344,11 @@ export class PaymentOperationManagementService {
                     `Payment operation ${paymentOperation.id} could not be completed.`,
                 );
             }
-            // Update status after firing
-            paymentOperation.status = 'COMPLETED';
-            await this.paymentChannelOperationRepo.save(paymentOperation);
+            await this.savePaymentChannelRecord(
+                paymentOperation,
+                result,
+                paymentOperation.paymentId,
+            );
         }
     }
 

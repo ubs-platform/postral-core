@@ -19,6 +19,13 @@ A channel handles these message patterns, using its channel ID in each path:
 
 The handlers return `PaymentChannelStatusDTO` with the operation identifiers, redirect URL, operation status, optional failure status, provider fee, and instant-fee flag. `EventSenderService` dispatches lifecycle calls to these patterns. `PaymentChannelOperation` stores the provider operation record, while a channel-specific entity stores provider state.
 
+Initialization, status checks, and successful `fire` responses use the same
+operation-record save path. A returned `providerFee` or `feeCutInstantly`
+replaces the stored value (including explicit zero/false); omitted values
+preserve the existing fee information. The iyzico adapter supplies the actual
+`iyziCommissionRateAmount + iyziCommissionFee` after verified completion,
+without estimating a commission percentage or fixed transaction charge.
+
 Use `NonProductionGuard` for development-only endpoints. Administrative mutations use `JwtAuthGuard`, `RolesGuard`, and the `admin` or `postral-admin` roles.
 
 `apps/integration-iyzico` is a separate sandbox-only Engine5 channel application.
