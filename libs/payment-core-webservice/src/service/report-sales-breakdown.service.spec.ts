@@ -5,7 +5,7 @@ import {
     ExternalPlatform, PaymentChannelOperation, Report, ReportExpense, ReportItem,
     ReportPaymentRelation, ReportPlatform, ReportQuery, ReportTaxGroup,
 } from '@tk-postral/postral-entities';
-import { EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, EXTERNAL_PLATFORM_COMISSION_PREFIX, ITEM_CLASS_COMISSION_PREFIX, PLATFORM_COMISSION_TOTAL, REPORT_TOTAL, PaymentFullDTO, PaymentItemDTO, POSTRAL_INSTANCE, ReportType } from '@tk-postral/payment-common';
+import { EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, EXTERNAL_PLATFORM_COMISSION_PREFIX, ITEM_CLASS_COMISSION_PREFIX, PAYMENT_CHANNEL_FEE_PREFIX, PAYMENT_SERVICE_FEE, PLATFORM_COMISSION_TOTAL, REPORT_TOTAL, PaymentFullDTO, PaymentItemDTO, POSTRAL_INSTANCE, ReportType } from '@tk-postral/payment-common';
 import { ReportDigestionService } from './report-digestion.service';
 import { PaymentCommonService } from './payment-common.service';
 import { AppComissionService } from './app-commission.service';
@@ -171,6 +171,63 @@ describe('ReportDigestionService sales breakdown', () => {
             externalRepo.findOneBy.mockResolvedValue(null);
             await expect(service['updateExpensesForReport']('report', payment({ externalPlatformId: 'missing' }), 'seller'))
                 .rejects.toThrow('missing or invalid external platform');
+            expect(expenses.save).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('payment service fee attribution by channel', () => {
+        let storedExpenses: ReportExpense[];
+
+        beforeEach(() => {
+            storedExpenses = [];
+            expenses.find.mockImplementation(async ({ where }: { where: { reportId: string; accountId: string } }) =>
+                storedExpenses.filter(row => row.reportId === where.reportId && row.accountId === where.accountId));
+            expenses.save.mockImplementation(async (rows: ReportExpense[]) => {
+                for (const row of rows) {
+                    if (!storedExpenses.includes(row)) storedExpenses.push(row);
+                }
+                return rows;
+            });
+        });
+
+        const op = (paymentChannelId: string, providerFee: number) =>
+            Object.assign(new PaymentChannelOperation(), { paymentChannelId, providerFee });
+
+        it('splits platform provider fees per channel while charging the total and report total once', async () => {
+            operations.find.mockResolvedValueOnce([op('iyzico', 5), op('dummy-ecommerce', 2)]);
+            await service['updateProviderFeeExpenseForPlatformReport']('report', payment());
+            operations.find.mockResolvedValueOnce([op('iyzico', 3), op('market:tr', 1)]);
+            await service['updateProviderFeeExpenseForPlatformReport']('report', payment({ id: 'second' }));
+
+            const amounts = Object.fromEntries(storedExpenses.map(row => [row.expenseKey, row.expenseAmount]));
+            expect(amounts).toEqual({
+                [PAYMENT_SERVICE_FEE]: 11,
+                [PAYMENT_CHANNEL_FEE_PREFIX + 'iyzico']: 8,
+                [PAYMENT_CHANNEL_FEE_PREFIX + 'dummy-ecommerce']: 2,
+                [PAYMENT_CHANNEL_FEE_PREFIX + 'market%3Atr']: 1,
+                [REPORT_TOTAL]: 11,
+            });
+            expect(storedExpenses.every(row => row.accountId === 'PLATFORM')).toBe(true);
+            expect(storedExpenses.find(row => row.expenseKey === PAYMENT_SERVICE_FEE)?.displayWeight).toBe(2);
+            expect(storedExpenses.filter(row => row.expenseKey.startsWith(PAYMENT_CHANNEL_FEE_PREFIX))
+                .every(row => row.displayWeight === 3)).toBe(true);
+        });
+
+        it('applies the seller share ratio to each channel fee and adds to existing commission totals', async () => {
+            await service['updateExpensesForReport']('report', payment(), 'seller');
+            operations.find.mockResolvedValueOnce([op('iyzico', 10), op('dummy-ecommerce', 4)]);
+            await service['updateProviderFeeExpenseForReportAccountId']('report', payment({ totalAmount: 480 }), 'seller');
+
+            const amounts = Object.fromEntries(storedExpenses.map(row => [row.expenseKey, row.expenseAmount]));
+            expect(amounts[PAYMENT_CHANNEL_FEE_PREFIX + 'iyzico']).toBe(5);
+            expect(amounts[PAYMENT_CHANNEL_FEE_PREFIX + 'dummy-ecommerce']).toBe(2);
+            expect(amounts[PAYMENT_SERVICE_FEE]).toBe(7);
+            expect(amounts[REPORT_TOTAL]).toBe(27); // 20 komisyon + 7 ödeme hizmeti
+        });
+
+        it('writes nothing when there is no positive provider fee', async () => {
+            operations.find.mockResolvedValueOnce([]);
+            await service['updateProviderFeeExpenseForPlatformReport']('report', payment());
             expect(expenses.save).not.toHaveBeenCalled();
         });
     });

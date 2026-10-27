@@ -4,6 +4,8 @@ export const EXTERNAL_PLATFORM_COMISSION_PREFIX = 'EXTERNAL_PLATFORM_COMISSION:'
 export const EXTERNAL_ITEM_CLASS_COMISSION_PREFIX = 'EXTERNAL_ITEM_CLASS_COMISSION:';
 export const REPORT_TOTAL = 'REPORT_TOTAL';
 export const PAYMENT_SERVICE_FEE = 'PAYMENT_SERVICE_FEE';
+/** Ödeme kanalı bazlı hizmet ücreti: `PAYMENT_CHANNEL_FEE:{encodedPaymentChannelId}`. Toplamı PAYMENT_SERVICE_FEE'dedir. */
+export const PAYMENT_CHANNEL_FEE_PREFIX = 'PAYMENT_CHANNEL_FEE:';
 // Trol masraflar :d
 export const SHAQ_ONEAL_ADVERTISEMENT_FEE = 'SHAQ_ONEAL_ADVERTISEMENT_FEE'; // Turkcell (0.)5G reklamı
 export const KOBE_BRYANT_RESURRECTION_AND_ADVERTISEMENT_FEE = 'KOBE_BRYANT_RESURRECTION_AND_ADVERTISEMENT_FEE'; // Turkcell 31Ğ reklamı
@@ -16,7 +18,7 @@ export class ReportExpenseDTO {
     accountId!: string;
     expenseKey!: string;
     expenseAmount: number = 0;
-    /** 1 = toplam masraf, 2 = Postral/harici platform komisyonu veya ödeme hizmeti, 3 = ürün grubu komisyonları */
+    /** 1 = toplam masraf, 2 = Postral/harici platform komisyonu veya ödeme hizmeti, 3 = ürün grubu komisyonları ve ödeme kanalı bazlı ücretler */
     displayWeight: number = 2;
     createdAt!: Date;
     updatedAt!: Date;

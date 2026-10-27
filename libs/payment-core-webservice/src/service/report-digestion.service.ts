@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import { Report, ReportQuery, ReportComission, ReportTaxGroup, PaymentChannelOperation, ReportPaymentRelation, ReportExpense, ReportPlatform, ExternalPlatform } from '@tk-postral/postral-entities';
-import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, EXTERNAL_PLATFORM_COMISSION_PREFIX, EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, PAYMENT_SERVICE_FEE, REPORT_TOTAL, ReportDateGrouping, ReportType, POSTRAL_INSTANCE } from '@tk-postral/payment-common';
+import { BaseReport, ITEM_CLASS_COMISSION_PREFIX, PaymentFullDTO, PLATFORM_COMISSION_TOTAL, EXTERNAL_PLATFORM_COMISSION_PREFIX, EXTERNAL_ITEM_CLASS_COMISSION_PREFIX, PAYMENT_SERVICE_FEE, PAYMENT_CHANNEL_FEE_PREFIX, REPORT_TOTAL, ReportDateGrouping, ReportType, POSTRAL_INSTANCE } from '@tk-postral/payment-common';
 import { AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentCommonService } from './payment-common.service';
 import { Cron } from '@nestjs/schedule';
@@ -356,21 +356,7 @@ export class ReportDigestionService {
     private static expenseDisplayWeight(expenseKey: string): number {
         if (expenseKey === REPORT_TOTAL) return 1;
         if (expenseKey === PLATFORM_COMISSION_TOTAL || expenseKey === PAYMENT_SERVICE_FEE || expenseKey.startsWith(EXTERNAL_PLATFORM_COMISSION_PREFIX)) return 2;
-        return 3; // ITEM_CLASS_COMISSION_* ve diğerleri
-    }
-
-    private async fetchOrCreateReportExpense(reportId: string, accountId: string, expenseKey: string, currency: string): Promise<ReportExpense> {
-        let expense = await this.reportExpenseRepo.findOne({ where: { reportId, accountId, expenseKey } });
-        if (!expense) {
-            expense = new ReportExpense();
-            expense.reportId = reportId;
-            expense.accountId = accountId;
-            expense.expenseKey = expenseKey;
-            expense.expenseAmount = 0;
-            expense.displayWeight = ReportDigestionService.expenseDisplayWeight(expenseKey);
-            await this.reportExpenseRepo.save(expense);
-        }
-        return expense;
+        return 3; // ITEM_CLASS_COMISSION_*, PAYMENT_CHANNEL_FEE:* ve diğerleri
     }
 
     private async updateProviderFeeExpenseForReportAccountId(reportId: string, payment: PaymentFullDTO, accountId: string): Promise<void> {
@@ -384,26 +370,44 @@ export class ReportDigestionService {
         ]);
 
 
-        for (const operation of operations) {
+        const sellerItemsTotal = paymentSellerOrder?.amount ?? 0;
+        if (sellerItemsTotal <= 0 || payment.totalAmount <= 0) return;
+        const ratio = AmountCalculationUtil.divideNumberValues(sellerItemsTotal, payment.totalAmount);
 
-            const sellerItemsTotal = paymentSellerOrder.amount;
+        const fees = operations.map(operation => ({
+            paymentChannelId: operation.paymentChannelId,
+            amount: AmountCalculationUtil.multiplyNumberValues(operation.providerFee, ratio),
+        }));
+        await this.addProviderFeeExpenses(reportId, accountId, fees);
+    }
 
-            if (sellerItemsTotal <= 0 || payment.totalAmount <= 0) continue;
+    /**
+     * Ödeme hizmeti ücretlerini PAYMENT_SERVICE_FEE (toplam), kanal bazlı PAYMENT_CHANNEL_FEE:{kanal}
+     * alt kırılımı ve REPORT_TOTAL'a yazar. Alt kırılım REPORT_TOTAL'a ikinci kez eklenmez.
+     */
+    private async addProviderFeeExpenses(reportId: string, accountId: string, fees: { paymentChannelId: string; amount: number }[]): Promise<void> {
+        const positiveFees = fees.filter(fee => fee.amount > 0);
+        if (positiveFees.length === 0) return;
 
-            const ratio = AmountCalculationUtil.divideNumberValues(sellerItemsTotal, payment.totalAmount);
-            const sellerFee = AmountCalculationUtil.multiplyNumberValues(operation.providerFee, ratio);
+        const existing = await this.reportExpenseRepo.find({ where: { reportId, accountId } });
+        const expenseMap = new Map(existing.map(e => [e.expenseKey, e]));
+        const addTo = (expenseKey: string, amount: number) => {
+            let expense = expenseMap.get(expenseKey);
+            if (!expense) {
+                expense = ReportExpense.create(reportId, accountId, expenseKey, 0, undefined, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
+                expenseMap.set(expenseKey, expense);
+            }
+            expense.expenseAmount = AmountCalculationUtil.addNumberValues(expense.expenseAmount, amount);
+            return expense;
+        };
 
-            if (sellerFee <= 0) continue;
-
-            const feeExpense = await this.fetchOrCreateReportExpense(reportId, accountId, PAYMENT_SERVICE_FEE, payment.currency);
-            feeExpense.expenseAmount = AmountCalculationUtil.addNumberValues(feeExpense.expenseAmount, sellerFee);
-            await this.reportExpenseRepo.save(feeExpense);
-
-            const totalExpense = await this.fetchOrCreateReportExpense(reportId, accountId, REPORT_TOTAL, payment.currency);
-            totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, sellerFee);
-            await this.reportExpenseRepo.save(totalExpense);
+        const changed = new Set<ReportExpense>();
+        for (const fee of positiveFees) {
+            changed.add(addTo(PAYMENT_SERVICE_FEE, fee.amount));
+            changed.add(addTo(PAYMENT_CHANNEL_FEE_PREFIX + encodeURIComponent(fee.paymentChannelId), fee.amount));
+            changed.add(addTo(REPORT_TOTAL, fee.amount));
         }
-
+        await this.reportExpenseRepo.save(Array.from(changed));
     }
 
     private async updateProviderFeeExpenseForPlatformReport(reportId: string, payment: PaymentFullDTO): Promise<void> {
@@ -415,15 +419,10 @@ export class ReportDigestionService {
         const operations = await this.paymentChannelOperationRepo.find({
             where: { paymentId: payment.id, providerFee: Not(0) },
         });
-        for (const operation of operations) {
-            if (operation.providerFee <= 0) continue;
-            const feeExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', PAYMENT_SERVICE_FEE, payment.currency);
-            feeExpense.expenseAmount = AmountCalculationUtil.addNumberValues(feeExpense.expenseAmount, operation.providerFee);
-            await this.reportExpenseRepo.save(feeExpense);
-            const totalExpense = await this.fetchOrCreateReportExpense(reportId, 'PLATFORM', REPORT_TOTAL, payment.currency);
-            totalExpense.expenseAmount = AmountCalculationUtil.addNumberValues(totalExpense.expenseAmount, operation.providerFee);
-            await this.reportExpenseRepo.save(totalExpense);
-        }
+        await this.addProviderFeeExpenses(reportId, 'PLATFORM', operations.map(operation => ({
+            paymentChannelId: operation.paymentChannelId,
+            amount: operation.providerFee,
+        })));
     }
 
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId, platforms = new Map<string, ExternalPlatform>()) {

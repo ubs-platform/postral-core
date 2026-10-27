@@ -21,6 +21,7 @@ export class ReportExpense {
      * - Harici ürün sınıfı için "EXTERNAL_ITEM_CLASS_COMISSION:{encodedPlatformCode}:{encodedItemClass}"
      * - Bir item class'ına ait masraf için "ITEM_CLASS_COMISSION_{itemClassName}" gibi bir format kullanılabilir. Örneğin, elektronik ürünler için "ITEM_CLASS_COMISSION_ELECTRONICS".
      * - Ödeme hizmetlerine ait masraflar için "PAYMENT_SERVICE_FEE" gibi bir format kullanılabilir.
+     * - Ödeme kanalı bazlı hizmet ücreti için "PAYMENT_CHANNEL_FEE:{encodedPaymentChannelId}" (toplamı PAYMENT_SERVICE_FEE'dedir).
      * Bu şekilde, raporlama sırasında masrafları tiplerine göre ayırabilir ve analiz edebiliriz. 
      * Ayrıca, yeni masraf tipleri eklemek istediğimizde de esneklik sağlamış oluruz.
      */
@@ -38,7 +39,8 @@ export class ReportExpense {
 
     /**
      * Sıralama ağırlığı. 1 = toplam masraf (REPORT_TOTAL), 2 = komisyon/ödeme hizmeti
-     * (PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE), 3 = ürün grubu komisyonları (ITEM_CLASS_COMISSION_*).
+     * (PLATFORM_COMISSION_TOTAL, PAYMENT_SERVICE_FEE), 3 = ürün grubu komisyonları (ITEM_CLASS_COMISSION_*)
+     * ve ödeme kanalı bazlı ücretler (PAYMENT_CHANNEL_FEE:*).
      * Frontend bu sıraya göre gösterir.
      */
     @Column({ type: 'int', default: 2 })
