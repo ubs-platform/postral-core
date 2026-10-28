@@ -118,15 +118,18 @@ export function mapCheckout(
             'iyzico requires at least one payment item',
         );
     }
-    // TODO: ❗ All items are temporarily VIRTUAL. Map Postral's future isPhysical
-    // field and shipping snapshot before supporting physical checkout.
-    const basketItems = payment.items.map((item) => ({
-        id: required(item.id, 'items[].id'),
-        name: required(item.name, 'items[].name'),
-        category1: 'Digital products',
-        itemType: 'VIRTUAL' as const,
-        price: checkoutMoney(item.totalAmount, 'items[].totalAmount'),
-    }));
+    const basketItems = payment.items.map((item) => {
+        if (item.isPhysical !== undefined && typeof item.isPhysical !== 'boolean') {
+            throw new BadRequestException('items[].isPhysical must be a boolean');
+        }
+        return {
+            id: required(item.id, 'items[].id'),
+            name: required(item.name, 'items[].name'),
+            category1: item.isPhysical ? 'Physical products' : 'Digital products',
+            itemType: item.isPhysical ? 'PHYSICAL' : 'VIRTUAL',
+            price: checkoutMoney(item.totalAmount, 'items[].totalAmount'),
+        };
+    });
     if (
         new Set(basketItems.map((item) => item.id)).size !==
             basketItems.length ||
@@ -168,6 +171,9 @@ export function mapCheckout(
             zipCode: billingAddress.zipCode,
         },
         billingAddress,
+        ...(payment.items.some((item) => item.isPhysical)
+            ? { shippingAddress: { ...billingAddress } }
+            : {}),
         basketItems,
     };
     console.log('iyzicoCheckoutRequest:', iyzicoCheckoutRequest);

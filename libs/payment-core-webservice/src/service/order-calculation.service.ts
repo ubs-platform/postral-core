@@ -126,6 +126,10 @@ export class OrderCalculationService {
             paymentItem.entityGroup = realItemFind.entityGroup;
             paymentItem.entityId = realItemFind.entityId;
             paymentItem.entityName = realItemFind.entityName;
+            paymentItem.isPhysical = realItemFind.isPhysical ?? false;
+            paymentItem.metaEntityGroup = realItemFind.metaEntityGroup;
+            paymentItem.metaEntityName = realItemFind.metaEntityName;
+            paymentItem.metaEntityId = realItemFind.metaEntityId;
             paymentItem.itemClass = realItemFind.itemClass || "";
             paymentItem.totalAmount =
                 AmountCalculationUtil.multiplyNumberValues(

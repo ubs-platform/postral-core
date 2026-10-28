@@ -29,6 +29,10 @@ export class PaymentItemMapper {
         pi.entityGroup = dto.entityGroup;
         pi.entityId = dto.entityId;
         pi.entityName = dto.entityName;
+        pi.isPhysical = dto.isPhysical ?? false;
+        pi.metaEntityGroup = dto.metaEntityGroup;
+        pi.metaEntityName = dto.metaEntityName;
+        pi.metaEntityId = dto.metaEntityId;
         pi.sellerAccountId = dto.sellerAccountId;
         // pi.sellerAccountName = dto.sellerAccountName;
         pi.sellerSnapshotAccountId = dto.sellerSnapshotAccountId;
@@ -58,6 +62,10 @@ export class PaymentItemMapper {
                 entityGroup: a.entityGroup!,
                 entityId: a.entityId!,
                 entityName: a.entityName!,
+                isPhysical: a.isPhysical,
+                metaEntityGroup: a.metaEntityGroup,
+                metaEntityName: a.metaEntityName,
+                metaEntityId: a.metaEntityId,
                 itemClass: a.itemClass || "",
                 unTaxAmount: a.unTaxAmount,
                 originalUnitAmount: a.originalUnitAmount,

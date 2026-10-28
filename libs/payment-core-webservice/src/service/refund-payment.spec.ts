@@ -31,6 +31,7 @@ describe('Refund payment persistence', () => {
             originalUnitAmount: 60, totalAmount: 120, taxAmount: 20,
             unTaxAmount: 100, taxPercent: 20, variation: 'default', appComissionAmount: 12,
             sellerAccountId: 'seller', entityGroup: 'LOTUS_QB', entityName: 'QUESTION_BOOK', entityId: 'book',
+            isPhysical: true, metaEntityGroup: 'CATALOG', metaEntityName: 'BOOK', metaEntityId: 'edition',
         })],
     });
     const request = Object.assign(new RefundRequestDTO(), {
@@ -100,7 +101,10 @@ describe('Refund payment persistence', () => {
         const result = await service.createRefundPayment(request);
         expect(result).toMatchObject({
             type: 'REFUND', totalAmount: 60, taxAmount: 10, paymentStatus: 'WAITING',
-            items: [{ quantity: 1, totalAmount: 60, taxAmount: 10, taxPercent: 20, unTaxAmount: 50, appComissionAmount: 6 }],
+            items: [{
+                quantity: 1, totalAmount: 60, taxAmount: 10, taxPercent: 20, unTaxAmount: 50, appComissionAmount: 6,
+                isPhysical: true, metaEntityGroup: 'CATALOG', metaEntityName: 'BOOK', metaEntityId: 'edition',
+            }],
         });
         expect(calculations.calculateTotalAmount).not.toHaveBeenCalled();
         expect(orders.addSellerPaymentOrders).toHaveBeenCalledWith(expect.any(Array), manager);

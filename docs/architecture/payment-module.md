@@ -62,6 +62,25 @@ The only additional checkout context is server-populated `captureInfo.buyerIp`.
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.
 
+### Catalog item details
+
+Items have `isPhysical` (boolean, default `false`) and nullable
+`metaEntityGroup`, `metaEntityName`, `metaEntityId` references to a catalog owned
+by another application. The meta triple has a non-unique composite index:
+multiple items/sellers may share the same specification. It does not replace
+`entityGroup` / `entityName` / `entityId` or resolve payment item identity.
+Item create/edit/read supports these fields; omitted fields on edit preserve
+existing values, and `null` clears a meta reference. Item and payment-item search
+accept independent exact meta filters and `isPhysical=true|false`.
+
+Calculation copies all four fields from the server-side catalog into persisted
+payment items. DTO mapping and refunds retain that historical snapshot rather
+than reading current catalog metadata. Existing rows default to virtual; no
+historical physical classification is inferred. Before rollout without schema
+synchronization, add `isPhysical` (NOT NULL, default false) and the three nullable
+varchar meta columns to `item` and `postral_payment_item`, plus the non-unique
+meta index on `item`. Rebuild/patch shared libraries into frontend consumers.
+
 ## Experimental External Sales
 
 `POST /payment/external-platform` records an already-settled external sale; it

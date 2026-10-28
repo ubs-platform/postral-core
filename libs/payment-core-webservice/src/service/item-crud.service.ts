@@ -19,6 +19,7 @@ import { lastValueFrom } from 'rxjs';
 import { TypeormRepositoryWrap } from './base/typeorm-repository-wrap';
 import { AuthUtilService } from './auth-util.service';
 import { exec } from 'child_process';
+import { itemDetailFilters } from '../util/item-detail-filters';
 
 @Injectable()
 export class ItemCrudService extends BaseCrudService<
@@ -78,7 +79,7 @@ export class ItemCrudService extends BaseCrudService<
 
         }
 
-        const where: any = {};
+        const where: any = itemDetailFilters(s);
         if (s?.name) {
             where.name = Like('%' + s.name + '%');
         }

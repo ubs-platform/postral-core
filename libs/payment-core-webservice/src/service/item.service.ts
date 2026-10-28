@@ -9,6 +9,7 @@ import {
 import { Account, Item } from '@tk-postral/postral-entities';
 import { ItemMapper } from '../mapper/item.mapper';
 import { ItemPriceService } from './item-price.service';
+import { itemDetailFilters } from '../util/item-detail-filters';
 
 @Injectable()
 export class ItemService {
@@ -19,8 +20,9 @@ export class ItemService {
     ) {}
 
     async fetchAll(search: ItemSearchDTO) {
+        const { isPhysical, ...criteria } = search;
         return await this.itemMapper.toDtoList(
-            await this.itemRepo.find({ where: search }),
+            await this.itemRepo.find({ where: { ...criteria, ...itemDetailFilters({ isPhysical }) } }),
         );
     }
 

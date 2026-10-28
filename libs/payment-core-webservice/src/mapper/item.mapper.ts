@@ -1,6 +1,6 @@
 import { AccountDTO, ItemDTO, ItemEditDTO } from '@tk-postral/payment-common';
 import { Account, Item } from '@tk-postral/postral-entities';
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import e from 'express';
 
 @Injectable()
@@ -29,6 +29,11 @@ export class ItemMapper {
 
             entityId: ac.entityId,
 
+            isPhysical: ac.isPhysical,
+            metaEntityGroup: ac.metaEntityGroup,
+            metaEntityName: ac.metaEntityName,
+            metaEntityId: ac.metaEntityId,
+
             unit: ac.unit,
 
             sellerAccountId: ac.sellerAccountId,
@@ -49,6 +54,8 @@ export class ItemMapper {
 
         entity.entityId = dto.entityId;
 
+        this.updateItemDetails(entity, dto);
+
         entity.unit = dto.unit;
 
         entity.sellerAccountId = dto.sellerAccountId;
@@ -64,9 +71,28 @@ export class ItemMapper {
 
         entity.name = dto.name;
 
+        this.updateItemDetails(entity, dto);
+
         entity.unit = dto.unit;
         entity.itemTaxId = dto.itemTaxId;
         entity.itemClass = dto.itemClass || "";
         return entity;
+    }
+
+    private updateItemDetails(entity: Item, dto: ItemEditDTO): void {
+        if (dto.isPhysical !== undefined) {
+            if (typeof dto.isPhysical !== 'boolean') {
+                throw new BadRequestException('isPhysical must be a boolean');
+            }
+            entity.isPhysical = dto.isPhysical;
+        }
+        for (const field of ['metaEntityGroup', 'metaEntityName', 'metaEntityId'] as const) {
+            if (dto[field] !== undefined) {
+                if (dto[field] !== null && typeof dto[field] !== 'string') {
+                    throw new BadRequestException(`${field} must be a string or null`);
+                }
+                entity[field] = dto[field];
+            }
+        }
     }
 }

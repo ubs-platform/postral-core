@@ -200,7 +200,7 @@ describe('iyzico checkout mapping', () => {
         },
     );
 
-    it('temporarily maps every product family to VIRTUAL without shipping data', () => {
+    it('keeps legacy items VIRTUAL regardless of their entity family', () => {
         const input = payment();
         input.items[0].entityGroup = 'OTHER_APP';
         input.items[0].entityName = 'OTHER_PRODUCT';
@@ -217,6 +217,54 @@ describe('iyzico checkout mapping', () => {
             itemType: 'VIRTUAL',
         });
         expect(result).not.toHaveProperty('shippingAddress');
+    });
+
+    it.each([false, true])('maps physical items with shipping (mixed basket: %s)', (mixed) => {
+        const input = payment();
+        input.items[0].isPhysical = true;
+        input.items[0].metaEntityGroup = 'CATALOG';
+        input.items[0].metaEntityName = 'LAPTOP';
+        input.items[0].metaEntityId = 'Thinkpad-E14';
+        if (mixed) {
+            input.items[0].totalAmount = 5;
+            input.items.push({
+                ...input.items[0], id: 'digital-line', isPhysical: false, totalAmount: 5,
+            });
+        }
+        const result = mapCheckout(input, 'adapter-id', 'https://app.test/callback');
+        expect(result.shippingAddress).toEqual(result.billingAddress);
+        expect(result.shippingAddress).toMatchObject({
+            address: 'Test street Kadikoy', city: 'Istanbul', country: 'Turkey',
+        });
+        expect(result.basketItems[0]).toMatchObject({
+            id: 'payment-item', itemType: 'PHYSICAL', category1: 'Physical products',
+        });
+        expect(result.basketItems[0]).not.toHaveProperty('metaEntityId');
+        if (mixed) {
+            expect(result.basketItems[1].itemType).toBe('VIRTUAL');
+        }
+    });
+
+    it('does not send shipping for explicitly virtual items', () => {
+        const input = payment();
+        input.items[0].isPhysical = false;
+        expect(mapCheckout(input, 'adapter-id', 'https://app.test/callback'))
+            .not.toHaveProperty('shippingAddress');
+    });
+
+    it('rejects physical checkout without a valid customer address snapshot', () => {
+        const input = payment();
+        input.items[0].isPhysical = true;
+        input.customerSnapshotAddress = undefined;
+        expect(() => mapCheckout(input, 'adapter-id', 'https://app.test/callback'))
+            .toThrow('customerSnapshotAddress.streetName');
+    });
+
+    it('rejects non-boolean physical flags rather than treating strings as truthy', () => {
+        const input = payment();
+        Object.assign(input.items[0], { isPhysical: 'false' });
+        expect(() => mapCheckout(input, 'adapter-id', 'https://app.test/callback'))
+            .toThrow('isPhysical must be a boolean');
     });
 });
 

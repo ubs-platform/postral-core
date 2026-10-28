@@ -1,6 +1,11 @@
 import { InternalSearchDTO } from "./internal-search.dto";
 
 export class ItemAddDTO {
+    isPhysical?: boolean;
+    metaEntityGroup?: string | null;
+    metaEntityName?: string | null;
+    metaEntityId?: string | null;
+
     id!: string;
 
     name!: string;
@@ -33,6 +38,11 @@ export class ItemAddDTO {
 }
 
 export class ItemDTO {
+    isPhysical?: boolean;
+    metaEntityGroup?: string | null;
+    metaEntityName?: string | null;
+    metaEntityId?: string | null;
+
     id!: string;
 
     name!: string;
@@ -63,6 +73,11 @@ export class ItemDTO {
 }
 
 export class ItemEditDTO {
+    isPhysical?: boolean;
+    metaEntityGroup?: string | null;
+    metaEntityName?: string | null;
+    metaEntityId?: string | null;
+
     id!: string;
 
     name!: string;
@@ -81,6 +96,11 @@ export class ItemEditDTO {
 }
 
 export class ItemSearchDTO implements InternalSearchDTO {
+    isPhysical?: "true" | "false";
+    metaEntityGroup?: string;
+    metaEntityName?: string;
+    metaEntityId?: string;
+
     id?: string;
 
     entityGroup?: string;

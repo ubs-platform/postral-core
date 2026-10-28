@@ -3,10 +3,10 @@
 An independent Engine5 payment channel (`iyzico`), not a replacement for
 `dummy-ecommerce`. Postral remains responsible for payment lifecycle, accounting
 and fulfillment events. This first increment supports full-amount, single-charge
-Checkout Form purchases with all items temporarily classified as digital. Currency comes
+Checkout Form purchases with virtual, physical or mixed baskets. Currency comes
 from the payment DTO; TRY/EUR/USD/GBP/NOK/CHF are accepted subject to the sandbox
 merchant's capabilities. Unpaid checkouts can be cancelled locally (see `cancel`).
-Marketplace, physical products, preauthorization, voiding a captured payment and
+Marketplace, preauthorization, voiding a captured payment and
 refunds are **not enabled**.
 
 ## Configuration and startup
@@ -144,11 +144,15 @@ manual recovery; do not delete reservations just to retry.
   Internal callers must supply a trusted IP. Behind a reverse proxy, review the
   payment server's trusted-proxy policy before real risk/fraud testing; do not
   blindly trust arbitrary `X-Forwarded-For` headers.
-- TODO: ❗ Physical/virtual type and shipping snapshots are absent from the shared
-  item contract. By explicit temporary policy, every product family is sent as
-  `VIRTUAL` with category `Digital products`, without a shipping address. Once
-  Postral adds `isPhysical` to payment items and related snapshots, map that field
-  and require shipping data for physical items before enabling physical checkout.
+- Basket lines use the persisted payment-item `isPhysical`: `true` becomes
+  `PHYSICAL` / `Physical products`; false or omitted (legacy callers) becomes
+  `VIRTUAL` / `Digital products`. A physical or mixed basket also sends
+  `shippingAddress` from the validated `customerSnapshotAddress`, the same address
+  used for billing. Postral snapshots the explicitly selected `billingAddressId`,
+  falling back to the customer account's default address when omitted. There is
+  no separate delivery-address selection. Missing address data fails explicitly.
+  `metaEntityGroup` / `metaEntityName` / `metaEntityId` stay in Postral snapshots;
+  iyzico line IDs remain payment-item IDs, not shared catalog references.
 - TODO: ❗ No webhook or autonomous lost-callback reconciliation yet. If the
   browser never posts the callback, provider result recovery is manual. A stored
   callback flag allows normal `check` retries after a callback retrieval error.

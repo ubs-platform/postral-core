@@ -10,6 +10,7 @@ import {
 import { PostralPaymentItem } from '@tk-postral/postral-entities';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
 import { exec } from 'child_process';
+import { itemDetailFilters } from '../util/item-detail-filters';
 
 @Injectable()
 export class PaymentItemSearchService {
@@ -22,7 +23,7 @@ export class PaymentItemSearchService {
     async findItemsByCriteria(
         criteria: PaymentItemSearchDTO,
     ): Promise<PaymentItemDTO[]> {
-        const where: any = {};
+        const where: any = itemDetailFilters(criteria);
         if (criteria.id) {
             where.id = criteria.id;
         }

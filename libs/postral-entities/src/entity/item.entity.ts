@@ -1,6 +1,7 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
+@Index(['metaEntityGroup', 'metaEntityName', 'metaEntityId'])
 export class Item {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -16,6 +17,18 @@ export class Item {
 
     @Column()
     entityId?: string;
+
+    @Column({ default: false })
+    isPhysical: boolean = false;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityGroup?: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityName?: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityId?: string | null;
 
     @Column()
     unit!: string;

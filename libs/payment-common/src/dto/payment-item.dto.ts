@@ -19,6 +19,10 @@ export class PaymentItemDTO {
     entityGroup?: string;
     entityId?: string;
     entityName?: string;
+    isPhysical?: boolean;
+    metaEntityGroup?: string | null;
+    metaEntityName?: string | null;
+    metaEntityId?: string | null;
     unTaxAmount: number;
     originalUnitAmount: number;
     unitAmount: number;

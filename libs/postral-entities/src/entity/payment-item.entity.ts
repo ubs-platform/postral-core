@@ -22,6 +22,18 @@ export class PostralPaymentItem {
     @Column()
     entityId?: string;
 
+    @Column({ default: false })
+    isPhysical: boolean = false;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityGroup?: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityName?: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    metaEntityId?: string | null;
+
     @Column()
     variation!: string;
 
