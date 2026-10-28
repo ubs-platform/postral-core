@@ -28,6 +28,31 @@ without estimating a commission percentage or fixed transaction charge.
 
 Use `NonProductionGuard` for development-only endpoints. Administrative mutations use `JwtAuthGuard`, `RolesGuard`, and the `admin` or `postral-admin` roles.
 
+### Returning from a channel payment page
+
+Clients send the absolute frontend URL to return to as
+`PaymentCaptureInfoDTO.redirectUrl` in `POST /payment/:id/operation/start`.
+Postral validates it, stores it as `PaymentChannelOperation.returnUrl`, and does
+not forward it to the channel. The returned `PaymentChannelStatusDTO.redirectUrl`
+is then an app-origin (or absolute) channel URL that already carries
+`redirectUrl=/service/payment/api/payment/operation/<operation-record-id>/return`;
+clients open it as-is. The public API path can be overridden with
+`POSTRAL_PUBLIC_API_PATH` (default `/service/payment/api/`).
+
+The channel sends the browser to that `GET` endpoint, which runs
+`updatePaymentByOperationStatuses(paymentId, true)` and redirects (302) to the
+stored URL with `paymentId`, `operationId`, and `status` query parameters. A
+failed check still redirects with the last known status (typically `WAITING`);
+the frontend must re-read the payment from Postral rather than trust `status`.
+Requests without `redirectUrl` keep the legacy behaviour in which the client
+appends its own return URL to the channel URL.
+
+`AdminSettings.allowedReturnOrigins` (also settable in first-run setup, merged
+into existing values on completion) lists origins such as
+`https://app.example.com`. Outside `NODE_ENV=production` every http(s) origin is
+accepted; in production the origin must be listed, and an empty list rejects
+the start request. The URL is re-validated before the redirect.
+
 `apps/integration-iyzico` is a separate sandbox-only Engine5 channel application.
 It owns provider operations and item-transaction mappings without changing
 `PaymentChannelOperation`. See its [setup and limitations](../../apps/integration-iyzico/README.md).

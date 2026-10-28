@@ -4,6 +4,7 @@ import { AdminSettings } from '@tk-postral/postral-entities';
 import { Repository } from "typeorm";
 import { AdminSettingsDto } from "@tk-postral/payment-common";
 import { ItemTaxMapper } from "../mapper/item-tax.mapper";
+import { normalizeReturnOrigins } from "../util/payment-return-url.util";
 
 @Injectable()
 export class AdminSettingsService {
@@ -61,6 +62,7 @@ export class AdminSettingsService {
         dto.comissionItemTax = settings.comissionItemTax ? this.taxMapper.toDTO(settings.comissionItemTax) : undefined;
         dto.billingAccountId = settings.billingAccountId;
         dto.billingDays = settings.billingDays;
+        dto.allowedReturnOrigins = settings.allowedReturnOrigins ?? [];
         return dto;
     }
 
@@ -70,6 +72,9 @@ export class AdminSettingsService {
         settings.comissionItemTaxId = dto.comissionItemTaxId;
         settings.billingAccountId = dto.billingAccountId;
         settings.billingDays = dto.billingDays;
+        if (dto.allowedReturnOrigins !== undefined) {
+            settings.allowedReturnOrigins = normalizeReturnOrigins(dto.allowedReturnOrigins);
+        }
     }
 
 

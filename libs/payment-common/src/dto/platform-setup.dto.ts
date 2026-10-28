@@ -34,6 +34,8 @@ export class PlatformSetupSettingsDTO {
     sellerReports!: boolean;
     dateGroupings!: SellerReportSetupGrouping[];
     additionalTaxes?: PlatformSetupTaxDTO[];
+    /** Frontend origins payments may return to; required in production. */
+    allowedReturnOrigins?: string[];
 }
 
 export class PlatformSetupStatusDTO {

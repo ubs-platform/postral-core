@@ -101,8 +101,12 @@ Postral payment IDs and line IDs use **payment-item** IDs, not catalog IDs.
 No buyer identity/address or raw provider response is persisted by the adapter.
 
 The public redirect is an app-origin path derived from `IYZICO_PUBLIC_BASE_URL`,
-e.g. `/service/payment/api/iyzico/operation/<adapter-operation-id>`. Clients
-resolve it against their own origin and append `redirectUrl`. The adapter binds the first validated
+e.g. `/service/payment/api/iyzico/operation/<adapter-operation-id>`. When the
+client gives Postral a `captureInfo.redirectUrl`, Postral appends its own return
+endpoint (`/service/payment/api/payment/operation/<id>/return`) as `redirectUrl`,
+so the browser comes back through Postral, which checks the payment before
+forwarding to the frontend. Legacy clients resolve the path against their own
+origin and append `redirectUrl` themselves. The adapter binds the first validated
 same-origin return URL and redirects to the stored hosted checkout URL. On
 callback it validates the token, retrieves the result server-side, verifies the
 HMAC signature and correlation/amount/currency/basket details, stores status

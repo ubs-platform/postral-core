@@ -20,6 +20,10 @@ export class PaymentChannelOperation {
     @Column({ type: 'varchar', nullable: true })
     redirectUrl: string = '';
 
+    // Ödeme sonrası tarayıcının dönmesi gereken frontend adresi (PaymentCaptureInfoDTO.redirectUrl)
+    @Column({ type: 'varchar', length: 2048, nullable: true })
+    returnUrl?: string | null;
+
     @Column(MoneyDbField)
     amount: number = 0;
 

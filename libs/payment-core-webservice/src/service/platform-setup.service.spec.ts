@@ -245,6 +245,20 @@ describe('PlatformSetupService', () => {
         expect(bucket(Account)[0]).not.toHaveProperty('id', 'untrusted');
     });
 
+    it('normalizes allowed return origins and copies them to admin settings on completion', async () => {
+        await platform();
+        await service.configure(config({ mode: 'SELF', allowedReturnOrigins: ['https://App.example.com/', 'https://app.example.com'] }), user);
+        expect(savedState().settings?.allowedReturnOrigins).toEqual(['https://app.example.com']);
+        await service.complete(user);
+        expect(bucket(AdminSettings)[0]).toMatchObject({ allowedReturnOrigins: ['https://app.example.com'] });
+    });
+
+    it('rejects invalid allowed return origins before writing anything', async () => {
+        await expect(service.configure(config({ allowedReturnOrigins: ['https://app.example.com/path'] }), user))
+            .rejects.toThrow(BadRequestException);
+        expect(manager.save).not.toHaveBeenCalled();
+    });
+
     it('completes own-sales with zero commission and no automatic billing', async () => {
         await platform();
         await service.configure(config({ mode: 'SELF', alsoSells: true }), user);

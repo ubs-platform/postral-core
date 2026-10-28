@@ -9,6 +9,7 @@ import {
     Param,
     Post,
     Req,
+    Res,
     Sse,
     UseGuards,
 } from '@nestjs/common';
@@ -28,7 +29,10 @@ import { exec } from 'child_process';
 import { CurrentUser, JwtAuthGuard } from '@ubs-platform/users-microservice-helper';
 import { UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { ExternalPlatformPaymentService } from '../service/external-platform-payment.service';
-import { FastifyRequest } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @Controller('payment')
 export class PaymentController {
     constructor(
@@ -98,6 +102,22 @@ export class PaymentController {
             throw new BadRequestException(`Failed to start payment operation`);
         }
         //   return await this.ps.generateTransactions(id, captureInfo);
+    }
+
+    // Payment channels send the browser here instead of the frontend; see PaymentCaptureInfoDTO.redirectUrl.
+    @Get('/operation/:operationId/return')
+    public async returnFromOperation(
+        @Param('operationId') operationId: string,
+        @Res() reply: FastifyReply,
+    ) {
+        if (!UUID_PATTERN.test(operationId)) {
+            throw new NotFoundException('Payment operation not found');
+        }
+        const target = await this.ps.resolveOperationReturnUrl(operationId);
+        return reply
+            .header('Cache-Control', 'no-store')
+            .header('Referrer-Policy', 'no-referrer')
+            .redirect(target, 302);
     }
 
     @Post('/:id/operation/check')

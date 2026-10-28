@@ -20,6 +20,13 @@ import { TypeAssertionUtil, AmountCalculationUtil } from '@tk-postral/common-uti
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
 import { AdminSettingsService } from './admin-settings.service';
 import { exec } from 'child_process';
+import { randomUUID } from 'node:crypto';
+import {
+    appendReturnParams,
+    operationReturnPath,
+    validateReturnUrl,
+    withChannelReturnUrl,
+} from '../util/payment-return-url.util';
 
 @Injectable()
 export class PaymentOperationManagementService {
@@ -192,16 +199,35 @@ export class PaymentOperationManagementService {
             captureInfo.paidAmount = paymentFullDto.totalAmount;
         }
 
+        const { redirectUrl, ...channelCaptureInfo } = captureInfo;
+        const returnUrl = redirectUrl === undefined || redirectUrl === null || redirectUrl === ''
+            ? null
+            : validateReturnUrl(
+                redirectUrl,
+                (await this.adminSettingsService.getAdminSettings()).allowedReturnOrigins,
+            );
+
         try {
             const result =
                 await this.eventSenderService.initializePaymentChannelOperation(
                     captureInfo.paymentChannelId,
-                    paymentFullDto,
+                    { ...paymentFullDto, captureInfo: channelCaptureInfo },
                 );
             const paymentOperationRecord = new PaymentChannelOperation();
             paymentOperationRecord.amount = captureInfo.paidAmount!;
             paymentOperationRecord.currency = captureInfo.currency;
             paymentOperationRecord.operationType = paymentFullDto.type;
+            if (returnUrl) {
+                // Kanal, ödeme sonrası tarayıcıyı doğrudan frontende değil Postral'ın return endpoint'ine gönderir.
+                paymentOperationRecord.id = randomUUID();
+                paymentOperationRecord.returnUrl = returnUrl;
+                if (result.redirectUrl) {
+                    result.redirectUrl = withChannelReturnUrl(
+                        result.redirectUrl,
+                        operationReturnPath(paymentOperationRecord.id),
+                    );
+                }
+            }
             return await this.savePaymentChannelRecord(
                 paymentOperationRecord,
                 result,
@@ -300,6 +326,25 @@ export class PaymentOperationManagementService {
             paymentOperation.status = 'FAILED';
             await this.paymentChannelOperationRepo.save(paymentOperation);
         }
+    }
+
+    /** Finds an operation by its Postral record ID (PaymentChannelOperation.id), not the channel's ID. */
+    async findOperationRecordById(id: string) {
+        return await this.paymentChannelOperationRepo.findOneBy({ id });
+    }
+
+    /** Re-validates the stored frontend URL and appends the payment result for the browser redirect. */
+    async buildReturnTarget(
+        operation: PaymentChannelOperation,
+        paymentStatus: string,
+    ): Promise<string> {
+        const settings = await this.adminSettingsService.getAdminSettings();
+        const returnUrl = validateReturnUrl(operation.returnUrl, settings.allowedReturnOrigins);
+        return appendReturnParams(returnUrl, {
+            paymentId: operation.paymentId,
+            operationId: operation.id,
+            status: paymentStatus,
+        });
     }
 
     async findOperationById(operationId: string) {

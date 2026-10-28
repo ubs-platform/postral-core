@@ -13,6 +13,7 @@ import { AccountMapper } from '../mapper/account.mapper';
 import { AddressMapper } from '../mapper/address.mapper';
 import { ItemTaxMapper } from '../mapper/item-tax.mapper';
 import { PostralConstants } from '../util/consts';
+import { normalizeReturnOrigins } from '../util/payment-return-url.util';
 import { SellerReportSetupService } from './seller-report-setup.service';
 
 @Injectable()
@@ -257,6 +258,9 @@ export class PlatformSetupService {
                         }));
                     }
                 }
+                if (config.allowedReturnOrigins?.length) {
+                    admin.allowedReturnOrigins = [...new Set([...(admin.allowedReturnOrigins ?? []), ...config.allowedReturnOrigins])];
+                }
                 await manager.save(admin);
                 current.status = 'COMPLETED';
                 current.completedAt = new Date();
@@ -395,6 +399,9 @@ export class PlatformSetupService {
             ...(input.additionalTaxes !== undefined ? {
                 additionalTaxes: input.additionalTaxes.map(tax => ({ taxName: tax.taxName.trim(), taxRate: tax.taxRate })),
             } : {}),
+            ...(input.allowedReturnOrigins !== undefined ? {
+                allowedReturnOrigins: normalizeReturnOrigins(input.allowedReturnOrigins),
+            } : {}),
         };
     }
 
@@ -406,6 +413,7 @@ export class PlatformSetupService {
             input.dateGroupings.some(grouping => !SELLER_REPORT_SETUP_GROUPINGS.includes(grouping))) {
             throw new BadRequestException('Invalid setup settings');
         }
+        normalizeReturnOrigins(input.allowedReturnOrigins);
         if (input.mode === 'MARKETPLACE' && (
             !Number.isFinite(input.commissionPercent) || input.commissionPercent < 0 || input.commissionPercent > 100 ||
             !Number.isInteger(input.taxRate) || input.taxRate < 0 || input.taxRate > 100 ||

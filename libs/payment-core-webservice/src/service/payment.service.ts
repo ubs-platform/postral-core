@@ -540,6 +540,27 @@ export class PaymentService {
         await this.updatePaymentByOperationStatuses(operation.paymentId, false);
     }
 
+    /**
+     * Browser return point after a channel payment page: refreshes the payment from the channel
+     * and returns the frontend URL to redirect to. A failed check still returns the user with
+     * the last known status; the frontend re-checks the payment anyway.
+     */
+    async resolveOperationReturnUrl(operationRecordId: string): Promise<string> {
+        const operation =
+            await this.paymentOperationManagementService.findOperationRecordById(operationRecordId);
+        if (!operation?.returnUrl) {
+            throw new NotFoundException('Payment operation not found');
+        }
+        let status: string;
+        try {
+            status = (await this.updatePaymentByOperationStatuses(operation.paymentId, true)).paymentStatus;
+        } catch (error) {
+            console.error(`Error checking payment ${operation.paymentId} on return:`, error);
+            status = (await this.findPaymentByIdRaw(operation.paymentId))?.paymentStatus ?? 'WAITING';
+        }
+        return this.paymentOperationManagementService.buildReturnTarget(operation, status);
+    }
+
     async confirmOpenPayment(paymentId: string, sellerAccountId: string): Promise<PaymentDTO> {
         let payment = await this.findPaymentByIdRaw(paymentId, true);
         if (!payment) {

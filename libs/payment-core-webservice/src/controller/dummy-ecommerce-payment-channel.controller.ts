@@ -220,7 +220,7 @@ export class DummyEcommercePaymentChannelController {
         // Redirect back to the application with status
         if (fastifyReply && redirectUrlBackToApp) {
             return fastifyReply.status(302).redirect(
-                `${redirectUrlBackToApp}?operationId=${operationId}&status=${set}`,
+                this.withOperationStatus(redirectUrlBackToApp, operationId, set),
             );
         } else {
             return {
@@ -248,8 +248,13 @@ export class DummyEcommercePaymentChannelController {
         }
         // Redirect back to the application with status
         return fastifyReply.status(302).redirect(
-            `${redirectUrlBackToApp}?operationId=${operationId}&status=${currentStatus}`,
+            this.withOperationStatus(redirectUrlBackToApp, operationId, currentStatus),
         );
+    }
+
+    private withOperationStatus(redirectUrl: string, operationId: string, status: string) {
+        const separator = redirectUrl.includes('?') ? '&' : '?';
+        return `${redirectUrl}${separator}operationId=${encodeURIComponent(operationId)}&status=${encodeURIComponent(status)}`;
     }
 
     @UseGuards(NonProductionGuard)

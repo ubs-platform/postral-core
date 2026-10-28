@@ -29,6 +29,9 @@ export class AdminSettingsDto {
     // Fatura kesim günleri (ayın kaçında). Örnek: [1, 15]
     billingDays?: number[];
 
+    // Ödeme sonrası dönülebilecek frontend origin'leri. Production'da boşsa ödeme başlatılamaz.
+    allowedReturnOrigins?: string[];
+
     createdAt: Date = new Date();
 
     updatedAt: Date = new Date();

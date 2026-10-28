@@ -6,7 +6,9 @@ export class PaymentChannelStatusDTO {
     /**
      * Payment page to open: an absolute `http(s)` URL or an app-origin path
      * starting with `/`. Bare relative paths are legacy and resolved by clients
-     * under `/service/payment/api/`.
+     * under `/service/payment/api/`. When the start request carried
+     * `captureInfo.redirectUrl`, Postral has already appended its own return
+     * endpoint and clients must open this URL as-is.
      */
     redirectUrl!: string;
     paymentStatus!: PaymentOperationStatus;

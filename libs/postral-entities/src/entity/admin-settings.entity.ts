@@ -54,6 +54,10 @@ export class AdminSettings {
     @Column({ type: 'simple-json', nullable: true })
     billingDays?: number[];
 
+    // Ödeme sonrası dönülebilecek frontend origin'leri (örn. https://app.example.com). Production'da zorunlu.
+    @Column({ type: 'simple-json', nullable: true })
+    allowedReturnOrigins?: string[];
+
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();
 
