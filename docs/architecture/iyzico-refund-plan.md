@@ -51,13 +51,17 @@ states remain required so an unsuccessful attempt cannot cause a double refund.
   already stores the verified provider payment ID and original
   `paymentItemId -> paymentTransactionId / price / paidPrice` mapping.
 
-### Contract gap: original refund line identity
+### Original refund line identity
 
-The channel initialization currently receives refund-payment items, not the
-original refund request's line mapping. Refund items get new persistence IDs:
+Refund items get new persistence IDs:
 [PaymentItemMapper.toEntity](../../libs/payment-core-webservice/src/mapper/payment-item.mapper.ts)
 does not copy the original item's ID. Catalog IDs and variations are not a safe
 replacement because a purchase can contain repeated catalog items.
+Core now persists `PostralPaymentItem.originalPaymentItemId` on newly created
+refund payment items, derived from the validated request's `paymentItemId`.
+The shared DTO and mapper carry this reference to channels; purchase and legacy
+refund items may have null references. Multiple partial refunds can refer to
+one original purchase item without reusing its primary key.
 
 The implementation adds an optional server-populated `refundPlan` field to
 [PaymentFullWithCaptureInfoDTO](../../libs/payment-common/src/dto/payment.dto.ts).
@@ -66,11 +70,15 @@ contains original operation IDs, opaque adapter metadata, accounting counterpart
 lines with `originalPaymentItemId`, `nominalAmount` and `providerAmount`. Amounts
 are decimal strings, so persisted plans are exact across transport and retries.
 
-For the supported single-capture iyzico case, populate it from persisted
+For the supported single-capture iyzico case, populate the plan from persisted
 `RefundRequestDTO.items[].paymentItemId/refundAmount`, not browser data or new
 refund-payment item IDs. Amounts include tax. Their sum must equal this channel's
 `captureInfo.paidAmount` at nominal precision. All refund-capable channels expose
 the generic `prepare-refund` RPC; amount-only channels explicitly return empty plans.
+At initialization iyzico resolves original item identities from the refund items
+and verifies them and their nominal amounts against the plan. Legacy refunds
+without item references retain plan-based lookup. Nominal/provider amounts and
+the saved policy remain in the plan in both cases.
 
 Do not pass full-request amounts as channel-local amounts for split captures.
 Reject that unsupported iyzico case explicitly; future split support requires

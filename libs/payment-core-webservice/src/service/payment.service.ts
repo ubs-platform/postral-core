@@ -158,6 +158,7 @@ export class PaymentService {
                     throw new BadRequestException('Refund item is missing original payment or amount information');
                 }
                 const dto = this.paymentItemMapper.toDto([original])[0];
+                dto.originalPaymentItemId = original.id;
                 dto.quantity = item.refundCount;
                 dto.totalAmount = item.refundAmount;
                 dto.taxAmount = item.refundTaxAmount;

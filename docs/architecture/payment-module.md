@@ -71,6 +71,18 @@ reserved operation. `channelData` is opaque string metadata owned by the adapter
 core neither interprets it nor checks channel names. Existing single-plan JSON
 remains readable. Deploy the RPC handlers and core together.
 
+Refund payment items also persist `originalPaymentItemId`, the primary key of
+the original purchase payment item (not its catalog `itemId`). Core sets it from
+the validated refund request; it is not a payment-init input. Mappers expose it
+to channels and payment readers. It is nullable for purchases and older refunds;
+multiple partial refund items can refer to the same original item.
+The iyzico adapter uses these identities to resolve its saved provider transaction
+mapping and checks that item origins and nominal amounts match the saved plan.
+Older refunds without these links continue using their persisted plan.
+Nominal/provider amounts and policy snapshots remain in the plan.
+Provision nullable varchar `PostralPaymentItem.originalPaymentItemId` before
+deploying core when database schema synchronization is disabled.
+
 The sandbox iyzico adapter supports one full-amount completed capture and owns
 `IYZICO_REFUND_ROUNDING_MODE`: `ROUND` (half up),
 `FLOOR` (intentionally upward/ceiling), `USE_FIRST_TWO` (truncate), `THROW`

@@ -7,6 +7,7 @@ export class PaymentItemDTO {
     }
     
     id: string;
+    originalPaymentItemId?: string | null;
     itemId: string;
     name: string;
     quantity: number;

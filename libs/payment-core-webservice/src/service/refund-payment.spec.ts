@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Payment, PostralPaymentItem, RefundRequest } from '@tk-postral/postral-entities';
-import { PaymentFullDTO, PaymentItemDTO, RefundChannelPlan, RefundRequestDTO } from '@tk-postral/payment-common';
+import { PaymentFullDTO, RefundChannelPlan, RefundRequestDTO } from '@tk-postral/payment-common';
 import { PaymentService } from './payment.service';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -78,10 +78,7 @@ describe('Refund payment persistence', () => {
                     toDto: (payment: Payment) => Object.assign(new PaymentFullDTO(), payment),
                     toFullDto: (payment: Payment) => Object.assign(new PaymentFullDTO(), payment),
                 } },
-                { provide: PaymentItemMapper, useValue: {
-                    toDto: (items: PostralPaymentItem[]) => items.map(item => new PaymentItemDTO(item)),
-                    toEntity: (item: PaymentItemDTO) => Object.assign(new PostralPaymentItem(), { ...item, id: undefined }),
-                } },
+                PaymentItemMapper,
                 { provide: PaymentTaxMapper, useValue: { toEntity: tax => tax } },
                 { provide: EventSenderService, useValue: {} },
                 { provide: SellerPaymentOrderService, useValue: orders },
@@ -109,11 +106,18 @@ describe('Refund payment persistence', () => {
         expect(result).toMatchObject({
             type: 'REFUND', totalAmount: 60, taxAmount: 10, paymentStatus: 'WAITING',
             items: [{
+                originalPaymentItemId: 'book-item',
                 quantity: 1, totalAmount: 60, taxAmount: 10, taxPercent: 20, unTaxAmount: 50, appComissionAmount: 6,
                 isPhysical: true, metaEntityGroup: 'CATALOG', metaEntityName: 'BOOK', metaEntityId: 'edition',
             }],
         });
         expect(calculations.calculateTotalAmount).not.toHaveBeenCalled();
+        expect(result.items[0].id).toBeUndefined();
+        expect(original.items[0].originalPaymentItemId).toBeUndefined();
+        expect(channels.startRefundPaymentOperationsForRefundRequest).toHaveBeenCalledWith(
+            request, expect.objectContaining({ items: [expect.objectContaining({ originalPaymentItemId: 'book-item' })] }),
+            expect.anything(), undefined,
+        );
         expect(orders.addSellerPaymentOrders).toHaveBeenCalledWith(expect.any(Array), manager);
         expect(transactions.fromPayment).toHaveBeenCalledWith(expect.objectContaining({ totalAmount: 60 }), manager);
     });
@@ -124,6 +128,7 @@ describe('Refund payment persistence', () => {
         expect(manager.save).toHaveBeenCalledTimes(1);
         expect(orders.addSellerPaymentOrders).toHaveBeenCalledTimes(1);
         expect(transactions.fromPayment).toHaveBeenCalledTimes(1);
+        expect(savedPayment?.items[0].originalPaymentItemId).toBe('book-item');
     });
 
     it('retains the saved payment when a channel fails so retry does not create a second one', async () => {

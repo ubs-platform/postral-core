@@ -10,6 +10,9 @@ export class PostralPaymentItem {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    originalPaymentItemId?: string | null;
+
     @Column()
     itemId: string = "";
 

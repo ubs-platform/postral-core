@@ -16,6 +16,7 @@ export class PaymentItemMapper {
         //     debugger
         // }
         const pi = new PostralPaymentItem();
+        pi.originalPaymentItemId = dto.originalPaymentItemId;
         pi.itemId = dto.itemId;
         pi.name = dto.name;
         pi.quantity = dto.quantity;
@@ -50,6 +51,7 @@ export class PaymentItemMapper {
             const a = items[index];
             dtos.push({
                 id: a.id,
+                originalPaymentItemId: a.originalPaymentItemId,
                 itemId: a.itemId,
                 name: a.name,
                 quantity: a.quantity,

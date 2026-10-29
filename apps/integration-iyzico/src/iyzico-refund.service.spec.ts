@@ -5,6 +5,7 @@ import { IyzicoClientService, IyzicoRefundRejectedError } from './iyzico-client.
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { PaymentFullWithCaptureInfoDTO, PrepareChannelRefundDTO } from '@tk-postral/payment-common';
+import { PaymentItemDTO } from '@tk-postral/payment-common';
 
 function payment(): PaymentFullWithCaptureInfoDTO {
     return {
@@ -23,6 +24,14 @@ function payment(): PaymentFullWithCaptureInfoDTO {
             ],
         },
     };
+}
+
+function linkedPayment(): PaymentFullWithCaptureInfoDTO {
+    const dto = payment();
+    dto.items = ['b', 'a'].map(originalPaymentItemId => new PaymentItemDTO({
+        id: `refund-item-${originalPaymentItemId}`, originalPaymentItemId, totalAmount: 3.3333,
+    }));
+    return dto;
 }
 
 describe('Durable iyzico refunds', () => {
@@ -91,6 +100,37 @@ describe('Durable iyzico refunds', () => {
     afterEach(() => {
         if (originalEnv === undefined) delete process.env.IYZICO_REFUND_ROUNDING_MODE;
         else process.env.IYZICO_REFUND_ROUNDING_MODE = originalEnv;
+    });
+
+    it('uses refund item original IDs to find provider transactions while retaining planned amounts', async () => {
+        expect((await service.initialize(linkedPayment())).paymentStatus).toBe('COMPLETED');
+        expect(client.refund).toHaveBeenNthCalledWith(1, expect.objectContaining({
+            paymentTransactionId: 'txn-a', price: '3.33',
+        }), 'provider-payment');
+        expect(client.refund).toHaveBeenNthCalledWith(2, expect.objectContaining({
+            paymentTransactionId: 'txn-b', price: '3.33',
+        }), 'provider-payment');
+        expect((await service.initialize(linkedPayment())).paymentStatus).toBe('COMPLETED');
+        expect(client.refund).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(['foreign', 'missing', 'duplicate', 'amount', 'count'])('rejects %s refund item links before reserving or submitting', async scenario => {
+        const dto = linkedPayment();
+        if (scenario === 'foreign') dto.items[0].originalPaymentItemId = 'foreign';
+        if (scenario === 'missing') dto.items[0].originalPaymentItemId = null;
+        if (scenario === 'duplicate') dto.items[0].originalPaymentItemId = dto.items[1].originalPaymentItemId;
+        if (scenario === 'amount') dto.items[0].totalAmount = 3.34;
+        if (scenario === 'count') dto.items.pop();
+        await expect(service.initialize(dto)).rejects.toThrow('do not match');
+        expect(manager.insert).not.toHaveBeenCalled();
+        expect(client.refund).not.toHaveBeenCalled();
+    });
+
+    it('continues legacy refund items with null origins using their saved plan', async () => {
+        const dto = linkedPayment();
+        dto.items.forEach(item => { item.originalPaymentItemId = null; });
+        expect((await service.initialize(dto)).paymentStatus).toBe('COMPLETED');
+        expect(client.refund).toHaveBeenCalledTimes(2);
     });
 
     function preparation(): PrepareChannelRefundDTO {

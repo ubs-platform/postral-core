@@ -79,7 +79,23 @@ export class IyzicoRefundService {
                 new Big(line.nominalAmount).lte(0) || new Big(line.providerAmount).lte(0))) {
             throw new BadRequestException('Invalid iyzico refund line amounts or identities');
         }
-        const lines = [...plan.lines].sort((a, b) => a.originalPaymentItemId.localeCompare(b.originalPaymentItemId));
+        let lines = [...plan.lines];
+        if (payment.items?.some(item => item.originalPaymentItemId != null)) {
+            if (payment.items.length !== lines.length ||
+                new Set(payment.items.map(item => item.originalPaymentItemId)).size !== payment.items.length) {
+                throw new BadRequestException('Refund payment item origins or amounts do not match the saved plan');
+            }
+            lines = payment.items.map(item => {
+                const line = plan.lines.find(candidate => candidate.originalPaymentItemId === item.originalPaymentItemId);
+                if (!line || typeof item.originalPaymentItemId !== 'string' || !item.originalPaymentItemId ||
+                    !Number.isFinite(item.totalAmount) || !new Big(line.nominalAmount).eq(item.totalAmount)) {
+                    throw new BadRequestException('Refund payment item origins or amounts do not match the saved plan');
+                }
+                return { ...line, originalPaymentItemId: item.originalPaymentItemId };
+            });
+        }
+        // Refund payments created before originalPaymentItemId rely on their persisted plan.
+        lines.sort((a, b) => a.originalPaymentItemId.localeCompare(b.originalPaymentItemId));
         if (new Set(lines.map(line => line.originalPaymentItemId)).size !== lines.length ||
             !lines.reduce((sum, line) => sum.plus(line.nominalAmount), new Big(0)).eq(payment.captureInfo.paidAmount!)) {
             throw new BadRequestException('Invalid iyzico refund line amounts or identities');

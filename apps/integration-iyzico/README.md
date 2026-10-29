@@ -39,6 +39,8 @@ also adds nullable JSON `RefundRequest.channelRefundPlan`,
 `PaymentChannelOperation.refundPlan` / `settledRefundItemIds` and nullable varchar
 `AccountPaymentTransaction.roundingOperationId` in the core database; provision
 these before deploying payment when its schema synchronization is disabled.
+Refund payment items additionally need nullable varchar
+`PostralPaymentItem.originalPaymentItemId`. Existing rows can remain null.
 This version refuses production mode and
 non-sandbox API endpoints. Plain HTTP public URLs are for local testing only;
 use externally reachable HTTPS for complete callback tests.
@@ -160,6 +162,13 @@ metadata as opaque. The request stores an array of plans; older single-plan
 snapshots and their top-level `roundingMode` remain readable. Deploy the core
 and adapter together for the new preparation RPC. Existing reservations must
 not be deleted or resubmitted during rollout.
+
+New refund payment items carry core-populated `originalPaymentItemId` references
+to purchase payment items. The adapter uses them to find the original provider
+item transactions, verifying identities and nominal amounts against the saved
+plan before reserving or submitting. The refund item's own ID and catalog
+`itemId` are not provider transaction references. Legacy refunds with no original
+item links still use the persisted plan; mixed or mismatched links fail explicitly.
 
 When provider and nominal amounts differ, an active, non-external COMMERCIAL
 `AdminSettings.billingAccountId` distinct from the customer is required before
