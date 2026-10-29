@@ -1,10 +1,11 @@
 import { createHmac } from 'node:crypto';
-import { IyzicoClientService } from './iyzico-client.service';
+import { IyzicoClientService, IyzicoRefundRejectedError } from './iyzico-client.service';
 import type { mapCheckout } from './iyzico-checkout.mapper';
 
 type SdkCallback = (error: Error | null, result: unknown) => void;
 const mockCreate = jest.fn<void, [object, SdkCallback]>();
 const mockRetrieve = jest.fn<void, [object, SdkCallback]>();
+const mockRefund = jest.fn<void, [object, SdkCallback]>();
 
 jest.mock('iyzipay', () => ({
     __esModule: true,
@@ -17,6 +18,7 @@ jest.mock('iyzipay', () => ({
             retrieve: (request: object, callback: SdkCallback) =>
                 mockRetrieve(request, callback),
         },
+        refund: { create: (request: object, callback: SdkCallback) => mockRefund(request, callback) },
     })),
 }));
 
@@ -115,12 +117,68 @@ describe('IyzicoClientService SDK boundary', () => {
         };
         mockCreate.mockReset();
         mockRetrieve.mockReset();
+        mockRefund.mockReset();
         client = new IyzicoClientService();
     });
 
     afterEach(() => {
         process.env = { ...originalEnv };
         jest.useRealTimers();
+    });
+
+    const refundRequest = {
+        conversationId: 'refund:0', paymentTransactionId: 'txn', price: '3.33', currency: 'TRY',
+    };
+    function refunded(changes: Record<string, unknown> = {}) {
+        return {
+            status: 'success', paymentId: 'provider', paymentTransactionId: 'txn',
+            price: '3.33', currency: 'TRY', conversationId: 'refund:0',
+            refundHostReference: 'host-ref',
+            signature: signature(['provider', '3.33', 'TRY', 'refund:0']),
+            ...changes,
+        };
+    }
+
+    it('sends an item refund and verifies the documented four-parameter signature', async () => {
+        mockRefund.mockImplementation((_request, callback) => callback(null, refunded()));
+        expect(await client.refund(refundRequest, 'provider')).toEqual({ refundHostReference: 'host-ref' });
+        expect(mockRefund).toHaveBeenCalledWith({ locale: 'tr', ...refundRequest }, expect.any(Function));
+    });
+
+    it.each([
+        { signature: '0'.repeat(64) }, { paymentTransactionId: 'wrong' },
+        { paymentId: 'wrong' }, { price: '3.34' }, { currency: 'USD' }, { conversationId: 'wrong' },
+    ])('rejects invalid refund signatures or correlation: %s', async changes => {
+        mockRefund.mockImplementation((_request, callback) => callback(null, refunded(changes)));
+        await expect(client.refund(refundRequest, 'provider')).rejects.toThrow();
+    });
+
+    it('rejects a signed refund response for a different transaction or amount', async () => {
+        const result = refunded({ price: '3.34' });
+        result.signature = signature(['provider', '3.34', 'TRY', 'refund:0']);
+        mockRefund.mockImplementation((_request, callback) => callback(null, result));
+        await expect(client.refund(refundRequest, 'provider')).rejects.toThrow('mismatch');
+        mockRefund.mockImplementation((_request, callback) => callback(null, refunded({ paymentTransactionId: 'wrong' })));
+        await expect(client.refund(refundRequest, 'provider')).rejects.toThrow('mismatch');
+    });
+
+    it('distinguishes a correlated provider rejection from an ambiguous transport failure', async () => {
+        mockRefund.mockImplementation((_request, callback) => callback(null, {
+            status: 'failure', conversationId: 'refund:0', errorCode: '10000',
+        }));
+        await expect(client.refund(refundRequest, 'provider')).rejects.toBeInstanceOf(IyzicoRefundRejectedError);
+        mockRefund.mockImplementation((_request, callback) => callback(new Error('socket reset'), undefined));
+        await expect(client.refund(refundRequest, 'provider')).rejects.not.toBeInstanceOf(IyzicoRefundRejectedError);
+    });
+
+    it('does not retry a refund when the SDK never responds', async () => {
+        jest.useFakeTimers();
+        mockRefund.mockImplementation(() => undefined);
+        const pending = client.refund(refundRequest, 'provider');
+        const assertion = expect(pending).rejects.toThrow('timed out');
+        await jest.advanceTimersByTimeAsync(20_000);
+        await assertion;
+        expect(mockRefund).toHaveBeenCalledTimes(1);
     });
 
     it('verifies initialization and retrieves a result with normalized signed prices', async () => {

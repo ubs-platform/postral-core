@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { RefundRequestItem } from './refund-request-item.entity';
 import { Payment } from './payment.entity';
-import { RefundReasonKey, RefundRequestStatus } from '@tk-postral/payment-common';
+import { RefundChannelPlan, RefundReasonKey, RefundRequestStatus } from '@tk-postral/payment-common';
 
 
 @Entity()
@@ -20,6 +20,9 @@ export class RefundRequest extends BaseEntity {
 
     @Column({ type: 'varchar', length: 200, nullable: true, unique: true })
     idempotencyKey?: string;
+
+    @Column({ type: 'json', nullable: true })
+    channelRefundPlan?: RefundChannelPlan[] | RefundChannelPlan | null;
 
     /**
      * Purchase tipi payment'e referans. Bu, refund request'in hangi purchase payment'e ait olduğunu belirtir. Ancak, bu sadece bir referans ve gerçek payment bilgisi için Payment servisine sorgu atılması gerekebilir.

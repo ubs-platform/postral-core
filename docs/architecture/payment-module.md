@@ -58,6 +58,44 @@ It owns provider operations and item-transaction mappings without changing
 `PaymentChannelOperation`. See its [setup and limitations](../../apps/integration-iyzico/README.md).
 The only additional checkout context is server-populated `captureInfo.buyerIp`.
 
+### Channel-independent refund preparation and settlements
+
+Core calls `postral/payment-channel/{channelId}/prepare-refund` with original
+purchase line IDs, nominal four-decimal amounts and completed capture context.
+Each adapter owns provider eligibility, precision policy and provider amounts,
+returning `{ plans: RefundChannelPlan[] }`. Amount-only adapters return
+`{ plans: [] }` explicitly; missing handlers and errors are not silently ignored.
+Core validates source ownership, unique lines, nominal allocations and amounts,
+persists the plan array on the refund request and copies each plan onto its
+reserved operation. `channelData` is opaque string metadata owned by the adapter;
+core neither interprets it nor checks channel names. Existing single-plan JSON
+remains readable. Deploy the RPC handlers and core together.
+
+The sandbox iyzico adapter supports one full-amount completed capture and owns
+`IYZICO_REFUND_ROUNDING_MODE`: `ROUND` (half up),
+`FLOOR` (intentionally upward/ceiling), `USE_FIRST_TWO` (truncate), `THROW`
+(default/error). Unsupported values fail adapter startup. Nominal four-decimal amounts
+stay unchanged. Nonzero differences require an active platform billing account
+before refund creation. Successful provider lines return exact settlements;
+core checks them against the saved plan and atomically posts balanced, tax-free
+customer/platform ledger corrections while marking each line settled under an
+operation lock. `roundingOperationId` protects these entries from nominal-ledger
+regeneration. Platform and platform-flow reports include signed
+`REFUND_ROUNDING_ADJUSTMENT` expenses; seller/tax/commission history is unchanged.
+
+The adapter reserves capacity under the purchase-operation lock in its own
+`iyzico_refund` table, with line states stored in JSON. It submits
+`/payment/refund` per original `paymentTransactionId`, verifies response
+signature and all correlation/amount fields, and never resends claimed lines
+automatically. `check` returns persisted settlements; `fire` cannot move money
+again. The existing core checker completes the nominal refund only after every
+line has a verified settlement and its rounding correction has been posted.
+Request approval remains distinct from actual refund completion.
+
+Admin recovery UI, seller manual-completion buttons and paid-after-cancel
+reversal are deferred. See the [refund design](./iyzico-refund-plan.md) and
+[adapter setup/runbook](../../apps/integration-iyzico/README.md).
+
 ## Persistence and Numeric Fields
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.

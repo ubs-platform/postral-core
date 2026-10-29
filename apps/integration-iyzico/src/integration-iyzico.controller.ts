@@ -9,7 +9,7 @@ import {
     UseFilters,
 } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
+import { PaymentFullWithCaptureInfoDTO, PrepareChannelRefundDTO } from '@tk-postral/payment-common';
 import { FastifyReply } from 'fastify';
 import { IntegrationIyzicoService } from './integration-iyzico.service';
 import { HttpToRpcExceptionFilter } from './http-to-rpc-exception.filter';
@@ -23,6 +23,12 @@ export class IntegrationIyzicoController {
     @Get('health')
     health() {
         return { mode: 'sandbox' };
+    }
+
+    @UseFilters(HttpToRpcExceptionFilter)
+    @MessagePattern('postral/payment-channel/iyzico/prepare-refund')
+    prepareRefund(request: PrepareChannelRefundDTO) {
+        return this.integrationIyzicoService.prepareRefund(request);
     }
 
     @UseFilters(HttpToRpcExceptionFilter)

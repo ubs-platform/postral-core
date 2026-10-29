@@ -12,6 +12,7 @@ import {
     responseDecimal,
 } from './iyzico-client.service';
 import { mapCheckout } from './iyzico-checkout.mapper';
+import { IyzicoRefundService } from './iyzico-refund.service';
 
 function payment(): PaymentFullWithCaptureInfoDTO {
     return {
@@ -390,6 +391,7 @@ describe('IntegrationIyzicoService', () => {
         retrieve: jest.fn(),
     };
     const messages = { emit: jest.fn() };
+    const refunds = { initialize: jest.fn(), check: jest.fn(), prepare: jest.fn() };
 
     function result(
         operationId: string,
@@ -429,6 +431,8 @@ describe('IntegrationIyzicoService', () => {
             paymentPageUrl: 'https://sandbox-cpp.iyzipay.com/form',
         });
         client.retrieve.mockReset();
+        refunds.initialize.mockReset().mockRejectedValue(new Error('Invalid iyzico refunds plan'));
+        refunds.check.mockReset().mockRejectedValue(new Error('iyzico refund not found'));
         messages.emit.mockReturnValue(of(undefined));
         const module = await Test.createTestingModule({
             providers: [
@@ -439,9 +443,19 @@ describe('IntegrationIyzicoService', () => {
                 },
                 { provide: IyzicoClientService, useValue: client },
                 { provide: 'MICROSERVICE_CLIENT', useValue: messages },
+                { provide: IyzicoRefundService, useValue: refunds },
             ],
         }).compile();
         service = module.get(IntegrationIyzicoService);
+    });
+
+    it('delegates refund preparation to the refund adapter without initializing a provider operation', async () => {
+        const request = { purchasePaymentId: 'purchase', purchaseAmount: 10, currency: 'TRY', captures: [], items: [] };
+        const prepared = { plans: [] };
+        refunds.prepare.mockResolvedValueOnce(prepared);
+        expect(await service.prepareRefund(request)).toBe(prepared);
+        expect(refunds.prepare).toHaveBeenCalledWith(request);
+        expect(client.initialize).not.toHaveBeenCalled();
     });
 
     it('reserves before the provider call and reuses an initialized purchase', async () => {
@@ -627,7 +641,7 @@ describe('IntegrationIyzicoService', () => {
         },
     );
 
-    it('explicitly rejects refunds and uncaptured fire without mutating state', async () => {
+    it('delegates refunds to their own validator and rejects uncaptured fire without mutating state', async () => {
         const refund = payment();
         refund.type = 'REFUND';
         await expect(service.initialize(refund)).rejects.toThrow('refunds');
@@ -636,6 +650,24 @@ describe('IntegrationIyzicoService', () => {
         const id = initialized.paymentChannelOperationId;
         await expect(service.fire(id)).rejects.toThrow('not captured');
         expect((await service.find(id)).status).toBe('WAITING');
+    });
+
+    it('routes refund init/check/fire without invoking checkout or issuing another provider call', async () => {
+        const input = payment();
+        input.type = 'REFUND';
+        const status = {
+            paymentChannelId: 'iyzico', paymentChannelOperationId: 'refund-id',
+            paymentStatus: 'COMPLETED', redirectUrl: '', refundSettlements: [],
+        };
+        refunds.initialize.mockResolvedValueOnce(status);
+        refunds.check.mockResolvedValue(status);
+        expect(await service.initialize(input)).toEqual(status);
+        expect(await service.check('refund-id')).toEqual(status);
+        expect(await service.fire('refund-id')).toEqual(status);
+        await expect(service.cancel('refund-id')).rejects.toThrow('not found');
+        expect(refunds.initialize).toHaveBeenCalledTimes(1);
+        expect(client.initialize).not.toHaveBeenCalled();
+        expect(client.retrieve).not.toHaveBeenCalled();
     });
 
     it('cancels an unpaid checkout locally and idempotently', async () => {

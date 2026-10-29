@@ -1,6 +1,6 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { PaymentDTO, PaymentFullDTO, PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
+import { PaymentDTO, PaymentFullDTO, PaymentFullWithCaptureInfoDTO, PrepareChannelRefundDTO, PreparedChannelRefund } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { lastValueFrom, timeout } from 'rxjs';
 @Injectable()
@@ -61,6 +61,16 @@ export class EventSenderService {
     ): Promise<PaymentChannelStatusDTO> {
         try {
             return await lastValueFrom(this.kfk.send(`postral/payment-channel/${paymentChannelId}/init`, pd).pipe(timeout(30_000)));
+        } catch (error) {
+            throw this.toHttpException(error);
+        }
+    }
+
+    async prepareChannelRefund(paymentChannelId: string, request: PrepareChannelRefundDTO): Promise<PreparedChannelRefund> {
+        try {
+            return await lastValueFrom(this.kfk.send(
+                `postral/payment-channel/${paymentChannelId}/prepare-refund`, request,
+            ).pipe(timeout(30_000)));
         } catch (error) {
             throw this.toHttpException(error);
         }

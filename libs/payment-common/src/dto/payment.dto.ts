@@ -4,6 +4,7 @@ import { SnapshotAccountDTO } from './invoice-account.dto';
 import { SnapshotAddressDTO } from './invoice-address.dto';
 import { PaymentItemDTO } from './payment-item.dto';
 import { TaxDTO } from './tax.dto';
+import type { RefundChannelPlan } from './refund-channel-plan.dto';
 
 export class PaymentDTO {
     id: string;
@@ -48,6 +49,7 @@ export class PaymentFullWithCaptureInfoDTO extends PaymentDTO {
     captureInfo: PaymentCaptureInfoDTO;
     originalPaymentChannelOperationId?: string;
     refundOperationId?: string;
+    refundPlan?: RefundChannelPlan;
 }
 
 export class PaymentFullDTO extends PaymentDTO {

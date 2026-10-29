@@ -15,6 +15,7 @@ describe('IntegrationIyzicoController HTTP', () => {
         notify: jest.fn(),
         returnUrl: jest.fn(),
         toStatus: jest.fn(),
+        prepareRefund: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -35,6 +36,13 @@ describe('IntegrationIyzicoController HTTP', () => {
 
     afterEach(async () => {
         await app.close();
+    });
+
+    it('routes refund preparation to the adapter service', async () => {
+        const request = { purchasePaymentId: 'purchase', purchaseAmount: 10, currency: 'TRY', captures: [], items: [] };
+        service.prepareRefund.mockResolvedValueOnce({ plans: [] });
+        expect(await app.get(IntegrationIyzicoController).prepareRefund(request)).toEqual({ plans: [] });
+        expect(service.prepareRefund).toHaveBeenCalledWith(request);
     });
 
     it('reports sandbox mode', async () => {

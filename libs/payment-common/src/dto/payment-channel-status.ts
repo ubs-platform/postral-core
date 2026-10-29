@@ -1,4 +1,5 @@
 import { PaymentErrorStatus, PaymentOperationFailReason, PaymentOperationStatus, PaymentStatus } from "../type/status";
+import type { RefundSettlement } from './refund-channel-plan.dto';
 
 export class PaymentChannelStatusDTO {
     paymentChannelId!: string;
@@ -14,6 +15,7 @@ export class PaymentChannelStatusDTO {
     paymentStatus!: PaymentOperationStatus;
     paymentErrorStatus?: PaymentOperationFailReason;
     providerFee?: number;
+    refundSettlements?: RefundSettlement[];
     /**
      * Komisyon kesintisinin ödeme kanalının kesip kesmediği bilgisini tutar.
      * Eğer true ise, ödeme kanalı provider fee'yi tahsil eder ve kalan tutarı satıcıya öder.

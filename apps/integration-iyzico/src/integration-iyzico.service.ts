@@ -12,6 +12,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import type {
     PaymentChannelStatusDTO,
     PaymentFullWithCaptureInfoDTO,
+    PrepareChannelRefundDTO,
 } from '@tk-postral/payment-common';
 import { IsNull, QueryFailedError, Repository } from 'typeorm';
 import { lastValueFrom, timeout } from 'rxjs';
@@ -25,6 +26,7 @@ import {
     responseString,
 } from './iyzico-client.service';
 import { mapCheckout } from './iyzico-checkout.mapper';
+import { IyzicoRefundService } from './iyzico-refund.service';
 
 @Injectable()
 export class IntegrationIyzicoService {
@@ -35,11 +37,17 @@ export class IntegrationIyzicoService {
         private readonly operations: Repository<IyzicoOperation>,
         private readonly client: IyzicoClientService,
         @Inject('MICROSERVICE_CLIENT') private readonly messages: ClientProxy,
+        private readonly refunds: IyzicoRefundService,
     ) {}
+
+    prepareRefund(request: PrepareChannelRefundDTO) {
+        return this.refunds.prepare(request);
+    }
 
     async initialize(
         payment: PaymentFullWithCaptureInfoDTO,
     ): Promise<PaymentChannelStatusDTO> {
+        if (payment.type === 'REFUND') return this.refunds.initialize(payment);
         const id = randomUUID();
         const request = mapCheckout(
             payment,
@@ -219,7 +227,8 @@ export class IntegrationIyzicoService {
     }
 
     async check(id: string): Promise<PaymentChannelStatusDTO> {
-        let operation = await this.find(id);
+        let operation = await this.operations.findOneBy({ id });
+        if (!operation) return this.refunds.check(id);
         if (
             operation.status === 'WAITING' &&
             operation.callbackReceived &&

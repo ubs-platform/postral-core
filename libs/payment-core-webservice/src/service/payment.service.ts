@@ -16,6 +16,7 @@ import {
     AccountDTO,
     AccountAddressDto,
     ItemListCalculationDto,
+    RefundChannelPlan,
 } from '@tk-postral/payment-common';
 import { PaymentTaxMapper } from '../mapper/payment-tax.mapper';
 import { TransactionMapper } from '../mapper/transaction.mapper';
@@ -146,7 +147,11 @@ export class PaymentService {
             throw new BadRequestException('Can only refund completed PURCHASE payments');
         }
         let prepared: Payment | undefined;
+        let channelRefundPlan: RefundChannelPlan[] | undefined;
         if (!await this.paymentrepo.exists({ where: { refundRequestId: refundRequest.id } })) {
+            channelRefundPlan = await this.paymentOperationManagementService.prepareRefundChannelPlan(
+                refundRequest, this.paymentMapper.toFullDto(originalPayment),
+            );
             const items = refundRequest.items.map(item => {
                 const original = originalPayment.items.find(candidate => candidate.id === item.paymentItemId);
                 if (!original || item.refundAmount == null || item.refundTaxAmount == null || item.refundAmountWithoutTax == null) {
@@ -180,7 +185,7 @@ export class PaymentService {
             }), calculation);
             prepared.paymentStatus = 'WAITING';
         }
-        const paymentSaved = await this.paymentrepo.manager.transaction(async manager => {
+        const { payment: paymentSaved, plan } = await this.paymentrepo.manager.transaction(async manager => {
             const request = await manager.findOne(RefundRequest, {
                 where: { id: refundRequest.id },
                 lock: { mode: 'pessimistic_write' },
@@ -193,10 +198,13 @@ export class PaymentService {
                 if (existing.paymentStatus === 'FAILED') {
                     throw new BadRequestException('Refund payment failed; reconcile its channel operations before retrying');
                 }
-                return existing;
+                return { payment: existing, plan: request.channelRefundPlan };
             }
             if (!prepared) {
                 throw new BadRequestException('Refund payment changed during preparation; retry the same request');
+            }
+            if (channelRefundPlan) {
+                await manager.update(RefundRequest, request.id, { channelRefundPlan });
             }
             const saved = await manager.save(Payment, prepared);
             const full = await manager.findOneOrFail(Payment, {
@@ -204,13 +212,14 @@ export class PaymentService {
             });
             await this.generateSellerPaymentOrders(full, manager);
             await this.accountPaymentTransactionService.fromPayment(this.paymentMapper.toFullDto(full), manager);
-            return saved;
+            return { payment: saved, plan: channelRefundPlan };
         });
 
         await this.paymentOperationManagementService.startRefundPaymentOperationsForRefundRequest(
             refundRequest,
             await this.findPaymentById(paymentSaved.id, true) as PaymentFullDTO,
-            await this.findPaymentById(refundRequest.paymentId, true) as PaymentFullDTO
+            await this.findPaymentById(refundRequest.paymentId, true) as PaymentFullDTO,
+            plan ?? undefined,
         );
 
         const paymentDtoFinal = this.paymentMapper.toDto(paymentSaved);

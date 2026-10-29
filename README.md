@@ -72,6 +72,23 @@ integrations must honor these fields; the dummy channel uses the stable
 identifier and completes refunds asynchronously. Do not additionally call the
 legacy full-operation `refund` message for the same request.
 
+The sandbox iyzico adapter supports single-capture full/partial refunds.
+Set `IYZICO_REFUND_ROUNDING_MODE` on the **integration-iyzico** service to `ROUND`,
+`FLOOR` (upward/ceiling), `USE_FIRST_TWO` (truncate), or `THROW` (default).
+Postral keeps nominal four-decimal totals; differing provider amounts post
+balanced customer/platform rounding adjustments using the platform billing
+account. The precision plan is persisted before channel calls and is not
+recomputed on retries. See the [adapter refund notes](apps/integration-iyzico/README.md#refund-precision-and-tracking)
+for configuration, schema additions and investigation guidance.
+
+Refund-capable channels implement `postral/payment-channel/{channelId}/prepare-refund`.
+Core sends original line identities and capture context; adapters return optional
+per-capture nominal/provider amount plans with opaque string metadata in
+`channelData`. Amount-only channels explicitly return `{ plans: [] }`, as the
+dummy channel does. Core validates allocations, owns the accounting counterparty
+and consumes generic `refundSettlements`; provider policies stay in adapters.
+Deploy core and channel handlers together when introducing this RPC.
+
 Channel operations are durably reserved before network calls. If the call
 times out (30 seconds), returns an invalid response, or fails before its result
 can be recorded, the request remains pending and repeated commands do not send
@@ -84,7 +101,11 @@ refund payment's status separately tracks actual channel completion or failure.
 The nullable unique request idempotency key, payment approval-lease fields, and
 channel source-operation index are part of the TypeORM entities. The current app uses schema
 synchronization; deployments with synchronization disabled must apply these
-schema additions before rollout. Patch shared libraries into consuming
+schema additions before rollout. iyzico refunds additionally require nullable
+`RefundRequest.channelRefundPlan`, `PaymentChannelOperation.refundPlan` and
+`settledRefundItemIds` JSON columns, plus nullable
+`AccountPaymentTransaction.roundingOperationId` varchar; the adapter owns a
+separate `iyzico_refund` table. Patch shared libraries into consuming
 workspaces after changing their contracts.
 
 Focused refund tests cover system commands, historical refund amounts,

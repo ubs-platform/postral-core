@@ -12,6 +12,7 @@ export class AccountPaymentTransactionMapper {
     dto.accountName = entity.accountName;
     dto.paymentId = entity.paymentId;
     dto.paymentSellerOrderId = entity.paymentSellerOrderId;
+    dto.roundingOperationId = entity.roundingOperationId;
     dto.type = entity.type;
     dto.status = entity.status;
     dto.amount = entity.amount;

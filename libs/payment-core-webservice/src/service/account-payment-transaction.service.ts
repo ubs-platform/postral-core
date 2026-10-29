@@ -5,7 +5,7 @@ import { AccountPaymentTransactionMapper } from "../mapper/account-payment-trans
 import { InjectRepository } from "@nestjs/typeorm";
 import { randomUUID } from "crypto";
 import { AmountCalculationUtil, TypeAssertionUtil } from "@tk-postral/common-utils";
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, IsNull, Repository } from "typeorm";
 
 @Injectable()
 export class AccountPaymentTransactionService {
@@ -42,6 +42,7 @@ export class AccountPaymentTransactionService {
                         accountId: entity.accountId,
                         paymentId: entity.paymentId,
                         type: entity.type,
+                        roundingOperationId: IsNull(),
                         // TODO: Önceden failed olanlar da dahil olmasını istiyorum. Completed olanlar genelde değişmez, tabi kontrol etmekten de zarar gelmez. SOnradan eklenecek
                         // status: "WAITING"
                     };

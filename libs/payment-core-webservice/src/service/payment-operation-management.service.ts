@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
-import { Payment, PaymentChannelOperation } from '@tk-postral/postral-entities';
+import { Account, AccountPaymentTransaction, Payment, PaymentChannelOperation } from '@tk-postral/postral-entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Not, Repository } from 'typeorm';
 import Big from 'big.js';
@@ -15,6 +15,7 @@ import {
     PaymentDTO,
     PaymentFullDTO,
     RefundRequestDTO,
+    RefundChannelPlan,
 } from '@tk-postral/payment-common';
 import { TypeAssertionUtil, AmountCalculationUtil } from '@tk-postral/common-utils';
 import { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
@@ -49,6 +50,9 @@ export class PaymentOperationManagementService {
         result: PaymentChannelStatusDTO,
         paymentId: string,
     ) {
+        if (paymentOperationRecord.operationType === 'REFUND' && paymentOperationRecord.refundPlan) {
+            return this.saveRefundSettlementRecord(paymentOperationRecord, result, paymentId);
+        }
         const stgs = await this.adminSettingsService.getAdminSettings();
 
         paymentOperationRecord.operationId = result.paymentChannelOperationId!;
@@ -68,6 +72,168 @@ export class PaymentOperationManagementService {
         return result;
     }
 
+    private async saveRefundSettlementRecord(record: PaymentChannelOperation, result: PaymentChannelStatusDTO, paymentId: string) {
+        const settings = await this.adminSettingsService.getAdminSettings();
+        await this.paymentChannelOperationRepo.manager.transaction(async manager => {
+            const operation = await manager.findOneOrFail(PaymentChannelOperation, {
+                where: { id: record.id }, lock: { mode: 'pessimistic_write' },
+            });
+            const plan = operation.refundPlan;
+            const settlements = result.refundSettlements;
+            if (!plan || !Array.isArray(settlements) ||
+                settlements.some(line => !line || typeof line.originalPaymentItemId !== 'string' || typeof line.providerAmount !== 'string') ||
+                operation.operationType !== 'REFUND' || result.paymentChannelId !== operation.paymentChannelId ||
+                !result.paymentChannelOperationId ||
+                (operation.operationId && result.paymentChannelOperationId !== operation.operationId) || operation.paymentId !== paymentId ||
+                !['WAITING', 'READY', 'COMPLETED', 'FAILED'].includes(result.paymentStatus) ||
+                new Set(settlements.map(line => line.originalPaymentItemId)).size !== settlements.length ||
+                !plan.lines.reduce((sum, line) => sum.plus(line.nominalAmount), new Big(0)).eq(operation.amount) ||
+                (result.paymentStatus === 'COMPLETED' && settlements.length !== plan.lines.length) ||
+                (result.paymentStatus === 'FAILED' && settlements.length > 0)) {
+                throw new BadRequestException('Invalid channel refund settlement; reconciliation is required');
+            }
+            const settled = new Set(operation.settledRefundItemIds ?? []);
+            if (operation.status === 'COMPLETED' && result.paymentStatus !== 'COMPLETED') {
+                throw new ConflictException('Completed channel refund cannot regress');
+            }
+            if ([...settled].some(id => !settlements.some(line => line.originalPaymentItemId === id))) {
+                throw new ConflictException('Channel refund settlement cannot lose completed lines');
+            }
+            for (const settlement of settlements) {
+                const line = plan.lines.find(candidate => candidate.originalPaymentItemId === settlement.originalPaymentItemId);
+                if (!line || settlement.providerAmount !== line.providerAmount) {
+                    throw new BadRequestException('Channel refund settlement amount or line mismatch');
+                }
+                if (settled.has(line.originalPaymentItemId)) continue;
+                const difference = new Big(line.providerAmount).minus(line.nominalAmount);
+                if (!difference.eq(0)) {
+                    if (!plan.roundingAccountId) throw new BadRequestException('Refund rounding account is missing');
+                    const payment = await manager.findOneOrFail(Payment, { where: { id: paymentId } });
+                    if (!payment.customerAccountId || payment.customerAccountId === plan.roundingAccountId) {
+                        throw new BadRequestException('Invalid refund rounding counterparties');
+                    }
+                    const accounts = await manager.findBy(Account, { id: In([payment.customerAccountId, plan.roundingAccountId]) });
+                    const correlationId = randomUUID();
+                    const entries = [payment.customerAccountId, plan.roundingAccountId].map((accountId, index) => {
+                        const account = accounts.find(candidate => candidate.id === accountId);
+                        if (!account) throw new BadRequestException('Refund rounding account not found');
+                        return Object.assign(new AccountPaymentTransaction(), {
+                            corelationId: correlationId, accountId, accountName: account.name,
+                            paymentId, roundingOperationId: operation.id,
+                            type: (difference.gt(0) === (index === 0)) ? 'CREDIT' : 'DEBIT',
+                            status: 'COMPLETED', amount: Number(difference.abs()), taxAmount: 0,
+                            description: `Refund rounding adjustment for ${operation.id}/${line.originalPaymentItemId}`,
+                        });
+                    });
+                    await manager.save(AccountPaymentTransaction, entries);
+                }
+                settled.add(line.originalPaymentItemId);
+            }
+            operation.operationId = result.paymentChannelOperationId;
+            operation.status = result.paymentStatus;
+            if (result.providerFee != null) operation.providerFee = result.providerFee;
+            if (result.feeCutInstantly != null) operation.feeCutInstantly = result.feeCutInstantly;
+            operation.providerFeeDebitFrom = settings.sellerPaysPaymentServiceFee ? 'SELLER' : 'PLATFORM';
+            operation.settledRefundItemIds = [...settled];
+            await manager.save(PaymentChannelOperation, operation);
+            Object.assign(record, operation);
+        });
+        return result;
+    }
+
+    async prepareRefundChannelPlan(request: RefundRequestDTO, purchase: PaymentFullDTO): Promise<RefundChannelPlan[]> {
+        const operations = await this.paymentChannelOperationRepo.find({
+            where: { paymentId: purchase.id, status: 'COMPLETED', operationType: 'PURCHASE' },
+            order: { id: 'ASC' },
+        });
+        if (!operations.length || operations.some(operation => !operation.operationId || operation.currency !== purchase.currency) ||
+            purchase.paymentStatus !== 'COMPLETED' || purchase.type !== 'PURCHASE') {
+            throw new BadRequestException('Completed purchase channel operations are required for refund preparation');
+        }
+        const lines = request.items.map(item => {
+            const original = purchase.items.find(line => line.id === item.paymentItemId);
+            if (!original || item.refundAmount == null || !Number.isFinite(item.refundAmount) ||
+                item.refundAmount <= 0 || item.refundAmount > original.totalAmount ||
+                !new Big(item.refundAmount).eq(new Big(item.refundAmount).round(4))) {
+                throw new BadRequestException('Refund original line or historical amount is invalid');
+            }
+            return {
+                originalPaymentItemId: item.paymentItemId,
+                nominalAmount: new Big(item.refundAmount).toFixed(4),
+            };
+        }).sort((a, b) => a.originalPaymentItemId.localeCompare(b.originalPaymentItemId));
+        if (!lines.length || new Set(lines.map(line => line.originalPaymentItemId)).size !== lines.length) {
+            throw new BadRequestException('Refund original line IDs must be unique and nonempty');
+        }
+        const plans: RefundChannelPlan[] = [];
+        for (const channelId of new Set(operations.map(operation => operation.paymentChannelId))) {
+            const prepared = await this.eventSenderService.prepareChannelRefund(channelId, {
+                purchasePaymentId: purchase.id, purchaseAmount: purchase.totalAmount, currency: purchase.currency,
+                captures: operations.map(operation => ({
+                    originalOperationId: operation.id, originalChannelOperationId: operation.operationId,
+                    paymentChannelId: operation.paymentChannelId, amount: operation.amount,
+                })),
+                items: lines,
+            });
+            if (!prepared || !Array.isArray(prepared.plans)) {
+                throw new BadRequestException('Channel returned an invalid refund preparation');
+            }
+            for (const plan of prepared.plans) {
+                const source = operations.find(operation => operation.id === plan?.originalOperationId);
+                if (!source || source.paymentChannelId !== channelId ||
+                    plan.originalChannelOperationId !== source.operationId ||
+                    plans.some(existing => existing.originalOperationId === plan.originalOperationId) ||
+                    (plan.channelData !== undefined && (!plan.channelData || typeof plan.channelData !== 'object' ||
+                        Array.isArray(plan.channelData) || Object.values(plan.channelData).some(value => typeof value !== 'string'))) ||
+                    !Array.isArray(plan.lines) || !plan.lines.length ||
+                    new Set(plan.lines.map(line => line?.originalPaymentItemId)).size !== plan.lines.length ||
+                    plan.lines.some(line => !line || typeof line.nominalAmount !== 'string' ||
+                        typeof line.providerAmount !== 'string' ||
+                        !/^\d+(\.\d{1,4})?$/.test(line.nominalAmount) || !/^\d+(\.\d{1,4})?$/.test(line.providerAmount) ||
+                        new Big(line.nominalAmount).lte(0) || new Big(line.providerAmount).lte(0) ||
+                        !lines.some(original => original.originalPaymentItemId === line.originalPaymentItemId &&
+                            new Big(original.nominalAmount).gte(line.nominalAmount)))) {
+                    throw new BadRequestException('Channel returned invalid refund source or line amounts');
+                }
+                // Accounting ownership is core-owned; the channel cannot select the ledger counterparty.
+                plans.push({ originalOperationId: source.id, originalChannelOperationId: source.operationId,
+                    channelData: plan.channelData, lines: plan.lines.map(line => ({
+                        originalPaymentItemId: line.originalPaymentItemId,
+                        nominalAmount: line.nominalAmount, providerAmount: line.providerAmount,
+                    })) });
+            }
+        }
+        for (const line of lines) {
+            if (plans.flatMap(plan => plan.lines).filter(candidate => candidate.originalPaymentItemId === line.originalPaymentItemId)
+                .reduce((sum, candidate) => sum.plus(candidate.nominalAmount), new Big(0)).gt(line.nominalAmount)) {
+                throw new BadRequestException('Channel plans exceed the requested refund line amount');
+            }
+        }
+        if (plans.length) {
+            const previousRefunds = await this.paymentChannelOperationRepo.find({
+                where: { originalOperationId: In(operations.map(operation => operation.id)), operationType: 'REFUND' },
+            });
+            this.validateRefundPlanAllocations(plans, this.refundCaptureAllocations(
+                operations, previousRefunds,
+                Number(lines.reduce((sum, line) => sum.plus(line.nominalAmount), new Big(0))),
+            ));
+        }
+        let roundingAccountId: string | undefined;
+        if (plans.some(plan => plan.lines.some(line => !new Big(line.nominalAmount).eq(line.providerAmount)))) {
+            roundingAccountId = (await this.adminSettingsService.getAdminSettings()).billingAccountId;
+            const account = roundingAccountId
+                ? await this.paymentChannelOperationRepo.manager.findOneBy(Account, { id: roundingAccountId })
+                : null;
+            if (!account || account.deactivated || account.isExternal || account.type !== 'COMMERCIAL' ||
+                roundingAccountId === purchase.customerAccountId) {
+                throw new BadRequestException('An active platform billing account is required for refund rounding adjustments');
+            }
+        }
+        return plans.map(plan => ({ ...plan,
+            ...(plan.lines.some(line => !new Big(line.nominalAmount).eq(line.providerAmount)) ? { roundingAccountId } : {}),
+        }));
+    }
+
     async totalPaidOrAuthorizedOf(paymentId: string) {
         const paymentOperations = await this.paymentChannelOperationRepo.find({
             where: [
@@ -81,7 +247,7 @@ export class PaymentOperationManagementService {
         );
     }
 
-    async startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, refundPayment: PaymentFullDTO, purchasePayment: PaymentFullDTO) {
+    async startRefundPaymentOperationsForRefundRequest(refundRequest: RefundRequestDTO, refundPayment: PaymentFullDTO, purchasePayment: PaymentFullDTO, refundPlans?: RefundChannelPlan[] | RefundChannelPlan) {
         const totalRefundAmount = refundPayment.totalAmount;
         if (!Number.isFinite(totalRefundAmount) || totalRefundAmount < 0 ||
             purchasePayment.paymentStatus !== 'COMPLETED' || purchasePayment.type !== 'PURCHASE') {
@@ -97,6 +263,7 @@ export class PaymentOperationManagementService {
         if (!alreadyCompletedOps.length || alreadyCompletedOps.some(op => !op.operationId || op.currency !== refundPayment.currency)) {
             throw new BadRequestException('Completed payment channel operations are required to refund this purchase');
         }
+        const plans = refundPlans ? (Array.isArray(refundPlans) ? refundPlans : [refundPlans]) : [];
         const previousRefunds = await this.paymentChannelOperationRepo.find({
             where: {
                 originalOperationId: In(alreadyCompletedOps.map(op => op.id)),
@@ -104,26 +271,10 @@ export class PaymentOperationManagementService {
                 operationType: 'REFUND',
             },
         });
-        const available = alreadyCompletedOps.map(op => {
-            const reserved = previousRefunds.filter(refund => refund.originalOperationId === op.id)
-                .reduce((sum, refund) => AmountCalculationUtil.addNumberValues(sum, refund.amount), 0);
-            return AmountCalculationUtil.minusNumberValues(op.amount, reserved);
-        });
-        let remainingAvailable = AmountCalculationUtil.addNumberValues(...available);
-        if (available.some(amount => amount < 0) || totalRefundAmount > remainingAvailable) {
-            throw new BadRequestException('Refund exceeds the remaining captured channel amount');
-        }
-        let remainingRefund = totalRefundAmount;
-        for (let index = 0; index < alreadyCompletedOps.length; index++) {
-            const element = alreadyCompletedOps[index];
-            const refundAmountForThisOp = remainingAvailable === available[index]
-                ? remainingRefund
-                : Number(new Big(remainingRefund).times(available[index]).div(remainingAvailable).round(4, 0));
-            remainingRefund = AmountCalculationUtil.minusNumberValues(remainingRefund, refundAmountForThisOp);
-            remainingAvailable = AmountCalculationUtil.minusNumberValues(remainingAvailable, available[index]);
-            if (refundAmountForThisOp <= 0) {
-                continue;
-            }
+        const allocations = this.refundCaptureAllocations(alreadyCompletedOps, previousRefunds, totalRefundAmount);
+        this.validateRefundPlanAllocations(plans, allocations);
+        for (const { operation: element, amount: refundAmountForThisOp } of allocations) {
+            const refundPlan = plans.find(plan => plan.originalOperationId === element.id);
             const reservation = await this.paymentChannelOperationRepo.manager.transaction(async manager => {
                 await manager.findOneOrFail(Payment, {
                     where: { id: refundPayment.id }, lock: { mode: 'pessimistic_write' },
@@ -144,6 +295,7 @@ export class PaymentOperationManagementService {
                 operation.paymentChannelId = element.paymentChannelId;
                 operation.paymentId = refundPayment.id;
                 operation.originalOperationId = element.id;
+                if (refundPlan) operation.refundPlan = refundPlan;
                 return { operation: await manager.save(PaymentChannelOperation, operation), created: true };
             });
             if (!reservation.created) {
@@ -156,6 +308,7 @@ export class PaymentOperationManagementService {
                     ...refundPayment,
                     originalPaymentChannelOperationId: element.operationId,
                     refundOperationId: refundOp.id,
+                    ...(refundOp.refundPlan ? { refundPlan: refundOp.refundPlan } : {}),
                     captureInfo: {
                         paymentChannelId: element.paymentChannelId,
                         paidAmount: refundOp.amount,
@@ -172,6 +325,38 @@ export class PaymentOperationManagementService {
             if (refundOp.status === 'FAILED') {
                 throw new BadRequestException(`Refund channel operation ${refundOp.id} failed`);
             }
+        }
+    }
+
+    private refundCaptureAllocations(operations: PaymentChannelOperation[], previousRefunds: PaymentChannelOperation[], total: number) {
+        const available = operations.map(operation => {
+            const reserved = previousRefunds.filter(refund => refund.originalOperationId === operation.id)
+                .reduce((sum, refund) => AmountCalculationUtil.addNumberValues(sum, refund.amount), 0);
+            return AmountCalculationUtil.minusNumberValues(operation.amount, reserved);
+        });
+        let remainingAvailable = AmountCalculationUtil.addNumberValues(...available);
+        if (available.some(amount => amount < 0) || total > remainingAvailable) {
+            throw new BadRequestException('Refund exceeds the remaining captured channel amount');
+        }
+        let remaining = total;
+        return operations.map((operation, index) => {
+            const amount = remainingAvailable === 0 ? 0 : remainingAvailable === available[index]
+                ? remaining
+                : Number(new Big(remaining).times(available[index]).div(remainingAvailable).round(4, 0));
+            remaining = AmountCalculationUtil.minusNumberValues(remaining, amount);
+            remainingAvailable = AmountCalculationUtil.minusNumberValues(remainingAvailable, available[index]);
+            return { operation, amount };
+        }).filter(allocation => allocation.amount > 0);
+    }
+
+    private validateRefundPlanAllocations(plans: RefundChannelPlan[], allocations: { operation: PaymentChannelOperation; amount: number }[]) {
+        if (new Set(plans.map(plan => plan.originalOperationId)).size !== plans.length ||
+            plans.some(plan => {
+                const allocation = allocations.find(candidate => candidate.operation.id === plan.originalOperationId);
+                return !allocation || plan.originalChannelOperationId !== allocation.operation.operationId ||
+                    !plan.lines.reduce((sum, line) => sum.plus(line.nominalAmount), new Big(0)).eq(allocation.amount);
+            })) {
+            throw new BadRequestException('Channel refund plan does not match the reserved capture amount');
         }
     }
 

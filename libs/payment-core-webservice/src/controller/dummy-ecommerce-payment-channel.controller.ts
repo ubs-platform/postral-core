@@ -16,6 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
     PaymentFullWithCaptureInfoDTO,
     PaymentOperationStatus,
+    PreparedChannelRefund,
 } from '@tk-postral/payment-common';
 import { PaymentChannelStatusDTO } from '@tk-postral/payment-common/dto/payment-channel-status';
 import { FastifyReply } from 'fastify';
@@ -43,6 +44,11 @@ export class DummyEcommercePaymentChannelController {
     }
 
     // # MessagePattern handlers for microservice communication
+    @MessagePattern('postral/payment-channel/dummy-ecommerce/prepare-refund')
+    prepareRefund(): PreparedChannelRefund {
+        return { plans: [] };
+    }
+
     @MessagePattern('postral/payment-channel/dummy-ecommerce/init')
     async handleStartPaymentOperation(paymentDto: PaymentFullWithCaptureInfoDTO) {
         // Payment geldiğinde refund olup olmadığını kontrol edebiliriz. Ödeme ile ilgili entegrasyonda bu kontrol ile ayrı istekler atabiliriz.

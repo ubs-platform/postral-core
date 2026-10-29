@@ -4,6 +4,19 @@ import Iyzipay from 'iyzipay';
 import Big from 'big.js';
 import type { mapCheckout } from './iyzico-checkout.mapper';
 
+export class IyzicoRefundRejectedError extends BadGatewayException {
+    constructor(readonly providerCode: string) {
+        super(`iyzico rejected refund (code ${providerCode})`);
+    }
+}
+
+export interface IyzicoRefundRequest {
+    conversationId: string;
+    paymentTransactionId: string;
+    price: string;
+    currency: string;
+}
+
 export function responseObject(value: unknown): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         throw new BadGatewayException('Invalid iyzico response');
@@ -98,6 +111,7 @@ export class IyzicoClientService {
         action: (
             callback: (error: Error | null, result: unknown) => void,
         ) => void,
+        refundConversationId?: string,
     ): Promise<Record<string, unknown>> {
         try {
             const result = await new Promise<unknown>((resolve, reject) => {
@@ -136,6 +150,9 @@ export class IyzicoClientService {
                     typeof body.errorCode === 'string'
                         ? body.errorCode
                         : 'UNKNOWN';
+                if (refundConversationId && body.conversationId === refundConversationId && code !== 'UNKNOWN') {
+                    throw new IyzicoRefundRejectedError(code);
+                }
                 throw new BadGatewayException(
                     `iyzico rejected the request (code ${code}); reconciliation may be required`,
                 );
@@ -215,5 +232,28 @@ export class IyzicoClientService {
             );
         }
         return result;
+    }
+
+    async refund(request: IyzicoRefundRequest, providerPaymentId: string): Promise<{ refundHostReference?: string }> {
+        const result = await this.call(
+            cb => this.sdk.refund.create({ locale: 'tr', ...request }, cb),
+            request.conversationId,
+        );
+        verifyResponseSignature(this.secret, [
+            responseString(result.paymentId),
+            responseDecimal(result.price),
+            responseString(result.currency),
+            responseString(result.conversationId),
+        ], result.signature);
+        if (result.paymentId !== providerPaymentId ||
+            result.paymentTransactionId !== request.paymentTransactionId ||
+            result.conversationId !== request.conversationId ||
+            result.currency !== request.currency ||
+            !new Big(responseDecimal(result.price)).eq(request.price)) {
+            throw new BadGatewayException('iyzico refund correlation or amount mismatch');
+        }
+        return {
+            ...(typeof result.refundHostReference === 'string' ? { refundHostReference: result.refundHostReference } : {}),
+        };
     }
 }

@@ -44,3 +44,4 @@ export * from './dto/report-platform.dto';
 export * from './dto/seller-report-series.dto';
 export * from './dto/seller-report-setup.dto';
 export * from './dto/platform-setup.dto';
+export * from './dto/refund-channel-plan.dto';

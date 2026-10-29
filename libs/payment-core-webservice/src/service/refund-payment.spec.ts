@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Payment, PostralPaymentItem, RefundRequest } from '@tk-postral/postral-entities';
-import { PaymentFullDTO, PaymentItemDTO, RefundRequestDTO } from '@tk-postral/payment-common';
+import { PaymentFullDTO, PaymentItemDTO, RefundChannelPlan, RefundRequestDTO } from '@tk-postral/payment-common';
 import { PaymentService } from './payment.service';
 import { PaymentMapper } from '../mapper/payment.mapper';
 import { PaymentItemMapper } from '../mapper/payment-item.mapper';
@@ -23,6 +23,7 @@ import { AddressService } from './address.service';
 describe('Refund payment persistence', () => {
     let service: PaymentService;
     let savedPayment: Payment | null;
+    let savedPlan: RefundChannelPlan[] | undefined;
     const original = Object.assign(new Payment(), {
         id: 'purchase', type: 'PURCHASE', paymentStatus: 'COMPLETED',
         customerAccountId: 'buyer', currency: 'TRY',
@@ -38,22 +39,28 @@ describe('Refund payment persistence', () => {
         id: 'request', paymentId: 'purchase', status: 'PENDING',
         items: [{ paymentItemId: 'book-item', refundCount: 1, refundAmount: 60, refundTaxAmount: 10, refundAmountWithoutTax: 50 }],
     });
-    const manager = { findOne: jest.fn(), findOneOrFail: jest.fn(), save: jest.fn() };
-    const repo = { exists: jest.fn(), manager: { transaction: jest.fn() } };
+    const manager = { findOne: jest.fn(), findOneOrFail: jest.fn(), save: jest.fn(), update: jest.fn() };
+    const repo = { exists: jest.fn(), save: jest.fn(), manager: { transaction: jest.fn() } };
     const calculations = { calculateTotalAmount: jest.fn() };
     const accounts = { fetchOne: jest.fn() };
     const common = { findPaymentByIdRaw: jest.fn(), findPaymentById: jest.fn() };
-    const channels = { startRefundPaymentOperationsForRefundRequest: jest.fn() };
+    const channels = {
+        startRefundPaymentOperationsForRefundRequest: jest.fn(), prepareRefundChannelPlan: jest.fn(),
+        checkAndUpdateOperationStatuses: jest.fn(), totalPaidOrAuthorizedOf: jest.fn(), firePaymentOperationsByPaymentId: jest.fn(),
+    };
     const orders = { addSellerPaymentOrders: jest.fn() };
     const transactions = { fromPayment: jest.fn() };
 
     beforeEach(async () => {
         jest.resetAllMocks();
         savedPayment = null;
+        savedPlan = undefined;
         repo.exists.mockImplementation(async () => savedPayment !== null);
         repo.manager.transaction.mockImplementation(async action => action(manager));
         manager.findOne.mockImplementation(async entity => entity === RefundRequest
-            ? Object.assign(new RefundRequest(), { id: 'request', status: 'PENDING' }) : savedPayment);
+            ? Object.assign(new RefundRequest(), { id: 'request', status: 'PENDING', channelRefundPlan: savedPlan }) : savedPayment);
+        manager.update.mockImplementation(async (_entity, _id, values) => { savedPlan = values.channelRefundPlan; });
+        repo.save.mockImplementation(async payment => payment);
         manager.save.mockImplementation(async (_entity, payment: Payment) => {
             payment.id = 'refund-payment';
             savedPayment = payment;
@@ -124,5 +131,41 @@ describe('Refund payment persistence', () => {
         await expect(service.createRefundPayment(request)).rejects.toThrow('Channel unavailable');
         await service.createRefundPayment(request);
         expect(manager.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('persists and reuses the original rounding plan without recalculation on resume', async () => {
+        const plan: RefundChannelPlan = {
+            originalOperationId: 'original-op', originalChannelOperationId: 'adapter-op', channelData: { policy: 'saved' },
+            lines: [{ originalPaymentItemId: 'book-item', nominalAmount: '60.0000', providerAmount: '60.00' }],
+        };
+        channels.prepareRefundChannelPlan.mockResolvedValueOnce([plan]);
+        await service.createRefundPayment(request);
+        await service.createRefundPayment(request);
+        expect(channels.prepareRefundChannelPlan).toHaveBeenCalledTimes(1);
+        expect(manager.update).toHaveBeenCalledWith(RefundRequest, 'request', { channelRefundPlan: [plan] });
+        expect(channels.startRefundPaymentOperationsForRefundRequest).toHaveBeenLastCalledWith(
+            request, expect.anything(), expect.anything(), [plan],
+        );
+    });
+
+    it('fails predictable channel precision validation before payment and accounting creation', async () => {
+        channels.prepareRefundChannelPlan.mockRejectedValueOnce(new Error('Channel rejected refund precision'));
+        await expect(service.createRefundPayment(request)).rejects.toThrow('precision');
+        expect(manager.save).not.toHaveBeenCalled();
+        expect(transactions.fromPayment).not.toHaveBeenCalled();
+        expect(channels.startRefundPaymentOperationsForRefundRequest).not.toHaveBeenCalled();
+    });
+
+    it('completes a synchronously settled refund through the existing checker once', async () => {
+        await service.createRefundPayment(request);
+        common.findPaymentByIdRaw.mockImplementation(async () => savedPayment);
+        channels.totalPaidOrAuthorizedOf.mockResolvedValue(60);
+        const completed = jest.spyOn(service, 'onPaymentCompleted').mockResolvedValue(undefined);
+        expect(await service.updatePaymentByOperationStatuses('refund-payment', true)).toMatchObject({
+            type: 'REFUND', paymentStatus: 'COMPLETED', totalAmount: 60,
+        });
+        await service.updatePaymentByOperationStatuses('refund-payment', true);
+        expect(channels.checkAndUpdateOperationStatuses).toHaveBeenCalledTimes(1);
+        expect(completed).toHaveBeenCalledTimes(1);
     });
 });

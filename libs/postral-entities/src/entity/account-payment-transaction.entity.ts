@@ -30,6 +30,9 @@ export class AccountPaymentTransaction {
     @Column({ nullable: true })
     paymentSellerOrderId?: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    roundingOperationId?: string | null;
+
     @Column()
     type!: "DEBIT" | "CREDIT";
 

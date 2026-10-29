@@ -15,6 +15,7 @@ export class AccountPaymentTransactionDTO {
     paymentId: string;
 
     paymentSellerOrderId?: string;
+    roundingOperationId?: string | null;
 
     type: "DEBIT" | "CREDIT";
 

@@ -14,6 +14,12 @@ declare module 'iyzipay' {
                 callback: (error: Error | null, result: unknown) => void,
             ): void;
         };
+        refund: {
+            create(
+                request: object,
+                callback: (error: Error | null, result: unknown) => void,
+            ): void;
+        };
     }
     export = Iyzipay;
 }

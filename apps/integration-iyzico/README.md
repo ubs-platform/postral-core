@@ -6,8 +6,8 @@ and fulfillment events. This first increment supports full-amount, single-charge
 Checkout Form purchases with virtual, physical or mixed baskets. Currency comes
 from the payment DTO; TRY/EUR/USD/GBP/NOK/CHF are accepted subject to the sandbox
 merchant's capabilities. Unpaid checkouts can be cancelled locally (see `cancel`).
-Marketplace, preauthorization, voiding a captured payment and
-refunds are **not enabled**.
+Full and item/quantity-based partial refunds are supported for those captures.
+Marketplace, preauthorization and voiding a captured payment are **not enabled**.
 
 ## Configuration and startup
 
@@ -33,9 +33,13 @@ IYZICO_DB_SYNCHRONIZE=true
 ```
 
 Use `IYZICO_DB_SYNCHRONIZE=true` only for disposable sandbox databases. The adapter
-registers only its own `iyzico_operation` table. With synchronization disabled,
-provision that table from `IyzicoOperation` metadata before startup. No Postral
-core entity/schema change is required. This version refuses production mode and
+registers its own `iyzico_operation` and `iyzico_refund` tables. With synchronization
+disabled, provision them from entity metadata before startup. The refund increment
+also adds nullable JSON `RefundRequest.channelRefundPlan`,
+`PaymentChannelOperation.refundPlan` / `settledRefundItemIds` and nullable varchar
+`AccountPaymentTransaction.roundingOperationId` in the core database; provision
+these before deploying payment when its schema synchronization is disabled.
+This version refuses production mode and
 non-sandbox API endpoints. Plain HTTP public URLs are for local testing only;
 use externally reachable HTTPS for complete callback tests.
 
@@ -90,13 +94,16 @@ card form, hardcoded merchant keys or absolute provider URLs are needed.
   successful callback arriving after cancellation is not completed; the row is
   set to `cancellationState: PAID_AFTER_CANCEL` and an error is logged for manual
   reconciliation/refund.
-- `init` with `type: REFUND`: explicitly rejected until the refund increment.
+- `init` with `type: REFUND`: uses a server-persisted original-line/precision plan
+  and stable `refundOperationId` to submit item-level refunds. It returns an empty
+  redirect URL and verified settlements; `check` reads the persisted result and
+  `fire` never submits another refund. Do not use the legacy `/refund` message.
 
 `PaymentChannelOperation.operationId` stores the adapter UUID returned at init.
 This is neither a product ID nor iyzico's payment/transaction ID. The provider
 payment ID becomes available only after result retrieval. The adapter stores
 that ID and per-line `paymentItemId` ↔ `paymentTransactionId`/price/paidPrice
-mapping in its own row, ready for later item-level refunds. Basket IDs use
+mapping in its own row for item-level refunds. Basket IDs use
 Postral payment IDs and line IDs use **payment-item** IDs, not catalog IDs.
 No buyer identity/address or raw provider response is persisted by the adapter.
 
@@ -125,6 +132,63 @@ reserved with `RECONCILIATION_REQUIRED` (or `INITIALIZING` after a process crash
 it is **never automatically sent again**. `conversationId` is correlation, not a
 provider idempotency guarantee. Reconcile in the sandbox dashboard before any
 manual recovery; do not delete reservations just to retry.
+
+## Refund precision and tracking
+
+Set `IYZICO_REFUND_ROUNDING_MODE` in the **integration-iyzico environment**, e.g.
+`apps/integration-iyzico/dev.env` (see [dev.env.example](./dev.env.example)).
+The payment core has no iyzico policy or configuration dependency.
+
+| Value | Positive amount behavior | 3.3333 |
+| --- | --- | --- |
+| `ROUND` | Nearest cent, half up | 3.33 |
+| `FLOOR` | Upward to the next cent (intentionally ceiling despite the name) | 3.34 |
+| `USE_FIRST_TWO` | Keep two decimals, truncate the rest | 3.33 |
+| `THROW` | Reject non-cent-exact amounts; default when unset | error |
+
+Unknown values fail adapter startup. A refund becoming zero or exceeding the
+remaining provider transaction balance is rejected, never clamped. Each line is
+normalized separately; totals are summed from those lines. The original mode
+and amounts are saved with the request and reused after restart/config changes.
+Nominal payment/operation totals, taxes and commissions keep four-decimal precision.
+
+The adapter implements `postral/payment-channel/iyzico/prepare-refund` to validate
+the single-capture restriction, purchase identity and original item mapping,
+then calculate provider amounts without issuing refunds. Its saved policy is
+kept in `RefundChannelPlan.channelData.roundingMode`; the core treats that
+metadata as opaque. The request stores an array of plans; older single-plan
+snapshots and their top-level `roundingMode` remain readable. Deploy the core
+and adapter together for the new preparation RPC. Existing reservations must
+not be deleted or resubmitted during rollout.
+
+When provider and nominal amounts differ, an active, non-external COMMERCIAL
+`AdminSettings.billingAccountId` distinct from the customer is required before
+creating the refund payment. Verified successful lines post a balanced,
+tax-free customer/platform ledger pair for the difference, once per line.
+The platform bears upward-rounding cost and receives downward-rounding benefit;
+seller amounts are unchanged. Platform/flow reports record the signed difference
+as `REFUND_ROUNDING_ADJUSTMENT`, not a provider processing fee.
+
+Users/sellers follow the existing separate refund payment (seller-to-customer
+direction). Request approval is not proof of provider settlement or bank posting.
+All lines must succeed before the refund operation completes; Postral's existing
+status checker then completes the refund payment and its accounting/events.
+Refunds have no browser callback or redirect.
+
+The adapter locks the original capture while reserving provider capacity and
+stores line states in `iyzico_refund.lines`. Network calls run without SQL locks.
+Duplicate/concurrent init calls do not resubmit claimed lines. Definitive initial
+provider rejection returns `FAILED`; ambiguous or partially successful operations
+remain `WAITING` with an error indication and log entry, and are not resent.
+Rejected/ambiguous reservations are not automatically released.
+
+For investigation, match the core operation's stable ID to `iyzico_refund.id`;
+inspect each line's conversation ID, transaction ID, amount, state and provider
+reference against sandbox provider evidence. A lost init response may leave the
+core operation's channel ID unbound even though the adapter has submitted it.
+Do not delete reservations, reissue provider calls or mark the payment completed
+without reconciling every line and its accounting. Admin recovery UI, seller
+manual-confirmation buttons and automatic lost-response recovery are deferred.
 
 ## Known gaps / next increment
 
@@ -166,10 +230,12 @@ manual recovery; do not delete reservations just to retry.
 - TODO: ❗ Full-amount captures only; amounts and each basket line must be positive,
   exactly representable in two decimal places, with matching totals. No silent
   rounding, installment surcharge or split-channel allocation is performed.
-- TODO: ❗ Marketplace seller routing and refunds remain disabled, even though
-  Postral can emit refund requests. A fulfillment failure may therefore leave a
-  refund needing manual sandbox handling. Do not enable this channel outside
-  disposable test scenarios until the refund increment is implemented.
+- TODO: ❗ Marketplace seller routing and split-channel refunds remain disabled.
+  Normal seller-approved and internal fulfillment-failure refunds use the same
+  supported single-capture path. Ambiguous results still require manual sandbox
+  investigation. Do not enable this channel outside disposable test scenarios.
+  The design and deferred work are recorded in the
+  [refund integration plan](../../docs/architecture/iyzico-refund-plan.md).
 
 ## Verification
 
@@ -183,6 +249,13 @@ node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand \
   apps/integration-iyzico/src/integration-iyzico.service.spec.ts \
   apps/integration-iyzico/src/integration-iyzico.controller.spec.ts \
   apps/integration-iyzico/src/iyzico-client.service.spec.ts \
+  apps/integration-iyzico/src/iyzico-refund.service.spec.ts \
+  apps/integration-iyzico/src/refund-rounding.util.spec.ts \
+  libs/payment-core-webservice/src/service/refund-settlement-accounting.spec.ts \
+  libs/payment-core-webservice/src/service/account-payment-transaction.service.spec.ts \
+  libs/payment-core-webservice/src/service/refund-channel-operations.spec.ts \
+  libs/payment-core-webservice/src/service/refund-payment.spec.ts \
+  libs/payment-core-webservice/src/service/refund.service.spec.ts \
   libs/payment-core-webservice/src/controller/payment.controller.spec.ts \
   --transform='{"^.+\\.(t|j)s$":["ts-jest",{"tsconfig":{"isolatedModules":true}}]}'
 ```
@@ -202,6 +275,6 @@ credentials and a reachable callback; unit tests use mocks and never charge.
 - [Sandbox setup](https://docs.iyzico.com/en/getting-started/preliminaries/sandbox)
 
 The SDK has no bundled TypeScript declarations. The app-local declaration covers
-only the two SDK methods used here; `@types/iyzipay` currently describes an older,
+only the SDK methods used here; `@types/iyzipay` currently describes an older,
 incompatible Checkout Form request/response shape. Provider responses are
 therefore treated as unknown and validated at the boundary.

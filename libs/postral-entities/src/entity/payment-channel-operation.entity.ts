@@ -2,6 +2,7 @@ import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeor
 import {
     PaymentOperationStatus,
     PaymentStatus,
+    RefundChannelPlan,
 } from '@tk-postral/payment-common';
 import { MoneyDbField } from './base';
 
@@ -42,6 +43,12 @@ export class PaymentChannelOperation {
 
     @Column({ type: 'varchar', nullable: true })
     originalOperationId?: string;
+
+    @Column({ type: 'json', nullable: true })
+    refundPlan?: RefundChannelPlan | null;
+
+    @Column({ type: 'json', nullable: true })
+    settledRefundItemIds?: string[] | null;
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();

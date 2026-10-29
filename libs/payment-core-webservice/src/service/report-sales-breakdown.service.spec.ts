@@ -13,6 +13,7 @@ import { SellerPaymentOrderSearchService } from './transaction-search.service';
 import { AdminSettingsService } from './admin-settings.service';
 import { EventSenderService } from './event-management.service';
 import { SellerReportSetupService } from './seller-report-setup.service';
+import { REFUND_ROUNDING_ADJUSTMENT } from '@tk-postral/payment-common';
 
 describe('ReportDigestionService sales breakdown', () => {
     let service: ReportDigestionService;
@@ -229,6 +230,31 @@ describe('ReportDigestionService sales breakdown', () => {
             operations.find.mockResolvedValueOnce([]);
             await service['updateProviderFeeExpenseForPlatformReport']('report', payment());
             expect(expenses.save).not.toHaveBeenCalled();
+        });
+
+        it('adds signed refund rounding once to platform expenses, not provider fees or seller amounts', async () => {
+            const report = Object.assign(new Report(), {
+                id: 'report', reportType: 'PLATFORM', query: { ownerAccountId: 'platform-account' },
+            });
+            operations.find.mockResolvedValue([Object.assign(new PaymentChannelOperation(), {
+                paymentChannelId: 'arbitrary-refund-channel',
+                settledRefundItemIds: ['original-a'],
+                refundPlan: { lines: [
+                    { originalPaymentItemId: 'original-a', nominalAmount: '3.3333', providerAmount: '3.33' },
+                    { originalPaymentItemId: 'unsettled', nominalAmount: '3.3333', providerAmount: '3.34' },
+                ] },
+            })]);
+            await service['updateRefundRoundingExpense'](report, payment({ type: 'REFUND' }));
+            expect(operations.find).toHaveBeenCalledWith({
+                where: { paymentId: 'purchase', operationType: 'REFUND' },
+            });
+            expect(storedExpenses.map(row => [row.accountId, row.expenseKey, row.expenseAmount])).toEqual([
+                ['platform-account', REFUND_ROUNDING_ADJUSTMENT, -0.0033],
+                ['platform-account', REPORT_TOTAL, -0.0033],
+            ]);
+            expect(report.totalExpense).toBe(-0.0033);
+            expect(storedExpenses.some(row => row.expenseKey === PAYMENT_SERVICE_FEE)).toBe(false);
+            expect(storedExpenses.find(row => row.expenseKey === REPORT_TOTAL)?.displayWeight).toBe(1);
         });
     });
 

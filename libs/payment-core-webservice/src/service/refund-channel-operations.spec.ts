@@ -111,6 +111,47 @@ describe('Refund channel operations', () => {
         expect(operations.map(operation => operation.amount)).toEqual([0.0001]);
     });
 
+    it('forwards opaque plans to the matching channel without applying provider policies', async () => {
+        const plans = [
+            { originalOperationId: 'source-a', originalChannelOperationId: 'provider-a',
+                channelData: { providerPolicy: 'custom-a' },
+                lines: [{ originalPaymentItemId: 'original', nominalAmount: '15.0000', providerAmount: '15.0000' }] },
+            { originalOperationId: 'source-b', originalChannelOperationId: 'provider-b',
+                channelData: { providerPolicy: 'custom-b' },
+                lines: [{ originalPaymentItemId: 'original', nominalAmount: '10.0000', providerAmount: '10.0000' }] },
+        ];
+        channel.initializePaymentChannelOperation.mockImplementation(async (id, dto) => ({
+            paymentChannelId: id, paymentChannelOperationId: dto.refundOperationId,
+            paymentStatus: 'WAITING', refundSettlements: [],
+        }));
+        manager.findOneOrFail.mockImplementation(async (entity, options) => entity === PaymentChannelOperation
+            ? operations.find(operation => operation.id === options.where.id)
+            : {});
+        manager.save.mockImplementation(async (_entity, operation) => {
+            if (!operation.id) {
+                operation.id = `refund-op-${operations.length}`;
+                operations.push(operation);
+            }
+            return operation;
+        });
+        await service.startRefundPaymentOperationsForRefundRequest(request, refund, purchase, plans);
+        expect(channel.initializePaymentChannelOperation).toHaveBeenNthCalledWith(1, 'channel-a',
+            expect.objectContaining({ refundPlan: plans[0] }));
+        expect(channel.initializePaymentChannelOperation).toHaveBeenNthCalledWith(2, 'channel-b',
+            expect.objectContaining({ refundPlan: plans[1] }));
+        expect(operations.map(operation => operation.refundPlan)).toEqual(plans);
+    });
+
+    it('reads legacy single plans and refuses mismatched nominal allocations before sending', async () => {
+        const plan = {
+            originalOperationId: 'source-a', originalChannelOperationId: 'provider-a',
+            lines: [{ originalPaymentItemId: 'original', nominalAmount: '25.0000', providerAmount: '25.00' }],
+        };
+        await expect(service.startRefundPaymentOperationsForRefundRequest(request, refund, purchase, plan))
+            .rejects.toThrow('does not match');
+        expect(channel.initializePaymentChannelOperation).not.toHaveBeenCalled();
+    });
+
     it('rejects refunds without completed captures and refunds exceeding remaining captures', async () => {
         repo.find.mockResolvedValueOnce([]);
         await expect(service.startRefundPaymentOperationsForRefundRequest(request, refund, purchase))

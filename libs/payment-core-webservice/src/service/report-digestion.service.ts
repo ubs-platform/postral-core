@@ -15,6 +15,8 @@ import { exec } from 'child_process';
 import { EventSenderService } from './event-management.service';
 import { ReportItem } from '@tk-postral/postral-entities/entity/report-item.entity';
 import { SellerReportSetupService } from './seller-report-setup.service';
+import { REFUND_ROUNDING_ADJUSTMENT } from '@tk-postral/payment-common';
+import Big from 'big.js';
 
 @Injectable()
 export class ReportDigestionService {
@@ -425,6 +427,32 @@ export class ReportDigestionService {
         })));
     }
 
+    private async updateRefundRoundingExpense(report: Report, payment: PaymentFullDTO): Promise<void> {
+        if (payment.type === 'REFUND') {
+            const accountId = report.query?.ownerAccountId;
+            if (!accountId) throw new Error('Refund rounding report requires an owner account');
+            const refunds = await this.paymentChannelOperationRepo.find({
+                where: { paymentId: payment.id, operationType: 'REFUND' },
+            });
+            const adjustment = refunds.reduce((sum, operation) => sum.plus(
+                (operation.refundPlan?.lines ?? [])
+                    .filter(line => operation.settledRefundItemIds?.includes(line.originalPaymentItemId))
+                    .reduce((total, line) => total.plus(new Big(line.providerAmount).minus(line.nominalAmount)), new Big(0)),
+            ), new Big(0));
+            if (!adjustment.eq(0)) {
+                const expenses = await this.reportExpenseRepo.find({ where: { reportId: report.id, accountId } });
+                const changed = [REFUND_ROUNDING_ADJUSTMENT, REPORT_TOTAL].map(key => {
+                    const expense = expenses.find(entry => entry.expenseKey === key) ??
+                        ReportExpense.create(report.id, accountId, key, 0, undefined, true, key === REPORT_TOTAL ? 1 : 2);
+                    expense.expenseAmount = Number(new Big(expense.expenseAmount).plus(adjustment));
+                    return expense;
+                });
+                await this.reportExpenseRepo.save(changed);
+                report.totalExpense = changed[1].expenseAmount;
+            }
+        }
+    }
+
     private async updateExpensesForReport(mainReportId: string, payment: PaymentFullDTO, expenseAccountId: string, itemFilterAccountId: string | null = expenseAccountId, platforms = new Map<string, ExternalPlatform>()) {
         const platformCode = payment.externalPlatformId
             ? encodeURIComponent((await this.resolveReportPlatform(payment, platforms)).platformKey)
@@ -715,6 +743,7 @@ export class ReportDigestionService {
                 }
                 if (flag && !payment.externalPlatformId && freshReport.reportType === "PLATFORM") {
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+                    await this.updateRefundRoundingExpense(freshReport, payment);
 
                 }
                 if (flag && (freshReport.reportType === "PLATFORM" || freshReport.reportType === "PLATFORM_SELLER")) {
@@ -729,6 +758,7 @@ export class ReportDigestionService {
                     const platform = await this.resolveReportPlatform(payment, platforms);
                     await this.updateExpensesForReport(freshReport.id, payment, accountId, null, platforms);
                     await this.updateProviderFeeExpenseForPlatformReport(freshReport.id, payment);
+                    await this.updateRefundRoundingExpense(freshReport, payment);
                     await this.digestPlatformFlowReport(freshReport, payment);
                     await this.updateTaxGroupReportByPaymentAndAccountId(freshReport.id, payment, null);
                     await this.updatePaymentItemReport(freshReport.id, payment);
