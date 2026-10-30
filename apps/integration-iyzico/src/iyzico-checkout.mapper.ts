@@ -28,7 +28,8 @@ export function mapCheckout(
     payment: PaymentFullWithCaptureInfoDTO,
     operationId: string,
     callbackUrl: string,
-    subMerchantKeys: ReadonlyMap<string, string> = new Map(),
+    // Tanımsızsa sub-merchant (marketplace) yönlendirmesi kapalıdır.
+    subMerchantKeys?: ReadonlyMap<string, string>,
 ) {
     console.info("Postral Payment:", payment);
     if (payment.type !== 'PURCHASE') {
@@ -114,10 +115,11 @@ export function mapCheckout(
             throw new BadRequestException('items[].isPhysical must be a boolean');
         }
         const price = checkoutMoney(item.totalAmount, 'items[].totalAmount');
-        const subMerchantKey = item.sellerAccountId
-            ? subMerchantKeys.get(item.sellerAccountId)
-            : undefined;
-        if (item.sellerAccountId && !subMerchantKey) {
+        const subMerchantKey =
+            subMerchantKeys && item.sellerAccountId
+                ? subMerchantKeys.get(item.sellerAccountId)
+                : undefined;
+        if (subMerchantKeys && item.sellerAccountId && !subMerchantKey) {
             throw new BadRequestException(
                 'iyzico requires a sub-merchant key for every seller item',
             );

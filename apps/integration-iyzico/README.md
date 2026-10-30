@@ -11,7 +11,10 @@ Preauthorization and voiding a captured payment are **not enabled**.
 
 ## Sub-merchants (marketplace)
 
-Basket lines with a `sellerAccountId` are routed to an iyzico sub-merchant. Before
+Disabled by default; set `IYZICO_ENABLE_SUBMERCHANTS=true` for marketplace deployments
+(e.g. Lotus). When off, `sellerAccountId` is ignored and no sub-merchant is created or
+sent, so Postral can sell on its own behalf. When on, basket lines with a
+`sellerAccountId` are routed to an iyzico sub-merchant. Before
 checkout the adapter asks Postral core for the seller's current account data
 (`postral/account/get-sub-merchant-source`), maps it (`iyzico-sub-merchant.mapper.ts`)
 and creates or updates the sub-merchant when the keyed hash of the mapped data
@@ -37,6 +40,7 @@ IYZIPAY_URI=https://sandbox-api.iyzipay.com
 IYZIPAY_API_KEY=<sandbox API key>
 IYZIPAY_SECRET_KEY=<sandbox secret>
 IYZICO_PUBLIC_BASE_URL=https://<application-host>/service/payment/api/iyzico/
+IYZICO_ENABLE_SUBMERCHANTS=false
 POSTRAL_DB_HOST=localhost
 POSTRAL_DB_PORT=3306
 POSTRAL_DB_USER=<database user>

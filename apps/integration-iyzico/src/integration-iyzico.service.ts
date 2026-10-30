@@ -117,9 +117,11 @@ export class IntegrationIyzicoService {
         }
     }
 
+    /** `IYZICO_ENABLE_SUBMERCHANTS=true` ise satıcı satırları alt üye işyerine yönlenir. */
     private async ensureSubMerchants(
         payment: PaymentFullWithCaptureInfoDTO,
-    ): Promise<Map<string, string>> {
+    ): Promise<Map<string, string> | undefined> {
+        if (process.env.IYZICO_ENABLE_SUBMERCHANTS !== 'true') return undefined;
         const sellerAccountIds = new Set(
             (payment.items ?? []).flatMap((item) =>
                 item.sellerAccountId ? [item.sellerAccountId] : [],

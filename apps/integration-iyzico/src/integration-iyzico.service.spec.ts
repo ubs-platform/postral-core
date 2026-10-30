@@ -221,8 +221,16 @@ describe('iyzico checkout mapping', () => {
         const input = payment();
         input.items[0].sellerAccountId = 'seller-1';
         expect(() =>
-            mapCheckout(input, 'adapter-id', 'https://app.test/callback'),
+            mapCheckout(input, 'adapter-id', 'https://app.test/callback', new Map()),
         ).toThrow('sub-merchant key');
+    });
+
+    it('does not route seller items when sub-merchants are disabled', () => {
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        const result = mapCheckout(input, 'adapter-id', 'https://app.test/callback');
+        expect(result.basketItems[0]).not.toHaveProperty('subMerchantKey');
+        expect(result.basketItems[0]).not.toHaveProperty('subMerchantPrice');
     });
 
     it('keeps legacy items VIRTUAL regardless of their entity family', () => {
@@ -459,6 +467,7 @@ describe('IntegrationIyzicoService', () => {
         refunds.initialize.mockReset().mockRejectedValue(new Error('Invalid iyzico refunds plan'));
         refunds.check.mockReset().mockRejectedValue(new Error('iyzico refund not found'));
         subMerchants.ensure.mockReset().mockImplementation(async (id: string) => `key-${id}`);
+        process.env.IYZICO_ENABLE_SUBMERCHANTS = 'true';
         messages.emit.mockReturnValue(of(undefined));
         const module = await Test.createTestingModule({
             providers: [
@@ -518,6 +527,15 @@ describe('IntegrationIyzicoService', () => {
             subMerchantKey: 'key-seller-1',
             subMerchantPrice: '10.00',
         });
+    });
+
+    it('skips sub-merchants entirely unless IYZICO_ENABLE_SUBMERCHANTS is true', async () => {
+        process.env.IYZICO_ENABLE_SUBMERCHANTS = 'false';
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        await service.initialize(input);
+        expect(subMerchants.ensure).not.toHaveBeenCalled();
+        expect(client.initialize.mock.calls[0][0].basketItems[0]).not.toHaveProperty('subMerchantKey');
     });
 
     it('does not reach iyzico when a seller sub-merchant cannot be ensured', async () => {
