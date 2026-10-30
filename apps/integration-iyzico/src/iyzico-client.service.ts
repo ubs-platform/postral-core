@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import Iyzipay from 'iyzipay';
 import Big from 'big.js';
 import type { mapCheckout } from './iyzico-checkout.mapper';
+import { describeIyzicoError } from './iyzico-error-catalog';
 
 export class IyzicoRefundRejectedError extends BadGatewayException {
     constructor(readonly providerCode: string) {
@@ -150,11 +151,23 @@ export class IyzicoClientService {
                     typeof body.errorCode === 'string'
                         ? body.errorCode
                         : 'UNKNOWN';
+                const group =
+                    typeof body.errorGroup === 'string' &&
+                    /^[A-Z0-9_]+$/.test(body.errorGroup)
+                        ? body.errorGroup
+                        : undefined;
+                const explanation = describeIyzicoError(code, group);
+                if (explanation) {
+                    this.logger.warn(
+                        `iyzico error ${code}${group ? ` (${group})` : ''}: ${explanation}`,
+                    );
+                }
                 if (refundConversationId && body.conversationId === refundConversationId && code !== 'UNKNOWN') {
                     throw new IyzicoRefundRejectedError(code);
                 }
+                const codeDescription = explanation ? `: ${explanation}` : '';
                 throw new BadGatewayException(
-                    `iyzico rejected the request (code ${code}); reconciliation may be required`,
+                    `iyzico rejected the request (code ${code}); reconciliation may be required (${codeDescription})`,
                 );
             }
             return body;
