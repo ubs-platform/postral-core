@@ -27,6 +27,7 @@ import {
 } from './iyzico-client.service';
 import { mapCheckout } from './iyzico-checkout.mapper';
 import { IyzicoRefundService } from './iyzico-refund.service';
+import { IyzicoSubMerchantService } from './iyzico-sub-merchant.service';
 
 @Injectable()
 export class IntegrationIyzicoService {
@@ -38,6 +39,7 @@ export class IntegrationIyzicoService {
         private readonly client: IyzicoClientService,
         @Inject('MICROSERVICE_CLIENT') private readonly messages: ClientProxy,
         private readonly refunds: IyzicoRefundService,
+        private readonly subMerchants: IyzicoSubMerchantService,
     ) {}
 
     prepareRefund(request: PrepareChannelRefundDTO) {
@@ -49,10 +51,12 @@ export class IntegrationIyzicoService {
     ): Promise<PaymentChannelStatusDTO> {
         if (payment.type === 'REFUND') return this.refunds.initialize(payment);
         const id = randomUUID();
+        const subMerchantKeys = await this.ensureSubMerchants(payment);
         const request = mapCheckout(
             payment,
             id,
             new URL(`callback/${id}`, this.client.publicBaseUrl).toString(),
+            subMerchantKeys,
         );
         const reservation = this.operations.create({
             id,
@@ -111,6 +115,21 @@ export class IntegrationIyzicoService {
             );
             throw error;
         }
+    }
+
+    private async ensureSubMerchants(
+        payment: PaymentFullWithCaptureInfoDTO,
+    ): Promise<Map<string, string>> {
+        const sellerAccountIds = new Set(
+            (payment.items ?? []).flatMap((item) =>
+                item.sellerAccountId ? [item.sellerAccountId] : [],
+            ),
+        );
+        const keys = new Map<string, string>();
+        for (const accountId of sellerAccountIds) {
+            keys.set(accountId, await this.subMerchants.ensure(accountId));
+        }
+        return keys;
     }
 
     async find(id: string): Promise<IyzicoOperation> {

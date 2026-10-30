@@ -14,6 +14,20 @@ declare module 'iyzipay' {
                 callback: (error: Error | null, result: unknown) => void,
             ): void;
         };
+        subMerchant: {
+            create(
+                request: object,
+                callback: (error: Error | null, result: unknown) => void,
+            ): void;
+            update(
+                request: object,
+                callback: (error: Error | null, result: unknown) => void,
+            ): void;
+            retrieve(
+                request: object,
+                callback: (error: Error | null, result: unknown) => void,
+            ): void;
+        };
         refund: {
             create(
                 request: object,

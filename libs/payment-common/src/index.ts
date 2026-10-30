@@ -1,6 +1,7 @@
 export * from './dto/account.dto';
 export * from './dto/bank-account.dto';
 export * from './dto/address.dto';
+export * from './dto/sub-merchant-source.dto';
 export * from './dto/payment-init.dto';
 export * from './dto/payment-item-init.dto';
 export * from './dto/payment-item-input.dto';

@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { PaymentFullWithCaptureInfoDTO } from '@tk-postral/payment-common';
+import { splitPersonName } from '@tk-postral/common-utils';
 import Big from 'big.js';
 import { isIP } from 'node:net';
 
@@ -27,6 +28,7 @@ export function mapCheckout(
     payment: PaymentFullWithCaptureInfoDTO,
     operationId: string,
     callbackUrl: string,
+    subMerchantKeys: ReadonlyMap<string, string> = new Map(),
 ) {
     console.info("Postral Payment:", payment);
     if (payment.type !== 'PURCHASE') {
@@ -66,25 +68,14 @@ export function mapCheckout(
         );
     }
     // TODO: ❗ SnapshotAccountDTO has a single name, not separate given/family names.
-    // Until explicit fields exist, two trailing uppercase words form a compound surname.
-    const names = required(account.name, 'customerSnapshotAccount.name').split(
-        /\s+/,
+    const personName = splitPersonName(
+        required(account.name, 'customerSnapshotAccount.name'),
     );
-    if (names.length < 2) {
+    if (!personName) {
         throw new BadRequestException(
             'iyzico requires a customer name and surname',
         );
     }
-    const hasUppercaseCompoundSurname =
-        names.length >= 3 &&
-        names
-            .slice(-2)
-            .every(
-                (word) =>
-                    word === word.toLocaleUpperCase('tr-TR') &&
-                    word !== word.toLocaleLowerCase('tr-TR'),
-            );
-    const surnameWordCount = hasUppercaseCompoundSurname ? 2 : 1;
     if (!isIP(payment.captureInfo.buyerIp ?? '')) {
         throw new BadRequestException(
             'iyzico requires captureInfo.buyerIp from the trusted HTTP request context',
@@ -122,12 +113,29 @@ export function mapCheckout(
         if (item.isPhysical !== undefined && typeof item.isPhysical !== 'boolean') {
             throw new BadRequestException('items[].isPhysical must be a boolean');
         }
+        const price = checkoutMoney(item.totalAmount, 'items[].totalAmount');
+        const subMerchantKey = item.sellerAccountId
+            ? subMerchantKeys.get(item.sellerAccountId)
+            : undefined;
+        if (item.sellerAccountId && !subMerchantKey) {
+            throw new BadRequestException(
+                'iyzico requires a sub-merchant key for every seller item',
+            );
+        }
         return {
             id: required(item.id, 'items[].id'),
             name: required(item.name, 'items[].name'),
             category1: item.isPhysical ? 'Physical products' : 'Digital products',
             itemType: item.isPhysical ? 'PHYSICAL' : 'VIRTUAL',
-            price: checkoutMoney(item.totalAmount, 'items[].totalAmount'),
+            price,
+            ...(subMerchantKey
+                ? {
+                      subMerchantKey,
+                      // TODO: ❗ The seller share is the full line price. App commission is not
+                      // deducted here; seller earnings are settled by the report digestion.
+                      subMerchantPrice: price,
+                  }
+                : {}),
         };
     });
     if (
@@ -153,8 +161,8 @@ export function mapCheckout(
         enabledInstallments: [1],
         buyer: {
             id: required(payment.customerAccountId, 'customerAccountId'),
-            name: names.slice(0, -surnameWordCount).join(' '),
-            surname: names.slice(-surnameWordCount).join(' '),
+            name: personName.givenName,
+            surname: personName.familyName,
             email: required(
                 account.emailAddress,
                 'customerSnapshotAccount.emailAddress',

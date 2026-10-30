@@ -7,7 +7,20 @@ Checkout Form purchases with virtual, physical or mixed baskets. Currency comes
 from the payment DTO; TRY/EUR/USD/GBP/NOK/CHF are accepted subject to the sandbox
 merchant's capabilities. Unpaid checkouts can be cancelled locally (see `cancel`).
 Full and item/quantity-based partial refunds are supported for those captures.
-Marketplace, preauthorization and voiding a captured payment are **not enabled**.
+Preauthorization and voiding a captured payment are **not enabled**.
+
+## Sub-merchants (marketplace)
+
+Basket lines with a `sellerAccountId` are routed to an iyzico sub-merchant. Before
+checkout the adapter asks Postral core for the seller's current account data
+(`postral/account/get-sub-merchant-source`), maps it (`iyzico-sub-merchant.mapper.ts`)
+and creates or updates the sub-merchant when the keyed hash of the mapped data
+changed. Only the account ID, `subMerchantKey`, type and hash are stored
+(`iyzico_sub_merchant`); no personal data. Type mapping: `INDIVIDUAL` → `PERSONAL`;
+commercial names ending in A.Ş./Anonim Şirketi/Ltd./Ltd. Şti./Limited →
+`LIMITED_OR_JOINT_STOCK_COMPANY`; other commercial accounts → `PRIVATE_COMPANY`
+(requires an 11-digit identity number). iyzico cannot change a sub-merchant's type,
+so such a change fails with a conflict. `subMerchantPrice` equals the full line price.
 
 ## Configuration and startup
 
@@ -239,7 +252,8 @@ manual-confirmation buttons and automatic lost-response recovery are deferred.
 - TODO: ❗ Full-amount captures only; amounts and each basket line must be positive,
   exactly representable in two decimal places, with matching totals. No silent
   rounding, installment surcharge or split-channel allocation is performed.
-- TODO: ❗ Marketplace seller routing and split-channel refunds remain disabled.
+- TODO: ❗ Split-channel refunds remain disabled, and sub-merchant refund behaviour is not verified against the sandbox.
+  App commission is not deducted from `subMerchantPrice` yet (see the TODO in the checkout mapper).
   Normal seller-approved and internal fulfillment-failure refunds use the same
   supported single-capture path. Ambiguous results still require manual sandbox
   investigation. Do not enable this channel outside disposable test scenarios.

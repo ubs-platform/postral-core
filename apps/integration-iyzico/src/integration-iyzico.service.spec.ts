@@ -13,6 +13,7 @@ import {
 } from './iyzico-client.service';
 import { mapCheckout } from './iyzico-checkout.mapper';
 import { IyzicoRefundService } from './iyzico-refund.service';
+import { IyzicoSubMerchantService } from './iyzico-sub-merchant.service';
 
 function payment(): PaymentFullWithCaptureInfoDTO {
     return {
@@ -200,6 +201,29 @@ describe('iyzico checkout mapping', () => {
             ).toMatchObject({ name, surname });
         },
     );
+
+    it('routes seller items to their sub-merchant at the full line price', () => {
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        const result = mapCheckout(
+            input,
+            'adapter-id',
+            'https://app.test/callback',
+            new Map([['seller-1', 'key-seller-1']]),
+        );
+        expect(result.basketItems[0]).toMatchObject({
+            subMerchantKey: 'key-seller-1',
+            subMerchantPrice: '10.00',
+        });
+    });
+
+    it('rejects a seller item without a resolved sub-merchant key', () => {
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        expect(() =>
+            mapCheckout(input, 'adapter-id', 'https://app.test/callback'),
+        ).toThrow('sub-merchant key');
+    });
 
     it('keeps legacy items VIRTUAL regardless of their entity family', () => {
         const input = payment();
@@ -392,6 +416,7 @@ describe('IntegrationIyzicoService', () => {
     };
     const messages = { emit: jest.fn() };
     const refunds = { initialize: jest.fn(), check: jest.fn(), prepare: jest.fn() };
+    const subMerchants = { ensure: jest.fn() };
 
     function result(
         operationId: string,
@@ -433,6 +458,7 @@ describe('IntegrationIyzicoService', () => {
         client.retrieve.mockReset();
         refunds.initialize.mockReset().mockRejectedValue(new Error('Invalid iyzico refunds plan'));
         refunds.check.mockReset().mockRejectedValue(new Error('iyzico refund not found'));
+        subMerchants.ensure.mockReset().mockImplementation(async (id: string) => `key-${id}`);
         messages.emit.mockReturnValue(of(undefined));
         const module = await Test.createTestingModule({
             providers: [
@@ -444,6 +470,7 @@ describe('IntegrationIyzicoService', () => {
                 { provide: IyzicoClientService, useValue: client },
                 { provide: 'MICROSERVICE_CLIENT', useValue: messages },
                 { provide: IyzicoRefundService, useValue: refunds },
+                { provide: IyzicoSubMerchantService, useValue: subMerchants },
             ],
         }).compile();
         service = module.get(IntegrationIyzicoService);
@@ -479,6 +506,27 @@ describe('IntegrationIyzicoService', () => {
         expect(client.initialize).toHaveBeenCalledTimes(1);
         expect(first).not.toHaveProperty('providerFee');
         expect([...rows.values()][0]).not.toHaveProperty('buyer');
+    });
+
+    it('ensures each distinct seller once and sends sub-merchant keys to iyzico', async () => {
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        await service.initialize(input);
+        expect(subMerchants.ensure).toHaveBeenCalledTimes(1);
+        expect(subMerchants.ensure).toHaveBeenCalledWith('seller-1');
+        expect(client.initialize.mock.calls[0][0].basketItems[0]).toMatchObject({
+            subMerchantKey: 'key-seller-1',
+            subMerchantPrice: '10.00',
+        });
+    });
+
+    it('does not reach iyzico when a seller sub-merchant cannot be ensured', async () => {
+        const input = payment();
+        input.items[0].sellerAccountId = 'seller-1';
+        subMerchants.ensure.mockRejectedValue(new Error('seller incomplete'));
+        await expect(service.initialize(input)).rejects.toThrow('seller incomplete');
+        expect(client.initialize).not.toHaveBeenCalled();
+        expect(rows.size).toBe(0);
     });
 
     it('never repeats ambiguous initialization and preserves the reservation after restart', async () => {

@@ -27,6 +27,7 @@ export class AccountMapper {
             id: ac.id,
             legalIdentity: this.cryptionUtil.decryptWithConfig(ac.legalIdentity, "USE_DEFAULT") || "",
             name: ac.name,
+            contactName: this.cryptionUtil.decryptWithConfig(ac.contactName, "USE_DEFAULT") || "",
             website: ac.website || "",
             phone: this.cryptionUtil.decryptWithConfig(ac.phone, "USE_DEFAULT") || "",
             emailAddress: this.cryptionUtil.decryptWithConfig(ac.emailAddress, "USE_DEFAULT") || "",
@@ -59,6 +60,7 @@ export class AccountMapper {
         // Hassas alanlar şifrelenerek güncellenir; diğer alanlar doğrudan atanır.
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || "";
         entity.name = dto.name;
+        entity.contactName = this.cryptionUtil.encryptWithConfig(dto.contactName, "USE_DEFAULT") || "";
         entity.phone = this.cryptionUtil.encryptWithConfig(dto.phone, "USE_DEFAULT") || "";
         entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || "";
         // website alanı hassas değer midir... 

@@ -6,6 +6,7 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
     Unique,
+    UpdateDateColumn,
 } from 'typeorm';
 import { Payment } from './payment.entity';
 import { Address } from './address.entity';
@@ -31,6 +32,13 @@ export class Account {
      */
     @Column({ nullable: true })
     website?: string;
+
+    /**
+     * Yetkili kişinin adı soyadı (şifreli saklanır). Şirket hesaplarında `name` unvandır;
+     * ödeme sağlayıcılarının (örn. iyzico alt üye işyeri) istediği kişi adı buradan alınır.
+     */
+    @Column({ nullable: true })
+    contactName?: string;
 
     /**
      * Eğer kişiselse TCKN, şirketse Vergi numarası
@@ -100,8 +108,8 @@ export class Account {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date = new Date();
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    updatedAt: Date = new Date();
+    @UpdateDateColumn()
+    updatedAt!: Date;
 
     // Harici platform (Hepsiburada, Trendyol vb.) müşteri eşlemesi için.
     // externalPlatformId null olabilir; unique kısıt yalnızca dolu çiftlerde işler

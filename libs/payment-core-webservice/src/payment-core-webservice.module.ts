@@ -10,6 +10,7 @@ import { PaymentItemMapper } from './mapper/payment-item.mapper';
 import { EventSenderService } from './service/event-management.service';
 import { AccountService } from './service/account.service';
 import { AccountMapper } from './mapper/account.mapper';
+import { SubMerchantSourceService } from './service/sub-merchant-source.service';
 import { AppComissionService } from './service/app-commission.service';
 import { AppComissionMapper } from './mapper/app-comission.mapper';
 import { AppComissionController } from './controller/app-comission.controller';
@@ -96,6 +97,7 @@ import { NonProductionGuard } from './guard/non-production.guard';
     providers: [
         AccountService,
         AccountMapper,
+        SubMerchantSourceService,
         AppComissionService,
         AppComissionMapper,
         PaymentService,

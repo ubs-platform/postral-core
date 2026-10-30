@@ -256,4 +256,54 @@ export class IyzicoClientService {
             ...(typeof result.refundHostReference === 'string' ? { refundHostReference: result.refundHostReference } : {}),
         };
     }
+
+    /** Kişisel veri içeren gövdeyi saklamadan değişim tespiti için anahtarlı özet. */
+    fingerprint(value: object): string {
+        const canonical = JSON.stringify(value, Object.keys(value).sort());
+        return createHmac('sha256', this.secret).update(canonical).digest('hex');
+    }
+
+    async createSubMerchant(request: { subMerchantExternalId: string }): Promise<string> {
+        const conversationId = String(request.subMerchantExternalId);
+        const result = await this.call((cb) =>
+            this.sdk.subMerchant.create({ locale: 'tr', conversationId, ...request }, cb),
+        );
+        this.assertSubMerchantCorrelation(result, conversationId);
+        return responseString(result.subMerchantKey);
+    }
+
+    async updateSubMerchant(
+        subMerchantKey: string,
+        request: object,
+    ): Promise<void> {
+        const result = await this.call((cb) =>
+            this.sdk.subMerchant.update(
+                { locale: 'tr', conversationId: subMerchantKey, subMerchantKey, ...request },
+                cb,
+            ),
+        );
+        this.assertSubMerchantCorrelation(result, subMerchantKey);
+    }
+
+    async retrieveSubMerchantKey(subMerchantExternalId: string): Promise<string> {
+        const result = await this.call((cb) =>
+            this.sdk.subMerchant.retrieve(
+                { locale: 'tr', conversationId: subMerchantExternalId, subMerchantExternalId },
+                cb,
+            ),
+        );
+        return responseString(result.subMerchantKey);
+    }
+
+    private assertSubMerchantCorrelation(
+        result: Record<string, unknown>,
+        conversationId: string,
+    ) {
+        if (
+            result.conversationId !== undefined &&
+            result.conversationId !== conversationId
+        ) {
+            throw new BadGatewayException('iyzico sub-merchant correlation mismatch');
+        }
+    }
 }

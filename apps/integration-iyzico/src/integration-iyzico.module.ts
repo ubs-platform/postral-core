@@ -6,6 +6,8 @@ import { MicroservicesCommonModule, MicroserviceSetupUtil } from '@ubs-platform/
 import { IyzicoOperation } from './iyzico-operation.entity';
 import { IyzicoRefund } from './iyzico-refund.entity';
 import { IyzicoRefundService } from './iyzico-refund.service';
+import { IyzicoSubMerchant } from './iyzico-sub-merchant.entity';
+import { IyzicoSubMerchantService } from './iyzico-sub-merchant.service';
 import { IyzicoClientService } from './iyzico-client.service';
 import { ClientsModule, NestMicroservice } from '@nestjs/microservices';
 
@@ -18,16 +20,16 @@ import { ClientsModule, NestMicroservice } from '@nestjs/microservices';
             username: process.env.POSTRAL_DB_USER || 'root',
             password: process.env.POSTRAL_DB_PASSWORD || '',
             database: process.env.POSTRAL_DB_NAME || 'postral_core',
-            entities: [IyzicoOperation, IyzicoRefund],
+            entities: [IyzicoOperation, IyzicoRefund, IyzicoSubMerchant],
             synchronize: process.env.IYZICO_DB_SYNCHRONIZE === 'true',
             timezone: 'Z',
             extra: { connectionLimit: 5 },
         }),
-        TypeOrmModule.forFeature([IyzicoOperation, IyzicoRefund]),
+        TypeOrmModule.forFeature([IyzicoOperation, IyzicoRefund, IyzicoSubMerchant]),
         // MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT'),
         ClientsModule.register([MicroserviceSetupUtil.setupClient('', 'MICROSERVICE_CLIENT')]),
     ],
     controllers: [IntegrationIyzicoController],
-    providers: [IntegrationIyzicoService, IyzicoClientService, IyzicoRefundService],
+    providers: [IntegrationIyzicoService, IyzicoClientService, IyzicoRefundService, IyzicoSubMerchantService],
 })
 export class IntegrationIyzicoModule {}

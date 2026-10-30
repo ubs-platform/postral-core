@@ -7,6 +7,8 @@ export class AccountDTO {
     name!: string;
 
     phone?: string;
+    /** Yetkili kişinin adı soyadı. Şirket hesaplarında `name` unvandır. */
+    contactName?: string;
     website?: string;
     emailAddress?: string;
     legalIdentity!: string;
