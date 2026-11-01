@@ -1,6 +1,8 @@
 export class PaymentItemInputDto {
     itemId?: string;
 
+    note?: string;
+
     entityGroup?: string;
 
     entityName?: string;

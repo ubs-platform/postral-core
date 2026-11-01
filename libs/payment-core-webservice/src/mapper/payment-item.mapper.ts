@@ -19,6 +19,7 @@ export class PaymentItemMapper {
         pi.originalPaymentItemId = dto.originalPaymentItemId;
         pi.itemId = dto.itemId;
         pi.name = dto.name;
+        pi.note = dto.note ?? undefined;
         pi.quantity = dto.quantity;
         pi.unitAmount = dto.unitAmount;
         pi.originalUnitAmount = dto.originalUnitAmount;
@@ -54,6 +55,7 @@ export class PaymentItemMapper {
                 originalPaymentItemId: a.originalPaymentItemId,
                 itemId: a.itemId,
                 name: a.name,
+                note: a.note ?? undefined,
                 quantity: a.quantity,
                 totalAmount: a.totalAmount,
                 taxAmount: a.taxAmount,

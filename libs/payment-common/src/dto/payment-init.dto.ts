@@ -1,6 +1,8 @@
 
 import { PaymentItemInputDto } from './payment-item-input.dto';
 
+export const MAX_PAYMENT_NOTE_LENGTH = 10_000;
+
 export class PaymentInitDTO {
     constructor(partial: Partial<PaymentInitDTO>) {
         Object.assign(this, partial);
@@ -9,6 +11,8 @@ export class PaymentInitDTO {
     // id: string;
 
     type!: 'PURCHASE' | 'REFUND';
+    note?: string;
+
     // totalAmount: number;
 
     /**

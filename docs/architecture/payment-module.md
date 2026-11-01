@@ -112,6 +112,18 @@ reversal are deferred. See the [refund design](./iyzico-refund-plan.md) and
 
 Use the entity helpers in `libs/postral-entities/src/entity/base.ts`: `MoneyDbField` stores `decimal(19,4)` using the Big.js transformer; `BigintDbField` guards safe integer conversion. Follow the established mapper and service patterns for CRUD behavior.
 
+### Payment notes
+
+Payment initialization accepts an optional plain-text `note` on the payment and
+on each item in `items`. Both fields are limited to 10,000 characters, persisted
+as nullable varchar columns, and returned by payment/item DTO mappers and the
+`postral/payment-completed` event. They are generic purchase metadata; Postral
+does not interpret them or apply feature-specific behavior. Notes are not
+encrypted and are deliberately removed from payment-channel initialization
+payloads, including refund initialization, so they are not sent to providers.
+When schema synchronization is disabled, add the nullable `note` columns to
+`payment` and `postral_payment_item` before rollout.
+
 ### Catalog item details
 
 Items have `isPhysical` (boolean, default `false`) and nullable

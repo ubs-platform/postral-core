@@ -9,6 +9,7 @@ import { EventSenderService } from './event-management.service';
 import {
     PaymentItemDTO,
     PaymentInitDTO,
+    MAX_PAYMENT_NOTE_LENGTH,
     PaymentDTO,
     TaxDTO,
     PaymentFullDTO,
@@ -291,6 +292,7 @@ export class PaymentService {
     }
 
     private async generateEntityFromInitDto(pdto: PaymentInitDTO, refundCalculation?: ItemListCalculationDto) {
+        this.validatePaymentNotes(pdto);
         let activeSessionId: string | undefined = pdto.activeSessionId,
             generateActiveSessionId: boolean = pdto.generateActiveSessionId || false;
 
@@ -349,6 +351,7 @@ export class PaymentService {
         const p = new Payment();
 
         p.type = pdto.type;
+        p.note = pdto.note ?? undefined;
         p.currency = pdto.currency;
         p.totalAmount = totalAmt;
         p.taxAmount = taxTotal;
@@ -368,6 +371,16 @@ export class PaymentService {
         await this.applyAccountSnapshot(customerAccount, p);
         await this.applyAddressSnapshot(p);
         return p;
+    }
+
+    private validatePaymentNotes(pdto: PaymentInitDTO): void {
+        const notes = [pdto.note, ...(pdto.items ?? []).map((item) => item?.note)];
+        if (notes.some((note) => note != null &&
+            (typeof note !== 'string' || note.length > MAX_PAYMENT_NOTE_LENGTH))) {
+            throw new BadRequestException(
+                `Payment notes cannot exceed ${MAX_PAYMENT_NOTE_LENGTH} characters`,
+            );
+        }
     }
 
 

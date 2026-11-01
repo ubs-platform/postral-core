@@ -25,6 +25,7 @@ export class PaymentMapper {
         return {
             type: saved.type,
             id: saved.id,
+            note: saved.note ?? undefined,
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,
@@ -50,6 +51,7 @@ export class PaymentMapper {
         return {
             type: saved.type,
             id: saved.id,
+            note: saved.note ?? undefined,
             currency: saved.currency,
             totalAmount: saved.totalAmount,
             taxAmount: saved.taxAmount,

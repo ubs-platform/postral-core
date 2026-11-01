@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ItemService } from './item.service';
 import {
     PaymentItemDTO,
     PaymentItemInputDto,
+    MAX_PAYMENT_NOTE_LENGTH,
 } from '@tk-postral/payment-common';
 import {
     ItemListCalculationInputDto,
@@ -33,6 +34,13 @@ export class OrderCalculationService {
     async calculateTotalAmount(
         paymentItems: ItemListCalculationInputDto,
     ): Promise<ItemListCalculationDto> {
+        if (paymentItems.items.some((item) => item.note != null &&
+            (typeof item.note !== 'string' || item.note.length > MAX_PAYMENT_NOTE_LENGTH))) {
+            throw new BadRequestException(
+                `Payment notes cannot exceed ${MAX_PAYMENT_NOTE_LENGTH} characters`,
+            );
+        }
+
         let totalAmt = 0,
             taxTotal = 0;
         const items: PaymentItemDTO[] = [];
@@ -122,6 +130,7 @@ export class OrderCalculationService {
                 });
 
             const paymentItem = new PostralPaymentItem();
+            paymentItem.note = PaymentItemDTO.note;
             paymentItem.variation = itemPriceActive[0].variation;
             paymentItem.entityGroup = realItemFind.entityGroup;
             paymentItem.entityId = realItemFind.entityId;

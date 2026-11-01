@@ -10,6 +10,7 @@ export class PaymentDTO {
     id: string;
 
     type: 'PURCHASE' | 'REFUND';
+    note?: string;
 
     /**
      * Ödeme tutarı (vergiler dahil)

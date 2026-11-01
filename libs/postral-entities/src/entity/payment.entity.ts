@@ -30,6 +30,9 @@ export class Payment {
     @Column()
     type!: 'PURCHASE' | 'REFUND';
 
+    @Column({ type: 'varchar', length: 10000, nullable: true })
+    note?: string;
+
     @Column(MoneyDbField)
     totalAmount!: number;
 

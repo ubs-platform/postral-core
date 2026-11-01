@@ -43,6 +43,9 @@ export class PostralPaymentItem {
     @Column()
     name!: string;
 
+    @Column({ type: 'varchar', length: 10000, nullable: true })
+    note?: string;
+
     @Column(MoneyDbField)
     quantity: number = 0;
 

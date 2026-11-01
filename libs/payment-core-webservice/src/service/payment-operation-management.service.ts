@@ -305,7 +305,7 @@ export class PaymentOperationManagementService {
             const result = await this.eventSenderService.initializePaymentChannelOperation(
                 refundOp.paymentChannelId,
                 {
-                    ...refundPayment,
+                    ...this.omitPaymentNotes(refundPayment),
                     originalPaymentChannelOperationId: element.operationId,
                     refundOperationId: refundOp.id,
                     ...(refundOp.refundPlan ? { refundPlan: refundOp.refundPlan } : {}),
@@ -396,7 +396,7 @@ export class PaymentOperationManagementService {
             const result =
                 await this.eventSenderService.initializePaymentChannelOperation(
                     captureInfo.paymentChannelId,
-                    { ...paymentFullDto, captureInfo: channelCaptureInfo },
+                    { ...this.omitPaymentNotes(paymentFullDto), captureInfo: channelCaptureInfo },
                 );
             const paymentOperationRecord = new PaymentChannelOperation();
             paymentOperationRecord.amount = captureInfo.paidAmount!;
@@ -422,6 +422,19 @@ export class PaymentOperationManagementService {
             console.error(error);
             throw error;
         }
+    }
+
+    private omitPaymentNotes<T extends PaymentFullDTO | PaymentFullWithCaptureInfoDTO>(payment: T): T {
+        const sanitized = {
+            ...payment,
+            items: payment.items.map((item) => {
+                const sanitizedItem = { ...item };
+                delete sanitizedItem.note;
+                return sanitizedItem;
+            }),
+        };
+        delete sanitized.note;
+        return sanitized as T;
     }
 
     async checkAndUpdateOperationStatusByOpId(operationId: string): Promise<void> {

@@ -72,13 +72,16 @@ describe('Item details through payment persistence and search', () => {
     it('copies authoritative catalog values into persisted payment items and reads them back', async () => {
         const result = await calculations.calculateTotalAmount({
             currency: 'TRY', saleMode: 'DEFAULT',
-            items: [{ itemId: catalogItem.id, quantity: 1, variation: 'default' }],
+            items: [{ itemId: catalogItem.id, quantity: 1, variation: 'default', note: 'Line note' }],
         });
         expect(result.items[0]).toMatchObject(details);
+        expect(result.items[0].note).toBe('Line note');
         const entity = mapper.toEntity(result.items[0]);
         expect(entity).toMatchObject(details);
+        expect(entity.note).toBe('Line note');
         catalogItem.metaEntityId = 'changed-after-purchase';
         expect(mapper.toDto([entity])[0]).toMatchObject(details);
+        expect(mapper.toDto([entity])[0].note).toBe('Line note');
         catalogItem.metaEntityId = details.metaEntityId;
     });
 

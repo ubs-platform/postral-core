@@ -10,6 +10,7 @@ export class PaymentItemDTO {
     originalPaymentItemId?: string | null;
     itemId: string;
     name: string;
+    note?: string;
     quantity: number;
     totalAmount: number;
     taxPercent: number;
