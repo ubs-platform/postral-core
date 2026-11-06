@@ -133,8 +133,12 @@ export function mapCheckout(
             ...(subMerchantKey
                 ? {
                       subMerchantKey,
-                      // TODO: ❗ The seller share is the full line price. App commission is not
-                      // deducted here; seller earnings are settled by the report digestion.
+                      // NOTE: ❗ Bilinçli karar: subMerchantPrice satırın tam fiyatıdır; iyzico tutarın (kendi komisyonunu düşerek)
+                      // tamamını satıcıya aktarır, uygulama komisyonu burada düşülmez.
+                      // Kesintiler raporlarda (report digestion) gösterilir; platform sahibi
+                      // `sellerPaysPaymentServiceFee` ayarını açabilir ya da satıcıyla mutabakatı
+                      // kendi muhasebesinde yapar. Komisyonun iyzico üzerinden otomatik kesilmesi
+                      // istenirse: subMerchantPrice = price - komisyon (iade senaryosu da ele alınmalı).
                       subMerchantPrice: price,
                   }
                 : {}),

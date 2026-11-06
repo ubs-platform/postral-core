@@ -22,8 +22,8 @@ export class WebhookConfig {
     @Column({ length: 10, default: 'POST' })
     method!: WebhookMethod;
 
-    // TODO: Bu alan DB'ye yazılmadan önce CryptionUtil.encryptWithConfig ile şifrelenmelidir.
-    // Şifrelenmiş alan decrypt edilmeden asla dışarıya döndürülmemeli.
+    // CryptionUtil ile şifreli saklanır (WebhookConfigService); API'ye yalnızca
+    // oluşturma/yenileme anında açık metin döner, diğer durumlarda maskelenir.
     @Column({ length: 500 })
     eventKey!: string;
 

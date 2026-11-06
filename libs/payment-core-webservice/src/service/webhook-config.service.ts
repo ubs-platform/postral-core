@@ -20,8 +20,7 @@ export class WebhookConfigService {
 
     async create(dto: WebhookConfigCreateDTO): Promise<WebhookConfigDTO> {
         const rawKey = dto.eventKey || randomBytes(32).toString('hex');
-        // TODO: eventKey DB'ye yazılmadan önce CryptionUtil.encryptWithConfig ile şifrelenmelidir.
-        const encryptedKey = this.cryptionUtil.encryptWithConfig(rawKey, 'USE_DEFAULT') as string;
+        const encryptedKey = this.cryptionUtil.encryptWithConfig(rawKey, 'THROW') as string;
 
         const entity = this.webhookConfigRepo.create({
             accountId: dto.accountId,
@@ -46,8 +45,7 @@ export class WebhookConfigService {
         if (dto.method !== undefined) entity.method = dto.method;
         if (dto.isEnabled !== undefined) entity.isEnabled = dto.isEnabled;
         if (dto.eventKey !== undefined) {
-            // TODO: eventKey DB'ye yazılmadan önce CryptionUtil.encryptWithConfig ile şifrelenmelidir.
-            entity.eventKey = this.cryptionUtil.encryptWithConfig(dto.eventKey, 'USE_DEFAULT') as string;
+            entity.eventKey = this.cryptionUtil.encryptWithConfig(dto.eventKey, 'THROW') as string;
         }
 
         const saved = await this.webhookConfigRepo.save(entity);
@@ -70,7 +68,7 @@ export class WebhookConfigService {
         }
 
         const rawKey = randomBytes(32).toString('hex');
-        entity.eventKey = this.cryptionUtil.encryptWithConfig(rawKey, 'USE_DEFAULT') as string;
+        entity.eventKey = this.cryptionUtil.encryptWithConfig(rawKey, 'THROW') as string;
 
         const saved = await this.webhookConfigRepo.save(entity);
         return this.toDto(saved, rawKey);

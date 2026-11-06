@@ -100,7 +100,7 @@ export class WebhookDispatchService {
         encryptedEventKey: string,
         payloadStr: string,
     ): Promise<void> {
-        // TODO: eventKey DB'den decrypt edilmeli — CryptionUtil.decryptWithConfig kullan
+        // Eski düz metin kayıtlar için çözülemeyen değer olduğu gibi kullanılır.
         const eventKey = this.cryptionUtil.decryptWithConfig(encryptedEventKey, 'USE_DEFAULT') as string;
 
         try {

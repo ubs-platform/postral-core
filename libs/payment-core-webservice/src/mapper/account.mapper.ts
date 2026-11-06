@@ -60,7 +60,9 @@ export class AccountMapper {
         // Hassas alanlar şifrelenerek güncellenir; diğer alanlar doğrudan atanır.
         entity.legalIdentity = this.cryptionUtil.encryptWithConfig(dto.legalIdentity, "USE_DEFAULT") || "";
         entity.name = dto.name;
-        entity.contactName = this.cryptionUtil.encryptWithConfig(dto.contactName, "USE_DEFAULT") || "";
+        // Kişisel hesapta temsilci kişi hesap sahibinin kendisidir.
+        const contactName = dto.type === 'INDIVIDUAL' ? dto.name : dto.contactName;
+        entity.contactName = this.cryptionUtil.encryptWithConfig(contactName, "USE_DEFAULT") || "";
         entity.phone = this.cryptionUtil.encryptWithConfig(dto.phone, "USE_DEFAULT") || "";
         entity.emailAddress = this.cryptionUtil.encryptWithConfig(dto.emailAddress, "USE_DEFAULT") || "";
         // website alanı hassas değer midir... 
