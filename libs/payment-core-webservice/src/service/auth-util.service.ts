@@ -145,7 +145,10 @@ export class AuthUtilService {
             throw new Error('En az bir yetenek sağlanmalıdır');
         }
 
-        if (ownershipGroupId) {
+        // Kullanıcı varsa grup filtresi kullanıcı yetkisiyle birlikte (VE) uygulanır; böylece üyesi olmadığı
+        // bir grubun id'sini gönderen kullanıcı o grubun varlıklarını göremez. Kullanıcısız grup araması yalnızca
+        // sistem içi (çağıranın üyeliği zaten doğruladığı) durumlar içindir.
+        if (ownershipGroupId && !userId) {
             return await lastValueFrom(
                 this.eo.searchByEntityIdsByEogroup({
                     entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,

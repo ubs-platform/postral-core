@@ -73,9 +73,7 @@ export class AddressService extends BaseCrudService<
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ADDRESS,
                 [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
-                (s?.entityOwnershipGroupId != null
-                        ? { ownershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id })
+                { userId: u!.id, ownershipGroupId: s?.entityOwnershipGroupId ?? undefined }
             );
 
         }

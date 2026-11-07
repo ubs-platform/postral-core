@@ -71,9 +71,7 @@ export class ItemCrudService extends BaseCrudService<
             ids = await this.authUtilService.searchOwnedIds(
                 PostralConstants.ENTITY_NAME_ACCOUNT,
                 [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
-                (s?.entityOwnershipGroupId != null
-                    ? { ownershipGroupId: s.entityOwnershipGroupId }
-                    : { userId: u!.id })
+                { userId: u!.id, ownershipGroupId: s?.entityOwnershipGroupId ?? undefined }
             );
 
 

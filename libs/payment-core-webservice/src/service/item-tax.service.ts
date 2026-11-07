@@ -92,9 +92,10 @@ export class ItemTaxService extends BaseCrudService<
                     entityName: PostralConstants.ENTITY_NAME_TAX,
                     requestedCapabilities: [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
                     // capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
+                    userId: u!.id,
                     ...(s?.entityOwnershipGroupId != null
                         ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : { userId: u!.id }),
+                        : {}),
                 }),
             );
             orClauses.push({ id: In(ids.length > 0 ? ids : ['']) });
