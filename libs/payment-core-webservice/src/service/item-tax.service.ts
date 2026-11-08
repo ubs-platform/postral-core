@@ -86,18 +86,9 @@ export class ItemTaxService extends BaseCrudService<
             orClauses.push({ isPublic: true });
         }
         if (s?.admin !== 'true' && (s?.visibility === 'PRIVATE' || s?.visibility === 'NONE' || s?.visibility === undefined) && u) {
-            const ids = await lastValueFrom(
-                this.eoService.searchOwnershipEntityIdsByUser({
-                    entityGroup: PostralConstants.ENTITY_GROUP_POSTRAL,
-                    entityName: PostralConstants.ENTITY_NAME_TAX,
-                    requestedCapabilities: [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
-                    // capabilityAtLeastOne: ['OWNER', 'EDITOR', 'VIEWER'],
-                    userId: u!.id,
-                    ...(s?.entityOwnershipGroupId != null
-                        ? { entityOwnershipGroupId: s.entityOwnershipGroupId }
-                        : {}),
-                }),
-            );
+            const ids = await this.authUtilService.searchOwnedIds(PostralConstants.ENTITY_NAME_TAX,  [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
+                {userId: u!.id, ownershipGroupId: s?.entityOwnershipGroupId ?? undefined }
+            )
             orClauses.push({ id: In(ids.length > 0 ? ids : ['']) });
         }
 

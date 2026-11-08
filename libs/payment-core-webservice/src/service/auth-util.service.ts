@@ -6,6 +6,11 @@ import { Capability, UserAuthBackendDTO } from '@ubs-platform/users-common';
 import { Optional } from '@ubs-platform/crud-base-common/utils';
 import { exec } from 'child_process';
 
+export interface UserOrEOG {
+    userId?: string;
+    ownershipGroupId?: string;
+}
+
 @Injectable()
 export class AuthUtilService {
     /**
@@ -133,11 +138,9 @@ export class AuthUtilService {
     async searchOwnedIds(
         entityName: string,
         requestedCapabilities: number[][] = [[Capability.OWNER], [Capability.EDIT], [Capability.VIEW]],
-        {
-            userId,
-            ownershipGroupId,
-        }: { userId?: string; ownershipGroupId?: string },
+        userOrEOG: UserOrEOG,
     ) {
+        const { userId, ownershipGroupId } = userOrEOG;
         if (!userId && !ownershipGroupId) {
             throw new Error('userId veya ownershipGroupId sağlanmalıdır');
         }
