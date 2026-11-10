@@ -45,12 +45,28 @@ pipeline {
         }
 
         stage('Install dependencies') {
+            agent {
+                docker {
+                    image 'node:24'
+                    reuseNode true
+                    // npm cache/config inside the container; keeps the npm token out of the workspace and host HOME
+                    args '-e npm_config_cache=/tmp/npm-cache -e NPM_CONFIG_USERCONFIG=/tmp/npmrc'
+                }
+            }
             steps {
                 sh 'npm install --force'
             }
         }
 
         stage('Update package.json') {
+            agent {
+                docker {
+                    image 'node:24'
+                    reuseNode true
+                    // npm cache/config inside the container; keeps the npm token out of the workspace and host HOME
+                    args '-e npm_config_cache=/tmp/npm-cache -e NPM_CONFIG_USERCONFIG=/tmp/npmrc'
+                }
+            }
             steps {
                 sh '''
 node <<'NODE'
@@ -67,6 +83,14 @@ NODE
         }
 
         stage('Publish libraries') {
+            agent {
+                docker {
+                    image 'node:24'
+                    reuseNode true
+                    // npm cache/config inside the container; keeps the npm token out of the workspace and host HOME
+                    args '-e npm_config_cache=/tmp/npm-cache -e NPM_CONFIG_USERCONFIG=/tmp/npmrc'
+                }
+            }
             when {
                 expression { return !params.SKIP_LIB_PUBLISH }
             }
@@ -93,6 +117,14 @@ NODE
         }
 
         stage('Update stock.env versions') {
+            agent {
+                docker {
+                    image 'node:24'
+                    reuseNode true
+                    // npm cache/config inside the container; keeps the npm token out of the workspace and host HOME
+                    args '-e npm_config_cache=/tmp/npm-cache -e NPM_CONFIG_USERCONFIG=/tmp/npmrc'
+                }
+            }
             steps {
                 sh '''
 node <<'NODE'
