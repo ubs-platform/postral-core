@@ -43,12 +43,14 @@ export class PaymentControllerService {
 
 
   async fetchPaymentInformation(id: string): Promise<PaymentDTO> {
+    debugger
     let urlAltered = this.interceptUrl("api/payment/:id").replace(':id', id + '');
     return firstValueFrom(this.http.get<PaymentDTO>(urlAltered).pipe(map(r => r.data)));
   }
 
 
   async fetchPaymentFull(id: string): Promise<PaymentFullDTO> {
+    debugger
     let urlAltered = this.interceptUrl("api/payment/:id/full").replace(':id', id + '');
     return firstValueFrom(this.http.get<PaymentFullDTO>(urlAltered).pipe(map(r => r.data)));
   }

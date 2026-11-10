@@ -20,7 +20,8 @@ export class TransactionSearchControllerService {
 
   interceptUrl(url: string): string {
     // you can modify url here if needed
-    return this.basePath + (!url || this.basePath.endsWith("/") ? "" : "/") + url;
+    // return this.basePath + (!url || this.basePath.endsWith("/") ? "" : "/") + url;
+    return [this.basePath, ...url.split('/')].filter(Boolean).join('/');
   }
 
 
