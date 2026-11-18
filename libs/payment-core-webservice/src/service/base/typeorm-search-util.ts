@@ -23,10 +23,11 @@ export class TypeormSearchUtil {
         if (searchParamsQuery.length == 1 && searchParamsQuery[0]["$match"]) {
             searchParamsQuery = searchParamsQuery[0]["$match"];
         }
+        // Negatif veya aşırı büyük değerler OFFSET/LIMIT'e gidip SQL hatası (500) üretmesin
         //@ts-ignore
-        size = parseInt(size) || 10;
+        size = Math.min(Math.max(parseInt(size) || 10, 1), 100);
         //@ts-ignore
-        page = parseInt(page) || 0;
+        page = Math.max(parseInt(page) || 0, 0);
 
         const count = await model.count({
             where: searchParamsQuery,
