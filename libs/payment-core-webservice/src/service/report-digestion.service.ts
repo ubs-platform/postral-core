@@ -487,7 +487,6 @@ export class ReportDigestionService {
                     itemClassExpenseReport = ReportExpense.create(mainReportId, expenseAccountId, expenseKey, 0, item.itemClass, true, ReportDigestionService.expenseDisplayWeight(expenseKey));
                     expenseMap.set(expenseKey, itemClassExpenseReport);
                     if (itemClassExpenseReport.expenseKey == null || itemClassExpenseReport.expenseKey === "") {
-                        debugger;
                         throw new Error("Expense key cannot be null or empty");
 
                     }
@@ -508,7 +507,6 @@ export class ReportDigestionService {
 
 
             if (totalComissionExpenseReport.expenseKey == null || totalComissionExpenseReport.expenseKey === "") {
-                debugger;
                 throw new Error("Expense key cannot be null or empty");
             }
 
